@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カレンダー</title>
+    
+<!-- アプリのアイコン設定 (icon-kuroneko.png) -->
+<link rel="icon" href="icon-kuroneko.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-kuroneko.png">
+
+    <!-- PWA用メタタグ -->
+    <meta name="theme-color" content="#090d16">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="時計&カレンダー">
+    <meta name="application-name" content="時計&カレンダー">
+
+    <!-- 要望1: アプリのアイコン設定 (icon-kuroneko.png) -->
+    <link rel="icon" href="icon-kuroneko.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-kuroneko.png">
+
+    <!-- Web App Manifest (Data URI形式で1ファイル化) -->
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AB%20%E3%83%87%E3%82%B8%E3%82%BF%E3%83%AB%E6%99%82%E8%A8%8B%20%26%20%E3%82%AB%E3%83%AC%E3%83%B3%E3%83%80%E3%83%BC%22%2C%22short_name%22%3A%22%E6%99%82%E8%A8%8B%E3%82%AB%E3%83%AC%E3%83%B3%E3%83%80%E3%83%BC%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23090d16%22%2C%22theme_color%22%3A%22%23090d16%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22icon-kuroneko.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22icon-kuroneko.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        /* カラー変数 */
+        :root {
+            --bg: #0f1219;
+            --panel: #181d28;
+            --panel-light: #222836;
+            --border: #323b4e;
+            --text: #f5f7fa;
+            --sub: #9da6b5;
+            --accent: #657dff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #090d16;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        .font-mono-clock {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .color-holiday { color: #f87171; }
+        .color-sunday { color: #f87171; }
+        .color-saturday { color: #60a5fa; }
+
+        .bg-holiday { background-color: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .bg-today { background-color: #3b82f6; color: #ffffff !important; font-weight: bold; }
+        
+        .badge-task {
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            margin-top: 2px;
+            line-height: 1.1;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .time-glow {
+            text-shadow: 0 0 25px rgba(59, 130, 246, 0.35);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* 要望2: ハンバーガーボタン */
+        .hamburger-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            background: rgba(24, 29, 40, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .hamburger-btn:active {
+            transform: scale(0.95);
+        }
+        .hamburger-bar {
+            width: 20px;
+            height: 2px;
+            background-color: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* 要望2: サイドバー オーバーレイ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 要望2: サイドバー本体 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(280px, 80vw);
+            height: 100vh;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            z-index: 1002;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        .sidebar-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: var(--sub);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .sidebar-nav {
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 10px;
+            background: var(--panel-light);
+            border: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+        }
+        .sidebar-link:hover {
+            border-color: var(--accent);
+            background: rgba(101, 125, 255, 0.15);
+        }
+        .sidebar-link:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col justify-between p-3 sm:p-5 select-none">
+
+    <!-- 要望2: ハンバーガーボタン -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+    </button>
+
+    <!-- 要望2: サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 要望2: サイドバー -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <span>仕事ツール</span>
+            </div>
+            <button class="sidebar-close" id="sidebarCloseBtn" aria-label="閉じる">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page10.html" class="sidebar-link">
+                <span>タイマー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page11.html" class="sidebar-link">
+                <span>カレンダー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3.html" class="sidebar-link">
+                <span>負担額</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page6.html" class="sidebar-link">
+                <span>時間計算</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page7.html" class="sidebar-link">
+                <span>和暦西暦</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page8.html" class="sidebar-link">
+                <span>電卓</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page9.html" class="sidebar-link">
+                <span>医療用語辞典</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ヘッダー / 設定バー (ハンバーガーボタン用に左側に余白確保) -->
+    <header class="flex justify-between items-center max-w-4xl w-full mx-auto mb-3 text-slate-400 pl-14 sm:pl-0">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="clock" class="w-5 h-5 text-blue-500"></i>
+            <span class="font-semibold tracking-wider text-slate-200 text-sm sm:text-base">SMART CLOCK</span>
+        </div>
+        <div class="flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm">
+            <button id="toggle-seconds" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition border border-slate-700/50 flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                <span id="toggle-seconds-text">秒を非表示</span>
+            </button>
+            <button id="toggle-format" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition border border-slate-700/50 cursor-pointer">
+                <span id="format-text" class="font-mono font-medium">24H</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- メインコンテンツエリア -->
+    <main class="flex-1 flex flex-col justify-center items-center max-w-4xl w-full mx-auto my-auto space-y-4 sm:space-y-6 py-2">
+        
+        <!-- 現在の日付 (和暦付き) -->
+        <div class="text-center">
+            <div id="current-date" class="text-lg sm:text-2xl md:text-3xl font-medium text-slate-200 tracking-wide">
+                ----年--月--日 (ー)
+            </div>
+            <div id="japanese-era" class="text-xs sm:text-sm md:text-base text-blue-400 font-medium mt-0.5">
+                --
+            </div>
+        </div>
+
+        <!-- 大画面デジタル時計 -->
+        <div class="text-center w-full flex flex-col items-center justify-center py-1 sm:py-2">
+            <div id="clock-hm" class="font-mono-clock tabular-nums text-6xl sm:text-8xl md:text-9xl text-white time-glow leading-none">
+                00:00
+            </div>
+            
+            <div id="seconds-wrapper" class="mt-2 transition-all duration-300 flex items-center justify-center min-h-[1.75rem]">
+                <span id="seconds-val" class="font-mono-clock tabular-nums text-xl sm:text-2xl md:text-3xl text-slate-400/80 font-light tracking-wider">
+                    00
+                </span>
+            </div>
+        </div>
+
+        <!-- リマインダーアラートエリア -->
+        <div id="reminder-container" class="w-full max-w-md space-y-2 hidden"></div>
+
+        <!-- カレンダーエリア -->
+        <div class="w-full max-w-md bg-slate-900/70 backdrop-blur-md border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-2xl">
+            <!-- カレンダーヘッダー -->
+            <div class="flex justify-between items-center mb-3">
+                <button id="prev-month" class="p-1.5 sm:p-2 hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-white active:scale-95 cursor-pointer" aria-label="前月">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <h2 id="calendar-month-year" class="text-base sm:text-lg font-bold text-slate-200">
+                        ----年 --月
+                    </h2>
+                    <button id="today-btn" class="text-xs px-2.5 py-1 bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-md hover:bg-blue-600 hover:text-white transition cursor-pointer">
+                        今日
+                    </button>
+                </div>
+                <button id="next-month" class="p-1.5 sm:p-2 hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-white active:scale-95 cursor-pointer" aria-label="翌月">
+                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- 曜日表示 -->
+            <div class="grid grid-cols-7 text-center text-xs font-semibold mb-1 sm:mb-2">
+                <span class="color-sunday py-1">日</span>
+                <span class="text-slate-400 py-1">月</span>
+                <span class="text-slate-400 py-1">火</span>
+                <span class="text-slate-400 py-1">水</span>
+                <span class="text-slate-400 py-1">木</span>
+                <span class="text-slate-400 py-1">金</span>
+                <span class="color-saturday py-1">土</span>
+            </div>
+
+            <!-- 日付グリッド -->
+            <div id="calendar-days" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+
+            <!-- 凡例エリア -->
+            <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap justify-center items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs text-slate-400">
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span>今日</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                    <span>日曜・祝日</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <span>土曜</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="px-1 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] rounded border border-amber-500/30 font-medium">詳記</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="px-1 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] rounded border border-purple-500/30 font-medium">本送信</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="px-1 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded border border-emerald-500/30 font-medium">交通費</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="text-center text-xs text-slate-500 max-w-4xl w-full mx-auto pt-2 pb-1">
+        <span id="holiday-info" class="text-slate-400"></span>
+    </footer>
+
+    <script>
+        // 要望2: サイドバー制御用JavaScript
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const sidebar = document.getElementById("sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+        function toggleSidebar() {
+            const isActive = sidebar.classList.contains("active");
+            if (isActive) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function openSidebar() {
+            sidebar.classList.add("active");
+            sidebarOverlay.classList.add("active");
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove("active");
+            sidebarOverlay.classList.remove("active");
+        }
+
+        hamburgerBtn.addEventListener("click", toggleSidebar);
+        sidebarOverlay.addEventListener("click", closeSidebar);
+        sidebarCloseBtn.addEventListener("click", closeSidebar);
+
+        // 時計・カレンダー処理
+        let showSeconds = true;
+        let is24HourFormat = true;
+        let currentDateView = new Date();
+
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        // 祝日データ (2025-2027対応)
+        const holidays = {
+            '2025-01-01': '元日', '2025-01-13': '成人の日', '2025-02-11': '建国記念の日', '2025-02-23': '天皇誕生日', '2025-02-24': '振替休日',
+            '2025-03-20': '春分の日', '2025-04-29': '昭和の日', '2025-05-03': '憲法記念日', '2025-05-04': 'みどもの日', '2025-05-05': 'こどもの日',
+            '2025-05-06': '振替休日', '2025-07-21': '海の日', '2025-08-11': '山の日', '2025-09-15': '敬老の日', '2025-09-23': '秋分の日',
+            '2025-10-13': 'スポーツの日', '2025-11-03': '文化の日', '2025-11-23': '勤労感謝の日', '2025-11-24': '振替休日',
+            '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日',
+            '2026-03-20': '春分の日', '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどもの日',
+            '2026-05-05': 'こどもの日', '2026-05-06': '振替休日', '2026-07-20': '海の日', '2026-08-11': '山の日',
+            '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日', '2026-10-12': 'スポーツの日',
+            '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+            '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日'
+        };
+
+        // Google サイト埋め込み環境に配慮したアイコン呼び出し
+        function safeCreateIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                console.warn('Lucide icons load issue:', e);
+            }
+        }
+
+        function getJapaneseEra(date) {
+            const year = date.getFullYear();
+            if (year >= 2019) {
+                const reiwaYear = year - 2018;
+                return `令和${reiwaYear === 1 ? '元' : reiwaYear}年`;
+            } else if (year >= 1989) {
+                return `平成${year - 1988}年`;
+            }
+            return '';
+        }
+
+        function formatDateKey(year, month, day) {
+            const m = String(month + 1).padStart(2, '0');
+            const d = String(day).padStart(2, '0');
+            return `${year}-${m}-${d}`;
+        }
+
+        function getHolidayName(year, month, day) {
+            const key = formatDateKey(year, month, day);
+            if (holidays[key]) return holidays[key];
+
+            const mmdd = `${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const staticHolidays = {
+                '01-01': '元日', '02-11': '建国記念の日', '02-23': '天皇誕生日',
+                '04-29': '昭和の日', '05-03': '憲法記念日', '05-04': 'みどもの日',
+                '05-05': 'こどもの日', '08-11': '山の日', '11-03': '文化の日', '11-23': '勤労感謝の日'
+            };
+
+            return staticHolidays[mmdd] || null;
+        }
+
+        function isBusinessDay(year, month, day) {
+            const date = new Date(year, month, day);
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+            if (getHolidayName(year, month, day)) return false;
+            return true;
+        }
+
+        // 指定した基準日、あるいはそれ以前の最新の平日の日付を取得
+        function getPreviousOrSameBusinessDay(year, month, targetDay) {
+            for (let day = targetDay; day >= 1; day--) {
+                if (isBusinessDay(year, month, day)) {
+                    return day;
+                }
+            }
+            return null;
+        }
+
+        // 詳記進捗報告の対象日（7日が休日なら前平日に繰り上げ）
+        function getShokiTargetDay(year, month) {
+            return getPreviousOrSameBusinessDay(year, month, 7);
+        }
+
+        // 交通費提出の対象日（月末が休日なら前平日に繰り上げ）
+        function getLastBusinessDay(year, month) {
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            return getPreviousOrSameBusinessDay(year, month, lastDate);
+        }
+
+        const clockHmEl = document.getElementById('clock-hm');
+        const secondsValEl = document.getElementById('seconds-val');
+        const secondsWrapperEl = document.getElementById('seconds-wrapper');
+        const currentDateEl = document.getElementById('current-date');
+        const japaneseEraEl = document.getElementById('japanese-era');
+        const calendarMonthYearEl = document.getElementById('calendar-month-year');
+        const calendarDaysEl = document.getElementById('calendar-days');
+        const holidayInfoEl = document.getElementById('holiday-info');
+        const reminderContainerEl = document.getElementById('reminder-container');
+
+        const toggleSecondsBtn = document.getElementById('toggle-seconds');
+        const toggleSecondsText = document.getElementById('toggle-seconds-text');
+        const toggleFormatBtn = document.getElementById('toggle-format');
+        const formatText = document.getElementById('format-text');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const todayBtn = document.getElementById('today-btn');
+
+        function updateClock() {
+            const now = new Date();
+
+            let hours = now.getHours();
+            if (!is24HourFormat) {
+                hours = hours % 12 || 12;
+            }
+            const hoursStr = String(hours).padStart(2, '0');
+            const minutesStr = String(now.getMinutes()).padStart(2, '0');
+            const secondsStr = String(now.getSeconds()).padStart(2, '0');
+
+            clockHmEl.textContent = `${hoursStr}:${minutesStr}`;
+
+            if (showSeconds) {
+                secondsValEl.textContent = secondsStr;
+                secondsWrapperEl.style.display = 'flex';
+            } else {
+                secondsWrapperEl.style.display = 'none';
+            }
+
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const date = now.getDate();
+            const dayOfWeek = dayNames[now.getDay()];
+
+            currentDateEl.textContent = `${year}年 ${month + 1}月 ${date}日 (${dayOfWeek})`;
+            japaneseEraEl.textContent = `${getJapaneseEra(now)}`;
+
+            checkAndRenderAlerts(year, month, date);
+
+            const todayHoliday = getHolidayName(year, month, date);
+            if (todayHoliday) {
+                holidayInfoEl.textContent = `本日は祝日です: 「${todayHoliday}」`;
+                holidayInfoEl.className = "text-red-400 font-medium";
+            } else {
+                holidayInfoEl.textContent = "";
+            }
+        }
+
+        function checkAndRenderAlerts(year, month, date) {
+            const shokiTargetDay = getShokiTargetDay(year, month);
+            const lastBizDay = getLastBusinessDay(year, month);
+
+            reminderContainerEl.innerHTML = '';
+            let hasAlert = false;
+
+            // 詳記進捗報告リマインド
+            if (date === shokiTargetDay) {
+                hasAlert = true;
+                const isShifted = shokiTargetDay !== 7;
+                const alertEl = document.createElement('div');
+                alertEl.className = 'bg-amber-500/15 border border-amber-500/40 text-amber-300 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex items-center gap-3 shadow-lg animate-pulse';
+                alertEl.innerHTML = `
+                    <div class="p-2 bg-amber-500/20 rounded-lg text-amber-400 shrink-0">
+                        <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-amber-200">【本日報告日】詳記進捗報告${isShifted ? ' (前平日実施)' : ''}</div>
+                        <div class="text-amber-300/80 text-xs mt-0.5">本日は詳記進捗報告日です${isShifted ? '（7日が土日祝のため本日繰り上げ）' : ''}。進捗状況のご報告をお忘れなく！</div>
+                    </div>
+                `;
+                reminderContainerEl.appendChild(alertEl);
+            }
+
+            // 毎月9日：レセ本送信リマインド
+            if (date === 9) {
+                hasAlert = true;
+                const alertEl = document.createElement('div');
+                alertEl.className = 'bg-purple-500/15 border border-purple-500/40 text-purple-300 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex items-center gap-3 shadow-lg animate-pulse';
+                alertEl.innerHTML = `
+                    <div class="p-2 bg-purple-500/20 rounded-lg text-purple-400 shrink-0">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-purple-200">【本日送信日】レセ本送信</div>
+                        <div class="text-purple-300/80 text-xs mt-0.5">本日は毎月9日のレセ本送信日です。</div>
+                    </div>
+                `;
+                reminderContainerEl.appendChild(alertEl);
+            }
+
+            // 最終営業日：交通費提出リマインド
+            if (date === lastBizDay) {
+                hasAlert = true;
+                const lastDate = new Date(year, month + 1, 0).getDate();
+                const isShifted = lastBizDay !== lastDate;
+                const alertEl = document.createElement('div');
+                alertEl.className = 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex items-center gap-3 shadow-lg animate-pulse';
+                alertEl.innerHTML = `
+                    <div class="p-2 bg-emerald-500/20 rounded-lg text-emerald-400 shrink-0">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-emerald-200">【本日提出日】交通費提出${isShifted ? ' (前平日実施)' : ''}</div>
+                        <div class="text-emerald-300/80 text-xs mt-0.5">本日は今月最後の平日です${isShifted ? '（月末が土日祝のため本日繰り上げ）' : ''}。今月分の交通費精算のご提出をお忘れなく！</div>
+                    </div>
+                `;
+                reminderContainerEl.appendChild(alertEl);
+            }
+
+            if (hasAlert) {
+                reminderContainerEl.classList.remove('hidden');
+                safeCreateIcons();
+            } else {
+                reminderContainerEl.classList.add('hidden');
+            }
+        }
+
+        function renderCalendar() {
+            const year = currentDateView.getFullYear();
+            const month = currentDateView.getMonth();
+
+            calendarMonthYearEl.textContent = `${year}年 ${month + 1}月`;
+            calendarDaysEl.innerHTML = '';
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            
+            const shokiTargetDay = getShokiTargetDay(year, month);
+            const lastBizDay = getLastBusinessDay(year, month);
+
+            const prevLastDate = new Date(year, month, 0).getDate();
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'py-2 text-slate-600/40 text-center rounded-lg';
+                dayDiv.textContent = prevLastDate - i + 1;
+                calendarDaysEl.appendChild(dayDiv);
+            }
+
+            const now = new Date();
+            const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+
+            for (let day = 1; day <= lastDate; day++) {
+                const dayDiv = document.createElement('div');
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const holidayName = getHolidayName(year, month, day);
+
+                let classNames = 'py-1.5 rounded-lg transition-all flex flex-col items-center justify-center relative min-h-[42px]';
+                const isToday = isCurrentMonth && day === now.getDate();
+
+                if (isToday) {
+                    classNames += ' bg-today shadow-lg shadow-blue-500/30';
+                } else if (holidayName) {
+                    classNames += ' color-holiday bg-holiday font-medium';
+                } else if (dayOfWeek === 0) {
+                    classNames += ' color-sunday hover:bg-slate-800/50';
+                } else if (dayOfWeek === 6) {
+                    classNames += ' color-saturday hover:bg-slate-800/50';
+                } else {
+                    classNames += ' text-slate-300 hover:bg-slate-800/50';
+                }
+
+                dayDiv.className = classNames;
+                
+                const spanDate = document.createElement('span');
+                spanDate.className = 'text-sm font-medium';
+                spanDate.textContent = day;
+                dayDiv.appendChild(spanDate);
+
+                // 詳記進捗報告（7日または直前平日）
+                if (day === shokiTargetDay) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-task bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                    badge.textContent = '詳記';
+                    dayDiv.appendChild(badge);
+                    const note = shokiTargetDay !== 7 ? ' (7日休日により繰り上げ)' : '';
+                    dayDiv.title = (holidayName ? holidayName + ' / ' : '') + '詳記進捗報告日' + note;
+                }
+
+                // 9日: レセ本送信
+                if (day === 9) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-task bg-purple-500/20 text-purple-300 border border-purple-500/40';
+                    badge.textContent = '本送信';
+                    dayDiv.appendChild(badge);
+                    dayDiv.title = (holidayName ? holidayName + ' / ' : '') + 'レセ本送信日';
+                }
+
+                // 交通費提出（月末または直前平日）
+                if (day === lastBizDay) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-task bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                    badge.textContent = '交通費';
+                    dayDiv.appendChild(badge);
+                    const note = lastBizDay !== lastDate ? ' (月末休日により繰り上げ)' : '';
+                    dayDiv.title = (holidayName ? holidayName + ' / ' : '') + '交通費提出日' + note;
+                }
+
+                if (holidayName && day !== shokiTargetDay && day !== 9 && day !== lastBizDay) {
+                    dayDiv.title = holidayName;
+                    if (!isToday) {
+                        const dot = document.createElement('span');
+                        dot.className = 'w-1 h-1 bg-red-400 rounded-full mt-0.5';
+                        dayDiv.appendChild(dot);
+                    }
+                }
+
+                calendarDaysEl.appendChild(dayDiv);
+            }
+
+            const totalSlots = firstDayIndex + lastDate;
+            const nextDays = (42 - totalSlots) % 7;
+            for (let i = 1; i <= nextDays; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'py-2 text-slate-600/40 text-center rounded-lg';
+                dayDiv.textContent = i;
+                calendarDaysEl.appendChild(dayDiv);
+            }
+        }
+
+        toggleSecondsBtn.addEventListener('click', () => {
+            showSeconds = !showSeconds;
+            toggleSecondsText.textContent = showSeconds ? '秒を非表示' : '秒を表示';
+            updateClock();
+        });
+
+        toggleFormatBtn.addEventListener('click', () => {
+            is24HourFormat = !is24HourFormat;
+            formatText.textContent = is24HourFormat ? '24H' : '12H';
+            updateClock();
+        });
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentDateView.setMonth(currentDateView.getMonth() - 1);
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentDateView.setMonth(currentDateView.getMonth() + 1);
+            renderCalendar();
+        });
+
+        todayBtn.addEventListener('click', () => {
+            currentDateView = new Date();
+            renderCalendar();
+        });
+
+        // PWA用のService Workerインライン登録処理
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'clock-calendar-v1';
+                    self.addEventListener('install', (e) => {
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('activate', (e) => {
+                        e.waitUntil(clients.claim());
+                    });
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(
+                            fetch(e.request).catch(() => caches.match(e.request))
+                        );
+                    });
+                `;
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const blobUrl = URL.createObjectURL(blob);
+                    navigator.serviceWorker.register(blobUrl).catch(() => {});
+                } catch(e) {
+                    console.warn('SW Register Notice:', e);
+                }
+            });
+        }
+
+        function initApp() {
+            safeCreateIcons();
+            updateClock();
+            renderCalendar();
+            setInterval(updateClock, 1000);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+        
+        window.addEventListener('load', safeCreateIcons);
+    </script>
+</body>
+</html>
