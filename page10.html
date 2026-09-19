@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>タイマー</title>
+
+<!-- アプリのアイコン設定 (icon-kuroneko.png) -->
+<link rel="icon" href="icon-kuroneko.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-kuroneko.png">
+    
+<style>
+    :root {
+        --bg: #0f1219;
+        --panel: #181d28;
+        --panel-light: #222836;
+        --border: #323b4e;
+        --text: #f5f7fa;
+        --sub: #9da6b5;
+        --accent: #657dff;
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100dvh;
+        background: #0d1117;
+        color: #f0f6fc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Noto Sans JP", sans-serif;
+        overflow-x: hidden;
+        transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    button {
+        font: inherit;
+        color: inherit;
+        border: none;
+        cursor: pointer;
+        touch-action: manipulation;
+        outline: none;
+    }
+
+    /* ハンバーガーボタン */
+    .hamburger-btn {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 1000;
+        width: 44px;
+        height: 44px;
+        background: rgba(24, 29, 40, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    .hamburger-btn:active {
+        transform: scale(0.95);
+    }
+    .hamburger-bar {
+        width: 20px;
+        height: 2px;
+        background-color: var(--text);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    /* サイドバー オーバーレイ */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* サイドバー本体 */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: min(280px, 80vw);
+        height: 100vh;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+        z-index: 1002;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        overflow-y: auto;
+    }
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    .sidebar-header {
+        padding: 20px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .sidebar-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .sidebar-close {
+        background: transparent;
+        border: none;
+        color: var(--sub);
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px;
+    }
+    .sidebar-nav {
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        color: var(--text);
+        text-decoration: none;
+        border-radius: 10px;
+        background: var(--panel-light);
+        border: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 14px;
+        transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+    }
+    .sidebar-link:hover {
+        border-color: var(--accent);
+        background: rgba(101, 125, 255, 0.15);
+    }
+    .sidebar-link:active {
+        transform: scale(0.98);
+    }
+    .sidebar-link-icon {
+        font-size: 18px;
+    }
+
+    .app {
+        width: 100%;
+        max-width: 480px;
+        min-height: 100dvh;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        background: radial-gradient(circle at 50% 20%, rgba(31, 111, 235, 0.15), transparent 50%), #0d1117;
+        transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    header {
+        width: 100%;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4px 0 52px; /* ハンバーガーボタンのスペースを確保 */
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #e6edf3;
+        transition: color 0.5s ease;
+    }
+
+    .header-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: background 0.2s, transform 0.1s, color 0.5s ease;
+    }
+
+    .header-button:active {
+        transform: scale(0.92);
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .timer-area {
+        width: min(80vw, 320px);
+        aspect-ratio: 1 / 1;
+        margin: 12px 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .progress-ring {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .ring-background {
+        fill: none;
+        stroke: #161b22;
+        stroke-width: 7;
+        transition: stroke 0.5s ease;
+    }
+
+    .ring-progress {
+        fill: none;
+        stroke: #2f81f7;
+        stroke-width: 7;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 8px rgba(47, 129, 247, 0.6));
+        transition: stroke-dashoffset 0.3s linear, stroke 0.5s ease, filter 0.5s ease;
+    }
+
+    .timer-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    .time {
+        font-size: clamp(52px, 16vw, 84px);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        text-shadow: 0 0 20px rgba(47, 129, 247, 0.2);
+        transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    .time-label {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #8b949e;
+        letter-spacing: 0.12em;
+        transition: color 0.5s ease;
+    }
+
+    .controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .main-button {
+        flex: 1;
+        max-width: 220px;
+        height: 64px;
+        border-radius: 32px;
+        background: linear-gradient(135deg, #1f6feb 0%, #238636 100%);
+        box-shadow: 0 8px 24px rgba(31, 111, 235, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: transform 0.15s ease, filter 0.15s ease, background 0.3s ease;
+    }
+
+    .main-button.running {
+        background: linear-gradient(135deg, #d29922 0%, #bb8009 100%);
+        box-shadow: 0 8px 24px rgba(210, 153, 34, 0.3);
+    }
+
+    .main-button:active {
+        transform: scale(0.96);
+        filter: brightness(0.9);
+    }
+
+    .button-icon {
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .button-text {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .reset-button {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #21262d;
+        border: 1px solid #30363d;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, transform 0.15s, border-color 0.5s ease;
+    }
+
+    .reset-button:active {
+        transform: scale(0.92);
+        background: #30363d;
+    }
+
+    .presets {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .preset {
+        height: 44px;
+        border-radius: 12px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        font-size: 14px;
+        font-weight: 600;
+        color: #c9d1d9;
+        transition: background 0.15s, transform 0.1s, color 0.5s ease, border-color 0.5s ease;
+    }
+
+    .preset:active {
+        transform: scale(0.94);
+        background: #21262d;
+    }
+
+    .settings {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .setting-group {
+        background: #161b22;
+        border: 1px solid #21262d;
+        border-radius: 16px;
+        padding: 10px;
+        transition: background 0.5s ease, border-color 0.5s ease;
+    }
+
+    .setting-label {
+        display: block;
+        text-align: center;
+        color: #8b949e;
+        font-size: 12px;
+        margin-bottom: 6px;
+        transition: color 0.5s ease;
+    }
+
+    .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .small-button {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #21262d;
+        font-size: 20px;
+        color: #f0f6fc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s, color 0.5s ease;
+    }
+
+    .small-button:active {
+        transform: scale(0.92);
+        background: #30363d;
+    }
+
+    .setting-value {
+        min-width: 36px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        transition: color 0.5s ease;
+    }
+
+    .message {
+        min-height: 22px;
+        margin-top: 8px;
+        color: #f2cc60;
+        font-size: 16px;
+        font-weight: 700;
+        text-align: center;
+        transition: color 0.5s ease;
+    }
+
+    /* 時間終了時の画面全灯・明るい画面テーマ */
+    body.time-up {
+        background: #fffdf0;
+        color: #1f2328;
+    }
+
+    body.time-up .app {
+        background: radial-gradient(circle at 50% 30%, #ffffff 0%, #fff4c2 60%, #ffe885 100%);
+        animation: brightPulse 1.2s infinite alternate ease-in-out;
+    }
+
+    @keyframes brightPulse {
+        from {
+            filter: brightness(1.0);
+            box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.4);
+        }
+        to {
+            filter: brightness(1.15);
+            box-shadow: inset 0 0 100px rgba(255, 200, 0, 0.8);
+        }
+    }
+
+    body.time-up .title {
+        color: #1f2328;
+    }
+
+    body.time-up .header-button {
+        background: rgba(0, 0, 0, 0.08);
+        color: #1f2328;
+    }
+
+    body.time-up .time {
+        color: #d97706;
+        text-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
+    }
+
+    body.time-up .time-label {
+        color: #78350f;
+    }
+
+    body.time-up .ring-background {
+        stroke: #fef08a;
+    }
+
+    body.time-up .ring-progress {
+        stroke: #f59e0b;
+        filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.8));
+    }
+
+    body.time-up .main-button {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 8px 24px rgba(217, 119, 6, 0.4);
+        color: #ffffff;
+    }
+
+    body.time-up .reset-button {
+        background: #ffffff;
+        border-color: #fde047;
+        color: #1f2328;
+    }
+
+    body.time-up .preset {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: #fde047;
+        color: #1f2328;
+    }
+
+    body.time-up .setting-group {
+        background: rgba(255, 255, 255, 0.8);
+        border-color: #fde047;
+    }
+
+    body.time-up .setting-label {
+        color: #78350f;
+    }
+
+    body.time-up .setting-value {
+        color: #1f2328;
+    }
+
+    body.time-up .small-button {
+        background: #fef08a;
+        color: #1f2328;
+    }
+
+    body.time-up .message {
+        color: #b45309;
+    }
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-box {
+        width: 100%;
+        max-width: 480px;
+        background: #161b22;
+        border-radius: 20px 20px 0 0;
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+        border-top: 1px solid #30363d;
+        color: #f0f6fc;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+
+    .modal-option {
+        width: 100%;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 8px;
+        background: transparent;
+        border-bottom: 1px solid #21262d;
+        color: #c9d1d9;
+        font-size: 15px;
+    }
+
+    .close-button {
+        width: 100%;
+        height: 46px;
+        margin-top: 16px;
+        border-radius: 12px;
+        background: #21262d;
+        font-weight: 600;
+        color: #f0f6fc;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- ハンバーガーボタン -->
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
+  <div class="hamburger-bar"></div>
+  <div class="hamburger-bar"></div>
+  <div class="hamburger-bar"></div>
+</button>
+
+<!-- サイドバーオーバーレイ -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- サイドバー -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">
+      <span>仕事ツール</span>
+    </div>
+    <button class="sidebar-close" id="sidebarCloseBtn" aria-label="閉じる">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page10.html" class="sidebar-link">
+      <span class="sidebar-link-icon">⏱️</span>
+      <span>タイマー</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page11.html" class="sidebar-link">
+      <span class="sidebar-link-icon">📅</span>
+      <span>カレンダー</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3.html" class="sidebar-link">
+      <span class="sidebar-link-icon">💵</span>
+      <span>負担額</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page6.html" class="sidebar-link">
+      <span class="sidebar-link-icon">⏰</span>
+      <span>時間計算</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page7.html" class="sidebar-link">
+      <span class="sidebar-link-icon">⛩️</span>
+      <span>和暦西暦</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page8.html" class="sidebar-link">
+      <span class="sidebar-link-icon">🧮</span>
+      <span>電卓</span>
+    </a>
+    <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page9.html" class="sidebar-link">
+      <span class="sidebar-link-icon">📖</span>
+      <span>医療用語辞典</span>
+    </a>
+  </nav>
+</aside>
+
+<div class="app">
+
+    <header>
+        <div class="title">タイマー</div>
+        <button class="header-button" id="settingsButton" aria-label="設定">⚙</button>
+    </header>
+
+    <!-- タイマー表示エリア -->
+    <section class="timer-area">
+        <svg class="progress-ring" viewBox="0 0 100 100">
+            <circle class="ring-background" cx="50" cy="50" r="45"></circle>
+            <circle class="ring-progress" id="progressRing" cx="50" cy="50" r="45"></circle>
+        </svg>
+
+        <div class="timer-content">
+            <div class="time" id="time">05:00</div>
+            <div class="time-label">残り時間</div>
+        </div>
+    </section>
+
+    <!-- 操作ボタンエリア -->
+    <div class="controls-row">
+        <button class="main-button" id="mainButton">
+            <span class="button-icon" id="buttonIcon">▶</span>
+            <span class="button-text" id="buttonText">スタート</span>
+        </button>
+        <button class="reset-button" id="resetButton" aria-label="リセット">↺</button>
+    </div>
+
+    <!-- プリセット設定 -->
+    <div class="presets">
+        <button class="preset" data-minutes="1">1分</button>
+        <button class="preset" data-minutes="3">3分</button>
+        <button class="preset" data-minutes="5">5分</button>
+        <button class="preset" data-minutes="10">10分</button>
+        <button class="preset" data-minutes="25">25分</button>
+    </div>
+
+    <!-- 微調整ボタン -->
+    <div class="settings">
+        <div class="setting-group">
+            <span class="setting-label">分</span>
+            <div class="setting-row">
+                <button class="small-button" id="minuteMinus">−</button>
+                <span class="setting-value" id="minuteValue">5</span>
+                <button class="small-button" id="minutePlus">＋</button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <span class="setting-label">秒</span>
+            <div class="setting-row">
+                <button class="small-button" id="secondMinus">−</button>
+                <span class="setting-value" id="secondValue">0</span>
+                <button class="small-button" id="secondPlus">＋</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="message" id="message"></div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <div class="modal-title">設定</div>
+        <button class="modal-option" id="soundToggle">
+            <span>終了音</span>
+            <span id="soundStatus" style="color: #3fb950;">ON</span>
+        </button>
+        <button class="modal-option" id="vibrationToggle">
+            <span>バイブレーション</span>
+            <span id="vibrationStatus" style="color: #3fb950;">ON</span>
+        </button>
+        <button class="close-button" id="closeModal">閉じる</button>
+    </div>
+</div>
+
+<script>
+    // ハンバーガーメニュー制御
+    const hamburgerBtn = document.getElementById("hamburgerBtn");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+    function toggleSidebar() {
+        const isActive = sidebar.classList.contains("active");
+        if (isActive) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    }
+
+    function openSidebar() {
+        sidebar.classList.add("active");
+        sidebarOverlay.classList.add("active");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("active");
+        sidebarOverlay.classList.remove("active");
+    }
+
+    hamburgerBtn.addEventListener("click", toggleSidebar);
+    sidebarOverlay.addEventListener("click", closeSidebar);
+    sidebarCloseBtn.addEventListener("click", closeSidebar);
+
+    let totalSeconds = 5 * 60;
+    let remainingSeconds = totalSeconds;
+    let timer = null;
+    let running = false;
+
+    let soundEnabled = true;
+    let vibrationEnabled = true;
+    let audioCtx = null;
+
+    // DOM Elements
+    const timeElement = document.getElementById("time");
+    const mainButton = document.getElementById("mainButton");
+    const resetButton = document.getElementById("resetButton");
+    const buttonIcon = document.getElementById("buttonIcon");
+    const buttonText = document.getElementById("buttonText");
+    const progressRing = document.getElementById("progressRing");
+    const minuteValue = document.getElementById("minuteValue");
+    const secondValue = document.getElementById("secondValue");
+    const message = document.getElementById("message");
+
+    // Circular Progress Setup
+    const radius = 45;
+    const circumference = 2 * Math.PI * radius;
+    progressRing.style.strokeDasharray = circumference;
+    progressRing.style.strokeDashoffset = 0;
+
+    function initAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                audioCtx = new AudioContext();
+            }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function updateDisplay() {
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+
+        timeElement.textContent =
+            String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+
+        minuteValue.textContent = minutes;
+        secondValue.textContent = seconds;
+
+        // Circular gauge offset calculation
+        let progress = totalSeconds > 0 ? remainingSeconds / totalSeconds : 0;
+        const offset = circumference * (1 - progress);
+        progressRing.style.strokeDashoffset = offset;
+
+        // Main button status
+        if (running) {
+            buttonIcon.textContent = "Ⅱ";
+            buttonText.textContent = "一時停止";
+            mainButton.classList.add("running");
+        } else {
+            buttonIcon.textContent = "▶";
+            buttonText.textContent = "スタート";
+            mainButton.classList.remove("running");
+        }
+    }
+
+    function startTimer() {
+        initAudioContext();
+
+        if (remainingSeconds <= 0) {
+            resetTimer();
+        }
+
+        running = true;
+        message.textContent = "";
+        document.body.classList.remove("time-up");
+
+        timer = setInterval(() => {
+            remainingSeconds--;
+            updateDisplay();
+
+            if (remainingSeconds <= 0) {
+                finishTimer();
+            }
+        }, 1000);
+
+        updateDisplay();
+    }
+
+    function pauseTimer() {
+        running = false;
+        clearInterval(timer);
+        timer = null;
+        updateDisplay();
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        timer = null;
+        running = false;
+        remainingSeconds = totalSeconds;
+        message.textContent = "";
+        document.body.classList.remove("time-up");
+        updateDisplay();
+    }
+
+    function finishTimer() {
+        clearInterval(timer);
+        timer = null;
+        running = false;
+        remainingSeconds = 0;
+
+        updateDisplay();
+        message.textContent = "✨ 時間になりました！";
+        
+        // 画面を明るく（光る演出をスタート）
+        document.body.classList.add("time-up");
+
+        if (soundEnabled) {
+            playGlockenspielChime();
+        }
+
+        if (vibrationEnabled && "vibrate" in navigator) {
+            navigator.vibrate([300, 150, 300, 150, 600]);
+        }
+    }
+
+    // 鉄琴（グロッケンシュピール）風の澄んだやさしいチャイム音
+    function playGlockenspielChime() {
+        try {
+            initAudioContext();
+            if (!audioCtx) return;
+
+            // 鉄琴のような澄んだ和音 (C6, E6, G6, C7 のやさしいアルペジオ)
+            const notes = [
+                { freq: 1046.50, time: 0.00 }, // C6
+                { freq: 1318.51, time: 0.18 }, // E6
+                { freq: 1567.98, time: 0.36 }, // G6
+                { freq: 2093.00, time: 0.54 }, // C7
+                
+                // 繰り返しでチャイム感を出す
+                { freq: 1046.50, time: 1.10 }, // C6
+                { freq: 1318.51, time: 1.28 }, // E6
+                { freq: 1567.98, time: 1.46 }, // G6
+                { freq: 2093.00, time: 1.64 }  // C7
+            ];
+
+            const now = audioCtx.currentTime;
+
+            notes.forEach(note => {
+                const startTime = now + note.time;
+                
+                // メインの澄んだ基音（Sine波）
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(note.freq, startTime);
+
+                // アタック（瞬時に立ち上がる）と余韻（長く澄んで消える）
+                gain.gain.setValueAtTime(0.0001, startTime);
+                gain.gain.linearRampToValueAtTime(0.22, startTime + 0.008);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.6);
+
+                osc.connect(gain);
+
+                // 鉄琴特有の金属的アタック倍音（わずかに高音域を重ねる）
+                const harmonicOsc = audioCtx.createOscillator();
+                const harmonicGain = audioCtx.createGain();
+                
+                harmonicOsc.type = "sine";
+                harmonicOsc.frequency.setValueAtTime(note.freq * 2.76, startTime); // 鉄琴の非高調波倍音比率
+
+                harmonicGain.gain.setValueAtTime(0.0001, startTime);
+                harmonicGain.gain.linearRampToValueAtTime(0.05, startTime + 0.005);
+                harmonicGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.3);
+
+                harmonicOsc.connect(harmonicGain);
+
+                // スピーカー出力へ接続
+                gain.connect(audioCtx.destination);
+                harmonicGain.connect(audioCtx.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + 1.65);
+
+                harmonicOsc.start(startTime);
+                harmonicOsc.stop(startTime + 0.35);
+            });
+
+        } catch (error) {
+            console.log("音声を再生できませんでした", error);
+        }
+    }
+
+    mainButton.addEventListener("click", () => {
+        if (running) {
+            pauseTimer();
+        } else {
+            startTimer();
+        }
+    });
+
+    resetButton.addEventListener("click", resetTimer);
+
+    // Preset buttons setup
+    document.querySelectorAll(".preset").forEach(button => {
+        button.addEventListener("click", () => {
+            const minutes = Number(button.dataset.minutes);
+            clearInterval(timer);
+            timer = null;
+            running = false;
+            totalSeconds = minutes * 60;
+            remainingSeconds = totalSeconds;
+            message.textContent = "";
+            document.body.classList.remove("time-up");
+            updateDisplay();
+        });
+    });
+
+    // Time increment/decrement controls
+    document.getElementById("minutePlus").addEventListener("click", () => {
+        if (running) return;
+        let minutes = Math.floor(remainingSeconds / 60);
+        minutes = Math.min(minutes + 1, 99);
+        totalSeconds = minutes * 60 + (remainingSeconds % 60);
+        remainingSeconds = totalSeconds;
+        updateDisplay();
+    });
+
+    document.getElementById("minuteMinus").addEventListener("click", () => {
+        if (running) return;
+        let minutes = Math.floor(remainingSeconds / 60);
+        minutes = Math.max(minutes - 1, 0);
+        totalSeconds = minutes * 60 + (remainingSeconds % 60);
+        remainingSeconds = totalSeconds;
+        updateDisplay();
+    });
+
+    document.getElementById("secondPlus").addEventListener("click", () => {
+        if (running) return;
+        let seconds = remainingSeconds % 60 + 5;
+        let minutes = Math.floor(remainingSeconds / 60);
+
+        if (seconds >= 60) {
+            seconds = 0;
+            minutes = Math.min(minutes + 1, 99);
+        }
+
+        totalSeconds = minutes * 60 + seconds;
+        remainingSeconds = totalSeconds;
+        updateDisplay();
+    });
+
+    document.getElementById("secondMinus").addEventListener("click", () => {
+        if (running) return;
+        let seconds = remainingSeconds % 60 - 5;
+        let minutes = Math.floor(remainingSeconds / 60);
+
+        if (seconds < 0) {
+            if (minutes > 0) {
+                minutes--;
+                seconds = 55;
+            } else {
+                seconds = 0;
+            }
+        }
+
+        totalSeconds = minutes * 60 + seconds;
+        remainingSeconds = totalSeconds;
+        updateDisplay();
+    });
+
+    // Modal popup settings
+    const modal = document.getElementById("modal");
+    document.getElementById("settingsButton").addEventListener("click", () => {
+        modal.classList.add("show");
+    });
+
+    document.getElementById("closeModal").addEventListener("click", () => {
+        modal.classList.remove("show");
+    });
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.classList.remove("show");
+    });
+
+    // Toggle options
+    const soundStatus = document.getElementById("soundStatus");
+    document.getElementById("soundToggle").addEventListener("click", () => {
+        soundEnabled = !soundEnabled;
+        soundStatus.textContent = soundEnabled ? "ON" : "OFF";
+        soundStatus.style.color = soundEnabled ? "#3fb950" : "#f85149";
+    });
+
+    const vibrationStatus = document.getElementById("vibrationStatus");
+    document.getElementById("vibrationToggle").addEventListener("click", () => {
+        vibrationEnabled = !vibrationEnabled;
+        vibrationStatus.textContent = vibrationEnabled ? "ON" : "OFF";
+        vibrationStatus.style.color = vibrationEnabled ? "#3fb950" : "#f85149";
+    });
+
+    // Initial run
+    updateDisplay();
+</script>
+
+</body>
+</html>
