@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医療専門用語辞書 (PCI / ERCP)</title>
+    
+    <!-- 要求1: アプリのアイコン設定 (icon-kuroneko.png) -->
+    <link rel="icon" href="icon-kuroneko.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-kuroneko.png">
+    
+    <!-- PWA テーマカラー & Dynamic Web Manifest -->
+    <meta name="theme-color" content="#0f1219">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"医療専門用語辞書","short_name":"医療辞書","start_url":"./","display":"standalone","background_color":"#0f1219","theme_color":"#0f1219","icons":[{"src":"icon-kuroneko.png","sizes":"192x192","type":"image/png"},{"src":"icon-kuroneko.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                        bordercolor: '#334155',
+                        accent: '#657dff',
+                        accentHover: '#0284c7'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* カラー変数（移植元コードより） */
+        :root {
+            --bg: #0f1219;
+            --panel: #181d28;
+            --panel-light: #222836;
+            --border: #323b4e;
+            --text: #f5f7fa;
+            --sub: #9da6b5;
+            --accent: #657dff;
+        }
+
+        /* スクロールバー装飾 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* ハンバーガーボタン */
+        .hamburger-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            background: rgba(24, 29, 40, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .hamburger-btn:active {
+            transform: scale(0.95);
+        }
+        .hamburger-bar {
+            width: 20px;
+            height: 2px;
+            background-color: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* サイドバー オーバーレイ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* サイドバー本体 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(280px, 80vw);
+            height: 100vh;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            z-index: 1002;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        .sidebar-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: var(--sub);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .sidebar-nav {
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 10px;
+            background: var(--panel-light);
+            border: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+        }
+        .sidebar-link:hover {
+            border-color: var(--accent);
+            background: rgba(101, 125, 255, 0.15);
+        }
+        .sidebar-link:active {
+            transform: scale(0.98);
+        }
+        .sidebar-link-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- ハンバーガーボタン -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+    </button>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- サイドバー -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <i class="fa-solid fa-briefcase text-cyan-400"></i>
+                <span>仕事ツール</span>
+            </div>
+            <button class="sidebar-close" id="sidebarCloseBtn" aria-label="閉じる">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page10.html" class="sidebar-link">
+                <i class="fa-solid fa-stopwatch sidebar-link-icon"></i>
+                <span>タイマー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/index.html" class="sidebar-link">
+                <i class="fa-solid fa-calendar-days sidebar-link-icon"></i>
+                <span>カレンダー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page3.html" class="sidebar-link">
+                <i class="fa-solid fa-hand-holding-dollar sidebar-link-icon"></i>
+                <span>負担額</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page6.html" class="sidebar-link">
+                <i class="fa-solid fa-clock sidebar-link-icon"></i>
+                <span>時間計算</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page7.html" class="sidebar-link">
+                <i class="fa-solid fa-calendar-alt sidebar-link-icon"></i>
+                <span>和暦西暦</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page8.html" class="sidebar-link">
+                <i class="fa-solid fa-calculator sidebar-link-icon"></i>
+                <span>電卓</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page9.html" class="sidebar-link">
+                <i class="fa-solid fa-book-medical sidebar-link-icon"></i>
+                <span>医療用語辞典</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Header Navbar -->
+    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-bordercolor px-4 py-3 shadow-lg pl-16 md:pl-16">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-br from-cyan-500 to-blue-600 p-2.5 rounded-xl text-white shadow-md">
+                    <i class="fa-solid fa-notes-medical text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide text-slate-100 flex items-center gap-2">
+                        医療専門用語辞書 
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800">PCI / ERCP</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">冠動脈疾患・カテーテル治療・経過記録・消化器内視鏡用語</p>
+                </div>
+            </div>
+
+            <!-- Total count badge -->
+            <div class="text-xs text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-bordercolor flex items-center gap-2">
+                <i class="fa-solid fa-book-bookmark text-cyan-400"></i>
+                <span>収録語数: <strong id="total-count" class="text-slate-200">0</strong> 件</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-grow flex flex-col gap-6">
+
+        <!-- Search Bar & Category Tabs -->
+        <section class="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-cardbg p-4 rounded-2xl border border-bordercolor shadow-md">
+            
+            <!-- Search Input -->
+            <div class="relative flex-grow">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="search-input" placeholder="用語名、読み方、略語、病態名で検索..." 
+                    class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-900 border border-bordercolor text-slate-100 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-500">
+                <button id="clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Category Filter Buttons -->
+            <div class="flex flex-wrap items-center gap-2" id="category-filters">
+                <button data-category="ALL" class="cat-btn active px-3 py-1.5 rounded-lg text-xs font-medium border bg-cyan-500 border-cyan-400 text-slate-950 shadow-sm transition-all">すべて</button>
+                <button data-category="PCI" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium border bg-slate-800 border-bordercolor text-slate-300 hover:bg-slate-700 transition-all">PCI（循環器・虚血）</button>
+                <button data-category="TL" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium border bg-slate-800 border-bordercolor text-slate-300 hover:bg-slate-700 transition-all">経過記録・手技用語</button>
+                <button data-category="ERCP" class="cat-btn px-3 py-1.5 rounded-lg text-xs font-medium border bg-slate-800 border-bordercolor text-slate-300 hover:bg-slate-700 transition-all">ERCP（消化器内視鏡）</button>
+            </div>
+        </section>
+
+        <!-- Alphabet Quick Index Bar -->
+        <section class="bg-cardbg p-3.5 rounded-2xl border border-bordercolor shadow-md">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-font text-cyan-400"></i> 頭文字（A-Z）で絞り込み
+                </span>
+                <button id="reset-initial" class="text-xs text-cyan-400 hover:underline flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left text-[10px]"></i> 全選択に戻す
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5" id="initial-buttons">
+                <!-- Alphabet buttons injected via JS -->
+            </div>
+        </section>
+
+        <!-- Results Info & List -->
+        <section>
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <span id="filter-status-text">表示中: すべての用語</span>
+                    <span id="result-count" class="text-xs bg-slate-800 border border-bordercolor px-2 py-0.5 rounded-full text-cyan-400">0件</span>
+                </h2>
+            </div>
+
+            <!-- Terms Grid Display -->
+            <div id="terms-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Cards injected via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden text-center py-12 bg-cardbg rounded-2xl border border-bordercolor">
+                <i class="fa-solid fa-magnifying-glass-minus text-4xl text-slate-600 mb-3"></i>
+                <p class="text-slate-300 font-medium">該当する用語が見つかりませんでした</p>
+                <p class="text-xs text-slate-500 mt-1">検索語句を変更するか、フィルターを解除してください。</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-bordercolor bg-slate-900/60 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4">
+            冠動脈疾患（PCI）・経過記録（タイムライン）・ERCP医療専門用語クイックリファレンス
+        </div>
+    </footer>
+
+    <script>
+        // PWA Service Worker の動的登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    self.addEventListener('install', (e) => {
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('activate', (e) => {
+                        e.waitUntil(clients.claim());
+                    });
+                    self.addEventListener('fetch', (e) => {
+                        // Network first strategy
+                        e.respondWith(
+                            fetch(e.request).catch(() => caches.match(e.request))
+                        );
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'text/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('Service Worker registered successfully'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
+        // ハンバーガーメニュー制御JavaScript
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const sidebar = document.getElementById("sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+        function toggleSidebar() {
+            const isActive = sidebar.classList.contains("active");
+            if (isActive) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function openSidebar() {
+            sidebar.classList.add("active");
+            sidebarOverlay.classList.add("active");
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove("active");
+            sidebarOverlay.classList.remove("active");
+        }
+
+        hamburgerBtn.addEventListener("click", toggleSidebar);
+        sidebarOverlay.addEventListener("click", closeSidebar);
+        sidebarCloseBtn.addEventListener("click", closeSidebar);
+
+        // Dictionary Database
+        const dictionaryData = [
+            // A
+            { id: "access", term: "access", reading: "アクセス / しんにゅうろ", fullName: "Vascular Access", category: "TL", initial: "A", meaning: "アクセス・血管への到達経路。カテーテルを挿入するための血管への入口・経路。" },
+            { id: "acs", term: "ACS", reading: "エーシーエス / きゅうせいかんしょうこうぐん", fullName: "Acute Coronary Syndrome", category: "PCI", initial: "A", meaning: "急性冠症候群。冠動脈の動脈硬化プラーク破綻や血栓形成により、急速に心筋虚血が進行する病態の総称（STEMI, NSTEMI, UAが含まれる）。" },
+            { id: "advance", term: "advance", reading: "アドバンス / ぜんしん", fullName: "Advance Device", category: "TL", initial: "A", meaning: "進める・前進させる。カテーテルやガイドワイヤーを血管内で先へ進める操作。" },
+            { id: "aline", term: "Aライン / Aルート", reading: "エーライン / エールート", fullName: "Arterial Line", category: "TL", initial: "A", meaning: "動脈ライン。連続動脈圧モニタリングや採血、カテーテル挿入経路確保のために橈骨動脈等に留置するライン。" },
+            { id: "ami", term: "AMI", reading: "エーエムアイ / きゅうせいしんきんこうそく", fullName: "Acute Myocardial Infarction", category: "PCI", initial: "A", meaning: "急性心筋梗塞。冠動脈が急速に完全閉塞または高度狭窄を起こし、心筋細胞が壊死を起こす緊急疾患。" },
+            { id: "ampulla", term: "Ampulla of Vater", reading: "アンプラ / ファーターこふくぶ", fullName: "Ampulla of Vater", category: "ERCP", initial: "A", meaning: "ファーター壺腹部。総胆管と主膵管が合流して十二指腸乳頭に至るまでの膨大部。" },
+            { id: "ap", term: "AP", reading: "エーピー / きょうしんしょう", fullName: "Angina Pectoris", category: "PCI", initial: "A", meaning: "狭心症。冠動脈の狭窄や攣縮等により一時的に心筋への血流（酸素供給）が不足し、胸痛や胸部圧迫感が生じる状態。" },
+            { id: "aspirate", term: "aspirate", reading: "アスピレート / きゅういん", fullName: "Aspirate", category: "TL", initial: "A", meaning: "吸引する。血栓などをカテーテルで吸引する操作。" },
+            { id: "aspiration", term: "aspiration", reading: "アスピレーション / きゅういん", fullName: "Thrombus Aspiration", category: "TL", initial: "A", meaning: "吸引。血栓などを吸引する手技・操作。" },
+
+            // B
+            { id: "backup", term: "backup", reading: "バックアップ / しじりょく", fullName: "Backup Support", category: "TL", initial: "B", meaning: "バックアップ・支持力。デバイスを病変部へ進めるためのガイディングカテーテルの支持力。" },
+            { id: "balloon", term: "balloon / Balloon", reading: "バルーン", fullName: "Balloon Catheter", category: "PCI", initial: "B", meaning: "バルーン（風船付きカテーテル）。血管を内側から押し広げるための拡張デバイス。" },
+            { id: "basket", term: "Basket Catheter", reading: "バスケット", fullName: "Basket Catheter", category: "ERCP", initial: "B", meaning: "網目状（バスケット形）のワイヤー構造を持った結石把握用器具。胆管内の石を捕獲して引き出す。" },
+            { id: "bifurcation", term: "bifurcation", reading: "バイファーケーション / ぶんきぶ", fullName: "Bifurcation Lesion", category: "PCI", initial: "B", meaning: "分岐部。血管が二股などに分かれる部分およびその病変。" },
+            { id: "bms", term: "BMS", reading: "ビーエムエス", fullName: "Bare Metal Stent", category: "PCI", initial: "B", meaning: "ベアメタルステント。薬剤が付着していない金属生のステント。近年はDESが主流。" },
+            { id: "branch", term: "branch", reading: "ブランチ / ぶんし", fullName: "Side Branch", category: "PCI", initial: "B", meaning: "枝・分枝。主要な冠動脈から分かれる血管。" },
+
+            // C
+            { id: "cad", term: "CAD", reading: "シーエーディー / かんどうみゃくしっかん", fullName: "Coronary Artery Disease", category: "PCI", initial: "C", meaning: "冠動脈疾患。心臓に血液を供給する冠動脈が動脈硬化等により狭小化・閉塞する病態の総称。" },
+            { id: "cag", term: "CAG", reading: "シーエージー", fullName: "Coronary Angiography", category: "PCI", initial: "C", meaning: "冠動脈造影検査。カテーテルから造影剤を注入し、心臓表面の冠動脈の走行や狭窄・閉塞部位をレントゲン撮影する。" },
+            { id: "calcification", term: "calcification / Calcification", reading: "カルシフィケーション / せっかいか", fullName: "Vascular Calcification", category: "PCI", initial: "C", meaning: "石灰化。血管壁などにカルシウムが沈着して岩のように硬くなっている状態。" },
+            { id: "cannulation", term: "Cannulation / Cannula", reading: "カニュレーション / カニューレ", fullName: "Cannulation", category: "ERCP", initial: "C", meaning: "カニューレ（極細チューブ）の挿入操作。十二指腸乳頭から胆管または膵管へカテーテルを差し込む技術。" },
+            { id: "catheter", term: "catheter", reading: "カテーテル", fullName: "Catheter", category: "PCI", initial: "C", meaning: "カテーテル。血管内に挿入して検査・治療を行う細い管。" },
+            { id: "cbd", term: "CBD", reading: "シービーディー / そうたんかん", fullName: "Common Bile Duct", category: "ERCP", initial: "C", meaning: "総胆管。肝臓から十二指腸へ胆汁を送る主要な管。" },
+            { id: "chd", term: "CHD", reading: "シーエイチディー / そうかんかん", fullName: "Common Hepatic Duct", category: "ERCP", initial: "C", meaning: "総肝管。左右の肝管が合流してから胆嚢管と出会うまでの胆管。" },
+            { id: "cholangiogram", term: "Cholangiogram", reading: "コランジオグラム / たんかんぞうえい", fullName: "Cholangiography", category: "ERCP", initial: "C", meaning: "胆管造影写真。造影剤を胆管内に注入して得られるX線画像。" },
+            { id: "complication", term: "complication", reading: "コンプリケーション / がっぺいしょう", fullName: "Complication", category: "PCI", initial: "C", meaning: "合併症。手技に伴って生じた予期しない臨床的問題。" },
+            { id: "cross", term: "cross", reading: "クロス / つうか", fullName: "Cross Lesion", category: "TL", initial: "C", meaning: "通過する・横断する。ガイドワイヤーなどが狭窄・閉塞病変を通過すること。" },
+            { id: "crossability", term: "crossability", reading: "クロッサビリティ / つうかせい", fullName: "Crossability", category: "TL", initial: "C", meaning: "通過性。狭窄・閉塞病変をデバイス（バルーンやワイヤー等）が通過しやすい性能・特性。" },
+            { id: "cto", term: "CTO", reading: "シーティーオー", fullName: "Chronic Total Occlusion", category: "PCI", initial: "C", meaning: "慢性完全閉塞。3ヶ月以上にわたり冠動脈が100%完全に詰まっている最難関の病変。" },
+
+            // D
+            { id: "dc", term: "DC", reading: "ディーシー / じょさいどう", fullName: "Direct Current Countershock", category: "TL", initial: "D", meaning: "直流除細動（カウンターショック）。致死的不整脈の発生時に電気ショックを与えて心拍を正常に戻す緊急処置。" },
+            { id: "dca", term: "DCA", reading: "ディーシーエー", fullName: "Directional Coronary Atherectomy", category: "PCI", initial: "D", meaning: "方向性冠動脈アテローム切除術。カッターを用いてプラーク（アテローム）を直接削り取る治療装置。" },
+            { id: "dcb", term: "DCB / DEB", reading: "ディーシービー / デブ", fullName: "Drug-Coated / Eluting Balloon", category: "PCI", initial: "D", meaning: "薬剤塗布型バルーン。再狭窄を抑える薬剤が塗られた風船。ステントを留置せずに治療可能。" },
+            { id: "deflate", term: "deflate", reading: "デフレート / じゅあつ", fullName: "Deflate Balloon", category: "TL", initial: "D", meaning: "しぼませる。バルーンの圧を抜いて収縮させること。" },
+            { id: "deliver", term: "deliver", reading: "デリバー / そうそう", fullName: "Deliver Device", category: "TL", initial: "D", meaning: "送り込む・到達させる。ステントやバルーンなどのデバイスを病変部まで送り込む操作。" },
+            { id: "deploy", term: "deploy", reading: "デプロイ / てんかい", fullName: "Deploy Stent", category: "TL", initial: "D", meaning: "展開する・留置する。ステントなどのデバイスを目的病変部で広げて留置する操作。" },
+            { id: "des", term: "DES", reading: "ディーイーエス", fullName: "Drug-Eluting Stent", category: "PCI", initial: "D", meaning: "薬剤流出型ステント。再狭窄を防ぐ成分を徐放する金属網チューブ。現在のPCI治療の標準。" },
+            { id: "diagnostic", term: "diagnostic", reading: "ダイアグノスティック / しんだんよう", fullName: "Diagnostic Catheter", category: "PCI", initial: "D", meaning: "診断用の。心臓カテーテル検査等で診断目的で使用するカテーテル等を指す。" },
+            { id: "dilate", term: "dilate", reading: "ダイレート / かくちょう", fullName: "Dilate", category: "TL", initial: "D", meaning: "拡張する。バルーン等を用いて狭窄した血管を押し広げること。" },
+            { id: "dissection", term: "dissection / Dissection", reading: "ディセクション / かいり", fullName: "Coronary Dissection", category: "PCI", initial: "D", meaning: "解離。バルーン拡張等の刺激で血管内膜が裂け、血液が血管壁の中に入り込む状態。" },
+            { id: "distal", term: "distal", reading: "ディスタル / えんいぶ", fullName: "Distal Site", category: "TL", initial: "D", meaning: "遠位部。心臓から遠い側・血管の末梢側（病変より先）を指す。" },
+
+            // E
+            { id: "ebd", term: "EBD / EBS", reading: "イービーディー / イービーエス", fullName: "Endoscopic Biliary Drainage / Stenting", category: "ERCP", initial: "E", meaning: "内視鏡的胆管ドレナージ / ステント留置。胆管の狭窄部に管（ステント）を留置して黄疸を治療する。" },
+            { id: "engage", term: "engage", reading: "エンゲージ", fullName: "Catheter Engagement", category: "TL", initial: "E", meaning: "冠動脈入口にカテーテルを入れる・かける。ガイディングカテーテルを冠動脈入口に選択的に挿入・固定すること。" },
+            { id: "enbd", term: "ENBD", reading: "イーエヌビーディー", fullName: "Endoscopic Naso-Biliary Drainage", category: "ERCP", initial: "E", meaning: "内視鏡的鼻胆管ドレナージ。チューブを体外（鼻）へ誘導し、外へ胆汁を排出させるドレナージ法。" },
+            { id: "eplbd", term: "EPLBD", reading: "イーピーエルビーディー", fullName: "Endoscopic Papillary Large Balloon Dilation", category: "ERCP", initial: "E", meaning: "内視鏡的乳頭大口径バルーン拡張術。大きな総胆管結石を摘出するために大口径バルーンで乳頭を広げる技術。" },
+            { id: "ercp", term: "ERCP", reading: "イーアールシーピー", fullName: "Endoscopic Retrograde Cholangiopancreatography", category: "ERCP", initial: "E", meaning: "内視鏡的逆行性胆管膵管造影。十二指腸鏡を用いて胆管や膵管を造影・治療する手技の総称。" },
+            { id: "est", term: "EST", reading: "イーエスティー", fullName: "Endoscopic Sphincterotomy", category: "ERCP", initial: "E", meaning: "内視鏡的乳頭切開術。高周波ナイフを用いて十二指腸ファーター乳頭の括約筋を切開し、結石の出口を作る手技。" },
+
+            // F
+            { id: "femoral", term: "femoral", reading: "フェモラル / だいたいどうみゃく", fullName: "Femoral / Transfemoral Approach", category: "PCI", initial: "F", meaning: "大腿動脈の・大腿動脈アプローチの（TFI）。鼠径部の大腿動脈からカテーテルを挿入する方法。" },
+            { id: "ffr", term: "FFR", reading: "エフエフアール / かんけつりゅうよびのうひ", fullName: "Fractional Flow Reserve", category: "PCI", initial: "F", meaning: "冠血流予備量比。圧計測ワイヤー（PW）を用いて狭窄前後の血圧比を測り、有意虚血かを評価する指標（0.80以下で治療適応）。" },
+            { id: "fillingdefect", term: "Filling Defect", reading: "フィリングディフェクト / じゅうえいけっそん", fullName: "Filling Defect", category: "ERCP", initial: "F", meaning: "充盈欠損（じゅうえいけっそん）。造影剤を満たしたレントゲン写真で、結石や腫瘍が存在するために透亮像（白抜け）となる所見。" },
+            { id: "flow", term: "flow", reading: "フロー / けつりゅう", fullName: "Coronary Flow", category: "PCI", initial: "F", meaning: "血流。冠動脈内を流れる血液の状態（TIMIグレード等で評価）。" },
+
+            // G
+            { id: "gb", term: "GB", reading: "ジービー / たんのう", fullName: "Gallbladder", category: "ERCP", initial: "G", meaning: "胆嚢（たんのう）。胆汁を一時的に濃縮・蓄積する臓器。" },
+            { id: "gc", term: "GC", reading: "ジーシー / ガイディング", fullName: "Guiding Catheter", category: "PCI", initial: "G", meaning: "ガイディングカテーテル。血管内でワイヤーやバルーンを通すための基幹カテーテル。" },
+            { id: "guiding", term: "guiding", reading: "ガイディング / ちりょうよう", fullName: "Guiding Catheter", category: "PCI", initial: "G", meaning: "ガイディング・治療用の。治療用デバイスを通すための主軸カテーテル等を指す。" },
+            { id: "guidewire", term: "guidewire", reading: "ガイドワイヤー", fullName: "Guidewire", category: "PCI", initial: "G", meaning: "ガイドワイヤー。カテーテルやデバイスを目的部位へ導くための極細ワイヤー。" },
+            { id: "gw", term: "GW", reading: "ジーダブリュー / ガイドワイヤー", fullName: "Guide Wire", category: "PCI", initial: "G", meaning: "ガイドワイヤー。病変部を通過させて後続のバルーンやステントを誘導する金属製針金。" },
+
+            // H
+            { id: "hemostasis", term: "hemostasis", reading: "ヘモスタシス / しけつ", fullName: "Hemostasis", category: "TL", initial: "H", meaning: "止血。シース抜去後や穿刺部位などからの出血を圧迫等により止めること。" },
+            { id: "heparin", term: "Heparin", reading: "ヘパリン", fullName: "Heparin", category: "TL", initial: "H", meaning: "抗凝固薬。カテーテルや血管内で血液が固まる血栓の形成を防ぐため手技中に投与される。" },
+
+            // I
+            { id: "iabp", term: "IABP", reading: "アイエービーピー", fullName: "Intra-Aortic Balloon Pumping", category: "PCI", initial: "I", meaning: "大動脈バルーンパンピング。心臓の動きに合わせて大動脈内のバルーンを膨張・収縮させ、心負荷軽減を図る補助循環装置。" },
+            { id: "ihbd", term: "IHBD", reading: "アイエイチディー / かんないたんかん", fullName: "Intrahepatic Bile Duct", category: "ERCP", initial: "I", meaning: "肝内胆管。肝臓の内部に網の目のように広がる胆管網。" },
+            { id: "ihd", term: "IHD", reading: "アイエイチディー / きょけつせいしんしっかん", fullName: "Ischemic Heart Disease", category: "PCI", initial: "I", meaning: "虚血性心疾患。冠動脈血流障害によって心筋へ十分な酸素が供給できなくなる病態（狭心症・心筋梗塞）の総称。" },
+            { id: "inflate", term: "inflate", reading: "インフレート / かくちょう", fullName: "Inflate Balloon", category: "TL", initial: "I", meaning: "膨らませる。バルーンを加圧して広げる操作。" },
+            { id: "inject", term: "inject", reading: "インジェクト / ちゅうにゅう", fullName: "Inject Contrast", category: "TL", initial: "I", meaning: "注入する。造影剤や薬剤等をカテーテル内へ注入する。" },
+            { id: "insert", term: "insert", reading: "インサート / そうにゅう", fullName: "Insert Device", category: "TL", initial: "I", meaning: "挿入する。カテーテルやワイヤーなどを体内・血管内に入れる操作。" },
+            { id: "ischemia", term: "Ischemia", reading: "イスケミア / しんきんきょけつ", fullName: "Myocardial Ischemia", category: "PCI", initial: "I", meaning: "心筋虚血。心臓の筋肉（心筋）への血液（酸素）供給が著しく不足した状態。" },
+            { id: "ivl", term: "IVL", reading: "アイブイエル / ショックウェーブ", fullName: "Intravascular Lithotripsy", category: "PCI", initial: "I", meaning: "血管内結石破砕術（ショックウェーブ）。音響衝撃波を発射し血管壁の重度石灰化を破砕する最新PCI治療法。" },
+            { id: "ivus", term: "IVUS", reading: "アイバス", fullName: "Intravascular Ultrasound", category: "PCI", initial: "I", meaning: "血管内超音波。カテーテル先端の超音波センサーで血管壁の断層画像を取得・観察する。" },
+
+            // L
+            { id: "lad", term: "LAD", reading: "エルエーディー / ぜんこうし", fullName: "Left Anterior Descending branch", category: "PCI", initial: "L", meaning: "左前降枝（左冠動脈の枝 #6-10）。心臓の前面・心尖部に血液を送る最重要動脈の一つ。" },
+            { id: "lcx", term: "LCX", reading: "エルシーエックス / かいせんし", fullName: "Left Circumflex branch", category: "PCI", initial: "L", meaning: "左回旋枝（左冠動脈の枝 #11-15）。心臓の側面や後面に血液を送る動脈。" },
+            { id: "lesion", term: "lesion", reading: "レジョン / びょうへん", fullName: "Target Lesion", category: "PCI", initial: "L", meaning: "病変。冠動脈の狭窄・閉塞などの治療対象となる部位。" },
+            { id: "lmt", term: "LMT / LMA", reading: "エルエムティー / しゅかんぶ", fullName: "Left Main Trunk", category: "PCI", initial: "L", meaning: "左冠動脈主幹部（#5）。左冠動脈の根本。狭窄すると広範囲の心筋梗塞を起こす極めて重大な部位。" },
+
+            // M
+            { id: "mi", term: "MI", reading: "エムアイ / しんきんこうそく", fullName: "Myocardial Infarction", category: "PCI", initial: "M", meaning: "心筋梗塞。冠動脈の血流途絶・低下により心筋組織が壊死に至る病態。" },
+            { id: "minoca", term: "MINOCA", reading: "ミノカ", fullName: "Myocardial Infarction with Non-Obstructive Coronary Arteries", category: "PCI", initial: "M", meaning: "非閉塞性冠動脈による心筋梗塞。冠動脈造影で50%以上の主要狭窄病変を認めないにもかかわらず心筋梗塞を発症している病態。" },
+            { id: "mvd", term: "MVD", reading: "エムブイディー / たしかんどうみゃくしっかん", fullName: "Multivessel Disease", category: "PCI", initial: "M", meaning: "多枝冠動脈疾患（多枝病変）。主要冠動脈3本（LAD, LCX, RCA）のうち2本以上で高度狭窄が認められる状態。" },
+
+            // N
+            { id: "navigate", term: "navigate", reading: "ナビゲート / そうさ", fullName: "Navigate Wire", category: "TL", initial: "N", meaning: "進ませる・操作して通過させる。屈曲・分岐などのある複雑な血管内でデバイスを進める操作。" },
+            { id: "ncballoon", term: "NC Balloon", reading: "エヌシーバルーン", fullName: "Non-Compliant Balloon", category: "PCI", initial: "N", meaning: "非高順応性（硬質）バルーン。高圧をかけても膨らみにくく、強固な病変やステント後拡張で用いる。" },
+            { id: "nsteacs", term: "NSTE-ACS", reading: "エヌエステーイー エーシーエス", fullName: "Non-ST-segment Elevation Acute Coronary Syndrome", category: "PCI", initial: "N", meaning: "非ST上昇型急性冠症候群。心電図上でST上昇を伴わない急性冠症候群。NSTEMIおよびUAが含まれる。" },
+            { id: "nstemi", term: "NSTEMI", reading: "エヌステミ / ひえすてぃーじょうしょうがかしんきんこうそく", fullName: "Non-ST-segment Elevation Myocardial Infarction", category: "PCI", initial: "N", meaning: "非ST上昇型心筋梗塞。心電図でST上昇は見られないが、心筋逸脱酵素上昇により心筋壊死が確認される心筋梗塞。" },
+            { id: "ntg", term: "NTG", reading: "エヌティージー / ニトロ", fullName: "Nitroglycerin", category: "TL", initial: "N", meaning: "ニトログリセリン。強力な血管拡張作用を持ち、冠動脈攣縮（スパズム）予防・解除のために冠注入される。" },
+
+            // O
+            { id: "oas", term: "OAS", reading: "オーエーエス / ダイヤモンドバック", fullName: "Orbital Atherectomy System", category: "PCI", initial: "O", meaning: "軌道アテローム切除システム（ダイヤモンドバック）。高速回転して重度石灰化病変を削り落とす最新装置。" },
+            { id: "occlusion", term: "occlusion", reading: "オクルージョン / へいそく", fullName: "Vascular Occlusion", category: "PCI", initial: "O", meaning: "閉塞。血管が完全またはほぼ完全に塞がっている状態。" },
+            { id: "oct", term: "OCT / OFDI", reading: "オーシーティー / オーエフディーアイ", fullName: "Optical Coherence Tomography", category: "PCI", initial: "O", meaning: "光干渉断層撮影。赤外線光を用いて血管内壁を高精細に撮影する装置。" },
+            { id: "opacify", term: "opacify", reading: "オパシファイ / ぞうえい", fullName: "Opacify Vessels", category: "TL", initial: "O", meaning: "造影する・造影剤で満たす。造影剤を流入させて血管内腔をX線画像上に鮮明に描出すること。" },
+            { id: "ostium", term: "ostium", reading: "オスティウム / いりぐちぶ", fullName: "Coronary Ostium", category: "TL", initial: "O", meaning: "入口部・起始部。冠動脈などが大動脈や主要管から分岐する根元の入口部分。" },
+
+            // P
+            { id: "papilla", term: "Papilla", reading: "パピラ / じゅうにしちょうにゅうとう", fullName: "Major Duodenal Papilla", category: "ERCP", initial: "P", meaning: "十二指腸大乳頭（ファーター乳頭）。胆管と膵管が開口する十二指腸壁の膨らみ。" },
+            { id: "pass", term: "pass", reading: "パス / つうか", fullName: "Pass Device", category: "TL", initial: "P", meaning: "通過させる。ワイヤーやカテーテルなどを病変部位に通す操作。" },
+            { id: "patency", term: "patency", reading: "ペイテンシー / かいそんせい", fullName: "Vascular Patency", category: "PCI", initial: "P", meaning: "開存性。血管が開いて血流が正常に保たれている状態。" },
+            { id: "pci", term: "PCI", reading: "ピーシーアイ", fullName: "Percutaneous Coronary Intervention", category: "PCI", initial: "P", meaning: "経皮的冠動脈形成術。バルーンやステントを用いて心臓の冠動脈狭窄を広げる治療の総称。" },
+            { id: "pcps", term: "PCPS / VA-ECMO", reading: "ピーシーピーエス / ぶいえーエクセモ", fullName: "Percutaneous CardioPulmonary Support", category: "PCI", initial: "P", meaning: "経皮的心肺補助装置。ポンプと人工肺で心肺機能を代謝代行する生命維持装置。" },
+            { id: "pep", term: "PEP", reading: "ペップ / イーアールシーピーごすいえん", fullName: "Post-ERCP Pancreatitis", category: "ERCP", initial: "P", meaning: "ERCP後膵炎。ERCP手技後に発生する主要偶発症で膵臓の急激な炎症。" },
+            { id: "perforation", term: "perforation", reading: "パーフォレーション / せんこう", fullName: "Coronary / Vessel Perforation", category: "PCI", initial: "P", meaning: "穿孔。血管壁や消化管壁に穴が開いてしまう偶発症。" },
+            { id: "poba", term: "POBA", reading: "ポバ", fullName: "Plain Old Balloon Angioplasty", category: "PCI", initial: "P", meaning: "通常バルーン血管形成術。ステントを使わずバルーン（風船）拡張のみを行う手技。" },
+            { id: "position", term: "position", reading: "ポジション / はいち", fullName: "Position Device", category: "TL", initial: "P", meaning: "位置を合わせる・配置する。カテーテルやデバイスを目的病変位置に正しく置くこと。" },
+            { id: "postba", term: "Post-BA / Post-dil", reading: "ポストディーアイエル / こうかくちょう", fullName: "Post-Dilation Balloon Angioplasty", category: "TL", initial: "P", meaning: "後拡張。ステント留置後、さらに硬いバルーン（NCバルーン）等で高圧をかけステントを圧着させる作業。" },
+            { id: "postdilate", term: "postdilate", reading: "ポストダイレート / こうかくちょう", fullName: "Post-dilate Stent", category: "TL", initial: "P", meaning: "後拡張する。ステント留置後にバルーンを用いてさらに高圧で圧着拡張すること。" },
+            { id: "predilate", term: "predilate", reading: "プレダイレート / ぜんかくちょう", fullName: "Pre-dilate Lesion", category: "TL", initial: "P", meaning: "前拡張する。ステント留置などの前にバルーンで病変をあらかじめ拡張すること。" },
+            { id: "proximal", term: "proximal", reading: "プロキシマル / きんいぶ", fullName: "Proximal Site", category: "TL", initial: "P", meaning: "近位部。心臓に近い側・血管の根元側（病変より手前）を指す。" },
+            { id: "puncture", term: "puncture", reading: "パンクチャー / せんし", fullName: "Vessel Puncture", category: "TL", initial: "P", meaning: "穿刺。カテーテル挿入のために血管などに針を刺す操作。" },
+            { id: "pw", term: "PW / Pressure Wire", reading: "ピーダブリュー / プレッシャーワイヤー", fullName: "Pressure Wire", category: "PCI", initial: "P", meaning: "圧力計測ワイヤー。先端近くに超小型圧力センサーが内蔵されたガイドワイヤー（FFR等で使用）。" },
+
+            // R
+            { id: "radial", term: "radial", reading: "ラジアル / とうこつどうみゃく", fullName: "Radial / Transradial Approach", category: "PCI", initial: "R", meaning: "橈骨動脈の・橈骨動脈アプローチの（TRI）。手首の橈骨動脈からカテーテルを挿入する方法。" },
+            { id: "rca", term: "RCA", reading: "アールシーエー / うかんどうみゃく", fullName: "Right Coronary Artery", category: "PCI", initial: "R", meaning: "右冠動脈（#1-4）。心臓の下壁や右心室へ血液を供給する動脈。" },
+            { id: "recanalization", term: "recanalization", reading: "リカナリゼーション / さいかいつう", fullName: "Recanalization", category: "PCI", initial: "R", meaning: "再開通。閉塞して血流が途絶えていた血管を再び通れる状態にすること。" },
+            { id: "remove", term: "remove", reading: "リムーブ / ばっきょ", fullName: "Remove Catheter", category: "TL", initial: "R", meaning: "取り除く・抜去する。カテーテルやワイヤーなどを血管内から取り抜く操作。" },
+            { id: "residual", term: "residual", reading: "レジデュアル / ざんそん", fullName: "Residual Stenosis", category: "TL", initial: "R", meaning: "残存する・残存。治療後にも血管内に残っている狭窄（残存狭窄度など）。" },
+            { id: "restenosis", term: "restenosis", reading: "リステノーシス / さいきょうさく", fullName: "Restenosis / In-Stent Restenosis", category: "PCI", initial: "R", meaning: "再狭窄。治療・ステント留置した血管部位が再び狭くなってしまう病態（ISR）。" },
+            { id: "retrieve", term: "retrieve", reading: "リトリーブ / かいしゅう", fullName: "Retrieve Device", category: "TL", initial: "R", meaning: "回収する。体内に残った不具合デバイスや外れた器具などを回収すること。" },
+            { id: "rotablator", term: "Rotablator", reading: "ロータブレーター", fullName: "Rotational Atherectomy System", category: "PCI", initial: "R", meaning: "高速回転式アテローム切除術。微小ダイヤモンドバーを毎分15〜19万回転させて硬い石灰化を削る。" },
+
+            // S
+            { id: "sap", term: "SAP", reading: "エスエーピー / あんていきょうしんしょう", fullName: "Stable Angina Pectoris", category: "PCI", initial: "S", meaning: "安定狭心症。労作時など一定の負荷がかかった際に決定的な酸素不足が生じる狭心症。" },
+            { id: "segment", term: "segment", reading: "セグメント / くいき", fullName: "Coronary Segment", category: "PCI", initial: "S", meaning: "区域・部位。冠動脈を番号（#1〜#15等）で区分した特定の部分。" },
+            { id: "select", term: "select", reading: "セレクト / せんたく", fullName: "Select Branch", category: "TL", initial: "S", meaning: "選択的に挿入する・選択する。目的の冠動脈や分枝にカテーテルやワイヤーを入れること。" },
+            { id: "sheath", term: "sheath / Sheath", reading: "シース", fullName: "Vascular Sheath Introducer", category: "TL", initial: "S", meaning: "シース。血管内にカテーテルを出入させるための弁付き外筒管。" },
+            { id: "spasm", term: "spasm / Spasm", reading: "スパズム / かんけいれん", fullName: "Coronary Spasm", category: "PCI", initial: "S", meaning: "攣縮・スパズム。冠動脈壁の一時的な強度の収縮。ニトロ等で解除する。" },
+            { id: "stba", term: "StBA / Stent BA", reading: "エスティービーエー", fullName: "Stent Balloon Angioplasty", category: "PCI", initial: "S", meaning: "ステント内バルーン拡張術。ステント留置後の再拡張やステント再狭窄（ISR）病変の治療手技。" },
+            { id: "stemi", term: "STEMI", reading: "ステミ / えすてぃーじょうしょうがかしんきんこうそく", fullName: "ST-segment Elevation Myocardial Infarction", category: "PCI", initial: "S", meaning: "ST上昇型心筋梗塞。心電図でST上昇を認める緊急性の高い完全閉塞性心筋梗塞。迅速な再開通PCIを要する。" },
+            { id: "stenosis", term: "stenosis", reading: "ステノーシス / きょうさく", fullName: "Vascular Stenosis", category: "PCI", initial: "S", meaning: "狭窄。動脈硬化等により血管内腔が狭くなっている状態。" },
+            { id: "stent", term: "stent", reading: "ステント", fullName: "Coronary Stent", category: "PCI", initial: "S", meaning: "ステント。血管内に留置して内側から血管壁を支える網目状の金属筒デバイス。" },
+            { id: "successful", term: "successful", reading: "サクセスフル / せいこう", fullName: "Successful Result", category: "TL", initial: "S", meaning: "成功した・良好な。手技や治療が目的どおり良好に完了した状態。" },
+            { id: "suction", term: "suction", reading: "サクション / きゅういん", fullName: "Suction", category: "TL", initial: "S", meaning: "吸引する。陰圧を利用して血液や血栓などを吸引すること。" },
+            { id: "support", term: "support", reading: "サポート / しじりょく", fullName: "Catheter Support", category: "TL", initial: "S", meaning: "支持する・バックアップする。ガイドカテーテル等がワイヤーやデバイスの押し込み操作を支えること。" },
+
+            // T
+            { id: "tfi", term: "TFI", reading: "ティーエフアイ", fullName: "TransFemoral Intervention", category: "PCI", initial: "T", meaning: "大腿動脈アプローチ。太ももの付け根の大腿動脈からカテーテルを入れる手法。" },
+            { id: "thrombus", term: "thrombus", reading: "スロンバス / けっせん", fullName: "Coronary Thrombus", category: "PCI", initial: "T", meaning: "血栓。血管内で血液が固まって形成された血の塊。" },
+            { id: "thrombosis", term: "thrombosis", reading: "スロンボーシス / けっせんしょう", fullName: "Thrombosis", category: "PCI", initial: "T", meaning: "血栓症・血栓形成。血管内で血栓が作られて詰まる病態。" },
+            { id: "timi_flow", term: "TIMI flow", reading: "ティミ フロー / けつりゅう", fullName: "TIMI Blood Flow Grade", category: "PCI", initial: "T", meaning: "TIMI血流。冠動脈造影における冠血流の通り具合を評価する標準指標（TIMI 0〜3）。" },
+            { id: "timi_0", term: "TIMI 0", reading: "ティミ ゼロ / かんぜんへいそく", fullName: "TIMI Grade 0 Flow", category: "PCI", initial: "T", meaning: "完全閉塞・順行性血流なし。閉塞部位より遠位に造影剤が全く流れない状態。" },
+            { id: "timi_1", term: "TIMI 1", reading: "ティミ ワン / わずかなけつりゅう", fullName: "TIMI Grade 1 Flow", category: "PCI", initial: "T", meaning: "わずかな順行性血流あり。造影剤は閉塞部を通過するが末梢全体を満たせない状態。" },
+            { id: "timi_2", term: "TIMI 2", reading: "ティミ ツー / ちえんけつりゅう", fullName: "TIMI Grade 2 Flow", category: "PCI", initial: "T", meaning: "遅延した順行性血流。造影剤が末梢まで到達するが、正常血管に比べて造影・消失が遅い状態。" },
+            { id: "timi_3", term: "TIMI 3", reading: "ティミ スリー / せいじょうけつりゅう", fullName: "TIMI Grade 3 Flow", category: "PCI", initial: "T", meaning: "正常な順行性血流。造影剤が正常な速さで末梢まで完全に流れる状態。" },
+            { id: "torque", term: "torque", reading: "トルク / かいてん", fullName: "Torque Control", category: "TL", initial: "T", meaning: "トルク・回転操作。ガイドワイヤー等の手元を回転させて先端の向きを微調整する操作。" },
+            { id: "trband", term: "TR Band", reading: "ティーアールバンド / しけつバンド", fullName: "TR Band Compression Device", category: "TL", initial: "T", meaning: "手首の止血用エアバンド。TRI手技終了後、橈骨動脈の穿刺部を空気圧で圧迫止血する器具。" },
+            { id: "trackability", term: "trackability", reading: "トラッカビリティ / つじゅうせい", fullName: "Trackability", category: "TL", initial: "T", meaning: "追従性。屈曲した血管の形状に沿ってデバイスがスムーズに進みやすい性質。" },
+            { id: "tri", term: "TRI", reading: "ティーアールアイ", fullName: "TransRadial Intervention", category: "PCI", initial: "T", meaning: "橈骨動脈アプローチ。手首の橈骨動脈からカテーテルを入れる手法。止血が容易で負担が少ない。" },
+
+            // U
+            { id: "ua", term: "UA", reading: "ユーエー / ふあんていきょうしんしょう", fullName: "Unstable Angina", category: "PCI", initial: "U", meaning: "不安定狭心症。安静時にも発作が生じる等、急性心筋梗塞へ移行するリスクが非常に高い危険な状態。" },
+
+            // V
+            { id: "visualize", term: "visualize", reading: "ビジュアライズ / びょうしゅつ", fullName: "Visualize Lesion", category: "TL", initial: "V", meaning: "描出する・見えるようにする。造影剤等を用いて血管や病変部を透視画像上で確認可能にすること。" },
+            { id: "vline", term: "Vライン / Vルート", reading: "ブイライン / ブイルート", fullName: "Venous Line", category: "TL", initial: "V", meaning: "静脈ライン。点滴や急変時の薬剤投与経路確保のために静脈へ留置するライン。" },
+
+            // W
+            { id: "withdraw", term: "withdraw", reading: "ウィズドロー / こうたい", fullName: "Withdraw Device", category: "TL", initial: "W", meaning: "引き抜く・後退させる。カテーテルやワイヤーを手前側に引いて戻す操作。" },
+            { id: "wire", term: "wire", reading: "ワイヤー", fullName: "Guidewire", category: "PCI", initial: "W", meaning: "ワイヤー。主に病変通過やデバイス誘導に用いられるガイドワイヤーを指す。" }
+        ];
+
+        let currentCategory = "ALL";
+        let currentInitial = "ALL";
+        let searchQuery = "";
+
+        const termsGrid = document.getElementById("terms-grid");
+        const emptyState = document.getElementById("empty-state");
+        const totalCountEl = document.getElementById("total-count");
+        const resultCountEl = document.getElementById("result-count");
+        const searchInput = document.getElementById("search-input");
+        const clearSearchBtn = document.getElementById("clear-search");
+        const initialButtonsContainer = document.getElementById("initial-buttons");
+        const categoryFilterContainer = document.getElementById("category-filters");
+        const filterStatusText = document.getElementById("filter-status-text");
+        const resetInitialBtn = document.getElementById("reset-initial");
+
+        function initAlphabetButtons() {
+            const alphabets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            
+            let html = `
+                <button data-initial="ALL" class="init-btn active px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-500 border border-cyan-400 text-slate-950 shadow-sm transition-all">
+                    ALL
+                </button>
+            `;
+
+            alphabets.forEach(letter => {
+                const count = dictionaryData.filter(d => d.initial === letter).length;
+                const hasItem = count > 0;
+                
+                html += `
+                    <button data-initial="${letter}" ${!hasItem ? 'disabled' : ''} 
+                        class="init-btn px-2 py-1 rounded-md text-xs font-semibold transition-all border 
+                        ${hasItem 
+                            ? 'bg-slate-800 border-bordercolor text-slate-200 hover:border-cyan-500 hover:text-cyan-400 cursor-pointer' 
+                            : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'}">
+                        ${letter}
+                    </button>
+                `;
+            });
+
+            initialButtonsContainer.innerHTML = html;
+        }
+
+        function filterTerms() {
+            return dictionaryData.filter(item => {
+                // Category Filter
+                const matchCategory = (currentCategory === "ALL") || (item.category === currentCategory);
+                
+                // Initial Filter
+                const matchInitial = (currentInitial === "ALL") || (item.initial === currentInitial);
+
+                // Search Query Filter
+                const q = searchQuery.toLowerCase().trim();
+                const matchSearch = !q || 
+                    item.term.toLowerCase().includes(q) ||
+                    item.reading.toLowerCase().includes(q) ||
+                    item.fullName.toLowerCase().includes(q) ||
+                    item.meaning.toLowerCase().includes(q);
+
+                return matchCategory && matchInitial && matchSearch;
+            });
+        }
+
+        function render() {
+            const filtered = filterTerms();
+            
+            // Total & Result Counts
+            totalCountEl.textContent = dictionaryData.length;
+            resultCountEl.textContent = `${filtered.length}件`;
+
+            // Filter status text
+            let statusParts = [];
+            if (currentCategory !== "ALL") {
+                const catNames = { PCI: "PCI", TL: "経過記録", ERCP: "ERCP" };
+                statusParts.push(`カテゴリ: ${catNames[currentCategory] || currentCategory}`);
+            }
+            if (currentInitial !== "ALL") {
+                statusParts.push(`イニシャル: ${currentInitial}`);
+            }
+            if (searchQuery) {
+                statusParts.push(`検索: "${searchQuery}"`);
+            }
+            filterStatusText.textContent = statusParts.length > 0 ? `表示中: ${statusParts.join(" / ")}` : "表示中: すべての用語";
+
+            // Clear Grid
+            termsGrid.innerHTML = "";
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove("hidden");
+                return;
+            } else {
+                emptyState.classList.add("hidden");
+            }
+
+            // Create cards
+            filtered.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "bg-cardbg rounded-2xl border border-bordercolor p-5 shadow-lg hover:border-cyan-500/50 transition-all flex flex-col justify-between";
+
+                let catBadgeClass = "bg-blue-950 text-blue-400 border-blue-800";
+                let catBadgeText = "PCI";
+
+                if (item.category === "TL") {
+                    catBadgeClass = "bg-purple-950 text-purple-400 border-purple-800";
+                    catBadgeText = "経過記録";
+                } else if (item.category === "ERCP") {
+                    catBadgeClass = "bg-emerald-950 text-emerald-400 border-emerald-800";
+                    catBadgeText = "ERCP";
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                                <span class="text-[10px] tracking-wider font-semibold text-slate-400 block uppercase">${item.reading}</span>
+                                <h3 class="text-xl font-bold text-cyan-300 tracking-wide">${item.term}</h3>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${catBadgeClass}">
+                                ${catBadgeText}
+                            </span>
+                        </div>
+                        <p class="text-xs font-mono text-slate-400 mb-3 border-b border-bordercolor/60 pb-2">${item.fullName}</p>
+                        <p class="text-sm text-slate-200 leading-relaxed">${item.meaning}</p>
+                    </div>
+                `;
+
+                termsGrid.appendChild(card);
+            });
+        }
+
+        function setupEventListeners() {
+            // Search Input
+            searchInput.addEventListener("input", (e) => {
+                searchQuery = e.target.value;
+                clearSearchBtn.classList.toggle("hidden", !searchQuery);
+                render();
+            });
+
+            // Clear Search
+            clearSearchBtn.addEventListener("click", () => {
+                searchInput.value = "";
+                searchQuery = "";
+                clearSearchBtn.classList.add("hidden");
+                render();
+            });
+
+            // Initial Alphabet Buttons Click
+            initialButtonsContainer.addEventListener("click", (e) => {
+                const btn = e.target.closest(".init-btn");
+                if (!btn || btn.disabled) return;
+
+                document.querySelectorAll(".init-btn").forEach(b => {
+                    b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                    b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-200");
+                });
+
+                btn.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                btn.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-200");
+
+                currentInitial = btn.dataset.initial;
+                render();
+            });
+
+            // Category Filters Click
+            categoryFilterContainer.addEventListener("click", (e) => {
+                const btn = e.target.closest(".cat-btn");
+                if (!btn) return;
+
+                document.querySelectorAll(".cat-btn").forEach(b => {
+                    b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                    b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-300");
+                });
+
+                btn.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                btn.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-300");
+
+                currentCategory = btn.dataset.category;
+                render();
+            });
+
+            // Reset Initial
+            resetInitialBtn.addEventListener("click", () => {
+                currentInitial = "ALL";
+                document.querySelectorAll(".init-btn").forEach(b => {
+                    if (b.dataset.initial === "ALL") {
+                        b.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                        b.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-200");
+                    } else {
+                        b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
+                        b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-200");
+                    }
+                });
+                render();
+            });
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            initAlphabetButtons();
+            setupEventListeners();
+            render();
+        });
+    </script>
+</body>
+</html>
