@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>時間計算アプリ</title>
+
+    <!-- 要望１：アプリのアイコン設定 (icon-kuroneko.png) -->
+    <link rel="icon" href="icon-kuroneko.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-kuroneko.png">
+
+    <!-- PWA Web Meta Tags -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="時間計算">
+    <link rel="manifest" id="pwaManifest">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        wa: {
+                            indigo: '#0f172a',
+                            accent: '#3b82f6',
+                            gold: '#f59e0b',
+                            bg: '#090d16',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                        mono: ['"Roboto Mono"', 'monospace'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        /* カラー変数（移植元コードより） */
+        :root {
+            --bg: #0f1219;
+            --panel: #181d28;
+            --panel-light: #222836;
+            --border: #323b4e;
+            --text: #f5f7fa;
+            --sub: #9da6b5;
+            --accent: #657dff;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* ハンバーガーボタン (固定配置) */
+        .hamburger-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            background: rgba(24, 29, 40, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .hamburger-btn:active {
+            transform: scale(0.95);
+        }
+        .hamburger-bar {
+            width: 20px;
+            height: 2px;
+            background-color: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* サイドバー オーバーレイ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* サイドバー本体 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(280px, 80vw);
+            height: 100vh;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            z-index: 1002;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        .sidebar-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: var(--sub);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .sidebar-nav {
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 10px;
+            background: var(--panel-light);
+            border: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+        }
+        .sidebar-link:hover {
+            border-color: var(--accent);
+            background: rgba(101, 125, 255, 0.15);
+        }
+        .sidebar-link:active {
+            transform: scale(0.98);
+        }
+        .sidebar-link-icon {
+            font-size: 18px;
+        }
+    </style>
+
+    <script>
+        function combinedApp() {
+            return {
+                currentTab: 'd2b', // 初期タブ: 'd2b', 'igel', 'work', 'calc'
+
+                toast: {
+                    show: false,
+                    message: ''
+                },
+
+                // 共通: 数字4桁をHH:MM表示に変換
+                formatDisplay(val) {
+                    if (!val) return '';
+                    let str = val.toString().replace(/\D/g, '');
+                    if (str.length < 4) return str;
+                    
+                    let hh = parseInt(str.slice(0, 2), 10);
+                    let mm = parseInt(str.slice(2, 4), 10);
+
+                    if (hh > 23) hh = 23;
+                    if (mm > 59) mm = 59;
+
+                    const formattedHH = hh.toString().padStart(2, '0');
+                    const formattedMM = mm.toString().padStart(2, '0');
+
+                    return `${formattedHH}:${formattedMM}`;
+                },
+
+                // 共通: コピー機能（iframe / Google Sites 対応）
+                copyText(text) {
+                    if (!text) return;
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            this.showToast(`コピーしました`);
+                        }).catch(() => {
+                            this.fallbackCopy(text);
+                        });
+                    } else {
+                        this.fallbackCopy(text);
+                    }
+                },
+
+                fallbackCopy(text) {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.left = '-999999px';
+                    textarea.style.top = '-999999px';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        this.showToast(`コピーしました`);
+                    } catch (err) {
+                        console.error('Copy failed', err);
+                    }
+                    document.body.removeChild(textarea);
+                },
+
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 2000);
+                },
+
+                // 1. D2B Time App State & Functions
+                d2b: {
+                    doorRaw: '',
+                    reperfRaw: '',
+                    isNextDay: false,
+                    clear() {
+                        this.doorRaw = '';
+                        this.reperfRaw = '';
+                        this.isNextDay = false;
+                    }
+                },
+                get d2bResult() {
+                    const doorStr = this.formatDisplay(this.d2b.doorRaw);
+                    const reperfStr = this.formatDisplay(this.d2b.reperfRaw);
+
+                    if (!/^\d{2}:\d{2}$/.test(doorStr) || !/^\d{2}:\d{2}$/.test(reperfStr)) {
+                        return { valid: false, minutes: 0, text: '数字4桁を入力してください', isOver: false };
+                    }
+
+                    const [dH, dM] = doorStr.split(':').map(Number);
+                    const [rH, rM] = reperfStr.split(':').map(Number);
+
+                    let doorMinutes = dH * 60 + dM;
+                    let reperfMinutes = rH * 60 + rM;
+
+                    if (this.d2b.isNextDay) reperfMinutes += 1440;
+
+                    let diff = reperfMinutes - doorMinutes;
+
+                    if (diff < 0) {
+                        return { valid: false, minutes: 0, text: '時刻（同日・翌日）を確認してください', isOver: false };
+                    }
+
+                    return {
+                        valid: true,
+                        minutes: diff,
+                        text: `${diff} 分`,
+                        isOver: diff > 90
+                    };
+                },
+
+                // 2. i-gel App State & Functions
+                igel: {
+                    insertRaw: '',
+                    evalRaw: '',
+                    isNextDay: false,
+                    selectedFio2: 5,
+                    fio2Percent: 40,
+                    otherO2: '',
+                    fio2Options: [
+                        { percent: 30, flow: 2.5 },
+                        { percent: 40, flow: 5 },
+                        { percent: 50, flow: 6 },
+                        { percent: 60, flow: 7 },
+                        { percent: 80, flow: 11 },
+                        { percent: 100, flow: 15 }
+                    ],
+                    selectFio2(opt) {
+                        this.selectedFio2 = opt.flow;
+                        this.fio2Percent = opt.percent;
+                    },
+                    clear() {
+                        this.insertRaw = '';
+                        this.evalRaw = '';
+                        this.otherO2 = '';
+                        this.isNextDay = false;
+                    }
+                },
+                get igelResult() {
+                    const insertStr = this.formatDisplay(this.igel.insertRaw);
+                    const evalStr = this.formatDisplay(this.igel.evalRaw);
+
+                    if (!/^\d{2}:\d{2}$/.test(insertStr) || !/^\d{2}:\d{2}$/.test(evalStr)) {
+                        return { valid: false, minutes: 0, totalO2: 0, text: '時刻（数字4桁）を入力してください' };
+                    }
+
+                    const [iH, iM] = insertStr.split(':').map(Number);
+                    const [eH, eM] = evalStr.split(':').map(Number);
+
+                    let insertMinutes = iH * 60 + iM;
+                    let evalMinutes = eH * 60 + eM;
+
+                    if (this.igel.isNextDay) evalMinutes += 1440;
+
+                    let diff = evalMinutes - insertMinutes;
+
+                    if (diff < 0) {
+                        return { valid: false, minutes: 0, totalO2: 0, text: '時刻（同日・翌日）を確認してください' };
+                    }
+
+                    const igelO2 = diff * this.igel.selectedFio2;
+                    const additionalO2 = parseFloat(this.igel.otherO2) || 0;
+                    const totalO2 = igelO2 + additionalO2;
+
+                    return {
+                        valid: true,
+                        minutes: diff,
+                        igelO2: igelO2,
+                        otherO2Val: additionalO2,
+                        totalO2: totalO2,
+                        text: `${diff} 分`
+                    };
+                },
+
+                // 3. Work Time App State & Functions
+                work: {
+                    startRaw: '0852',
+                    endRaw: '1607',
+                    breakMin: 45,
+                    otStartRaw: '1607',
+                    isNextDay: false,
+                    clear() {
+                        this.startRaw = '';
+                        this.endRaw = '';
+                        this.breakMin = 45;
+                        this.otStartRaw = '';
+                        this.isNextDay = false;
+                    }
+                },
+                minsToHM(mins) {
+                    if (mins <= 0) return '0分';
+                    const h = Math.floor(mins / 60);
+                    const m = mins % 60;
+                    if (h === 0) return `${m}分`;
+                    if (m === 0) return `${h}時間`;
+                    return `${h}時間${m}分`;
+                },
+                get workResult() {
+                    const startStr = this.formatDisplay(this.work.startRaw);
+                    const endStr = this.formatDisplay(this.work.endRaw);
+
+                    if (!/^\d{2}:\d{2}$/.test(startStr) || !/^\d{2}:\d{2}$/.test(endStr)) {
+                        return { valid: false, text: '出勤・退勤時刻を数字4桁で入力してください' };
+                    }
+
+                    const [sH, sM] = startStr.split(':').map(Number);
+                    const [eH, eM] = endStr.split(':').map(Number);
+
+                    let startMinVal = sH * 60 + sM;
+                    let endMinVal = eH * 60 + eM;
+
+                    if (this.work.isNextDay) endMinVal += 1440;
+
+                    let totalSpanMin = endMinVal - startMinVal;
+
+                    if (totalSpanMin < 0) {
+                        return { valid: false, text: '退勤時刻は出勤時刻より後の時間を指定してください（翌日の場合は「翌日」を選択）' };
+                    }
+
+                    const bMin = parseInt(this.work.breakMin, 10) || 0;
+                    let totalWorkMin = Math.max(0, totalSpanMin - bMin);
+
+                    let overtimeMin = 0;
+                    const otStr = this.formatDisplay(this.work.otStartRaw);
+                    
+                    if (/^\d{2}:\d{2}$/.test(otStr)) {
+                        const [otH, otM] = otStr.split(':').map(Number);
+                        let otMinVal = otH * 60 + otM;
+
+                        if (otMinVal < startMinVal && this.work.isNextDay) otMinVal += 1440;
+
+                        if (endMinVal > otMinVal) overtimeMin = endMinVal - otMinVal;
+                    }
+
+                    return {
+                        valid: true,
+                        totalWorkMin: totalWorkMin,
+                        totalWorkText: this.minsToHM(totalWorkMin),
+                        totalWorkDecimal: (totalWorkMin / 60).toFixed(2),
+                        overtimeMin: overtimeMin,
+                        overtimeText: this.minsToHM(overtimeMin),
+                        overtimeDecimal: (overtimeMin / 60).toFixed(2)
+                    };
+                },
+
+                // 4. Time Calculator App State & Functions
+                calc: {
+                    h1: '0',
+                    m1: '0',
+                    op: '+',
+                    h2: '0',
+                    m2: '0',
+                    activeField: 'h2',
+                    pressNum(num) {
+                        let val = this[this.activeField] || '';
+                        if (val === '0') val = '';
+
+                        if (this.activeField.startsWith('h')) {
+                            if (val.length < 3) this[this.activeField] = val + num.toString();
+                        } else {
+                            if (val.length < 2) this[this.activeField] = val + num.toString();
+                        }
+                    },
+                    setFocus(field) {
+                        this.activeField = field;
+                    },
+                    backspace() {
+                        let val = this[this.activeField] || '';
+                        if (val.length > 0) {
+                            this[this.activeField] = val.slice(0, -1);
+                        }
+                    },
+                    clear() {
+                        this.h1 = '0';
+                        this.m1 = '0';
+                        this.h2 = '0';
+                        this.m2 = '0';
+                        this.op = '+';
+                        this.activeField = 'h1';
+                    }
+                },
+                toMins(h, m) {
+                    const hours = parseInt(h, 10) || 0;
+                    const mins = parseInt(m, 10) || 0;
+                    return hours * 60 + mins;
+                },
+                formatMins(totalMins) {
+                    const isNegative = totalMins < 0;
+                    const absMins = Math.abs(totalMins);
+                    const h = Math.floor(absMins / 60);
+                    const m = absMins % 60;
+
+                    let str = '';
+                    if (h > 0) str += `${h}時間`;
+                    if (m > 0 || h === 0) str += `${m}分`;
+                    return isNegative ? `-${str}` : str;
+                },
+                get calcResult() {
+                    const mins1 = this.toMins(this.calc.h1, this.calc.m1);
+                    const mins2 = this.toMins(this.calc.h2, this.calc.m2);
+
+                    let total = this.calc.op === '+' ? mins1 + mins2 : mins1 - mins2;
+
+                    return {
+                        totalMins: total,
+                        hmText: this.formatMins(total),
+                        decimalText: (total / 60).toFixed(2)
+                    };
+                }
+            };
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col justify-between" x-data="combinedApp()">
+
+    <!-- 要望２：ハンバーガーボタン -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+    </button>
+
+    <!-- 要望２：サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 要望２：サイドバー本体 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <span>仕事ツール</span>
+            </div>
+            <button class="sidebar-close" id="sidebarCloseBtn" aria-label="閉じる">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page10.html" class="sidebar-link">
+                <i class="fa-solid fa-stopwatch sidebar-link-icon"></i>
+                <span>タイマー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/index.html" class="sidebar-link">
+                <i class="fa-regular fa-calendar-days sidebar-link-icon"></i>
+                <span>カレンダー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page3.html" class="sidebar-link">
+                <i class="fa-solid fa-file-invoice-dollar sidebar-link-icon"></i>
+                <span>負担額</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page6.html" class="sidebar-link">
+                <i class="fa-solid fa-business-time sidebar-link-icon"></i>
+                <span>時間計算</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page7.html" class="sidebar-link">
+                <i class="fa-solid fa-calendar-week sidebar-link-icon"></i>
+                <span>和暦西暦</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page8.html" class="sidebar-link">
+                <i class="fa-solid fa-calculator sidebar-link-icon"></i>
+                <span>電卓</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page9.html" class="sidebar-link">
+                <i class="fa-solid fa-book-medical sidebar-link-icon"></i>
+                <span>医療用語辞典</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- トースト通知 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 transform -translate-y-4"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform -translate-y-4"
+         class="fixed top-4 right-4 z-50 bg-emerald-900 text-emerald-100 px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-emerald-500">
+        <i class="fa-solid fa-circle-check text-xl text-emerald-400"></i>
+        <span x-text="toast.message" class="text-sm font-bold"></span>
+    </div>
+
+    <!-- Header & App Navigation -->
+    <header class="bg-slate-900 text-white shadow-lg border-b border-slate-800 sticky top-0 z-40">
+        <!-- 左上のハンバーガーボタンと被らないよう pl-14 で適切な余白を確保 -->
+        <div class="max-w-2xl mx-auto pl-14 pr-3 py-2.5">
+            <!-- App Title & Global Action -->
+            <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-base shadow-md border border-blue-400/30">
+                        <i class="fa-solid fa-toolbox"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-black tracking-wide text-slate-100 leading-tight">医療・業務時間計算</h1>
+                        <p class="text-[10px] text-slate-400">統合時間管理ツール</p>
+                    </div>
+                </div>
+
+                <template x-if="currentTab === 'd2b'">
+                    <button @click="d2b.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> クリア
+                    </button>
+                </template>
+                <template x-if="currentTab === 'igel'">
+                    <button @click="igel.clear(); showToast('リセットしました')" class="text-xs bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold px-2.5 py-1.5 rounded-lg border border-rose-500/40 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> リセット
+                    </button>
+                </template>
+                <template x-if="currentTab === 'work'">
+                    <button @click="work.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> クリア
+                    </button>
+                </template>
+                <template x-if="currentTab === 'calc'">
+                    <button @click="calc.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> クリア
+                    </button>
+                </template>
+            </div>
+
+            <!-- Tab Navigation Buttons -->
+            <nav class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                <button @click="currentTab = 'd2b'"
+                        :class="currentTab === 'd2b' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+                        class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
+                    <i class="fa-solid fa-heart-pulse text-sm"></i>
+                    <span>D2B</span>
+                </button>
+                <button @click="currentTab = 'igel'"
+                        :class="currentTab === 'igel' ? 'bg-teal-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+                        class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
+                    <i class="fa-solid fa-lungs text-sm"></i>
+                    <span>i-gel</span>
+                </button>
+                <button @click="currentTab = 'work'"
+                        :class="currentTab === 'work' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+                        class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
+                    <i class="fa-solid fa-clock text-sm"></i>
+                    <span>勤務・残業</span>
+                </button>
+                <button @click="currentTab = 'calc'"
+                        :class="currentTab === 'calc' ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+                        class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
+                    <i class="fa-solid fa-calculator text-sm"></i>
+                    <span>筆算</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-2xl mx-auto px-3 sm:px-4 py-4 flex-grow w-full space-y-4">
+
+        <!-- ==================================================== -->
+        <!-- 1. D2B Time Calculator -->
+        <!-- ==================================================== -->
+        <div x-show="currentTab === 'd2b'" x-transition:enter="transition ease-out duration-150">
+            <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-950/90 text-slate-200 px-5 py-2.5 flex justify-between items-center border-b border-slate-800">
+                    <span class="text-xs sm:text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-rose-400"></i> 数字4桁を入力 (例: 1455)
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-mono">D2B計算</span>
+                </div>
+
+                <div class="p-4 sm:p-5 space-y-4">
+                    <!-- Door Time -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                1. 来院時刻 (Door Time)
+                            </label>
+                            <span class="text-xs font-mono font-bold text-rose-400" x-text="formatDisplay(d2b.doorRaw) ? '認識: ' + formatDisplay(d2b.doorRaw) : ''"></span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="d2b.doorRaw" placeholder="1455"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-rose-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="d2b.doorRaw" @click="d2b.doorRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reperfusion Time -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                2. 再灌流時刻 (Reperfusion Time)
+                            </label>
+                            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button @click="d2b.isNextDay = false" :class="!d2b.isNextDay ? 'bg-rose-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition">同日</button>
+                                <button @click="d2b.isNextDay = true" :class="d2b.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition flex items-center gap-1">
+                                    <span>翌日</span><span class="text-[9px] bg-amber-950 px-1 rounded border border-amber-500/30">+24h</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span></span>
+                            <span class="text-xs font-mono font-bold text-rose-400" x-text="formatDisplay(d2b.reperfRaw) ? '認識: ' + formatDisplay(d2b.reperfRaw) : ''"></span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="d2b.reperfRaw" placeholder="1625"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-rose-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="d2b.reperfRaw" @click="d2b.reperfRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/30 rounded-2xl p-4 sm:p-5 text-white shadow-2xl border border-slate-800 relative overflow-hidden mt-2">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span class="bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">計算結果 (D2B)</span>
+                            <template x-if="d2bResult.valid">
+                                <button @click="copyText(`D2B時間: ${d2bResult.text}`)" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i> コピー
+                                </button>
+                            </template>
+                        </div>
+                        <div class="py-3 flex items-baseline justify-between">
+                            <template x-if="d2bResult.valid">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-5xl sm:text-6xl font-black font-mono tracking-tight" :class="d2bResult.isOver ? 'text-amber-400' : 'text-emerald-400'" x-text="d2bResult.minutes"></span>
+                                    <span class="text-xl font-bold text-slate-300">分</span>
+                                </div>
+                            </template>
+                            <template x-if="!d2bResult.valid">
+                                <div class="text-slate-500 text-sm font-bold py-2" x-text="d2bResult.text"></div>
+                            </template>
+                            <template x-if="d2bResult.valid">
+                                <div class="text-right">
+                                    <span x-show="!d2bResult.isOver" class="inline-flex items-center gap-1 bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                        <i class="fa-solid fa-circle-check"></i> 90分以内
+                                    </span>
+                                    <span x-show="d2bResult.isOver" class="inline-flex items-center gap-1 bg-amber-950/80 border border-amber-500/40 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> 90分超過
+                                    </span>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 flex justify-between items-center">
+                            <span>目標: 90分以内</span>
+                            <span x-show="d2b.isNextDay" class="text-amber-400 font-bold">※ 翌日計算適用中 (+24h)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 2. i-gel Calculator -->
+        <!-- ==================================================== -->
+        <div x-show="currentTab === 'igel'" x-transition:enter="transition ease-out duration-150">
+            <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-950/90 text-slate-200 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+                    <span class="text-xs font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-teal-400"></i> 数字4桁を入力 (例: 1455)
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-mono">i-gel & 酸素量</span>
+                </div>
+
+                <div class="p-4 sm:p-5 space-y-4 sm:space-y-5">
+                    <!-- Insert Time -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">1. i-gel 挿入時刻</label>
+                            <span class="text-xs font-mono font-bold text-teal-400" x-text="formatDisplay(igel.insertRaw) ? '認識: ' + formatDisplay(igel.insertRaw) : ''"></span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="igel.insertRaw" placeholder="1455"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-xl sm:text-2xl font-mono focus:outline-none focus:border-teal-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="igel.insertRaw" @click="igel.insertRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Extubation Time -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">2. 抜管時刻</label>
+                            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button @click="igel.isNextDay = false" :class="!igel.isNextDay ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition">同日</button>
+                                <button @click="igel.isNextDay = true" :class="igel.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition flex items-center gap-1">
+                                    <span>翌日</span><span class="text-[9px] bg-amber-950 px-1 rounded border border-amber-500/30">+24h</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span></span>
+                            <span class="text-xs font-mono font-bold text-teal-400" x-text="formatDisplay(igel.evalRaw) ? '認識: ' + formatDisplay(igel.evalRaw) : ''"></span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="igel.evalRaw" placeholder="1525"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-xl sm:text-2xl font-mono focus:outline-none focus:border-teal-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="igel.evalRaw" @click="igel.evalRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FiO2 Settings -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">3. FiO<sub>2</sub> 設定（デフォルト: 40% = 5L/min）</label>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            <template x-for="opt in igel.fio2Options" :key="opt.percent">
+                                <button @click="igel.selectFio2(opt)"
+                                        :class="igel.fio2Percent === opt.percent ? 'bg-teal-600 border-teal-400 text-white font-bold shadow-lg ring-2 ring-teal-500/50' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'"
+                                        class="border p-2 rounded-xl text-center transition duration-150 flex flex-col items-center justify-center">
+                                    <span class="text-sm font-bold" x-text="`${opt.percent}%`"></span>
+                                    <span class="text-[10px] opacity-80 font-mono" x-text="`${opt.flow}L/min`"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Other Oxygen -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">4. その他の酸素吸入量 (i-gel以外)</label>
+                        <div class="relative flex items-center">
+                            <input type="number" inputmode="decimal" step="any" x-model="igel.otherO2" placeholder="0"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-12 py-2.5 text-xl font-mono focus:outline-none focus:border-teal-500 transition shadow-inner placeholder-slate-700">
+                            <span class="absolute right-4 text-slate-400 font-bold text-sm pointer-events-none">L</span>
+                            <button x-show="igel.otherO2" @click="igel.otherO2 = ''" class="absolute right-9 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/30 rounded-2xl p-4 sm:p-5 text-white shadow-2xl border border-slate-800 relative overflow-hidden mt-3">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span class="bg-teal-600/30 border border-teal-500/40 text-teal-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">計算結果</span>
+                            <template x-if="igelResult.valid">
+                                <button @click="copyText(`i-gel使用時間（全身麻酔時間）: ${igelResult.minutes}分 / FiO2: ${igel.fio2Percent}% (${igel.selectedFio2}L/min) / 総酸素量: ${igelResult.totalO2.toLocaleString()}L`)" 
+                                        class="bg-teal-600 hover:bg-teal-500 active:scale-95 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i> 結果をコピー
+                                </button>
+                            </template>
+                        </div>
+
+                        <template x-if="igelResult.valid">
+                            <div class="space-y-4 py-3">
+                                <div class="flex items-baseline justify-between border-b border-slate-800/50 pb-3">
+                                    <div>
+                                        <span class="text-xs text-slate-400 block font-bold mb-1">i-gel使用時間（全身麻酔時間）</span>
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="text-3xl sm:text-5xl font-black font-mono tracking-tight text-teal-400" x-text="igelResult.minutes"></span>
+                                            <span class="text-base sm:text-lg font-bold text-slate-300">分</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs text-slate-400 block">FiO<sub>2</sub> 条件</span>
+                                        <span class="text-xs sm:text-sm font-bold text-teal-300" x-text="`${igel.fio2Percent}% (${igel.selectedFio2}L/min)`"></span>
+                                    </div>
+                                </div>
+                                <div class="flex items-baseline justify-between">
+                                    <div>
+                                        <span class="text-xs text-amber-400/90 block font-bold mb-1">総酸素使用量</span>
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="text-3xl sm:text-5xl font-black font-mono tracking-tight text-amber-400" x-text="igelResult.totalO2.toLocaleString()"></span>
+                                            <span class="text-base sm:text-lg font-bold text-slate-300">L</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right text-[11px] text-slate-400 space-y-0.5">
+                                        <div>i-gel使用分: <span class="font-mono text-slate-200" x-text="`${igelResult.igelO2}L`"></span></div>
+                                        <div x-show="igelResult.otherO2Val > 0">i-gel以外: <span class="font-mono text-slate-200" x-text="`${igelResult.otherO2Val}L`"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="!igelResult.valid">
+                            <div class="text-slate-500 text-sm font-bold py-4 text-center" x-text="igelResult.text"></div>
+                        </template>
+
+                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 flex justify-between items-center">
+                            <span>算出式: (使用時間分 × L/min) + i-gel以外の吸入量</span>
+                            <span x-show="igel.isNextDay" class="text-amber-400 font-bold">※ 翌日計算適用中 (+24h)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 3. Work Time Calculator -->
+        <!-- ==================================================== -->
+        <div x-show="currentTab === 'work'" x-transition:enter="transition ease-out duration-150">
+            <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-950/90 text-slate-200 px-5 py-2.5 flex justify-between items-center border-b border-slate-800">
+                    <span class="text-xs sm:text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-indigo-400"></i> 数字4桁を入力 (例: 0852)
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-mono">勤務・残業</span>
+                </div>
+
+                <div class="p-4 sm:p-5 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Start Time -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">1. 出勤時刻</label>
+                                <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplay(work.startRaw) ? '認識: ' + formatDisplay(work.startRaw) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="work.startRaw" placeholder="0852"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="work.startRaw" @click="work.startRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- End Time -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">2. 退勤時刻</label>
+                                <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                    <button @click="work.isNextDay = false" :class="!work.isNextDay ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition">同日</button>
+                                    <button @click="work.isNextDay = true" :class="work.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2.5 py-0.5 rounded text-xs transition flex items-center gap-1">
+                                        <span>翌日</span><span class="text-[9px] bg-amber-950 px-1 rounded border border-amber-500/30">+24h</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span></span>
+                                <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplay(work.endRaw) ? '認識: ' + formatDisplay(work.endRaw) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="work.endRaw" placeholder="1607"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="work.endRaw" @click="work.endRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Break Time -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">3. 休憩時間 (分)</label>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" x-model="work.breakMin" placeholder="45"
+                                   class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700">
+                            <span class="absolute right-4 top-2.5 text-slate-500 font-bold text-sm">分</span>
+                        </div>
+                    </div>
+
+                    <!-- Overtime Start -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider">4. 残業開始時刻</label>
+                            <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplay(work.otStartRaw) ? '認識: ' + formatDisplay(work.otStartRaw) : ''"></span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="work.otStartRaw" placeholder="1607"
+                                   class="w-full bg-slate-950 font-bold text-white border border-indigo-900/80 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="work.otStartRaw" @click="work.otStartRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/30 rounded-2xl p-4 sm:p-5 text-white shadow-2xl border border-slate-800 relative overflow-hidden mt-2">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span class="bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">計算結果</span>
+                            <template x-if="workResult.valid">
+                                <button @click="copyText(`実労働: ${workResult.totalWorkText} (${workResult.totalWorkDecimal}h) / 残業: ${workResult.overtimeText} (${workResult.overtimeDecimal}h)`)" 
+                                        class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i> 結果をコピー
+                                </button>
+                            </template>
+                        </div>
+
+                        <template x-if="!workResult.valid">
+                            <div class="text-slate-500 text-sm font-bold py-4 text-center" x-text="workResult.text"></div>
+                        </template>
+
+                        <template x-if="workResult.valid">
+                            <div class="pt-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30">
+                                        <div class="text-xs font-bold text-amber-400 uppercase tracking-wider">残業時間</div>
+                                        <div class="text-3xl font-black font-mono mt-1 text-amber-300" x-text="workResult.overtimeText"></div>
+                                        <div class="text-xs text-amber-400/80 font-mono mt-0.5" x-text="`(${workResult.overtimeDecimal}時間)`"></div>
+                                    </div>
+                                    <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30">
+                                        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">実労働時間 (合計)</div>
+                                        <div class="text-3xl font-black font-mono mt-1 text-indigo-300" x-text="workResult.totalWorkText"></div>
+                                        <div class="text-xs text-indigo-400/80 font-mono mt-0.5" x-text="`(${workResult.totalWorkDecimal}時間)`"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 mt-3 flex justify-between items-center">
+                            <span>時刻は数字4桁で簡単入力</span>
+                            <span x-show="work.isNextDay" class="text-amber-400 font-bold">※ 翌日退勤適用中 (+24h)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 4. Time Calculator (Handwriting Style) -->
+        <!-- ==================================================== -->
+        <div x-show="currentTab === 'calc'" x-transition:enter="transition ease-out duration-150" class="max-w-md mx-auto space-y-4">
+            <div class="bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-2xl border border-slate-800 space-y-3 relative">
+                <div class="text-[11px] font-bold text-slate-400 flex justify-between items-center pb-1 border-b border-slate-800">
+                    <span><i class="fa-solid fa-pen-field text-indigo-400 mr-1"></i> 枠をタップして数字を入力</span>
+                    <span class="text-indigo-400 font-mono">時間計算機</span>
+                </div>
+
+                <div class="py-2 space-y-2 font-mono">
+                    <!-- Line 1 -->
+                    <div class="flex items-center justify-end space-x-2">
+                        <span class="text-xs text-slate-500 font-sans mr-auto">（元の時間）</span>
+                        <button @click="calc.setFocus('h1')" 
+                                :class="calc.activeField === 'h1' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
+                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
+                            <span class="text-2xl font-black text-white" x-text="calc.h1 || '0'"></span>
+                        </button>
+                        <span class="text-sm font-bold text-slate-400 font-sans">時間</span>
+
+                        <button @click="calc.setFocus('m1')" 
+                                :class="calc.activeField === 'm1' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
+                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
+                            <span class="text-2xl font-black text-white" x-text="calc.m1 || '0'"></span>
+                        </button>
+                        <span class="text-sm font-bold text-slate-400 font-sans">分</span>
+                    </div>
+
+                    <!-- Line 2 -->
+                    <div class="flex items-center justify-end space-x-2">
+                        <div class="flex mr-auto bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button @click="calc.op = '+'" :class="calc.op === '+' ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition">＋</button>
+                            <button @click="calc.op = '-'" :class="calc.op === '-' ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition">－</button>
+                        </div>
+
+                        <button @click="calc.setFocus('h2')" 
+                                :class="calc.activeField === 'h2' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
+                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
+                            <span class="text-2xl font-black text-white" x-text="calc.h2 || '0'"></span>
+                        </button>
+                        <span class="text-sm font-bold text-slate-400 font-sans">時間</span>
+
+                        <button @click="calc.setFocus('m2')" 
+                                :class="calc.activeField === 'm2' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
+                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
+                            <span class="text-2xl font-black text-white" x-text="calc.m2 || '0'"></span>
+                        </button>
+                        <span class="text-sm font-bold text-slate-400 font-sans">分</span>
+                    </div>
+
+                    <div class="border-b-2 border-slate-600 my-1"></div>
+
+                    <!-- Line 3 Result -->
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xl font-black text-amber-400 font-sans">＝</span>
+                        <div class="flex items-baseline space-x-2">
+                            <span class="text-3xl sm:text-4xl font-black text-amber-300" x-text="calcResult.hmText"></span>
+                            <span class="text-xs text-slate-400 font-sans" x-text="`(${calcResult.decimalText}時間)`"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex justify-end">
+                    <button @click="copyText(`${calcResult.hmText} (${calcResult.decimalText}時間)`)" class="bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow">
+                        <i class="fa-regular fa-copy"></i> 計算結果をコピー
+                    </button>
+                </div>
+            </div>
+
+            <!-- Keypad -->
+            <div class="bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                    <button @click="calc.clear(); showToast('クリアしました')" class="bg-rose-950/80 border border-rose-800/50 hover:bg-rose-900 text-rose-200 font-bold py-2.5 rounded-xl text-xs transition shadow">AC (クリア)</button>
+                    <button @click="calc.backspace()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition shadow flex items-center justify-center gap-1"><i class="fa-solid fa-backspace"></i> 消去</button>
+                    <button @click="calc.op = calc.op === '+' ? '-' : '+'" class="bg-amber-900/60 hover:bg-amber-800 text-amber-200 font-bold py-2.5 rounded-xl text-xs transition shadow border border-amber-500/30">＋ / － 切替</button>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button @click="calc.pressNum(7)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">7</button>
+                    <button @click="calc.pressNum(8)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">8</button>
+                    <button @click="calc.pressNum(9)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">9</button>
+                    <button @click="calc.pressNum(4)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">4</button>
+                    <button @click="calc.pressNum(5)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">5</button>
+                    <button @click="calc.pressNum(6)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">6</button>
+                    <button @click="calc.pressNum(1)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">1</button>
+                    <button @click="calc.pressNum(2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">2</button>
+                    <button @click="calc.pressNum(3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">3</button>
+                    <button @click="calc.pressNum(0)" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">0</button>
+                    <button @click="calc.pressNum('00')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-xl font-black py-3 rounded-xl font-mono shadow transition">00</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-500 py-3 border-t border-slate-900 text-center text-xs">
+        医療・業務時間計算 統合アプリケーション
+    </footer>
+
+    <!-- 要望２：JavaScript制御 & PWA設定 -->
+    <script>
+        // 要望２：ハンバーガーメニューの開閉機能
+        document.addEventListener("DOMContentLoaded", function() {
+            const hamburgerBtn = document.getElementById("hamburgerBtn");
+            const sidebar = document.getElementById("sidebar");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+            function toggleSidebar() {
+                const isActive = sidebar.classList.contains("active");
+                if (isActive) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            }
+
+            function openSidebar() {
+                sidebar.classList.add("active");
+                sidebarOverlay.classList.add("active");
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove("active");
+                sidebarOverlay.classList.remove("active");
+            }
+
+            if (hamburgerBtn) hamburgerBtn.addEventListener("click", toggleSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+            if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
+        });
+
+        // Dynamic Manifest Injection for PWA
+        (function() {
+            const manifestData = {
+                name: "医療・業務時間計算統合ツール",
+                short_name: "時間計算",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#0b0f19",
+                theme_color: "#0f172a",
+                icons: [
+                    {
+                        src: "icon-kuroneko.png",
+                        sizes: "192x192",
+                        type: "image/png"
+                    },
+                    {
+                        src: "icon-kuroneko.png",
+                        sizes: "512x512",
+                        type: "image/png"
+                    }
+                ]
+            };
+            const stringManifest = JSON.stringify(manifestData);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(blob);
+            const manifestElem = document.getElementById('pwaManifest');
+            if (manifestElem) {
+                manifestElem.setAttribute('href', manifestUrl);
+            }
+        })();
+
+        // PWA Service Worker Registration (Inline Data URL)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'time-calc-v2';
+                    self.addEventListener('install', (e) => {
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('activate', (e) => {
+                        e.waitUntil(clients.claim());
+                    });
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(
+                            fetch(e.request).catch(() => caches.match(e.request))
+                        );
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).then(() => {
+                    console.log('Service Worker Registered');
+                }).catch(err => {
+                    console.error('Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
+
+</body>
+</html>
