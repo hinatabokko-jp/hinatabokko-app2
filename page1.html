@@ -1,12 +1,369 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>病院事務の業務イラスト</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>資料・画像ダウンロード</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font-family:
+        "Yu Gothic",
+        YuGothic,
+        "Hiragino Kaku Gothic ProN",
+        Meiryo,
+        sans-serif;
+
+      background:
+        linear-gradient(135deg, #f5f8fc 0%, #eef3f9 100%);
+
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #1e3a5f;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 16px;
+      color: #64748b;
+    }
+
+    /* カードを並べる部分 */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    /* カード */
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 24px;
+
+      box-shadow:
+        0 8px 24px rgba(15, 23, 42, 0.06);
+
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+
+      box-shadow:
+        0 14px 32px rgba(15, 23, 42, 0.10);
+    }
+
+    /* ファイル種類 */
+    .file-type {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+
+      font-size: 12px;
+      font-weight: 700;
+
+      margin-bottom: 14px;
+    }
+
+    .pptx-type {
+      background: #fff1ed;
+      color: #c2410c;
+    }
+
+    .png-type {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    /* タイトル */
+    .card h2 {
+      margin: 0 0 8px;
+
+      font-size: 20px;
+      line-height: 1.5;
+
+      color: #1e293b;
+    }
+
+    .description {
+      margin: 0 0 20px;
+
+      font-size: 14px;
+      line-height: 1.7;
+
+      color: #64748b;
+    }
+
+    /* PPTプレビュー */
+    .ppt-preview {
+      height: 220px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 20px;
+
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, #fff7f4, #fff);
+
+      border: 1px solid #f1f5f9;
+    }
+
+    .ppt-icon {
+      text-align: center;
+    }
+
+    .ppt-icon-symbol {
+      width: 76px;
+      height: 76px;
+
+      margin: 0 auto 10px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 16px;
+
+      background: #ea580c;
+      color: white;
+
+      font-size: 26px;
+      font-weight: 700;
+
+      box-shadow:
+        0 8px 20px rgba(234, 88, 12, 0.20);
+    }
+
+    .ppt-icon span {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* 画像プレビュー */
+    .image-preview {
+      width: 100%;
+      height: 220px;
+
+      object-fit: contain;
+
+      margin-bottom: 20px;
+
+      border-radius: 12px;
+
+      background: #f8fafc;
+
+      border: 1px solid #e2e8f0;
+    }
+
+    /* ダウンロードボタン */
+    .download-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+
+      width: 100%;
+
+      padding: 13px 18px;
+
+      border-radius: 10px;
+
+      background: #2563eb;
+      color: white;
+
+      text-decoration: none;
+
+      font-size: 15px;
+      font-weight: 700;
+
+      transition:
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .download-button:hover {
+      background: #1d4ed8;
+
+      transform: translateY(-1px);
+
+      box-shadow:
+        0 6px 16px rgba(37, 99, 235, 0.25);
+    }
+
+    .download-button:active {
+      transform: translateY(0);
+    }
+
+    .download-icon {
+      font-size: 18px;
+    }
+
+    /* フッター */
+    .footer {
+      text-align: center;
+
+      margin-top: 35px;
+
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* スマホ */
+    @media (max-width: 700px) {
+
+      body {
+        padding: 25px 15px;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
+
+
 <body>
 
-    <img src="病院事務の業務イラスト.png" alt="病院事務の業務イラスト">
+  <div class="container">
+
+    <!-- ヘッダー -->
+    <div class="header">
+      <h1>資料・画像ダウンロード</h1>
+      <p>パワーポイント資料や業務イラストはこちらからダウンロードできます。</p>
+    </div>
+
+
+    <!-- カード -->
+    <div class="cards">
+
+
+      <!-- PowerPoint -->
+      <div class="card">
+
+        <div class="file-type pptx-type">
+          POWERPOINT
+        </div>
+
+        <h2>pawapo-QC.pptx</h2>
+
+        <p class="description">
+          パワーポイント形式の資料です。
+        </p>
+
+
+        <!-- PPTプレビュー -->
+        <div class="ppt-preview">
+
+          <div class="ppt-icon">
+
+            <div class="ppt-icon-symbol">
+              PPT
+            </div>
+
+            <span>PowerPoint ファイル</span>
+
+          </div>
+
+        </div>
+
+
+        <!-- ダウンロード -->
+        <a
+          class="download-button"
+          href="https://github.com/hinatabokko-jp/hinatabokko-app2/raw/refs/heads/main/pawapo-QC.pptx"
+          download
+        >
+          <span class="download-icon">↓</span>
+          パワーポイントをダウンロード
+        </a>
+
+      </div>
+
+
+
+      <!-- PNG画像 -->
+      <div class="card">
+
+        <div class="file-type png-type">
+          IMAGE / PNG
+        </div>
+
+        <h2>病院事務の業務イラスト</h2>
+
+        <p class="description">
+          パワーポイントなどで使用できる業務イラストです。
+        </p>
+
+
+        <!-- 画像プレビュー -->
+        <img
+          class="image-preview"
+          src="https://raw.githubusercontent.com/hinatabokko-jp/hinatabokko-app2/refs/heads/main/%E7%97%85%E9%99%A2%E4%BA%8B%E5%8B%99%E3%81%AE%E6%A5%AD%E5%8B%99%E3%82%A4%E3%83%A9%E3%82%B9%E3%83%88.png"
+          alt="病院事務の業務イラスト"
+        >
+
+
+        <!-- ダウンロード -->
+        <a
+          class="download-button"
+          href="https://raw.githubusercontent.com/hinatabokko-jp/hinatabokko-app2/refs/heads/main/%E7%97%85%E9%99%A2%E4%BA%8B%E5%8B%99%E3%81%AE%E6%A5%AD%E5%8B%99%E3%82%A4%E3%83%A9%E3%82%B9%E3%83%88.png"
+          download="病院事務の業務イラスト.png"
+        >
+          <span class="download-icon">↓</span>
+          画像をダウンロード
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div class="footer">
+      © hinatabokko
+    </div>
+
+  </div>
 
 </body>
 </html>
