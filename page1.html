@@ -1,369 +1,586 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>資料・画像ダウンロード</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 40px 20px;
-      font-family:
-        "Yu Gothic",
-        YuGothic,
-        "Hiragino Kaku Gothic ProN",
-        Meiryo,
-        sans-serif;
-
-      background:
-        linear-gradient(135deg, #f5f8fc 0%, #eef3f9 100%);
-
-      color: #1f2937;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    /* ヘッダー */
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .header h1 {
-      margin: 0 0 10px;
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      color: #1e3a5f;
-    }
-
-    .header p {
-      margin: 0;
-      font-size: 16px;
-      color: #64748b;
-    }
-
-    /* カードを並べる部分 */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
-
-    /* カード */
-    .card {
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid #e2e8f0;
-      border-radius: 18px;
-      padding: 24px;
-
-      box-shadow:
-        0 8px 24px rgba(15, 23, 42, 0.06);
-
-      transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-
-      box-shadow:
-        0 14px 32px rgba(15, 23, 42, 0.10);
-    }
-
-    /* ファイル種類 */
-    .file-type {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 999px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>資料ダウンロード</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                "Noto Sans JP",
+                sans-serif;
+
+            color: #f5f7fa;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(70, 90, 140, 0.18),
+                    transparent 35%
+                ),
+                #0b0d10;
+
+            min-height: 100vh;
+        }
+
+        /* --------------------------------
+           Header
+        -------------------------------- */
+
+        header {
+            padding: 70px 20px 50px;
+            text-align: center;
+        }
+
+        .header-label {
+            display: inline-block;
+            padding: 6px 14px;
+            margin-bottom: 18px;
 
-      font-size: 12px;
-      font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
 
-      margin-bottom: 14px;
-    }
-
-    .pptx-type {
-      background: #fff1ed;
-      color: #c2410c;
-    }
+            color: #aab4c3;
+            background: rgba(255,255,255,0.04);
 
-    .png-type {
-      background: #eff6ff;
-      color: #2563eb;
-    }
+            font-size: 12px;
+            letter-spacing: 0.15em;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size: clamp(32px, 6vw, 52px);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+
+            background: linear-gradient(
+                135deg,
+                #ffffff,
+                #9da8b8
+            );
+
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
 
-    /* タイトル */
-    .card h2 {
-      margin: 0 0 8px;
+        .subtitle {
+            margin-top: 18px;
 
-      font-size: 20px;
-      line-height: 1.5;
+            color: #8993a2;
 
-      color: #1e293b;
-    }
+            font-size: 14px;
+            line-height: 1.8;
+        }
 
-    .description {
-      margin: 0 0 20px;
+        /* --------------------------------
+           Main
+        -------------------------------- */
 
-      font-size: 14px;
-      line-height: 1.7;
+        main {
+            width: min(1100px, calc(100% - 32px));
+            margin: 0 auto 80px;
+        }
 
-      color: #64748b;
-    }
+        .file-grid {
+            display: grid;
 
-    /* PPTプレビュー */
-    .ppt-preview {
-      height: 220px;
+            grid-template-columns:
+                repeat(auto-fit, minmax(300px, 1fr));
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+            gap: 24px;
+        }
 
-      margin-bottom: 20px;
+        /* --------------------------------
+           Card
+        -------------------------------- */
 
-      border-radius: 12px;
-      background:
-        linear-gradient(135deg, #fff7f4, #fff);
+        .file-card {
+            position: relative;
 
-      border: 1px solid #f1f5f9;
-    }
+            overflow: hidden;
 
-    .ppt-icon {
-      text-align: center;
-    }
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
 
-    .ppt-icon-symbol {
-      width: 76px;
-      height: 76px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.065),
+                    rgba(255,255,255,0.025)
+                );
 
-      margin: 0 auto 10px;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.28);
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+            backdrop-filter: blur(15px);
 
-      border-radius: 16px;
+            transition:
+                transform 0.25s ease,
+                border-color 0.25s ease,
+                box-shadow 0.25s ease;
+        }
 
-      background: #ea580c;
-      color: white;
+        .file-card:hover {
+            transform: translateY(-5px);
 
-      font-size: 26px;
-      font-weight: 700;
+            border-color:
+                rgba(255,255,255,0.18);
 
-      box-shadow:
-        0 8px 20px rgba(234, 88, 12, 0.20);
-    }
+            box-shadow:
+                0 25px 70px rgba(0,0,0,0.4);
+        }
 
-    .ppt-icon span {
-      font-size: 13px;
-      color: #64748b;
-    }
+        .preview {
+            height: 240px;
 
-    /* 画像プレビュー */
-    .image-preview {
-      width: 100%;
-      height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-      object-fit: contain;
+            overflow: hidden;
 
-      margin-bottom: 20px;
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,0.06),
+                    rgba(0,0,0,0.18)
+                );
 
-      border-radius: 12px;
+            border-bottom:
+                1px solid rgba(255,255,255,0.07);
+        }
 
-      background: #f8fafc;
+        /* --------------------------------
+           PNG Preview
+        -------------------------------- */
 
-      border: 1px solid #e2e8f0;
-    }
+        .image-preview {
+            width: 100%;
+            height: 100%;
 
-    /* ダウンロードボタン */
-    .download-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 9px;
+            object-fit: contain;
 
-      width: 100%;
+            padding: 18px;
 
-      padding: 13px 18px;
+            transition:
+                transform 0.35s ease;
+        }
 
-      border-radius: 10px;
+        .file-card:hover .image-preview {
+            transform: scale(1.025);
+        }
 
-      background: #2563eb;
-      color: white;
+        /* --------------------------------
+           PowerPoint Preview
+        -------------------------------- */
 
-      text-decoration: none;
+        .ppt-preview {
+            width: 150px;
+            height: 105px;
 
-      font-size: 15px;
-      font-weight: 700;
+            border-radius: 7px;
 
-      transition:
-        background 0.2s ease,
-        transform 0.15s ease,
-        box-shadow 0.2s ease;
-    }
+            background: #d24726;
 
-    .download-button:hover {
-      background: #1d4ed8;
+            box-shadow:
+                0 15px 35px rgba(0,0,0,0.45);
 
-      transform: translateY(-1px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-      box-shadow:
-        0 6px 16px rgba(37, 99, 235, 0.25);
-    }
+            position: relative;
+        }
 
-    .download-button:active {
-      transform: translateY(0);
-    }
+        .ppt-preview::before {
+            content: "";
 
-    .download-icon {
-      font-size: 18px;
-    }
+            position: absolute;
 
-    /* フッター */
-    .footer {
-      text-align: center;
+            left: -16px;
+            top: 10px;
 
-      margin-top: 35px;
+            width: 55px;
+            height: 85px;
 
-      font-size: 12px;
-      color: #94a3b8;
-    }
+            border-radius: 5px;
 
-    /* スマホ */
-    @media (max-width: 700px) {
+            background: #b83c20;
+        }
 
-      body {
-        padding: 25px 15px;
-      }
+        .ppt-icon {
+            position: relative;
+            z-index: 2;
 
-      .header h1 {
-        font-size: 26px;
-      }
+            width: 58px;
+            height: 58px;
 
-      .cards {
-        grid-template-columns: 1fr;
-      }
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-      .card {
-        padding: 20px;
-      }
-    }
-  </style>
+            border-radius: 8px;
+
+            color: white;
+
+            font-size: 25px;
+            font-weight: 800;
+
+            border: 2px solid rgba(255,255,255,0.7);
+        }
+
+        /* --------------------------------
+           Font Preview
+        -------------------------------- */
+
+        @font-face {
+            font-family: "JRMMPreview";
+            src: url("./jrmm00u.ttc");
+        }
+
+        .font-preview {
+            width: 90%;
+
+            padding: 25px;
+
+            text-align: center;
+
+            color: #e8edf4;
+
+            font-family: "JRMMPreview", sans-serif;
+
+            font-size: clamp(28px, 5vw, 42px);
+
+            line-height: 1.5;
+        }
+
+        .font-small {
+            margin-top: 12px;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            color: #8c96a5;
+
+            font-size: 12px;
+            letter-spacing: 0.08em;
+        }
+
+        /* --------------------------------
+           Card Content
+        -------------------------------- */
+
+        .card-content {
+            padding: 24px;
+        }
+
+        .file-type {
+            margin-bottom: 8px;
+
+            color: #8994a5;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .file-name {
+            margin: 0;
+
+            font-size: 18px;
+            font-weight: 600;
+
+            word-break: break-all;
+        }
+
+        .description {
+            margin: 12px 0 22px;
+
+            min-height: 44px;
+
+            color: #8d97a5;
+
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* --------------------------------
+           Download Button
+        -------------------------------- */
+
+        .download-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 100%;
+            min-height: 48px;
+
+            border-radius: 12px;
+
+            color: #ffffff;
+
+            background:
+                rgba(255,255,255,0.09);
+
+            border:
+                1px solid rgba(255,255,255,0.12);
+
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .download-button:hover {
+            background:
+                rgba(255,255,255,0.16);
+
+            transform: translateY(-1px);
+        }
+
+        .download-icon {
+            margin-right: 9px;
+
+            font-size: 17px;
+        }
+
+        /* --------------------------------
+           Footer
+        -------------------------------- */
+
+        footer {
+            padding: 30px 20px 50px;
+
+            text-align: center;
+
+            color: #596270;
+
+            font-size: 11px;
+
+            letter-spacing: 0.08em;
+        }
+
+        /* --------------------------------
+           Mobile
+        -------------------------------- */
+
+        @media (max-width: 600px) {
+
+            header {
+                padding-top: 50px;
+                padding-bottom: 35px;
+            }
+
+            main {
+                width: min(100% - 24px, 600px);
+            }
+
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview {
+                height: 220px;
+            }
+        }
+    </style>
 </head>
-
 
 <body>
 
-  <div class="container">
+<header>
 
-    <!-- ヘッダー -->
-    <div class="header">
-      <h1>資料・画像ダウンロード</h1>
-      <p>パワーポイント資料や業務イラストはこちらからダウンロードできます。</p>
+    <div class="header-label">
+        DOWNLOAD CENTER
     </div>
 
+    <h1>資料ダウンロード</h1>
 
-    <!-- カード -->
-    <div class="cards">
+    <div class="subtitle">
+        必要なファイルを選択してダウンロードしてください。
+    </div>
 
-
-      <!-- PowerPoint -->
-      <div class="card">
-
-        <div class="file-type pptx-type">
-          POWERPOINT
-        </div>
-
-        <h2>pawapo-QC.pptx</h2>
-
-        <p class="description">
-          パワーポイント形式の資料です。
-        </p>
+</header>
 
 
-        <!-- PPTプレビュー -->
-        <div class="ppt-preview">
+<main>
 
-          <div class="ppt-icon">
+    <div class="file-grid">
 
-            <div class="ppt-icon-symbol">
-              PPT
+        <!-- =====================================
+             PowerPoint
+        ====================================== -->
+
+        <article class="file-card">
+
+            <div class="preview">
+
+                <div class="ppt-preview">
+
+                    <div class="ppt-icon">
+                        P
+                    </div>
+
+                </div>
+
             </div>
 
-            <span>PowerPoint ファイル</span>
+            <div class="card-content">
 
-          </div>
+                <div class="file-type">
+                    PowerPoint Presentation
+                </div>
 
-        </div>
+                <h2 class="file-name">
+                    pawapo-QC.pptx
+                </h2>
 
+                <p class="description">
+                    PowerPoint形式の資料です。
+                    クリックするとファイルをダウンロードできます。
+                </p>
 
-        <!-- ダウンロード -->
-        <a
-          class="download-button"
-          href="https://github.com/hinatabokko-jp/hinatabokko-app2/raw/refs/heads/main/pawapo-QC.pptx"
-          download
-        >
-          <span class="download-icon">↓</span>
-          パワーポイントをダウンロード
-        </a>
+                <a
+                    class="download-button"
+                    href="./pawapo-QC.pptx"
+                    download
+                >
+                    <span class="download-icon">↓</span>
+                    ダウンロード
+                </a>
 
-      </div>
+            </div>
 
-
-
-      <!-- PNG画像 -->
-      <div class="card">
-
-        <div class="file-type png-type">
-          IMAGE / PNG
-        </div>
-
-        <h2>病院事務の業務イラスト</h2>
-
-        <p class="description">
-          パワーポイントなどで使用できる業務イラストです。
-        </p>
+        </article>
 
 
-        <!-- 画像プレビュー -->
-        <img
-          class="image-preview"
-          src="https://raw.githubusercontent.com/hinatabokko-jp/hinatabokko-app2/refs/heads/main/%E7%97%85%E9%99%A2%E4%BA%8B%E5%8B%99%E3%81%AE%E6%A5%AD%E5%8B%99%E3%82%A4%E3%83%A9%E3%82%B9%E3%83%88.png"
-          alt="病院事務の業務イラスト"
-        >
+        <!-- =====================================
+             PNG
+        ====================================== -->
+
+        <article class="file-card">
+
+            <div class="preview">
+
+                <img
+                    class="image-preview"
+                    src="./病院事務の業務イラスト.png"
+                    alt="病院事務の業務イラスト"
+                >
+
+            </div>
+
+            <div class="card-content">
+
+                <div class="file-type">
+                    PNG Image
+                </div>
+
+                <h2 class="file-name">
+                    病院事務の業務イラスト.png
+                </h2>
+
+                <p class="description">
+                    病院事務の業務イラストです。
+                    プレビューを確認してからダウンロードできます。
+                </p>
+
+                <a
+                    class="download-button"
+                    href="./病院事務の業務イラスト.png"
+                    download
+                >
+                    <span class="download-icon">↓</span>
+                    画像をダウンロード
+                </a>
+
+            </div>
+
+        </article>
 
 
-        <!-- ダウンロード -->
-        <a
-          class="download-button"
-          href="https://raw.githubusercontent.com/hinatabokko-jp/hinatabokko-app2/refs/heads/main/%E7%97%85%E9%99%A2%E4%BA%8B%E5%8B%99%E3%81%AE%E6%A5%AD%E5%8B%99%E3%82%A4%E3%83%A9%E3%82%B9%E3%83%88.png"
-          download="病院事務の業務イラスト.png"
-        >
-          <span class="download-icon">↓</span>
-          画像をダウンロード
-        </a>
+        <!-- =====================================
+             TTC Font
+        ====================================== -->
 
-      </div>
+        <article class="file-card">
+
+            <div class="preview">
+
+                <div class="font-preview">
+
+                    あいうえお<br>
+                    かきくけこ
+
+                    <div class="font-small">
+                        FONT PREVIEW
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-content">
+
+                <div class="file-type">
+                    TrueType Collection
+                </div>
+
+                <h2 class="file-name">
+                    jrmm00u.ttc
+                </h2>
+
+                <p class="description">
+                    フォントファイルです。
+                    上部にフォントのプレビューを表示しています。
+                </p>
+
+                <a
+                    class="download-button"
+                    href="./jrmm00u.ttc"
+                    download
+                >
+                    <span class="download-icon">↓</span>
+                    フォントをダウンロード
+                </a>
+
+            </div>
+
+        </article>
 
     </div>
 
+</main>
 
-    <div class="footer">
-      © hinatabokko
-    </div>
 
-  </div>
+<footer>
+    FILE DOWNLOAD CENTER
+</footer>
 
 </body>
 </html>
