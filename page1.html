@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>資料ダウンロード</title>
 
     <style>
@@ -88,7 +87,7 @@
         }
 
         /* --------------------------------
-           Main
+           Main & Grid
         -------------------------------- */
 
         main {
@@ -347,6 +346,7 @@
                 1px solid rgba(255,255,255,0.12);
 
             text-decoration: none;
+            cursor: pointer;
 
             font-size: 14px;
             font-weight: 600;
@@ -367,6 +367,183 @@
             margin-right: 9px;
 
             font-size: 17px;
+        }
+
+        /* --------------------------------
+           Password Modal Overlay
+        -------------------------------- */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: linear-gradient(145deg, rgba(28, 33, 43, 0.95), rgba(18, 21, 28, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 32px 28px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            transform: scale(0.92);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            margin: 0 0 8px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: #8994a5;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .target-filename {
+            color: #3b82f6;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .password-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #8994a5;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            color: #ffffff;
+        }
+
+        .error-message {
+            min-height: 20px;
+            font-size: 12px;
+            color: #ef4444;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .error-message.active {
+            display: flex;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            color: #aab4c3;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .btn-submit {
+            flex: 1.5;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        /* Shake Animation for incorrect password */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .modal-card.shake {
+            animation: shake 0.4s ease-in-out;
         }
 
         /* --------------------------------
@@ -466,11 +643,11 @@
                 </p>
 
                 <a
-                    class="download-button"
+                    class="download-button js-protected-download"
                     href="./pawapo-QC.pptx"
-                    download
+                    data-filename="pawapo-QC.pptx"
                 >
-                    <span class="download-icon">↓</span>
+                    <span class="download-icon">🔒</span>
                     ダウンロード
                 </a>
 
@@ -511,11 +688,11 @@
                 </p>
 
                 <a
-                    class="download-button"
+                    class="download-button js-protected-download"
                     href="./病院事務の業務イラスト.png"
-                    download
+                    data-filename="病院事務の業務イラスト.png"
                 >
-                    <span class="download-icon">↓</span>
+                    <span class="download-icon">🔒</span>
                     画像をダウンロード
                 </a>
 
@@ -561,11 +738,11 @@
                 </p>
 
                 <a
-                    class="download-button"
+                    class="download-button js-protected-download"
                     href="./jrmm00u.ttc"
-                    download
+                    data-filename="jrmm00u.ttc"
                 >
-                    <span class="download-icon">↓</span>
+                    <span class="download-icon">🔒</span>
                     フォントをダウンロード
                 </a>
 
@@ -577,10 +754,174 @@
 
 </main>
 
+<!-- =====================================
+     Password Protection Modal
+====================================== -->
+<div class="modal-overlay" id="passwordModal" aria-hidden="true">
+    <div class="modal-card" id="modalCard">
+        <h3 class="modal-title">
+            <span>🔒</span> パスワード保護
+        </h3>
+        <p class="modal-subtitle">
+            <span class="target-filename" id="modalTargetFilename"></span><br>
+            をダウンロードするにはパスワードを入力してください。
+        </p>
+
+        <form id="passwordForm" onsubmit="return false;">
+            <div class="input-group">
+                <input 
+                    type="password" 
+                    id="passwordInput" 
+                    class="password-input" 
+                    placeholder="パスワードを入力"
+                    autocomplete="current-password"
+                >
+                <button type="button" class="toggle-password" id="togglePasswordBtn" title="パスワードの表示/非表示">
+                    👁️
+                </button>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <span>⚠️</span> パスワードが正しくありません。
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="closeModalBtn">キャンセル</button>
+                <button type="submit" class="btn-submit" id="submitPasswordBtn">認証して保存</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <footer>
     FILE DOWNLOAD CENTER
 </footer>
+
+<script>
+    // 指定された正しいパスワード
+    const CORRECT_PASSWORD = "hinatachan";
+
+    // DOM要素の取得
+    const modal = document.getElementById("passwordModal");
+    const modalCard = document.getElementById("modalCard");
+    const passwordInput = document.getElementById("passwordInput");
+    const errorMessage = document.getElementById("errorMessage");
+    const modalTargetFilename = document.getElementById("modalTargetFilename");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const submitPasswordBtn = document.getElementById("submitPasswordBtn");
+    const togglePasswordBtn = document.getElementById("togglePasswordBtn");
+    const downloadButtons = document.querySelectorAll(".js-protected-download");
+
+    // 現在ダウンロード対象のデータ保持用
+    let pendingDownloadUrl = "";
+    let pendingFilename = "";
+
+    // モーダルを開く関数
+    function openModal(url, filename) {
+        pendingDownloadUrl = url;
+        pendingFilename = filename;
+
+        modalTargetFilename.textContent = filename;
+        passwordInput.value = "";
+        errorMessage.classList.remove("active");
+        modalCard.classList.remove("shake");
+        
+        modal.classList.add("active");
+        modal.setAttribute("aria-hidden", "false");
+        
+        // フォーカスをあてる
+        setTimeout(() => {
+            passwordInput.focus();
+        }, 100);
+    }
+
+    // モーダルを閉じる関数
+    function closeModal() {
+        modal.classList.remove("active");
+        modal.setAttribute("aria-hidden", "true");
+        pendingDownloadUrl = "";
+        pendingFilename = "";
+    }
+
+    // ダウンロードを実行する処理
+    function triggerDownload(url, filename) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // パスワード認証処理
+    function handlePasswordSubmit() {
+        const inputVal = passwordInput.value;
+
+        if (inputVal === CORRECT_PASSWORD) {
+            // パスワード認証成功
+            const targetUrl = pendingDownloadUrl;
+            const targetFilename = pendingFilename;
+
+            closeModal();
+
+            // 少し遅延させてスムーズにダウンロードを発火
+            setTimeout(() => {
+                triggerDownload(targetUrl, targetFilename);
+            }, 200);
+        } else {
+            // パスワード不一致エラー
+            errorMessage.classList.add("active");
+            
+            // シェイクアニメーション再トリガー
+            modalCard.classList.remove("shake");
+            void modalCard.offsetWidth; // リフロー発生させてアニメーションリセット
+            modalCard.classList.add("shake");
+
+            passwordInput.focus();
+            passwordInput.select();
+        }
+    }
+
+    // 各ダウンロードボタンのイベント設定
+    downloadButtons.forEach(button => {
+        button.addEventListener("click", function(e) {
+            e.preventDefault();
+            const url = this.getAttribute("href");
+            const filename = this.getAttribute("data-filename") || "download";
+            openModal(url, filename);
+        });
+    });
+
+    // キャンセルボタンクリック
+    closeModalBtn.addEventListener("click", closeModal);
+
+    // モーダル外枠クリックで閉じる
+    modal.addEventListener("click", function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // フォーム送信（Enterキー / ボタンクリック）
+    document.getElementById("passwordForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        handlePasswordSubmit();
+    });
+
+    // パスワードの表示/非表示切替
+    togglePasswordBtn.addEventListener("click", function() {
+        const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+        passwordInput.setAttribute("type", type);
+        this.textContent = type === "password" ? "👁️" : "🙈";
+    });
+
+    // ESCキーでモーダルを閉じる
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" && modal.classList.contains("active")) {
+            closeModal();
+        }
+    });
+</script>
 
 </body>
 </html>
