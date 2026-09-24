@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>日にち計算アプリ</title>
 
-    <!-- アプリのアイコン設定 (icon-kuroneko.png) --->
+    <!-- アプリのアイコン設定 (icon-kuroneko.png) -->
     <link rel="icon" href="icon-kuroneko.png" type="image/png">
     <link rel="apple-touch-icon" href="icon-kuroneko.png">
 
@@ -210,6 +210,13 @@
             const todayObj = new Date();
             const currentYear = todayObj.getFullYear();
 
+            // 本日日付を MMDD 形式で取得するヘルパー関数
+            const getTodayMMDD = () => {
+                const mm = (todayObj.getMonth() + 1).toString().padStart(2, '0');
+                const dd = todayObj.getDate().toString().padStart(2, '0');
+                return mm + dd;
+            };
+
             return {
                 currentTab: 'span', // 初期タブ: 'span'(2日間の差), 'addsub'(日付加減算)
 
@@ -295,19 +302,23 @@
                     startRaw: '',
                     startYear: currentYear,
                     endRaw: '',
-                    endYear: currentYear,
+                    isNextYear: false, // 要望1: 終了日が同年(false)か翌年(true)か
                     includeEndDay: true, // 初日算入・両端入れ
                     clear() {
                         this.startRaw = '';
                         this.endRaw = '';
                         this.startYear = currentYear;
-                        this.endYear = currentYear;
+                        this.isNextYear = false;
                         this.includeEndDay = true;
                     }
                 },
+                // 終了日の年を取得（翌年選択時は開始年+1）
+                get spanEndYear() {
+                    return this.span.isNextYear ? (this.span.startYear + 1) : this.span.startYear;
+                },
                 get spanResult() {
                     const startD = this.parseMMDD(this.span.startRaw, this.span.startYear);
-                    const endD = this.parseMMDD(this.span.endRaw, this.span.endYear);
+                    const endD = this.parseMMDD(this.span.endRaw, this.spanEndYear);
 
                     if (!startD || !endD) {
                         return { valid: false, text: '開始日と終了日を数字4桁で入力してください' };
@@ -317,7 +328,7 @@
                     let diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
                     if (diffDays < 0) {
-                        return { valid: false, text: '終了日は開始日以降の日付を指定してください' };
+                        return { valid: false, text: '終了日は開始日以降の日付を指定してください（年をまたぐ場合は「翌年」を選択してください）' };
                     }
 
                     const actualDays = this.span.includeEndDay ? diffDays + 1 : diffDays;
@@ -336,16 +347,17 @@
 
                 // --------------------------------------------------
                 // 2. 日付加減算 (Add / Subtract Days)
+                // 要望2: デフォルト（基準日: 本日, 減算: sub, 日数: 8）
                 // --------------------------------------------------
                 addsub: {
-                    baseRaw: '',
+                    baseRaw: getTodayMMDD(), // 要望2: 基準日は本日
                     baseYear: currentYear,
-                    op: 'add', // 'add' or 'sub'
-                    daysNum: 8,
+                    op: 'sub',               // 要望2: 減算(マイナス)
+                    daysNum: 8,              // 要望2: 日数 8
                     clear() {
-                        this.baseRaw = '';
+                        this.baseRaw = getTodayMMDD();
                         this.baseYear = currentYear;
-                        this.op = 'add';
+                        this.op = 'sub';
                         this.daysNum = 8;
                     }
                 },
@@ -432,12 +444,10 @@
                 <i class="fa-solid fa-book-medical sidebar-link-icon"></i>
                 <span>医療用語辞典</span>
             </a>
-            <!-- 追加指定リンク 1 -->
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page2.html" class="sidebar-link">
                 <i class="fa-solid fa-calendar-day sidebar-link-icon text-blue-400"></i>
                 <span>日数計算</span>
             </a>
-            <!-- 追加指定リンク 2 -->
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page1.html" class="sidebar-link">
                 <i class="fa-solid fa-file-arrow-down sidebar-link-icon text-emerald-400"></i>
                 <span>データDL</span>
@@ -480,7 +490,7 @@
                 </template>
                 <template x-if="currentTab === 'addsub'">
                     <button @click="addsub.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
-                        <i class="fa-solid fa-rotate-left"></i> クリア
+                        <i class="fa-solid fa-rotate-left"></i> 初期状態に戻す
                     </button>
                 </template>
             </div>
@@ -526,7 +536,7 @@
                             <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplayDate(span.startRaw, span.startYear) ? '認識: ' + formatDisplayDate(span.startRaw, span.startYear) : ''"></span>
                         </div>
                         <div class="relative">
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.startRaw" placeholder="0401"
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.startRaw" placeholder="1231"
                                    class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
                             <button x-show="span.startRaw" @click="span.startRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
                                 <i class="fa-solid fa-circle-xmark text-lg"></i>
@@ -534,14 +544,31 @@
                         </div>
                     </div>
 
-                    <!-- End Date -->
+                    <!-- End Date (要望1: 同年/翌年選択トグルスイッチを追加) -->
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">2. 終了日 (MMDD)</label>
-                            <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplayDate(span.endRaw, span.endYear) ? '認識: ' + formatDisplayDate(span.endRaw, span.endYear) : ''"></span>
+                            
+                            <!-- 同年 / 翌年 切り替えトグルボタン -->
+                            <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button type="button" @click="span.isNextYear = false"
+                                        :class="!span.isNextYear ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+                                        class="px-2.5 py-1 rounded-md text-xs transition">
+                                    同年
+                                </button>
+                                <button type="button" @click="span.isNextYear = true"
+                                        :class="span.isNextYear ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+                                        class="px-2.5 py-1 rounded-md text-xs transition flex items-center gap-1">
+                                    <span>翌年</span>
+                                    <span class="text-[10px] bg-indigo-900 text-indigo-200 px-1 rounded">+1年</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-right mb-1">
+                            <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplayDate(span.endRaw, spanEndYear) ? '認識: ' + formatDisplayDate(span.endRaw, spanEndYear) : ''"></span>
                         </div>
                         <div class="relative">
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.endRaw" placeholder="0430"
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.endRaw" placeholder="0101"
                                    class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
                             <button x-show="span.endRaw" @click="span.endRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
                                 <i class="fa-solid fa-circle-xmark text-lg"></i>
@@ -595,12 +622,13 @@
 
         <!-- ==================================================== -->
         <!-- 2. 日付加減算 (基準日 ± 〇日) -->
+        <!-- 要望2: 基準日は本日, 減算(マイナス), 日数: 8 日 -->
         <!-- ==================================================== -->
         <div x-show="currentTab === 'addsub'" x-transition:enter="transition ease-out duration-150">
             <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
                 <div class="bg-slate-950/90 text-slate-200 px-5 py-2.5 flex justify-between items-center border-b border-slate-800">
                     <span class="text-xs sm:text-sm font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-bolt text-teal-400"></i> 数字4桁を入力 (例: 0501)
+                        <i class="fa-solid fa-bolt text-teal-400"></i> 数字4桁を入力 (デフォルト: 本日/減算/8日)
                     </span>
                     <span class="text-[11px] text-slate-400 font-mono">日付加減算</span>
                 </div>
@@ -634,7 +662,7 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">3. 日数</label>
                             <div class="relative">
-                                <input type="number" inputmode="numeric" x-model="addsub.daysNum" placeholder="30"
+                                <input type="number" inputmode="numeric" x-model="addsub.daysNum" placeholder="8"
                                        class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-xl font-mono focus:outline-none focus:border-teal-500 transition shadow-inner placeholder-slate-700">
                                 <span class="absolute right-3 top-2.5 text-slate-500 font-bold text-sm">日</span>
                             </div>
@@ -710,60 +738,47 @@
             if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
         });
 
-        // PWA Dynamic Manifest Injection
+        // PWA Dynamic Manifest Injection (Data URL)
         (function() {
-            const manifestData = {
-                name: "日にち計算ツール",
-                short_name: "日数計算",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#0b0f19",
-                theme_color: "#0f172a",
-                icons: [
-                    {
-                        src: "icon-kuroneko.png",
-                        sizes: "192x192",
-                        type: "image/png"
-                    },
-                    {
-                        src: "icon-kuroneko.png",
-                        sizes: "512x512",
-                        type: "image/png"
-                    }
-                ]
-            };
-            const stringManifest = JSON.stringify(manifestData);
-            const blob = new Blob([stringManifest], {type: 'application/json'});
-            const manifestUrl = URL.createObjectURL(blob);
-            const manifestElem = document.getElementById('pwaManifest');
-            if (manifestElem) {
-                manifestElem.setAttribute('href', manifestUrl);
+            try {
+                const manifestData = {
+                    name: "日にち計算ツール",
+                    short_name: "日数計算",
+                    start_url: "./",
+                    display: "standalone",
+                    background_color: "#0b0f19",
+                    theme_color: "#0f172a",
+                    icons: [
+                        {
+                            src: "icon-kuroneko.png",
+                            sizes: "192x192",
+                            type: "image/png"
+                        },
+                        {
+                            src: "icon-kuroneko.png",
+                            sizes: "512x512",
+                            type: "image/png"
+                        }
+                    ]
+                };
+                const stringManifest = JSON.stringify(manifestData);
+                const manifestUrl = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(stringManifest);
+                const manifestElem = document.getElementById('pwaManifest');
+                if (manifestElem) {
+                    manifestElem.setAttribute('href', manifestUrl);
+                }
+            } catch (e) {
+                console.warn('Manifest injection skipped:', e);
             }
         })();
 
-        // PWA Service Worker Registration
-        if ('serviceWorker' in navigator) {
+        // Safe PWA Service Worker Registration
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:') && !window.location.href.startsWith('blob:')) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'date-calc-v1';
-                    self.addEventListener('install', (e) => {
-                        self.skipWaiting();
-                    });
-                    self.addEventListener('activate', (e) => {
-                        e.waitUntil(clients.claim());
-                    });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            fetch(e.request).catch(() => caches.match(e.request))
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).then(() => {
+                navigator.serviceWorker.register('./sw.js').then(() => {
                     console.log('Service Worker Registered');
                 }).catch(err => {
-                    console.error('Service Worker registration failed:', err);
+                    console.info('Service Worker registration skipped or sw.js not present:', err.message);
                 });
             });
         }
