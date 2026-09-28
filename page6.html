@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>時間計算アプリ</title>
 
-    <!-- 要望１：アプリのアイコン設定 (icon-kuroneko.png) -->
+    <!-- アプリのアイコン設定 (icon-kuroneko.png) -->
     <link rel="icon" href="icon-kuroneko.png" type="image/png">
     <link rel="apple-touch-icon" href="icon-kuroneko.png">
 
@@ -52,7 +52,6 @@
     </script>
 
     <style>
-        /* カラー変数（移植元コードより） */
         :root {
             --bg: #0f1219;
             --panel: #181d28;
@@ -214,6 +213,17 @@
                     message: ''
                 },
 
+                // 今日の日付文字列を計算 (年月日・曜日)
+                get todayDateString() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth() + 1;
+                    const date = now.getDate();
+                    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+                    const dayName = dayNames[now.getDay()];
+                    return `${year}年${month}月${date}日 (${dayName})`;
+                },
+
                 // 共通: 数字4桁をHH:MM表示に変換
                 formatDisplay(val) {
                     if (!val) return '';
@@ -232,7 +242,7 @@
                     return `${formattedHH}:${formattedMM}`;
                 },
 
-                // 共通: コピー機能（iframe / Google Sites 対応）
+                // 共通: コピー機能
                 copyText(text) {
                     if (!text) return;
                     if (navigator.clipboard && window.isSecureContext) {
@@ -517,17 +527,17 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between" x-data="combinedApp()">
 
-    <!-- 要望２：ハンバーガーボタン -->
+    <!-- ハンバーガーボタン -->
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
         <div class="hamburger-bar"></div>
         <div class="hamburger-bar"></div>
         <div class="hamburger-bar"></div>
     </button>
 
-    <!-- 要望２：サイドバーオーバーレイ -->
+    <!-- サイドバーオーバーレイ -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- 要望２：サイドバー本体 -->
+    <!-- サイドバー本体 -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">
@@ -564,12 +574,10 @@
                 <i class="fa-solid fa-book-medical sidebar-link-icon"></i>
                 <span>医療用語辞典</span>
             </a>
-            <!-- 追加指定リンク 1 -->
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page2.html" class="sidebar-link">
                 <i class="fa-solid fa-calendar-day sidebar-link-icon text-blue-400"></i>
                 <span>日数計算</span>
             </a>
-            <!-- 追加指定リンク 2 -->
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page1.html" class="sidebar-link">
                 <i class="fa-solid fa-file-arrow-down sidebar-link-icon text-emerald-400"></i>
                 <span>データDL</span>
@@ -592,7 +600,6 @@
 
     <!-- Header & App Navigation -->
     <header class="bg-slate-900 text-white shadow-lg border-b border-slate-800 sticky top-0 z-40">
-        <!-- 左上のハンバーガーボタンと被らないよう pl-14 で適切な余白を確保 -->
         <div class="max-w-2xl mx-auto pl-14 pr-3 py-2.5">
             <!-- App Title & Global Action -->
             <div class="flex justify-between items-center mb-2">
@@ -896,7 +903,24 @@
         <!-- ==================================================== -->
         <!-- 3. Work Time Calculator -->
         <!-- ==================================================== -->
-        <div x-show="currentTab === 'work'" x-transition:enter="transition ease-out duration-150">
+        <div x-show="currentTab === 'work'" x-transition:enter="transition ease-out duration-150" class="space-y-3">
+            
+            <!-- 要望２：勤務・残業時間計算の画面の一番上に、本日の日にち（年月日・曜日）を表示 -->
+            <div class="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 rounded-2xl p-3 sm:p-4 border border-indigo-800/50 shadow-lg flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                        <i class="fa-regular fa-calendar-check text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-indigo-300/80 font-bold block leading-none mb-1">本日の日付</span>
+                        <span class="text-base sm:text-lg font-black text-white font-mono tracking-wide" x-text="todayDateString"></span>
+                    </div>
+                </div>
+                <span class="text-xs bg-indigo-900/60 text-indigo-200 font-bold px-2.5 py-1 rounded-lg border border-indigo-700/50">
+                    本日勤務
+                </span>
+            </div>
+
             <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
                 <div class="bg-slate-950/90 text-slate-200 px-5 py-2.5 flex justify-between items-center border-b border-slate-800">
                     <span class="text-xs sm:text-sm font-bold flex items-center gap-2">
@@ -957,17 +981,17 @@
                         </div>
                     </div>
 
-                    <!-- Overtime Start -->
-                    <div>
+                    <!-- 要望１：残業開始時刻をフォント小さめ・グレー色に変更 -->
+                    <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider">4. 残業開始時刻</label>
-                            <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplay(work.otStartRaw) ? '認識: ' + formatDisplay(work.otStartRaw) : ''"></span>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">4. 残業開始時刻</label>
+                            <span class="text-xs font-mono font-medium text-slate-400" x-text="formatDisplay(work.otStartRaw) ? '認識: ' + formatDisplay(work.otStartRaw) : ''"></span>
                         </div>
                         <div class="relative">
                             <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="work.otStartRaw" placeholder="1607"
-                                   class="w-full bg-slate-950 font-bold text-white border border-indigo-900/80 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
-                            <button x-show="work.otStartRaw" @click="work.otStartRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
-                                <i class="fa-solid fa-circle-xmark text-lg"></i>
+                                   class="w-full bg-slate-950/80 font-bold text-slate-300 border border-slate-800 rounded-lg pl-3 pr-8 py-1.5 text-base font-mono focus:outline-none focus:border-slate-600 transition shadow-inner placeholder-slate-700 tracking-wider">
+                            <button x-show="work.otStartRaw" @click="work.otStartRaw = ''" class="absolute right-2.5 top-2.5 text-slate-600 hover:text-slate-400">
+                                <i class="fa-solid fa-circle-xmark text-sm"></i>
                             </button>
                         </div>
                     </div>
@@ -1047,7 +1071,7 @@
                     <div class="flex items-center justify-end space-x-2">
                         <div class="flex mr-auto bg-slate-950 p-1 rounded-xl border border-slate-800">
                             <button @click="calc.op = '+'" :class="calc.op === '+' ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition">＋</button>
-                            <button @click="calc.op = '-'" :class="calc.op === '-' ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition">－</button>
+                            <button @click="calc.op = '-'" :class="calc.op === '-'" ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition">－</button>
                         </div>
 
                         <button @click="calc.setFocus('h2')" 
@@ -1114,9 +1138,9 @@
         医療・業務時間計算 統合アプリケーション
     </footer>
 
-    <!-- 要望２：JavaScript制御 & PWA設定 -->
+    <!-- JavaScript制御 & PWA設定 -->
     <script>
-        // 要望２：ハンバーガーメニューの開閉機能
+        // ハンバーガーメニューの開閉機能
         document.addEventListener("DOMContentLoaded", function() {
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const sidebar = document.getElementById("sidebar");
@@ -1178,7 +1202,7 @@
             }
         })();
 
-        // PWA Service Worker Registration (Inline Data URL)
+        // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
