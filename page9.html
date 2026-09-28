@@ -16,7 +16,10 @@
                         cardbg: '#1e293b',
                         bordercolor: '#334155',
                         accent: '#38bdf8',
-                        accentHover: '#0284c7'
+                        accentHover: '#0284c7',
+                        /* サイドバー用のテーマカラー定義 */
+                        panel: '#181d28',
+                        panelLight: '#222836'
                     }
                 }
             }
@@ -39,12 +42,183 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #475569;
         }
+
+        /* ハンバーガーボタン */
+        .hamburger-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            background: rgba(24, 29, 40, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .hamburger-btn:active {
+            transform: scale(0.95);
+        }
+        .hamburger-bar {
+            width: 20px;
+            height: 2px;
+            background-color: #f1f5f9;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* サイドバー オーバーレイ */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* サイドバー本体 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(280px, 80vw);
+            height: 100vh;
+            background: #181d28;
+            border-right: 1px solid #334155;
+            z-index: 1002;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        .sidebar-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: #9da6b5;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .sidebar-nav {
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #f1f5f9;
+            text-decoration: none;
+            border-radius: 10px;
+            background: #222836;
+            border: 1px solid #334155;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
+        }
+        .sidebar-link:hover {
+            border-color: #657dff;
+            background: rgba(101, 125, 255, 0.15);
+        }
+        .sidebar-link:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body class="bg-darkbg text-slate-100 min-h-screen flex flex-col font-sans antialiased">
 
-    <!-- Header Navbar -->
-    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-bordercolor px-4 py-3 shadow-lg">
+    <!-- ハンバーガーボタン -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く">
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+        <div class="hamburger-bar"></div>
+    </button>
+
+    <!-- サイドバーオーバーレイ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- サイドバー -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <span>仕事ツール</span>
+            </div>
+            <button class="sidebar-close" id="sidebarCloseBtn" aria-label="閉じる">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/index.html" class="sidebar-link">
+                <span>カレンダー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page10.html" class="sidebar-link">
+                <span>タイマー</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page3.html" class="sidebar-link">
+                <span>負担額</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page6.html" class="sidebar-link">
+                <span>時間計算</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page7.html" class="sidebar-link">
+                <span>和暦西暦</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page8.html" class="sidebar-link">
+                <span>電卓</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page9.html" class="sidebar-link">
+                <span>医療用語辞典</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page2.html" class="sidebar-link">
+                <span>日数計算</span>
+            </a>
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page1.html" class="sidebar-link">
+                <span>データDL</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Header Navbar (ハンバーガーボタン用に左側に余白 pl-14 を確保) -->
+    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-bordercolor px-4 py-3 shadow-lg pl-14 sm:pl-4">
         <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center space-x-3">
                 <div class="bg-gradient-to-br from-cyan-500 to-blue-600 p-2.5 rounded-xl text-white shadow-md">
@@ -139,6 +313,35 @@
     </footer>
 
     <script>
+        // サイドバー制御用JavaScript
+        const hamburgerBtn = document.getElementById("hamburgerBtn");
+        const sidebar = document.getElementById("sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+
+        function toggleSidebar() {
+            const isActive = sidebar.classList.contains("active");
+            if (isActive) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function openSidebar() {
+            sidebar.classList.add("active");
+            sidebarOverlay.classList.add("active");
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove("active");
+            sidebarOverlay.classList.remove("active");
+        }
+
+        hamburgerBtn.addEventListener("click", toggleSidebar);
+        sidebarOverlay.addEventListener("click", closeSidebar);
+        sidebarCloseBtn.addEventListener("click", closeSidebar);
+
         // Dictionary Database
         const dictionaryData = [
             // A
