@@ -457,14 +457,14 @@
                     };
                 },
 
-                // 4. Time Calculator App State & Functions (モード拡張: duration, time, diff)
+                // 4. Time Calculator App State & Functions (筆算)
                 calc: {
-                    mode: 'duration', // 'duration': 時間計算, 'time': 時刻計算(加減), 'diff': 時刻間差分(経過時間)
-                    h1: '0',
-                    m1: '0',
+                    mode: 'time', // 'time': 時刻±時間計算, 'duration': 時間量の加減, 'diff': 時刻間差分(経過時間)
+                    h1: '14',
+                    m1: '30',
                     op: '+',
-                    h2: '0',
-                    m2: '0',
+                    h2: '2',
+                    m2: '45',
                     isNextDay: false, // 時刻間計算時の翌日フラグ
                     activeField: 'h2',
                     pressNum(num) {
@@ -484,6 +484,9 @@
                         let val = this[this.activeField] || '';
                         if (val.length > 0) {
                             this[this.activeField] = val.slice(0, -1);
+                        }
+                        if (this[this.activeField] === '') {
+                            this[this.activeField] = '0';
                         }
                     },
                     clear() {
@@ -553,7 +556,7 @@
                             hmText: this.formatMins(diff),
                             minutesText: `${diff}分`,
                             decimalText: (diff / 60).toFixed(2),
-                            text: diff >= 0 ? `${diff}分 (${this.formatMins(diff)})` : '時刻設定を確認してください'
+                            text: diff >= 0 ? `${this.formatMins(diff)} (${diff}分)` : '時刻設定を確認してください'
                         };
                     } else if (this.calc.mode === 'time') {
                         let total = this.calc.op === '+' ? mins1 + mins2 : mins1 - mins2;
@@ -578,6 +581,27 @@
                 }
             };
         }
+
+        // ハンバーガーメニュー制御スクリプト
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+            function openSidebar() {
+                if (sidebar) sidebar.classList.add('active');
+                if (sidebarOverlay) sidebarOverlay.classList.add('active');
+            }
+            function closeSidebar() {
+                if (sidebar) sidebar.classList.remove('active');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+            }
+
+            if (hamburgerBtn) hamburgerBtn.addEventListener('click', openSidebar);
+            if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+        });
     </script>
 </head>
 <body class="min-h-screen flex flex-col justify-between" x-data="combinedApp()">
@@ -653,7 +677,6 @@
         <span x-text="toast.message" class="text-sm font-bold"></span>
     </div>
 
-    <!-- Header & App Navigation -->
     <header class="bg-slate-900 text-white shadow-lg border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-2xl mx-auto pl-14 pr-3 py-2.5">
             <!-- App Title & Global Action -->
@@ -1068,7 +1091,7 @@
                         </template>
 
                         <template x-if="workResult.valid">
-                            <div class="pt-3">
+                            <div class="pt-3 space-y-3">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30">
                                         <div class="text-xs font-bold text-amber-400 uppercase tracking-wider">残業時間</div>
@@ -1076,17 +1099,17 @@
                                         <div class="text-xs text-amber-400/80 font-mono mt-0.5" x-text="`(${workResult.overtimeDecimal}時間)`"></div>
                                     </div>
                                     <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30">
-                                        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">実労働時間 (合計)</div>
-                                        <div class="text-3xl font-black font-mono mt-1 text-indigo-300" x-text="workResult.totalWorkText"></div>
-                                        <div class="text-xs text-indigo-400/80 font-mono mt-0.5" x-text="`(${workResult.totalWorkDecimal}時間)`"></div>
+                                        <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider">実労働時間</div>
+                                        <div class="text-3xl font-black font-mono mt-1 text-indigo-200" x-text="workResult.totalWorkText"></div>
+                                        <div class="text-xs text-indigo-300/80 font-mono mt-0.5" x-text="`(${workResult.totalWorkDecimal}時間)`"></div>
                                     </div>
                                 </div>
                             </div>
                         </template>
 
-                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 mt-3 flex justify-between items-center">
-                            <span>時刻は数字4桁で簡単入力</span>
-                            <span x-show="work.isNextDay" class="text-amber-400 font-bold">※ 翌日退勤適用中 (+24h)</span>
+                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 flex justify-between items-center mt-2">
+                            <span>※ 実労働時間 ＝ 拘束時間 － 休憩時間</span>
+                            <span x-show="work.isNextDay" class="text-amber-400 font-bold">※ 翌日計算適用中 (+24h)</span>
                         </div>
                     </div>
                 </div>
@@ -1094,278 +1117,182 @@
         </div>
 
         <!-- ==================================================== -->
-        <!-- 4. Time Calculator (Handwriting Style with 3-Way Mode Switch) -->
+        <!-- 4. Time Calculator (筆算モード) -->
         <!-- ==================================================== -->
-        <div x-show="currentTab === 'calc'" x-transition:enter="transition ease-out duration-150" class="max-w-md mx-auto space-y-4">
-            <div class="bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-2xl border border-slate-800 space-y-3 relative">
-                
-                <!-- ヘッダー＆モード切り替えセレクト要素（3項目切替） -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800">
-                    <div class="text-[11px] font-bold text-slate-400 flex items-center">
-                        <i class="fa-solid fa-pen-field text-amber-400 mr-1.5 text-sm"></i>
-                        <span>枠をタップして数字を入力</span>
-                    </div>
-
-                    <!-- セレクトボックスによるモード切替 -->
-                    <div class="flex items-center space-x-1.5">
-                        <span class="text-xs text-slate-400 font-bold whitespace-nowrap">モード:</span>
-                        <select x-model="calc.mode" 
-                                class="bg-slate-950 text-amber-300 text-xs font-bold border border-slate-700 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-500 shadow-inner">
-                            <option value="duration">時間計算 (時間/分)</option>
-                            <option value="time">時刻計算 (時刻±時間)</option>
-                            <option value="diff">時刻間差分 (何時〜何時)</option>
-                        </select>
-                    </div>
+        <div x-show="currentTab === 'calc'" x-transition:enter="transition ease-out duration-150" class="space-y-4">
+            <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <!-- Calc Mode Header Switch -->
+                <div class="bg-slate-950 p-2 border-b border-slate-800 grid grid-cols-3 gap-1">
+                    <button @click="calc.mode = 'time'"
+                            :class="calc.mode === 'time' ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+                            class="py-2 px-1 rounded-lg text-xs transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <i class="fa-solid fa-regular fa-clock"></i>
+                        <span>時刻 ＋ 時間</span>
+                    </button>
+                    <button @click="calc.mode = 'duration'"
+                            :class="calc.mode === 'duration' ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+                            class="py-2 px-1 rounded-lg text-xs transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                        <span>時間 ＋ 時間</span>
+                    </button>
+                    <button @click="calc.mode = 'diff'"
+                            :class="calc.mode === 'diff' ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+                            class="py-2 px-1 rounded-lg text-xs transition text-center flex flex-col sm:flex-row items-center justify-center gap-1">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                        <span>時刻間 差分</span>
+                    </button>
                 </div>
 
-                <div class="py-2 space-y-3 font-mono">
-
-                    <!-- モードごとのサブ説明 -->
-                    <div class="text-xs text-slate-400 font-sans font-bold flex justify-between items-center">
-                        <span x-show="calc.mode === 'duration'">（時間・分 の足し引き）</span>
-                        <span x-show="calc.mode === 'time'">（基準時刻 ± 指定時間）</span>
-                        <span x-show="calc.mode === 'diff'" class="text-amber-400">（開始時刻 〜 終了時刻 の経過時間）</span>
-
-                        <!-- 時刻間差分モード時の「翌日」切替ボタン -->
-                        <template x-if="calc.mode === 'diff'">
-                            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 font-sans">
-                                <button @click="calc.isNextDay = false" :class="!calc.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-0.5 rounded text-[11px] transition">同日</button>
-                                <button @click="calc.isNextDay = true" :class="calc.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-0.5 rounded text-[11px] transition flex items-center gap-0.5">
-                                    <span>翌日</span><span class="text-[9px] bg-amber-950 px-1 rounded border border-amber-500/30">+24h</span>
-                                </button>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Line 1: 元の時間 / 基準時刻 / 開始時刻 -->
-                    <div class="flex items-center justify-end space-x-2">
-                        <span class="text-xs text-slate-400 font-sans font-bold mr-auto" 
-                              x-text="calc.mode === 'diff' ? '【開始】' : (calc.mode === 'time' ? '【基準時刻】' : '【元の時間】')"></span>
-                        
-                        <button @click="calc.setFocus('h1')" 
-                                :class="calc.activeField === 'h1' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
-                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
-                            <span class="text-2xl font-black text-white" x-text="calc.h1 || '0'"></span>
-                        </button>
-                        <span class="text-sm font-bold text-slate-300 font-sans" x-text="calc.mode === 'duration' ? '時間' : '時'"></span>
-
-                        <button @click="calc.setFocus('m1')" 
-                                :class="calc.activeField === 'm1' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
-                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
-                            <span class="text-2xl font-black text-white" x-text="calc.m1 || '0'"></span>
-                        </button>
-                        <span class="text-sm font-bold text-slate-300 font-sans">分</span>
-                    </div>
-
-                    <!-- Line 2: 加減する時間 / 終了時刻 -->
-                    <div class="flex items-center justify-end space-x-2">
-                        
-                        <!-- モードに応じた演算子 / ラベル表示 -->
-                        <div class="mr-auto">
-                            <template x-if="calc.mode !== 'diff'">
-                                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                                    <button @click="calc.op = '+'" :class="calc.op === '+' ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition" :title="calc.mode === 'time' ? '何分後' : '足す'">＋</button>
-                                    <button @click="calc.op = '-'" :class="calc.op === '-'" ? 'bg-amber-600 text-white font-black' : 'text-slate-500 hover:text-slate-300'" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center transition" :title="calc.mode === 'time' ? '何分前' : '引く'">－</button>
-                                </div>
-                            </template>
+                <div class="p-4 sm:p-5 space-y-4">
+                    <!-- 筆算風ディスプレイ -->
+                    <div class="bg-slate-950 rounded-2xl p-4 border-2 border-amber-500/30 shadow-inner">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
+                                <i class="fa-solid fa-pen-nib"></i> 筆算ディスプレイ
+                            </span>
+                            <!-- 翌日切り替え（時刻差分モード時） -->
                             <template x-if="calc.mode === 'diff'">
-                                <span class="text-xs text-slate-400 font-sans font-bold">【終了】</span>
+                                <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                                    <button @click="calc.isNextDay = false" :class="!calc.isNextDay ? 'bg-amber-600 text-white font-bold' : 'text-slate-400'" class="px-2 py-0.5 rounded text-[10px]">同日</button>
+                                    <button @click="calc.isNextDay = true" :class="calc.isNextDay ? 'bg-amber-600 text-white font-bold' : 'text-slate-400'" class="px-2 py-0.5 rounded text-[10px]">翌日(+24h)</button>
+                                </div>
                             </template>
                         </div>
 
-                        <button @click="calc.setFocus('h2')" 
-                                :class="calc.activeField === 'h2' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
-                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
-                            <span class="text-2xl font-black text-white" x-text="calc.h2 || '0'"></span>
-                        </button>
-                        <span class="text-sm font-bold text-slate-300 font-sans" x-text="calc.mode === 'duration' ? '時間' : '時'"></span>
-
-                        <button @click="calc.setFocus('m2')" 
-                                :class="calc.activeField === 'm2' ? 'border-amber-500 bg-amber-950/40 ring-2 ring-amber-500/50' : 'border-slate-700 bg-slate-950'"
-                                class="px-3 py-2 rounded-xl border text-right min-w-[70px] transition">
-                            <span class="text-2xl font-black text-white" x-text="calc.m2 || '0'"></span>
-                        </button>
-                        <span class="text-sm font-bold text-slate-300 font-sans">分</span>
-                    </div>
-
-                    <div class="border-b-2 border-slate-600 my-1"></div>
-
-                    <!-- Line 3 Result -->
-                    <div class="flex items-center justify-between pt-1">
-                        <span class="text-xl font-black text-amber-400 font-sans" x-text="calc.mode === 'diff' ? '経過' : '＝'"></span>
-                        
-                        <!-- 時間計算モード時の結果 -->
-                        <template x-if="calc.mode === 'duration'">
-                            <div class="flex items-baseline space-x-2">
-                                <span class="text-3xl sm:text-4xl font-black text-amber-300" x-text="calcResult.hmText"></span>
-                                <span class="text-xs text-slate-400 font-sans" x-text="`(${calcResult.decimalText}時間)`"></span>
+                        <!-- 筆算領域 -->
+                        <div class="space-y-2 font-mono text-right py-2">
+                            <!-- 上の段 (h1 / m1) -->
+                            <div class="flex justify-end items-baseline gap-2">
+                                <!-- 上の段: 時 -->
+                                <div @click="calc.setFocus('h1')"
+                                     :class="calc.activeField === 'h1' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
+                                     class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[90px] justify-end">
+                                    <span class="text-2xl sm:text-3xl font-black" x-text="calc.h1"></span>
+                                    <span class="text-xs font-sans text-slate-400 font-bold" x-text="calc.mode === 'duration' ? '時間' : '時'"></span>
+                                </div>
+                                <!-- 上の段: 分 -->
+                                <div @click="calc.setFocus('m1')"
+                                     :class="calc.activeField === 'm1' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
+                                     class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[80px] justify-end">
+                                    <span class="text-2xl sm:text-3xl font-black" x-text="calc.m1"></span>
+                                    <span class="text-xs font-sans text-slate-400 font-bold">分</span>
+                                </div>
                             </div>
-                        </template>
 
-                        <!-- 時刻計算モード時の結果 -->
-                        <template x-if="calc.mode === 'time'">
-                            <div class="flex items-baseline space-x-2">
-                                <span class="text-3xl sm:text-4xl font-black text-amber-300" x-text="calcResult.text"></span>
-                                <span class="text-xs text-slate-400 font-mono" x-text="`(${calcResult.subText})`"></span>
-                            </div>
-                        </template>
+                            <!-- 演算子 + 下の段 -->
+                            <div class="flex justify-between items-center gap-2 pt-1">
+                                <!-- 演算子ボタン (時刻差分モード以外) -->
+                                <div>
+                                    <template x-if="calc.mode !== 'diff'">
+                                        <button @click="calc.op = calc.op === '+' ? '-' : '+'" 
+                                                class="w-12 h-12 bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/50 rounded-xl text-amber-300 text-2xl font-black flex items-center justify-center transition active:scale-95 shadow">
+                                            <span x-text="calc.op"></span>
+                                        </button>
+                                    </template>
+                                    <template x-if="calc.mode === 'diff'">
+                                        <span class="text-xs text-slate-500 font-sans font-bold px-2">〜</span>
+                                    </template>
+                                </div>
 
-                        <!-- 時刻間差分（何分経過）モード時の結果 -->
-                        <template x-if="calc.mode === 'diff'">
-                            <div class="flex items-baseline space-x-2">
-                                <template x-if="calcResult.isValid">
-                                    <div class="flex items-baseline space-x-2">
-                                        <span class="text-3xl sm:text-4xl font-black text-amber-300" x-text="calcResult.minutesText"></span>
-                                        <span class="text-xs text-slate-400 font-sans" x-text="`(${calcResult.hmText} / ${calcResult.decimalText}h)`"></span>
+                                <!-- 下の段 (h2 / m2) -->
+                                <div class="flex justify-end items-baseline gap-2">
+                                    <!-- 下の段: 時 / 時間 -->
+                                    <div @click="calc.setFocus('h2')"
+                                         :class="calc.activeField === 'h2' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
+                                         class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[90px] justify-end">
+                                        <span class="text-2xl sm:text-3xl font-black" x-text="calc.h2"></span>
+                                        <!-- ★要望対応箇所: 時刻計算モード (calc.mode === 'time') または 時間計算 (duration) では「時間」表記にする！ -->
+                                        <span class="text-xs font-sans text-slate-400 font-bold" 
+                                              x-text="(calc.mode === 'time' || calc.mode === 'duration') ? '時間' : '時'"></span>
                                     </div>
-                                </template>
-                                <template x-if="!calcResult.isValid">
-                                    <span class="text-sm font-bold text-rose-400 font-sans" x-text="calcResult.text"></span>
-                                </template>
+                                    <!-- 下の段: 分 -->
+                                    <div @click="calc.setFocus('m2')"
+                                         :class="calc.activeField === 'm2' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
+                                         class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[80px] justify-end">
+                                        <span class="text-2xl sm:text-3xl font-black" x-text="calc.m2"></span>
+                                        <span class="text-xs font-sans text-slate-400 font-bold">分</span>
+                                    </div>
+                                </div>
                             </div>
-                        </template>
+
+                            <!-- 筆算の横線 -->
+                            <div class="border-b-2 border-slate-700 my-2"></div>
+
+                            <!-- 筆算の答え表示 -->
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-xs font-sans font-bold text-slate-500">計算結果</span>
+                                <div class="text-right">
+                                    <div class="text-3xl sm:text-4xl font-black text-amber-400" x-text="calcResult.text"></div>
+                                    <template x-if="calcResult.subText">
+                                        <div class="text-xs text-slate-400 font-mono" x-text="`(${calcResult.subText})`"></div>
+                                    </template>
+                                    <template x-if="calcResult.decimalText">
+                                        <div class="text-xs text-slate-400 font-mono" x-text="`＝ ${calcResult.decimalText}時間`"></div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- テンキーパッド (入力補助) -->
+                    <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between items-center text-xs text-slate-400 px-1 mb-1 font-bold">
+                            <span>選択中: 
+                                <span class="text-amber-400 font-mono font-bold" 
+                                      x-text="calc.activeField === 'h1' ? '上の段 (時/時間)' : 
+                                             calc.activeField === 'm1' ? '上の段 (分)' : 
+                                             calc.activeField === 'h2' ? ((calc.mode === 'time' || calc.mode === 'duration') ? '下の段 (時間)' : '下の段 (時)') : '下の段 (分)'"></span>
+                            </span>
+                            <button @click="copyText(calcResult.text)" class="text-amber-400 hover:underline flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> 答えをコピー
+                            </button>
+                        </div>
+
+                        <!-- テンキーグリッド -->
+                        <div class="grid grid-cols-4 gap-1.5 font-mono">
+                            <button @click="calc.pressNum(7)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">7</button>
+                            <button @click="calc.pressNum(8)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">8</button>
+                            <button @click="calc.pressNum(9)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">9</button>
+                            <button @click="calc.backspace()" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 font-bold text-base p-3 rounded-xl transition flex items-center justify-center active:scale-95 shadow">
+                                <i class="fa-solid fa-delete-left"></i>
+                            </button>
+
+                            <button @click="calc.pressNum(4)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">4</button>
+                            <button @click="calc.pressNum(5)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">5</button>
+                            <button @click="calc.pressNum(6)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">6</button>
+                            <button @click="calc.clear(); showToast('クリアしました')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs p-3 rounded-xl transition active:scale-95 shadow font-sans">
+                                AC
+                            </button>
+
+                            <button @click="calc.pressNum(1)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">1</button>
+                            <button @click="calc.pressNum(2)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">2</button>
+                            <button @click="calc.pressNum(3)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">3</button>
+                            <!-- 次のフィールドへ移動 -->
+                            <button @click="
+                                calc.activeField = calc.activeField === 'h1' ? 'm1' : 
+                                                  calc.activeField === 'm1' ? 'h2' : 
+                                                  calc.activeField === 'h2' ? 'm2' : 'h1'
+                            " class="bg-amber-600/30 hover:bg-amber-600/50 border border-amber-500/40 text-amber-300 font-bold text-xs p-3 rounded-xl transition flex items-center justify-center active:scale-95 font-sans">
+                                次へ <i class="fa-solid fa-chevron-right ml-1"></i>
+                            </button>
+
+                            <button @click="calc.pressNum(0)" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">0</button>
+                            <button @click="calc.pressNum('00')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-lg p-3 rounded-xl transition shadow">00</button>
+                            <button @click="calc.op = calc.op === '+' ? '-' : '+'" x-show="calc.mode !== 'diff'" class="bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xl p-3 rounded-xl transition active:scale-95 shadow">
+                                <span x-text="calc.op"></span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
-                    <span class="text-[11px] text-slate-400 font-sans" 
-                          x-text="calc.mode === 'diff' ? '※ 何時から何時までの経過分数を算出' : (calc.mode === 'time' ? '※ 何分後・何時間後の時刻を算出' : '※ 時間の足し算・引き算')"></span>
-                    <button @click="copyText(
-                                calc.mode === 'diff' ? (calcResult.isValid ? `${calcResult.minutesText} (${calcResult.hmText})` : '') :
-                                (calc.mode === 'time' ? `${calcResult.text} (${calcResult.subText})` : `${calcResult.hmText} (${calcResult.decimalText}時間)`)
-                            )" 
-                            class="bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow">
-                        <i class="fa-regular fa-copy"></i> 結果をコピー
-                    </button>
-                </div>
-            </div>
-
-            <!-- Keypad -->
-            <div class="bg-slate-900 rounded-2xl p-4 shadow-2xl border border-slate-800 space-y-3">
-                <div class="grid grid-cols-3 gap-2">
-                    <button @click="calc.clear(); showToast('クリアしました')" class="bg-rose-950/80 border border-rose-800/50 hover:bg-rose-900 text-rose-200 font-bold py-2.5 rounded-xl text-xs transition shadow">AC (クリア)</button>
-                    <button @click="calc.backspace()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition shadow flex items-center justify-center gap-1"><i class="fa-solid fa-backspace"></i> 消去</button>
-                    
-                    <!-- Mode/Op Fast Toggle Button -->
-                    <button @click="calc.mode = calc.mode === 'duration' ? 'time' : (calc.mode === 'time' ? 'diff' : 'duration')" 
-                            class="bg-amber-900/60 hover:bg-amber-800 text-amber-200 font-bold py-2.5 rounded-xl text-xs transition shadow border border-amber-500/30">
-                        モード切替
-                    </button>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button @click="calc.pressNum(7)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">7</button>
-                    <button @click="calc.pressNum(8)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">8</button>
-                    <button @click="calc.pressNum(9)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">9</button>
-                    <button @click="calc.pressNum(4)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">4</button>
-                    <button @click="calc.pressNum(5)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">5</button>
-                    <button @click="calc.pressNum(6)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">6</button>
-                    <button @click="calc.pressNum(1)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">1</button>
-                    <button @click="calc.pressNum(2)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">2</button>
-                    <button @click="calc.pressNum(3)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">3</button>
-                    <button @click="calc.pressNum(0)" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-2xl font-black py-3 rounded-xl font-mono shadow transition">0</button>
-                    <button @click="calc.pressNum('00')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white text-xl font-black py-3 rounded-xl font-mono shadow transition">00</button>
-                </div>
-            </div>
+            </section>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-950 text-slate-500 py-3 border-t border-slate-900 text-center text-xs">
-        医療・業務時間計算 統合アプリケーション
+    <footer class="bg-slate-950 border-t border-slate-900 py-4 text-center text-xs text-slate-500">
+        <p>© 時間計算統合ツール - 医療・業務支援</p>
     </footer>
-
-    <!-- JavaScript制御 & PWA設定 -->
-    <script>
-        // ハンバーガーメニューの開閉機能
-        document.addEventListener("DOMContentLoaded", function() {
-            const hamburgerBtn = document.getElementById("hamburgerBtn");
-            const sidebar = document.getElementById("sidebar");
-            const sidebarOverlay = document.getElementById("sidebarOverlay");
-            const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
-
-            function toggleSidebar() {
-                const isActive = sidebar.classList.contains("active");
-                if (isActive) {
-                    closeSidebar();
-                } else {
-                    openSidebar();
-                }
-            }
-
-            function openSidebar() {
-                sidebar.classList.add("active");
-                sidebarOverlay.classList.add("active");
-            }
-
-            function closeSidebar() {
-                sidebar.classList.remove("active");
-                sidebarOverlay.classList.remove("active");
-            }
-
-            if (hamburgerBtn) hamburgerBtn.addEventListener("click", toggleSidebar);
-            if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
-            if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
-        });
-
-        // Dynamic Manifest Injection for PWA
-        (function() {
-            const manifestData = {
-                name: "医療・業務時間計算統合ツール",
-                short_name: "時間計算",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#0b0f19",
-                theme_color: "#0f172a",
-                icons: [
-                    {
-                        src: "icon-kuroneko.png",
-                        sizes: "192x192",
-                        type: "image/png"
-                    },
-                    {
-                        src: "icon-kuroneko.png",
-                        sizes: "512x512",
-                        type: "image/png"
-                    }
-                ]
-            };
-            const stringManifest = JSON.stringify(manifestData);
-            const blob = new Blob([stringManifest], {type: 'application/json'});
-            const manifestUrl = URL.createObjectURL(blob);
-            const manifestElem = document.getElementById('pwaManifest');
-            if (manifestElem) {
-                manifestElem.setAttribute('href', manifestUrl);
-            }
-        })();
-
-        // PWA Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'time-calc-v4';
-                    self.addEventListener('install', (e) => {
-                        self.skipWaiting();
-                    });
-                    self.addEventListener('activate', (e) => {
-                        e.waitUntil(clients.claim());
-                    });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            fetch(e.request).catch(() => caches.match(e.request))
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).then(() => {
-                    console.log('Service Worker Registered');
-                }).catch(err => {
-                    console.error('Service Worker registration failed:', err);
-                });
-            });
-        }
-    </script>
 
 </body>
 </html>
