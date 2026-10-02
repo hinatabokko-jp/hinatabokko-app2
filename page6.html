@@ -460,13 +460,14 @@
                 // 4. Time Calculator App State & Functions (筆算)
                 calc: {
                     mode: 'time', // 'time': 時刻±時間計算, 'duration': 時間量の加減, 'diff': 時刻間差分(経過時間)
-                    h1: '14',
-                    m1: '30',
+                    // 要望対応: すべてのテキストボックスのデフォルトをNull(空文字)にする
+                    h1: '',
+                    m1: '',
                     op: '+',
-                    h2: '2',
-                    m2: '45',
+                    h2: '',
+                    m2: '',
                     isNextDay: false, // 時刻間計算時の翌日フラグ
-                    activeField: 'h2',
+                    activeField: 'h1',
                     pressNum(num) {
                         let val = this[this.activeField] || '';
                         if (val === '0') val = '';
@@ -485,15 +486,13 @@
                         if (val.length > 0) {
                             this[this.activeField] = val.slice(0, -1);
                         }
-                        if (this[this.activeField] === '') {
-                            this[this.activeField] = '0';
-                        }
                     },
                     clear() {
-                        this.h1 = '0';
-                        this.m1 = '0';
-                        this.h2 = '0';
-                        this.m2 = '0';
+                        // 要望対応: クリア時もNull(空文字)にする
+                        this.h1 = '';
+                        this.m1 = '';
+                        this.h2 = '';
+                        this.m2 = '';
                         this.op = '+';
                         this.isNextDay = false;
                         this.activeField = 'h1';
@@ -1167,14 +1166,14 @@
                                 <div @click="calc.setFocus('h1')"
                                      :class="calc.activeField === 'h1' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
                                      class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[90px] justify-end">
-                                    <span class="text-2xl sm:text-3xl font-black" x-text="calc.h1"></span>
+                                    <span class="text-2xl sm:text-3xl font-black min-h-[2rem]" x-text="calc.h1"></span>
                                     <span class="text-xs font-sans text-slate-400 font-bold" x-text="calc.mode === 'duration' ? '時間' : '時'"></span>
                                 </div>
                                 <!-- 上の段: 分 -->
                                 <div @click="calc.setFocus('m1')"
                                      :class="calc.activeField === 'm1' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
                                      class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[80px] justify-end">
-                                    <span class="text-2xl sm:text-3xl font-black" x-text="calc.m1"></span>
+                                    <span class="text-2xl sm:text-3xl font-black min-h-[2rem]" x-text="calc.m1"></span>
                                     <span class="text-xs font-sans text-slate-400 font-bold">分</span>
                                 </div>
                             </div>
@@ -1200,8 +1199,7 @@
                                     <div @click="calc.setFocus('h2')"
                                          :class="calc.activeField === 'h2' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
                                          class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[90px] justify-end">
-                                        <span class="text-2xl sm:text-3xl font-black" x-text="calc.h2"></span>
-                                        <!-- ★要望対応箇所: 時刻計算モード (calc.mode === 'time') または 時間計算 (duration) では「時間」表記にする！ -->
+                                        <span class="text-2xl sm:text-3xl font-black min-h-[2rem]" x-text="calc.h2"></span>
                                         <span class="text-xs font-sans text-slate-400 font-bold" 
                                               x-text="(calc.mode === 'time' || calc.mode === 'duration') ? '時間' : '時'"></span>
                                     </div>
@@ -1209,7 +1207,7 @@
                                     <div @click="calc.setFocus('m2')"
                                          :class="calc.activeField === 'm2' ? 'border-amber-400 bg-amber-950/40 text-amber-200 ring-2 ring-amber-400/50' : 'border-slate-800 bg-slate-900/80 text-slate-200'"
                                          class="cursor-pointer border-2 rounded-xl px-3 py-1.5 transition flex items-baseline gap-1 min-w-[80px] justify-end">
-                                        <span class="text-2xl sm:text-3xl font-black" x-text="calc.m2"></span>
+                                        <span class="text-2xl sm:text-3xl font-black min-h-[2rem]" x-text="calc.m2"></span>
                                         <span class="text-xs font-sans text-slate-400 font-bold">分</span>
                                     </div>
                                 </div>
@@ -1234,7 +1232,7 @@
                         </div>
                     </div>
 
-                    <!-- テンキーパッド (入力補助) -->
+                    <!-- テンキーパッド (スマホテンキー配置: 上段1-2-3, 下段7-8-9) -->
                     <div class="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 space-y-2">
                         <div class="flex justify-between items-center text-xs text-slate-400 px-1 mb-1 font-bold">
                             <span>選択中: 
@@ -1248,15 +1246,17 @@
                             </button>
                         </div>
 
-                        <!-- テンキーグリッド -->
+                        <!-- スマホテンキーグリッド -->
                         <div class="grid grid-cols-4 gap-1.5 font-mono">
-                            <button @click="calc.pressNum(7)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">7</button>
-                            <button @click="calc.pressNum(8)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">8</button>
-                            <button @click="calc.pressNum(9)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">9</button>
+                            <!-- 1段目: 1, 2, 3, BS -->
+                            <button @click="calc.pressNum(1)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">1</button>
+                            <button @click="calc.pressNum(2)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">2</button>
+                            <button @click="calc.pressNum(3)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">3</button>
                             <button @click="calc.backspace()" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 font-bold text-base p-3 rounded-xl transition flex items-center justify-center active:scale-95 shadow">
                                 <i class="fa-solid fa-delete-left"></i>
                             </button>
 
+                            <!-- 2段目: 4, 5, 6, AC -->
                             <button @click="calc.pressNum(4)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">4</button>
                             <button @click="calc.pressNum(5)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">5</button>
                             <button @click="calc.pressNum(6)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">6</button>
@@ -1264,9 +1264,10 @@
                                 AC
                             </button>
 
-                            <button @click="calc.pressNum(1)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">1</button>
-                            <button @click="calc.pressNum(2)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">2</button>
-                            <button @click="calc.pressNum(3)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">3</button>
+                            <!-- 3段目: 7, 8, 9, 次へ -->
+                            <button @click="calc.pressNum(7)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">7</button>
+                            <button @click="calc.pressNum(8)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">8</button>
+                            <button @click="calc.pressNum(9)" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">9</button>
                             <!-- 次のフィールドへ移動 -->
                             <button @click="
                                 calc.activeField = calc.activeField === 'h1' ? 'm1' : 
@@ -1276,6 +1277,7 @@
                                 次へ <i class="fa-solid fa-chevron-right ml-1"></i>
                             </button>
 
+                            <!-- 4段目: 0, 00, 符号切り替え -->
                             <button @click="calc.pressNum(0)" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xl p-3 rounded-xl transition shadow">0</button>
                             <button @click="calc.pressNum('00')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-lg p-3 rounded-xl transition shadow">00</button>
                             <button @click="calc.op = calc.op === '+' ? '-' : '+'" x-show="calc.mode !== 'diff'" class="bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xl p-3 rounded-xl transition active:scale-95 shadow">
