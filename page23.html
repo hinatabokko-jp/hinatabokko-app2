@@ -1,227 +1,1013 @@
-<!doctype html>
-<html lang="ja">
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111318">
-<title>1対1 ビデオ通話</title>
-<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
-<style>
-:root{color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:#0d0f13;color:#f4f5f7;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:900px;margin:auto;padding:20px}
-h1{font-size:24px;margin:0 0 6px}
-p{color:#aeb4bf}
-.panel{background:#171a20;border:1px solid #292e38;border-radius:18px;padding:18px;margin:14px 0}
-.videos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.video-box{position:relative;background:#050608;border-radius:14px;overflow:hidden;aspect-ratio:16/10}
-video{width:100%;height:100%;object-fit:cover;display:block}
-.label{position:absolute;left:10px;bottom:10px;background:#0009;padding:5px 9px;border-radius:999px;font-size:13px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-input{flex:1;min-width:220px;background:#0d0f13;color:#fff;border:1px solid #3a404c;border-radius:10px;padding:12px;font-size:16px}
-button{border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;background:#e8ebf0;color:#111318}
-button.secondary{background:#292e38;color:#f4f5f7}
-button.danger{background:#a83a3a;color:#fff}
-button:disabled{opacity:.45;cursor:not-allowed}
-.status{padding:10px 12px;border-radius:10px;background:#101319;color:#cbd1da;font-size:14px}
-.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;word-break:break-all}
-small{color:#8e96a3}
-@media(max-width:650px){.videos{grid-template-columns:1fr}.row{flex-direction:column;align-items:stretch}input{min-width:0}}
-</style>
-</head>
-<body>
-<main>
-  <h1>1対1 ビデオ通話</h1>
-  <p>最小構成の試作版。PeerJS + WebRTCで、2人だけを接続します。</p>
-
-  <section class="panel">
-    <div class="status" id="status">接続準備中…</div>
-    <p>あなたのID</p>
-    <div class="id" id="myId">取得中…</div>
-    <small>このIDを相手に伝えてください。</small>
-  </section>
-
-  <section class="panel">
-    <div class="row">
-      <input id="remoteId" placeholder="相手のIDを入力">
-      <button id="callBtn" disabled>発信する</button>
-    </div>
-  </section>
-
-  <section class="panel videos">
-    <div class="video-box">
-      <video id="localVideo" autoplay muted playsinline></video>
-      <span class="label">あなた</span>
-    </div>
-    <div class="video-box">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <span class="label">相手</span>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="row">
-      <button id="micBtn" class="secondary" disabled>🎙 ミュート</button>
-      <button id="cameraBtn" class="secondary" disabled>📷 カメラOFF</button>
-      <button id="hangupBtn" class="danger" disabled>通話終了</button>
-    </div>
-  </section>
-</main>
-
-<script>
-(() => {
-  const status = document.getElementById("status");
-  const myId = document.getElementById("myId");
-  const remoteId = document.getElementById("remoteId");
-  const callBtn = document.getElementById("callBtn");
-  const hangupBtn = document.getElementById("hangupBtn");
-  const micBtn = document.getElementById("micBtn");
-  const cameraBtn = document.getElementById("cameraBtn");
-  const localVideo = document.getElementById("localVideo");
-  const remoteVideo = document.getElementById("remoteVideo");
-
-  let peer = null;
-  let localStream = null;
-  let currentCall = null;
-
-  function setStatus(message) {
-    status.textContent = message;
-  }
-
-  async function startCamera() {
-    if (localStream) return localStream;
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
-    });
-    localVideo.srcObject = localStream;
-    micBtn.disabled = false;
-    cameraBtn.disabled = false;
-    return localStream;
-  }
-
-  function finishCall() {
-    if (currentCall) {
-      currentCall.close();
-      currentCall = null;
-    }
-    remoteVideo.srcObject = null;
-    hangupBtn.disabled = true;
-    setStatus("通話終了。相手のIDを入れて、もう一度発信できます。");
-  }
-
-  function handleCall(call) {
-    currentCall = call;
-    setStatus("着信中…接続しています。");
-    startCamera()
-      .then(stream => {
-        call.answer(stream);
-        call.on("stream", remoteStream => {
-          remoteVideo.srcObject = remoteStream;
-          hangupBtn.disabled = false;
-          setStatus("通話中");
-        });
-        call.on("close", finishCall);
-        call.on("error", () => {
-          setStatus("通話中にエラーが発生しました。");
-          finishCall();
-        });
-      })
-      .catch(err => {
-        setStatus("カメラ・マイクを許可できませんでした。");
-        console.error(err);
-        call.close();
-      });
-  }
-
-  async function init() {
-    if (!window.Peer) {
-      setStatus("PeerJSの読み込みに失敗しました。インターネット接続を確認してください。");
-      return;
-    }
-    try {
-      await startCamera();
-      peer = new Peer();
-
-      peer.on("open", id => {
-        myId.textContent = id;
-        callBtn.disabled = false;
-        setStatus("準備完了。相手にこのIDを伝えてください。");
-      });
-
-      peer.on("call", handleCall);
-
-      peer.on("disconnected", () => {
-        setStatus("接続サーバーから切断されました。再接続を試みています…");
-        peer.reconnect();
-      });
-
-      peer.on("error", err => {
-        console.error(err);
-        if (err.type === "peer-unavailable") {
-          setStatus("その相手IDは見つかりません。相手がページを開いているか確認してください。");
-        } else {
-          setStatus("接続エラー: " + err.type);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Canvas Pro - 高機能QRコードジェネレーター</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QR Code Styling Library -->
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e5edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
         }
-      });
-    } catch (err) {
-      console.error(err);
-      setStatus("カメラ・マイクへのアクセスが必要です。HTTPSまたはlocalhostで開いてください。");
-    }
-  }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
 
-  callBtn.addEventListener("click", async () => {
-    const id = remoteId.value.trim();
-    if (!id || !peer) return;
-    try {
-      const stream = await startCamera();
-      setStatus("発信中…");
-      const call = peer.call(id, stream);
-      currentCall = call;
-      hangupBtn.disabled = false;
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 text-white p-2.5 rounded-xl shadow-md">
+                    <i class="fa-solid font-bold fa-qrcode text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">QR Canvas Pro</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">高機能QRコードデザインツール</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="themeToggleBtn" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" title="テーマ切り替え">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
 
-      call.on("stream", remoteStream => {
-        remoteVideo.srcObject = remoteStream;
-        setStatus("通話中");
-      });
-      call.on("close", finishCall);
-      call.on("error", () => {
-        setStatus("通話中にエラーが発生しました。");
-        finishCall();
-      });
-    } catch (err) {
-      console.error(err);
-      setStatus("発信できませんでした。");
-    }
-  });
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Side: Controls & Input Tabs -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+            
+            <!-- Type Selectors -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+                <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">1. タイプを選択</label>
+                <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="typeContainer">
+                    <button data-type="url" class="type-btn active flex flex-col items-center gap-2 p-3 rounded-xl border border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium text-xs transition-all">
+                        <i class="fa-solid fa-link text-lg"></i>
+                        <span>URL / テキスト</span>
+                    </button>
+                    <button data-type="wifi" class="type-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs transition-all">
+                        <i class="fa-solid fa-wifi text-lg"></i>
+                        <span>Wi-Fi</span>
+                    </button>
+                    <button data-type="vcard" class="type-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs transition-all">
+                        <i class="fa-solid fa-address-card text-lg"></i>
+                        <span>名刺 (vCard)</span>
+                    </button>
+                    <button data-type="email" class="type-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs transition-all">
+                        <i class="fa-solid fa-envelope text-lg"></i>
+                        <span>メール</span>
+                    </button>
+                    <button data-type="phone" class="type-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs transition-all">
+                        <i class="fa-solid fa-phone text-lg"></i>
+                        <span>電話 / SMS</span>
+                    </button>
+                </div>
+            </div>
 
-  hangupBtn.addEventListener("click", finishCall);
+            <!-- Settings Tabs & Input Content -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                <!-- Navigation Sub-tabs -->
+                <div class="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-4">
+                    <button id="tabInput" class="tab-btn active px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
+                        <i class="fa-solid fa-pen-to-square"></i> コンテンツ入力
+                    </button>
+                    <button id="tabStyle" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
+                        <i class="fa-solid fa-palette"></i> スタイル設定
+                    </button>
+                    <button id="tabLogo" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
+                        <i class="fa-solid fa-image"></i> ロゴ・アイコン
+                    </button>
+                    <button id="tabHistory" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
+                        <i class="fa-solid fa-clock-rotate-left"></i> 履歴
+                    </button>
+                </div>
 
-  micBtn.addEventListener("click", () => {
-    if (!localStream) return;
-    const track = localStream.getAudioTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    micBtn.textContent = track.enabled ? "🎙 ミュート" : "🔇 ミュート解除";
-  });
+                <div class="p-6">
+                    <!-- Section 1: Content Inputs -->
+                    <div id="contentSection" class="space-y-4">
+                        <!-- URL / Text Input -->
+                        <div id="formUrl" class="space-y-3">
+                            <label class="block text-sm font-medium">URLまたはテキスト</label>
+                            <textarea id="inputUrlText" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="https://example.com または 自由なテキストを入力"></textarea>
+                        </div>
 
-  cameraBtn.addEventListener("click", () => {
-    if (!localStream) return;
-    const track = localStream.getVideoTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    cameraBtn.textContent = track.enabled ? "📷 カメラOFF" : "📷 カメラON";
-  });
+                        <!-- Wi-Fi Input -->
+                        <div id="formWifi" class="space-y-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">ネットワーク名 (SSID)</label>
+                                <input type="text" id="wifiSsid" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Wi-Fiネットワーク名">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">パスワード</label>
+                                    <input type="password" id="wifiPassword" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="パスワード">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">暗号化方式</label>
+                                    <select id="wifiType" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="WPA">WPA / WPA2 / WPA3</option>
+                                        <option value="WEP">WEP</option>
+                                        <option value="nopass">なし (オープン)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="wifiHidden" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <label for="wifiHidden" class="text-sm">非公開ネットワーク (SSIDステルス)</label>
+                            </div>
+                        </div>
 
-  window.addEventListener("beforeunload", () => {
-    if (currentCall) currentCall.close();
-    if (peer) peer.destroy();
-    if (localStream) localStream.getTracks().forEach(track => track.stop());
-  });
+                        <!-- vCard Input -->
+                        <div id="formVcard" class="space-y-4 hidden">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">氏名 (姓 名)</label>
+                                    <input type="text" id="vcardName" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="山田 太郎">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">会社名 / 組織</label>
+                                    <input type="text" id="vcardOrg" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="株式会社サンプル">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">役職</label>
+                                    <input type="text" id="vcardTitle" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="マネージャー">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">電話番号</label>
+                                    <input type="tel" id="vcardTel" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="090-1234-5678">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">メールアドレス</label>
+                                    <input type="email" id="vcardEmail" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="example@domain.com">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Webサイト URL</label>
+                                    <input type="url" id="vcardUrl" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com">
+                                </div>
+                            </div>
+                        </div>
 
-  init();
-})();
-</script>
+                        <!-- Email Input -->
+                        <div id="formEmail" class="space-y-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">宛先メールアドレス</label>
+                                <input type="email" id="emailTo" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="contact@example.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">件名</label>
+                                <input type="text" id="emailSubject" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="件名を入力">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">本文</label>
+                                <textarea id="emailBody" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="本文を入力"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Phone/SMS Input -->
+                        <div id="formPhone" class="space-y-4 hidden">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">電話番号</label>
+                                <input type="tel" id="phoneNum" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="09012345678">
+                            </div>
+                            <div class="flex items-center gap-2 my-2">
+                                <input type="checkbox" id="isSms" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <label for="isSms" class="text-sm font-medium">SMSメッセージとして生成する</label>
+                            </div>
+                            <div id="smsMessageArea" class="hidden">
+                                <label class="block text-sm font-medium mb-1">SMSメッセージ本文</label>
+                                <textarea id="smsBody" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="メッセージを入力"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Style Options -->
+                    <div id="styleSection" class="space-y-6 hidden">
+                        <!-- Color Customization -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-droplet text-blue-500"></i> カラー設定
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">ドットの色 (前景色)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="colorDot" value="#000000" class="h-10 w-12 rounded border-0 cursor-pointer bg-transparent">
+                                        <input type="text" id="colorDotText" value="#000000" class="flex-grow px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">背景色</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="colorBg" value="#ffffff" class="h-10 w-12 rounded border-0 cursor-pointer bg-transparent">
+                                        <input type="text" id="colorBgText" value="#ffffff" class="flex-grow px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-3">
+                                <input type="checkbox" id="bgTransparent" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <label for="bgTransparent" class="text-sm">背景を透明にする (PNG/SVG選択時)</label>
+                            </div>
+                        </div>
+
+                        <!-- Gradient Option -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> グラデーションを使用
+                                </label>
+                                <input type="checkbox" id="useGradient" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                            </div>
+                            <div id="gradientControls" class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hidden">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">グラデーション終了色</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="colorGradientEnd" value="#3b82f6" class="h-10 w-12 rounded border-0 cursor-pointer bg-transparent">
+                                        <input type="text" id="colorGradientEndText" value="#3b82f6" class="flex-grow px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">グラデーション方向</label>
+                                    <select id="gradientType" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                        <option value="linear">斜め (Linear)</option>
+                                        <option value="radial">中央放射 (Radial)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pattern Shapes -->
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-shapes text-blue-500"></i> 形状とパターン
+                            </h3>
+                            
+                            <!-- Dots Type -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">ドット形状</label>
+                                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2" id="dotsStyleOptions">
+                                    <button data-dotstyle="square" class="dot-style-btn active p-2 border border-blue-500 rounded-lg text-xs font-medium text-center bg-blue-50 dark:bg-blue-900/30">正方形</button>
+                                    <button data-dotstyle="dots" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">丸ドット</button>
+                                    <button data-dotstyle="rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">角丸</button>
+                                    <button data-dotstyle="extra-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">大角丸</button>
+                                    <button data-dotstyle="classy" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">クラシック</button>
+                                    <button data-dotstyle="classy-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">優美</button>
+                                </div>
+                            </div>
+
+                            <!-- Corner Square Type -->
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">角の四角枠 (Corner Frame)</label>
+                                <div class="grid grid-cols-3 gap-2" id="cornerSquareOptions">
+                                    <button data-cornerstyle="square" class="corner-style-btn active p-2 border border-blue-500 rounded-lg text-xs font-medium text-center bg-blue-50 dark:bg-blue-900/30">四角</button>
+                                    <button data-cornerstyle="dot" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">丸</button>
+                                    <button data-cornerstyle="extra-rounded" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">角丸</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error Correction -->
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">エラー訂正レベル (誤り訂正)</label>
+                            <select id="errorCorrectionLevel" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                                <option value="L">L - 低 (7%復元可能 - ロゴなしに最適)</option>
+                                <option value="M" selected>M - 中 (15%復元可能 - 標準)</option>
+                                <option value="Q">Q - 高 (25%復元可能)</option>
+                                <option value="H">H - 最高 (30%復元可能 - ロゴ埋め込み推奨)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Logo Upload & Preset Icons -->
+                    <div id="logoSection" class="space-y-6 hidden">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-icons text-blue-500"></i> プリセットアイコン
+                            </h3>
+                            <div class="grid grid-cols-4 sm:grid-cols-6 gap-3" id="presetLogoContainer">
+                                <button data-logo="" class="preset-logo-btn active p-3 rounded-xl border border-blue-500 bg-blue-50 dark:bg-blue-900/30 flex flex-col items-center gap-1">
+                                    <i class="fa-solid fa-ban text-slate-400 text-xl"></i>
+                                    <span class="text-[10px]">なし</span>
+                                </button>
+                                <button data-logo="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                    <i class="fa-brands fa-x-twitter text-xl"></i>
+                                    <span class="text-[10px]">X (Twitter)</span>
+                                </button>
+                                <button data-logo="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                    <i class="fa-brands fa-instagram text-pink-500 text-xl"></i>
+                                    <span class="text-[10px]">Instagram</span>
+                                </button>
+                                <button data-logo="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                    <i class="fa-brands fa-youtube text-red-500 text-xl"></i>
+                                    <span class="text-[10px]">YouTube</span>
+                                </button>
+                                <button data-logo="https://cdn-icons-png.flaticon.com/512/124/124034.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                    <i class="fa-brands fa-line text-green-500 text-xl"></i>
+                                    <span class="text-[10px]">LINE</span>
+                                </button>
+                                <button data-logo="https://cdn-icons-png.flaticon.com/512/281/281769.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                    <i class="fa-solid fa-envelope text-red-400 text-xl"></i>
+                                    <span class="text-[10px]">Gmail</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-upload text-blue-500"></i> カスタムロゴ画像をアップロード
+                            </h3>
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">クリックして画像を選択（PNG/JPG）</p>
+                                    </div>
+                                    <input id="logoFileInput" type="file" accept="image/*" class="hidden" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="logoSizeSettings" class="space-y-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">ロゴの大きさ</label>
+                                    <span id="logoSizeVal" class="text-xs font-semibold">0.4</span>
+                                </div>
+                                <input type="range" id="logoSizeRange" min="0.1" max="0.5" step="0.05" value="0.4" class="w-full accent-blue-600">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">ロゴの余白 (マージン)</label>
+                                    <span id="logoMarginVal" class="text-xs font-semibold">5</span>
+                                </div>
+                                <input type="range" id="logoMarginRange" min="0" max="20" step="1" value="5" class="w-full accent-blue-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: History -->
+                    <div id="historySection" class="space-y-4 hidden">
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs text-slate-500">過去に作成したQRコード履歴 (最新10件)</p>
+                            <button id="clearHistoryBtn" class="text-xs text-red-500 hover:text-red-600 flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> 履歴消去
+                            </button>
+                        </div>
+                        <div id="historyList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                            <!-- JS Inject -->
+                            <p class="text-sm text-slate-400 text-center py-6">履歴はありません</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Live QR Preview & Actions -->
+        <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 sticky top-24 flex flex-col items-center">
+                <div class="w-full flex items-center justify-between mb-4">
+                    <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-eye text-blue-500"></i> プレビュー
+                    </h2>
+                    <span class="text-xs px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full font-medium flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> リアルタイム
+                    </span>
+                </div>
+
+                <!-- Canvas Preview Box -->
+                <div class="relative w-full aspect-square bg-slate-50 dark:bg-slate-900/50 rounded-2xl flex items-center justify-center p-6 border border-slate-100 dark:border-slate-700/50 shadow-inner group overflow-hidden">
+                    <div id="qrcode-container" class="transition-transform duration-200 flex items-center justify-center"></div>
+                </div>
+
+                <!-- Size Select & Format -->
+                <div class="w-full grid grid-cols-2 gap-3 mt-5">
+                    <div>
+                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">出力サイズ (px)</label>
+                        <select id="exportSize" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                            <option value="300">300 x 300</option>
+                            <option value="600" selected>600 x 600 (高画質)</option>
+                            <option value="1200">1200 x 1200 (印刷用)</option>
+                            <option value="2000">2000 x 2000 (超高画質)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">フォーマット</label>
+                        <select id="exportFormat" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                            <option value="png">PNG 画像</option>
+                            <option value="svg">SVG ベクター</option>
+                            <option value="webp">WEBP 画像</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="w-full space-y-2 mt-5">
+                    <button id="downloadBtn" class="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> QRコードをダウンロード
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="copyImageBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-regular fa-copy"></i> 画像コピー
+                        </button>
+                        <button id="saveHistoryBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-bookmark"></i> 履歴に保存
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Toast Notification -->
+                <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+                    <i id="toastIcon" class="fa-solid fa-circle-check text-green-400"></i>
+                    <span id="toastMsg" class="text-sm font-medium">通知メッセージ</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State Management
+        const state = {
+            type: 'url', // url, wifi, vcard, email, phone
+            data: 'https://example.com',
+            dotsColor: '#000000',
+            bgColor: '#ffffff',
+            isBgTransparent: false,
+            useGradient: false,
+            gradientEndColor: '#3b82f6',
+            gradientType: 'linear',
+            dotsStyle: 'square', // square, dots, rounded, extra-rounded, classy, classy-rounded
+            cornerStyle: 'square', // square, dot, extra-rounded
+            errorLevel: 'M',
+            logoUrl: '',
+            logoSize: 0.4,
+            logoMargin: 5
+        };
+
+        let qrCodeStyling = null;
+
+        function initQRCode() {
+            qrCodeStyling = new QRCodeStyling({
+                width: 280,
+                height: 280,
+                type: 'canvas',
+                data: state.data,
+                image: state.logoUrl,
+                dotsOptions: {
+                    color: state.dotsColor,
+                    type: state.dotsStyle,
+                    gradient: state.useGradient ? {
+                        type: state.gradientType,
+                        colorStops: [
+                            { offset: 0, color: state.dotsColor },
+                            { offset: 1, color: state.gradientEndColor }
+                        ]
+                    } : null
+                },
+                backgroundOptions: {
+                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
+                },
+                imageOptions: {
+                    crossOrigin: 'anonymous',
+                    imageSize: state.logoSize,
+                    margin: state.logoMargin
+                },
+                cornersSquareOptions: {
+                    type: state.cornerStyle,
+                    color: state.dotsColor
+                },
+                cornersDotOptions: {
+                    color: state.dotsColor
+                },
+                qrOptions: {
+                    errorCorrectionLevel: state.errorLevel
+                }
+            });
+
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = '';
+            qrCodeStyling.append(container);
+        }
+
+        function updateQRCode() {
+            if (!qrCodeStyling) return;
+            
+            // Build text payload based on selected type
+            buildDataPayload();
+
+            qrCodeStyling.update({
+                data: state.data,
+                image: state.logoUrl,
+                dotsOptions: {
+                    color: state.dotsColor,
+                    type: state.dotsStyle,
+                    gradient: state.useGradient ? {
+                        type: state.gradientType,
+                        colorStops: [
+                            { offset: 0, color: state.dotsColor },
+                            { offset: 1, color: state.gradientEndColor }
+                        ]
+                    } : null
+                },
+                backgroundOptions: {
+                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
+                },
+                imageOptions: {
+                    imageSize: state.logoSize,
+                    margin: state.logoMargin
+                },
+                cornersSquareOptions: {
+                    type: state.cornerStyle,
+                    color: state.dotsColor
+                },
+                cornersDotOptions: {
+                    color: state.dotsColor
+                },
+                qrOptions: {
+                    errorCorrectionLevel: state.errorLevel
+                }
+            });
+        }
+
+        function buildDataPayload() {
+            switch(state.type) {
+                case 'url': {
+                    const text = document.getElementById('inputUrlText').value.trim();
+                    state.data = text || 'https://example.com';
+                    break;
+                }
+                case 'wifi': {
+                    const ssid = document.getElementById('wifiSsid').value.trim();
+                    const pass = document.getElementById('wifiPassword').value;
+                    const type = document.getElementById('wifiType').value;
+                    const hidden = document.getElementById('wifiHidden').checked;
+                    if (!ssid) {
+                        state.data = 'WIFI:S:MyNetwork;T:WPA;P:password;;';
+                    } else {
+                        state.data = `WIFI:S:${ssid};T:${type};P:${pass};H:${hidden ? 'true' : 'false'};;`;
+                    }
+                    break;
+                }
+                case 'vcard': {
+                    const name = document.getElementById('vcardName').value.trim();
+                    const org = document.getElementById('vcardOrg').value.trim();
+                    const title = document.getElementById('vcardTitle').value.trim();
+                    const tel = document.getElementById('vcardTel').value.trim();
+                    const email = document.getElementById('vcardEmail').value.trim();
+                    const url = document.getElementById('vcardUrl').value.trim();
+
+                    state.data = `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nFN:${name}\nORG:${org}\nTITLE:${title}\nTEL:${tel}\nEMAIL:${email}\nURL:${url}\nEND:VCARD`;
+                    break;
+                }
+                case 'email': {
+                    const to = document.getElementById('emailTo').value.trim();
+                    const sub = document.getElementById('emailSubject').value.trim();
+                    const body = document.getElementById('emailBody').value.trim();
+                    state.data = `mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+                    break;
+                }
+                case 'phone': {
+                    const num = document.getElementById('phoneNum').value.trim();
+                    const isSms = document.getElementById('isSms').checked;
+                    const smsBody = document.getElementById('smsBody').value.trim();
+                    if (isSms) {
+                        state.data = `SMSTO:${num}:${smsBody}`;
+                    } else {
+                        state.data = `tel:${num}`;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // UI Navigation Tabs
+        const tabs = [
+            { id: 'tabInput', sec: 'contentSection' },
+            { id: 'tabStyle', sec: 'styleSection' },
+            { id: 'tabLogo', sec: 'logoSection' },
+            { id: 'tabHistory', sec: 'historySection' }
+        ];
+
+        tabs.forEach(t => {
+            document.getElementById(t.id).addEventListener('click', () => {
+                tabs.forEach(x => {
+                    document.getElementById(x.id).classList.remove('active');
+                    document.getElementById(x.sec).classList.add('hidden');
+                });
+                document.getElementById(t.id).classList.add('active');
+                document.getElementById(t.sec).classList.remove('hidden');
+            });
+        });
+
+        // Type Buttons switching
+        const typeBtns = document.querySelectorAll('.type-btn');
+        const formSections = {
+            url: 'formUrl',
+            wifi: 'formWifi',
+            vcard: 'formVcard',
+            email: 'formEmail',
+            phone: 'formPhone'
+        };
+
+        typeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                typeBtns.forEach(b => {
+                    b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30', 'text-blue-600', 'dark:text-blue-400');
+                    b.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-300');
+                });
+                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30', 'text-blue-600', 'dark:text-blue-400');
+                btn.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-300');
+
+                state.type = btn.dataset.type;
+                Object.values(formSections).forEach(id => document.getElementById(id).classList.add('hidden'));
+                document.getElementById(formSections[state.type]).classList.remove('hidden');
+
+                updateQRCode();
+            });
+        });
+
+        // Attach input listeners
+        const inputsToWatch = [
+            'inputUrlText', 'wifiSsid', 'wifiPassword', 'wifiType', 'wifiHidden',
+            'vcardName', 'vcardOrg', 'vcardTitle', 'vcardTel', 'vcardEmail', 'vcardUrl',
+            'emailTo', 'emailSubject', 'emailBody', 'phoneNum', 'smsBody'
+        ];
+
+        inputsToWatch.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', updateQRCode);
+                el.addEventListener('change', updateQRCode);
+            }
+        });
+
+        document.getElementById('isSms').addEventListener('change', (e) => {
+            document.getElementById('smsMessageArea').classList.toggle('hidden', !e.target.checked);
+            updateQRCode();
+        });
+
+        // Color & Gradient Pickers
+        const colorDot = document.getElementById('colorDot');
+        const colorDotText = document.getElementById('colorDotText');
+        colorDot.addEventListener('input', (e) => {
+            colorDotText.value = e.target.value;
+            state.dotsColor = e.target.value;
+            updateQRCode();
+        });
+        colorDotText.addEventListener('input', (e) => {
+            colorDot.value = e.target.value;
+            state.dotsColor = e.target.value;
+            updateQRCode();
+        });
+
+        const colorBg = document.getElementById('colorBg');
+        const colorBgText = document.getElementById('colorBgText');
+        colorBg.addEventListener('input', (e) => {
+            colorBgText.value = e.target.value;
+            state.bgColor = e.target.value;
+            updateQRCode();
+        });
+        colorBgText.addEventListener('input', (e) => {
+            colorBg.value = e.target.value;
+            state.bgColor = e.target.value;
+            updateQRCode();
+        });
+
+        document.getElementById('bgTransparent').addEventListener('change', (e) => {
+            state.isBgTransparent = e.target.checked;
+            updateQRCode();
+        });
+
+        // Gradient
+        document.getElementById('useGradient').addEventListener('change', (e) => {
+            state.useGradient = e.target.checked;
+            document.getElementById('gradientControls').classList.toggle('hidden', !e.target.checked);
+            updateQRCode();
+        });
+
+        const colorGradEnd = document.getElementById('colorGradientEnd');
+        const colorGradEndText = document.getElementById('colorGradientEndText');
+        colorGradEnd.addEventListener('input', (e) => {
+            colorGradEndText.value = e.target.value;
+            state.gradientEndColor = e.target.value;
+            updateQRCode();
+        });
+        document.getElementById('gradientType').addEventListener('change', (e) => {
+            state.gradientType = e.target.value;
+            updateQRCode();
+        });
+
+        // Style Buttons Selection (Dots)
+        const dotStyleBtns = document.querySelectorAll('.dot-style-btn');
+        dotStyleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                dotStyleBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
+                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
+                state.dotsStyle = btn.dataset.dotstyle;
+                updateQRCode();
+            });
+        });
+
+        // Corner Style Buttons
+        const cornerBtns = document.querySelectorAll('.corner-style-btn');
+        cornerBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                cornerBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
+                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
+                state.cornerStyle = btn.dataset.cornerstyle;
+                updateQRCode();
+            });
+        });
+
+        // Error Level
+        document.getElementById('errorCorrectionLevel').addEventListener('change', (e) => {
+            state.errorLevel = e.target.value;
+            updateQRCode();
+        });
+
+        // Logo Preset Selection
+        const presetLogoBtns = document.querySelectorAll('.preset-logo-btn');
+        presetLogoBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                presetLogoBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
+                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
+                state.logoUrl = btn.dataset.logo;
+                updateQRCode();
+            });
+        });
+
+        // Custom Logo File Upload
+        document.getElementById('logoFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    state.logoUrl = event.target.result;
+                    presetLogoBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
+                    updateQRCode();
+                    showToast('カスタムロゴを設定しました');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Logo Sliders
+        const logoSizeRange = document.getElementById('logoSizeRange');
+        logoSizeRange.addEventListener('input', (e) => {
+            document.getElementById('logoSizeVal').innerText = e.target.value;
+            state.logoSize = parseFloat(e.target.value);
+            updateQRCode();
+        });
+
+        const logoMarginRange = document.getElementById('logoMarginRange');
+        logoMarginRange.addEventListener('input', (e) => {
+            document.getElementById('logoMarginVal').innerText = e.target.value;
+            state.logoMargin = parseInt(e.target.value, 10);
+            updateQRCode();
+        });
+
+        // Export & Download Function
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const size = parseInt(document.getElementById('exportSize').value, 10);
+            const format = document.getElementById('exportFormat').value;
+
+            // Create temporary high-res QR instance for export
+            const downloadQr = new QRCodeStyling({
+                width: size,
+                height: size,
+                type: 'canvas',
+                data: state.data,
+                image: state.logoUrl,
+                dotsOptions: {
+                    color: state.dotsColor,
+                    type: state.dotsStyle,
+                    gradient: state.useGradient ? {
+                        type: state.gradientType,
+                        colorStops: [
+                            { offset: 0, color: state.dotsColor },
+                            { offset: 1, color: state.gradientEndColor }
+                        ]
+                    } : null
+                },
+                backgroundOptions: {
+                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
+                },
+                imageOptions: {
+                    imageSize: state.logoSize,
+                    margin: state.logoMargin
+                },
+                cornersSquareOptions: {
+                    type: state.cornerStyle,
+                    color: state.dotsColor
+                },
+                cornersDotOptions: {
+                    color: state.dotsColor
+                },
+                qrOptions: {
+                    errorCorrectionLevel: state.errorLevel
+                }
+            });
+
+            downloadQr.download({
+                name: 'qrcode_' + Date.now(),
+                extension: format
+            });
+
+            showToast('ダウンロードを開始しました！');
+        });
+
+        // Copy QR Image to Clipboard
+        document.getElementById('copyImageBtn').addEventListener('click', async () => {
+            try {
+                const canvas = document.querySelector('#qrcode-container canvas');
+                if (!canvas) {
+                    showToast('コピーできる画像がありません', true);
+                    return;
+                }
+                
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showToast('画像の変換に失敗しました', true);
+                        return;
+                    }
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        showToast('クリップボードに画像をコピーしました！');
+                    } catch (err) {
+                        showToast('クリップボードの操作が許可されていません', true);
+                    }
+                });
+            } catch (err) {
+                showToast('コピーに失敗しました', true);
+            }
+        });
+
+        // Toast Notification System
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = msg;
+            if (isError) {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-green-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // History Management
+        function saveToHistory() {
+            let history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            const newItem = {
+                id: Date.now(),
+                type: state.type,
+                data: state.data,
+                date: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            };
+            
+            // Avoid exact duplicates
+            history = history.filter(item => item.data !== newItem.data);
+            history.unshift(newItem);
+
+            // Limit to 10 items
+            if (history.length > 10) history.pop();
+
+            localStorage.setItem('qr_history', JSON.stringify(history));
+            renderHistory();
+            showToast('履歴に保存しました');
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+
+            if (history.length === 0) {
+                historyList.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">保存された履歴はありません</p>`;
+                return;
+            }
+
+            historyList.innerHTML = history.map(item => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 hover:border-blue-200 transition group">
+                    <div class="overflow-hidden mr-2">
+                        <span class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/50 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
+                        <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.data)}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">${item.date}</p>
+                    </div>
+                    <button onclick="loadFromHistory('${item.id}')" class="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 font-medium whitespace-nowrap">
+                        再読み込み
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        window.loadFromHistory = function(id) {
+            const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            const item = history.find(i => i.id == id);
+            if (!item) return;
+
+            // Trigger click on corresponding type button
+            const btn = document.querySelector(`.type-btn[data-type="${item.type}"]`);
+            if (btn) btn.click();
+
+            if (item.type === 'url') {
+                document.getElementById('inputUrlText').value = item.data;
+            }
+            updateQRCode();
+            showToast('履歴から読み込みました');
+        };
+
+        document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
+
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            localStorage.removeItem('qr_history');
+            renderHistory();
+            showToast('履歴を削除しました');
+        });
+
+        // Dark Mode Toggle
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+
+        // Initialize theme based on preference
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // Window Onload Initialization
+        window.onload = function() {
+            initQRCode();
+            renderHistory();
+        };
+    </script>
 </body>
 </html>
