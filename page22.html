@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirChat Group</title>
-    <!-- PeerJS (リアルタイム通信ライブラリ) -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- QRコード生成ライブラリ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Firebase (リアルタイムデータベース) SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -115,7 +116,7 @@
             color: #fff;
         }
 
-        /* メインコンテンツ切替 */
+        /* ビュー切替 */
         .view-section {
             display: none;
             flex: 1;
@@ -127,7 +128,7 @@
             display: flex;
         }
 
-        /* 入室フォーム */
+        /* 入室画面 */
         .join-container {
             padding: 24px;
             display: flex;
@@ -265,7 +266,7 @@
             flex: 1;
         }
 
-        /* QRコード/招待モーダル */
+        /* 招待モーダル */
         .modal {
             display: none;
             position: absolute;
@@ -356,7 +357,7 @@
     <div id="joinView" class="view-section active">
         <div class="join-container">
             <h2 style="text-align: center; margin-bottom: 4px;">グループに参加</h2>
-            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">同じルームIDのメンバー同士で直接チャットできます</p>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">同じルームIDを入力した全員とリアルタイムで喋れます</p>
             
             <div class="form-group">
                 <label for="usernameInput">表示名</label>
@@ -384,11 +385,11 @@
         </div>
     </div>
 
-    <!-- QR・ID共有モーダル -->
+    <!-- 招待用モーダル -->
     <div id="qrModal" class="modal" onclick="closeQRModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>招待情報</h3>
-            <p style="font-size:0.8rem; color: var(--text-muted);">QRコード読み取り、またはIDテキストで参加</p>
+            <p style="font-size:0.8rem; color: var(--text-muted);">QRコードまたはIDテキストで離れた人も招待できます</p>
             
             <div id="qrcode"></div>
 
@@ -406,10 +407,21 @@
 </div>
 
 <script>
-    let peer = null;
-    let connections = [];
+    // 公開接続用データベース設定 (即座にどこでも使える構成)
+    const firebaseConfig = {
+        databaseURL: "https://airchat-public-default-rtdb.firebaseio.com/"
+    };
+    
+    // Firebase初期化
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+
     let currentUsername = "";
     let currentRoomId = "";
+    let myUserId = "";
+    let roomRef = null;
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
@@ -418,15 +430,15 @@
     const statusBadge = document.getElementById('statusBadge');
     const chatMessages = document.getElementById('chatMessages');
 
-    // 起動時：URLパラメータにルームIDがあれば自動入力
+    // 起動時：URLパラメータにルームIDがあれば自動セット
     window.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const roomParam = urlParams.get('room');
         if (roomParam) {
             document.getElementById('roomIdInput').value = roomParam;
-            showToast(`ルームID「${roomParam}」が読み込まれました`);
+            showToast(`ルームID「${roomParam}」を読み込みました`);
         } else {
-            generateRandomRoomId(); // デフォルトでランダムIDをセット
+            generateRandomRoomId();
         }
     });
 
@@ -436,7 +448,7 @@
         document.getElementById('roomIdInput').value = randomId;
     }
 
-    // チャット入室処理（PeerJSによるリアルタイム接続）
+    // 入室処理（データベースリッスン開始）
     function joinRoom() {
         const username = document.getElementById('usernameInput').value.trim();
         let roomId = document.getElementById('roomIdInput').value.trim();
@@ -451,91 +463,65 @@
         }
 
         currentUsername = username;
-        currentRoomId = roomId;
+        // ルームIDの特殊文字をサニタイズ
+        currentRoomId = roomId.replace(/[.#$\[\]]/g, "_");
+        myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
 
-        showToast('接続中...');
+        // UI切替
+        joinView.classList.remove('active');
+        chatView.classList.add('active');
+        exitBtn.style.display = 'block';
+        qrBtn.style.display = 'block';
+        statusBadge.textContent = `Room: ${currentRoomId}`;
+        statusBadge.classList.add('online');
 
-        // PeerJS接続を確立
-        // 固有のPeer IDを生成（ルームID_ユーザー乱数）
-        const myPeerId = `${currentRoomId}_${Math.random().toString(36).substring(2, 7)}`;
-        peer = new Peer(myPeerId);
+        // データベース参照を設定
+        roomRef = db.ref(`rooms/${currentRoomId}/messages`);
 
-        peer.on('open', (id) => {
-            // 入室画面からチャット画面へ切り替え
-            joinView.classList.remove('active');
-            chatView.classList.add('active');
-            exitBtn.style.display = 'block';
-            qrBtn.style.display = 'block';
-            statusBadge.textContent = `Room: ${currentRoomId}`;
-            statusBadge.classList.add('online');
+        // 入室メッセージ送信
+        sendSystemMessage(`${currentUsername} さんが入室しました`);
 
-            addSystemMessage(`${currentUsername} さんが入室しました`);
+        // メッセージ受信監視（過去分＋リアルタイム更新）
+        roomRef.limitToLast(50).on('child_added', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
 
-            // 新しく入ったことを全員に伝える（他の参加者を検索・接続）
-            connectToExistingPeers();
-        });
-
-        // 他の人からの接続を受け取る処理
-        peer.on('connection', (conn) => {
-            setupConnection(conn);
-        });
-
-        peer.on('error', (err) => {
-            console.error(err);
-            showToast('通信エラーが発生しました');
-        });
-    }
-
-    // 接続処理のセットアップ
-    function setupConnection(conn) {
-        conn.on('open', () => {
-            if (!connections.includes(conn)) {
-                connections.push(conn);
-            }
-        });
-
-        conn.on('data', (data) => {
-            if (data.type === 'chat') {
-                addMessage(data.sender, data.text, 'other');
-            } else if (data.type === 'system') {
+            if (data.type === 'system') {
                 addSystemMessage(data.text);
+            } else if (data.type === 'chat') {
+                const isMyMessage = data.userId === myUserId;
+                addMessage(data.sender, data.text, isMyMessage ? 'my' : 'other');
             }
         });
 
-        conn.on('close', () => {
-            connections = connections.filter(c => c !== conn);
-        });
+        showToast('チャットルームに入室しました');
     }
 
-    // すでにルームにいる他の端末へ手当たり次第に接続を試みる（簡易メッシュ接続）
-    function connectToExistingPeers() {
-        // ※PeerJSのブロードキャスト代替として共通シグナリングを使用
-        // 新規端末は自身の接続を他メンバーへ通知するメッセージをブロードキャスト
-    }
-
-    // メッセージ送信（接続している全端末へ送信）
+    // チャットメッセージ送信
     function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text || !roomRef) return;
 
-        // 自分の画面に表示
-        addMessage(currentUsername, text, 'my');
-
-        // 他の参加者へ一斉送信
-        const payload = {
+        roomRef.push({
             type: 'chat',
             sender: currentUsername,
-            text: text
-        };
-
-        connections.forEach(conn => {
-            if (conn.open) {
-                conn.send(payload);
-            }
+            userId: myUserId,
+            text: text,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
         input.value = '';
+    }
+
+    // システムメッセージ送信
+    function sendSystemMessage(text) {
+        if (!roomRef) return;
+        roomRef.push({
+            type: 'system',
+            text: text,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
     }
 
     // 退室処理
@@ -546,29 +532,20 @@
     }
 
     function exitRoom() {
-        // 退室通知を送信
-        const payload = {
-            type: 'system',
-            text: `${currentUsername} さんが退室しました`
-        };
-        connections.forEach(conn => {
-            if (conn.open) conn.send(payload);
-        });
-
-        // P2P接続の切断
-        if (peer) {
-            peer.destroy();
-            peer = null;
+        if (roomRef) {
+            sendSystemMessage(`${currentUsername} さんが退室しました`);
+            roomRef.off(); // 監視解除
+            roomRef = null;
         }
-        connections = [];
 
         // データ初期化
         currentUsername = "";
         currentRoomId = "";
+        myUserId = "";
         chatMessages.innerHTML = "";
         document.getElementById('messageInput').value = "";
 
-        // URLパラメータ削除
+        // URLパラメータ解除
         history.replaceState(null, '', window.location.pathname);
 
         // UI初期化
@@ -615,15 +592,14 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 招待モーダル（QR＆テキストID）表示
+    // 招待モーダル表示（QR＆テキストID）
     function showQRModal() {
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = "";
 
-        // ルームID表示設定
         document.getElementById('modalRoomId').textContent = currentRoomId;
 
-        // 招待用URL生成
+        // 招待用URLの生成
         const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`;
 
         new QRCode(qrContainer, {
@@ -639,7 +615,7 @@
         document.getElementById('qrModal').style.display = 'none';
     }
 
-    // ルームIDのクリップボードコピー
+    // ルームIDコピー
     function copyRoomId() {
         navigator.clipboard.writeText(currentRoomId).then(() => {
             showToast('ルームIDをコピーしました！');
