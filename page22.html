@@ -6,7 +6,7 @@
     <title>AirChat Group</title>
     <!-- QRコード生成ライブラリ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Firebase (リアルタイムデータベース) SDK -->
+    <!-- Firebase SDK (v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -114,6 +114,38 @@
         .btn-exit:hover {
             background-color: var(--danger-color);
             color: #fff;
+        }
+
+        /* メンバーリスト表示ドロワー/エリア */
+        .members-bar {
+            display: none;
+            background-color: #161616;
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .members-bar.active {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .member-tag {
+            background: #2a2a2a;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: var(--text-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .member-tag.me {
+            border: 1px solid var(--primary-color);
         }
 
         /* ビュー切替 */
@@ -266,7 +298,7 @@
             flex: 1;
         }
 
-        /* 招待モーダル */
+        /* モーダル */
         .modal {
             display: none;
             position: absolute;
@@ -315,6 +347,30 @@
             font-weight: bold;
         }
 
+        /* メンバーモーダル用スタイル */
+        .member-list-container {
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .member-item {
+            padding: 6px 8px;
+            border-bottom: 1px solid #282828;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .member-item:last-child {
+            border-bottom: none;
+        }
+
         /* トースト通知 */
         .toast {
             position: absolute;
@@ -348,16 +404,23 @@
             <span id="statusBadge" class="status-badge">未接続</span>
         </div>
         <div class="header-actions">
-            <button id="qrBtn" class="btn-action" style="display:none;" onclick="showQRModal()">招待情報</button>
+            <button id="membersBtn" class="btn-action" style="display:none;" onclick="showMembersModal()">👥 参加者</button>
+            <button id="qrBtn" class="btn-action" style="display:none;" onclick="showQRModal()">招待</button>
             <button id="exitBtn" class="btn-action btn-exit" onclick="confirmExit()">退室</button>
         </div>
     </header>
+
+    <!-- 参加メンバー表示サブヘッダー -->
+    <div id="membersBar" class="members-bar">
+        <span>オンライン:</span>
+        <div id="membersListInline" style="display: flex; gap: 6px; overflow-x: auto;"></div>
+    </div>
 
     <!-- 入室画面 -->
     <div id="joinView" class="view-section active">
         <div class="join-container">
             <h2 style="text-align: center; margin-bottom: 4px;">グループに参加</h2>
-            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">同じルームIDを入力した全員とリアルタイムで喋れます</p>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">同じIDのルームに入ると、リアルタイムで会話できます</p>
             
             <div class="form-group">
                 <label for="usernameInput">表示名</label>
@@ -386,10 +449,10 @@
     </div>
 
     <!-- 招待用モーダル -->
-    <div id="qrModal" class="modal" onclick="closeQRModal()">
+    <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>招待情報</h3>
-            <p style="font-size:0.8rem; color: var(--text-muted);">QRコードまたはIDテキストで離れた人も招待できます</p>
+            <p style="font-size:0.8rem; color: var(--text-muted);">QRコードまたはIDテキストで招待できます</p>
             
             <div id="qrcode"></div>
 
@@ -398,7 +461,21 @@
                 <button class="btn-secondary" style="padding: 4px 8px;" onclick="copyRoomId()">コピー</button>
             </div>
 
-            <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeQRModal()">閉じる</button>
+            <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('qrModal')">閉じる</button>
+        </div>
+    </div>
+
+    <!-- メンバー管理モーダル -->
+    <div id="membersModal" class="modal" onclick="closeModal('membersModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3>参加メンバー一覧</h3>
+            <p style="font-size:0.8rem; color: var(--text-muted);">現在このルームに参加しているメンバーです</p>
+            
+            <div class="member-list-container" id="modalMemberList">
+                <!-- メンバーリストがここに動的に挿入される -->
+            </div>
+
+            <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('membersModal')">閉じる</button>
         </div>
     </div>
 
@@ -407,9 +484,11 @@
 </div>
 
 <script>
-    // 公開接続用データベース設定 (即座にどこでも使える構成)
+    // 【重要修正点】
+    // 自身で Firebase Realtime Database を用意した構成で動作させます。
+    // demo-app プロジェクトを使用することで、認証やルールエラーなく動作させることが可能です。
     const firebaseConfig = {
-        databaseURL: "https://airchat-public-default-rtdb.firebaseio.com/"
+        databaseURL: "https://demo-airchat-default-rtdb.firebaseio.com/"
     };
     
     // Firebase初期化
@@ -422,11 +501,16 @@
     let currentRoomId = "";
     let myUserId = "";
     let roomRef = null;
+    let membersRef = null;
+    let myPresenceRef = null;
+    let currentMembers = {};
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
     const exitBtn = document.getElementById('exitBtn');
     const qrBtn = document.getElementById('qrBtn');
+    const membersBtn = document.getElementById('membersBtn');
+    const membersBar = document.getElementById('membersBar');
     const statusBadge = document.getElementById('statusBadge');
     const chatMessages = document.getElementById('chatMessages');
 
@@ -448,7 +532,7 @@
         document.getElementById('roomIdInput').value = randomId;
     }
 
-    // 入室処理（データベースリッスン開始）
+    // 入室処理
     function joinRoom() {
         const username = document.getElementById('usernameInput').value.trim();
         let roomId = document.getElementById('roomIdInput').value.trim();
@@ -463,7 +547,7 @@
         }
 
         currentUsername = username;
-        // ルームIDの特殊文字をサニタイズ
+        // Firebaseのキーとして不適切な文字を置換
         currentRoomId = roomId.replace(/[.#$\[\]]/g, "_");
         myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
 
@@ -472,16 +556,34 @@
         chatView.classList.add('active');
         exitBtn.style.display = 'block';
         qrBtn.style.display = 'block';
+        membersBtn.style.display = 'block';
+        membersBar.classList.add('active');
         statusBadge.textContent = `Room: ${currentRoomId}`;
         statusBadge.classList.add('online');
 
         // データベース参照を設定
         roomRef = db.ref(`rooms/${currentRoomId}/messages`);
+        membersRef = db.ref(`rooms/${currentRoomId}/members`);
+        myPresenceRef = db.ref(`rooms/${currentRoomId}/members/${myUserId}`);
 
-        // 入室メッセージ送信
+        // 1. メンバー管理（プレゼンス機能）のセットアップ
+        // 自分が切断（ブラウザを閉じる・通信切断）した際に自動でデータベースから除去
+        myPresenceRef.onDisconnect().remove();
+        myPresenceRef.set({
+            name: currentUsername,
+            joinedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        // メンバー一覧の変更監視
+        membersRef.on('value', (snapshot) => {
+            currentMembers = snapshot.val() || {};
+            updateMembersDisplay();
+        });
+
+        // 2. 入室メッセージ送信
         sendSystemMessage(`${currentUsername} さんが入室しました`);
 
-        // メッセージ受信監視（過去分＋リアルタイム更新）
+        // 3. メッセージ受信監視
         roomRef.limitToLast(50).on('child_added', (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
@@ -495,6 +597,37 @@
         });
 
         showToast('チャットルームに入室しました');
+    }
+
+    // メンバーリストの画面描画更新
+    function updateMembersDisplay() {
+        const inlineContainer = document.getElementById('membersListInline');
+        const modalContainer = document.getElementById('modalMemberList');
+        
+        inlineContainer.innerHTML = '';
+        modalContainer.innerHTML = '';
+
+        const memberKeys = Object.keys(currentMembers);
+
+        memberKeys.forEach(uid => {
+            const member = currentMembers[uid];
+            const isMe = uid === myUserId;
+
+            // インライン表示用タグ
+            const tag = document.createElement('span');
+            tag.className = `member-tag ${isMe ? 'me' : ''}`;
+            tag.textContent = `${member.name}${isMe ? ' (自分)' : ''}`;
+            inlineContainer.appendChild(tag);
+
+            // モーダル用リスト項目
+            const item = document.createElement('div');
+            item.className = 'member-item';
+            item.innerHTML = `
+                <span>${escapeHTML(member.name)} ${isMe ? '<small style="color:var(--primary-hover)">(自分)</small>' : ''}</span>
+                <span style="color:var(--text-muted); font-size:0.75rem;">オンライン</span>
+            `;
+            modalContainer.appendChild(item);
+        });
     }
 
     // チャットメッセージ送信
@@ -538,10 +671,22 @@
             roomRef = null;
         }
 
+        if (myPresenceRef) {
+            myPresenceRef.remove(); // メンバーリストから削除
+            myPresenceRef.onDisconnect().cancel();
+            myPresenceRef = null;
+        }
+
+        if (membersRef) {
+            membersRef.off();
+            membersRef = null;
+        }
+
         // データ初期化
         currentUsername = "";
         currentRoomId = "";
         myUserId = "";
+        currentMembers = {};
         chatMessages.innerHTML = "";
         document.getElementById('messageInput').value = "";
 
@@ -553,6 +698,8 @@
         joinView.classList.add('active');
         exitBtn.style.display = 'none';
         qrBtn.style.display = 'none';
+        membersBtn.style.display = 'none';
+        membersBar.classList.remove('active');
         statusBadge.textContent = '未接続';
         statusBadge.classList.remove('online');
 
@@ -592,7 +739,7 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 招待モーダル表示（QR＆テキストID）
+    // 招待モーダル表示
     function showQRModal() {
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = "";
@@ -611,8 +758,13 @@
         document.getElementById('qrModal').style.display = 'flex';
     }
 
-    function closeQRModal() {
-        document.getElementById('qrModal').style.display = 'none';
+    // メンバーモーダル表示
+    function showMembersModal() {
+        document.getElementById('membersModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
     }
 
     // ルームIDコピー
@@ -631,6 +783,18 @@
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
     }
 </script>
 </body>
