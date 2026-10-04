@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AirChat - 即時P2Pチャット</title>
+    <title>AirChat - 即時P2Pチャット & ファイル共有</title>
     <!-- Manifest for PWA -->
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkhpbmF0YWJva2tvIEFpckNoYXQiLAogICJzaG9ydF9uYW1lIjogIkFpckNoYXQiLAogICJzdGFydF91cmwiOiAiaW5kZXguaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzEyMTIxMiIsCiAgInRoZW1lX2NvbG9yIjogIiMxMjEyMTIiCn0=">
     <!-- PeerJS & QRCode.js -->
@@ -252,6 +252,49 @@
             object-fit: cover;
         }
 
+        /* File Card Styling */
+        .file-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 4px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .file-card:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        .file-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-weight: bold;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .file-size {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
         .message-time {
             font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.5);
@@ -269,7 +312,7 @@
             margin: 4px 0;
         }
 
-        /* Chat Input Bar - Guaranteed Visible */
+        /* Chat Input Bar */
         .chat-input-area {
             padding: 10px 12px;
             background-color: #181818;
@@ -292,6 +335,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .file-btn:hover {
+            background: #333;
         }
 
         #file-input {
@@ -370,8 +417,9 @@
             <div class="system-msg">暗号化P2P接続が確立されました</div>
         </div>
         <div class="chat-input-area">
-            <label for="file-input" class="file-btn" title="画像を送信">📷</label>
-            <input type="file" id="file-input" accept="image/*">
+            <!-- accept属性を削除して全ファイルを選択可能に -->
+            <label for="file-input" class="file-btn" title="ファイルを送信">📎</label>
+            <input type="file" id="file-input">
             <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
             <button id="send-btn">送信</button>
         </div>
@@ -424,9 +472,30 @@
         }
     }
 
+    // Format File Size Helper
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Helper: DataURL to Blob
+    function dataURLtoBlob(dataurl) {
+        const arr = dataurl.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+
     // Initialize Peer
     function initPeer() {
-        // Generate compact readable ID
         const randomId = 'chat-' + Math.random().toString(36).substring(2, 8);
 
         peer = new Peer(randomId, {
@@ -443,7 +512,6 @@
             myIdDisplay.textContent = id;
             statusBadge.textContent = '接続待ち';
 
-            // Generate QR Code
             const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
             qrcodeDiv.innerHTML = '';
             new QRCode(qrcodeDiv, {
@@ -455,7 +523,6 @@
                 correctLevel: QRCode.CorrectLevel.M
             });
 
-            // Auto-connect via URL Parameter
             const urlParams = new URLSearchParams(window.location.search);
             const peerParam = urlParams.get('peer');
             if (peerParam) {
@@ -464,7 +531,6 @@
             }
         });
 
-        // Incoming Connection
         peer.on('connection', (incomingConn) => {
             setupConnection(incomingConn);
         });
@@ -496,8 +562,8 @@
         conn.on('data', (data) => {
             if (data.type === 'text') {
                 appendMessage(data.text, 'peer', data.time);
-            } else if (data.type === 'image') {
-                appendImageMessage(data.imgData, 'peer', data.time);
+            } else if (data.type === 'file') {
+                appendFileMessage(data.fileData, data.fileName, data.fileType, data.fileSize, 'peer', data.time);
             }
         });
 
@@ -522,23 +588,33 @@
         messageInput.value = '';
     }
 
-    // Send Image File
+    // Send Any File
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file || !conn) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            showToast('画像サイズは5MB以下にしてください');
+        // PeerJS Direct Data Transfer Limit Notice (15MB Limit for Safety)
+        if (file.size > 15 * 1024 * 1024) {
+            showToast('ファイルサイズは15MB以下にしてください');
             return;
         }
+
+        showToast('ファイルを送信中...');
 
         const reader = new FileReader();
         reader.onload = (evt) => {
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const payload = { type: 'image', imgData: evt.target.result, time: time };
+            const payload = {
+                type: 'file',
+                fileData: evt.target.result,
+                fileName: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+                time: time
+            };
 
             conn.send(payload);
-            appendImageMessage(evt.target.result, 'my', time);
+            appendFileMessage(evt.target.result, file.name, file.type, file.size, 'my', time);
         };
         reader.readAsDataURL(file);
         fileInput.value = '';
@@ -562,14 +638,43 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function appendImageMessage(imgData, sender, time) {
+    // Display Images or General Files
+    function appendFileMessage(fileData, fileName, fileType, fileSize, sender, time) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
 
-        const img = document.createElement('img');
-        img.src = imgData;
-        img.onclick = () => window.open(imgData, '_blank');
-        msgDiv.appendChild(img);
+        // 画像の場合はこれまで通りプレビュー表示
+        if (fileType && fileType.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = fileData;
+            img.alt = fileName;
+            img.onclick = () => window.open(fileData, '_blank');
+            msgDiv.appendChild(img);
+        } else {
+            // その他のファイル（PDF, Word, Excel, ZIP等）はダウンロードカード表示
+            const blob = dataURLtoBlob(fileData);
+            const blobUrl = URL.createObjectURL(blob);
+
+            const fileCard = document.createElement('a');
+            fileCard.className = 'file-card';
+            fileCard.href = blobUrl;
+            fileCard.download = fileName || 'download';
+
+            let icon = '📄';
+            if (fileType.includes('pdf')) icon = '📕';
+            else if (fileType.includes('zip') || fileType.includes('compressed')) icon = '📦';
+            else if (fileType.includes('audio')) icon = '🎵';
+            else if (fileType.includes('video')) icon = '🎬';
+
+            fileCard.innerHTML = `
+                <div class="file-icon">${icon}</div>
+                <div class="file-info">
+                    <div class="file-name">${fileName}</div>
+                    <div class="file-size">${formatBytes(fileSize)}</div>
+                </div>
+            `;
+            msgDiv.appendChild(fileCard);
+        }
 
         const timeDiv = document.createElement('div');
         timeDiv.className = 'message-time';
