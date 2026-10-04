@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirChat Group</title>
+    <!-- QRコード生成ライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
             --bg-color: #121212;
@@ -11,7 +13,6 @@
             --primary-color: #008080; /* ダークターコイズ */
             --primary-hover: #00a3a3;
             --danger-color: #cf6679;
-            --danger-hover: #b00020;
             --text-color: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #333333;
@@ -60,7 +61,7 @@
         }
 
         .header-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             color: var(--text-color);
             display: flex;
@@ -81,18 +82,30 @@
             color: #81c784;
         }
 
-        /* 退室/終了ボタン */
-        .btn-exit {
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
             background-color: transparent;
-            border: 1px solid var(--danger-color);
-            color: var(--danger-color);
-            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: bold;
+            font-size: 0.8rem;
             transition: all 0.2s;
-            display: none; /* 初期状態は非表示（参加後に表示） */
+        }
+
+        .btn-action:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-exit {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+            display: none; /* 参加時に表示 */
         }
 
         .btn-exit:hover {
@@ -225,6 +238,35 @@
             flex: 1;
         }
 
+        /* QRコードモーダル */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            max-width: 80%;
+        }
+
+        #qrcode {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
         /* トースト通知 */
         .toast {
             position: absolute;
@@ -254,10 +296,13 @@
 <div class="app-container">
     <header>
         <div class="header-title">
-            AirChat Group
+            AirChat
             <span id="statusBadge" class="status-badge">オフライン</span>
         </div>
-        <button id="exitBtn" class="btn-exit" onclick="confirmExit()">退室・終了</button>
+        <div class="header-actions">
+            <button id="qrBtn" class="btn-action" style="display:none;" onclick="showQRModal()">QR表示</button>
+            <button id="exitBtn" class="btn-action btn-exit" onclick="confirmExit()">退室</button>
+        </div>
     </header>
 
     <!-- 入室画面 -->
@@ -278,12 +323,20 @@
 
     <!-- チャット画面 -->
     <div id="chatView" class="view-section">
-        <div id="chatMessages" class="chat-messages">
-            <!-- メッセージがここに追加されます -->
-        </div>
+        <div id="chatMessages" class="chat-messages"></div>
         <div class="chat-input-area">
             <input type="text" id="messageInput" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)">
             <button class="btn-primary" style="padding: 10px 18px;" onclick="sendMessage()">送信</button>
+        </div>
+    </div>
+
+    <!-- QRコード表示モーダル -->
+    <div id="qrModal" class="modal" onclick="closeQRModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3>招待用QRコード</h3>
+            <p style="font-size:0.85rem; color: var(--text-muted);">スマホで読み込むと自動で同じルームに入れます</p>
+            <div id="qrcode"></div>
+            <button class="btn-primary" style="padding: 8px 24px;" onclick="closeQRModal()">閉じる</button>
         </div>
     </div>
 
@@ -298,8 +351,19 @@
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
     const exitBtn = document.getElementById('exitBtn');
+    const qrBtn = document.getElementById('qrBtn');
     const statusBadge = document.getElementById('statusBadge');
     const chatMessages = document.getElementById('chatMessages');
+
+    // 画面ロード時にURLパラメータからルームIDを取得
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomParam = urlParams.get('room');
+        if (roomParam) {
+            document.getElementById('roomIdInput').value = roomParam;
+            showToast(`ルームID「${roomParam}」がセットされました`);
+        }
+    });
 
     // ルーム入室処理
     function joinRoom() {
@@ -318,15 +382,15 @@
         joinView.classList.remove('active');
         chatView.classList.add('active');
         exitBtn.style.display = 'block';
+        qrBtn.style.display = 'block';
         statusBadge.textContent = `Room: ${currentRoomId}`;
         statusBadge.classList.add('online');
 
-        // システムメッセージ出力
         addSystemMessage(`${currentUsername} さんが入室しました`);
         showToast('チャットルームに入室しました');
     }
 
-    // 退室/終了処理
+    // 退室処理
     function confirmExit() {
         if (confirm('チャットを終了して退室しますか？')) {
             exitRoom();
@@ -334,7 +398,6 @@
     }
 
     function exitRoom() {
-        // システムメッセージ追加（送信用フック）
         addSystemMessage(`${currentUsername} さんが退室しました`);
 
         // データ初期化
@@ -343,14 +406,18 @@
         chatMessages.innerHTML = "";
         document.getElementById('messageInput').value = "";
 
+        // URLパラメータを解除（標準状態に戻す）
+        history.replaceState(null, '', window.location.pathname);
+
         // UI初期化
         chatView.classList.remove('active');
         joinView.classList.add('active');
         exitBtn.style.display = 'none';
+        qrBtn.style.display = 'none';
         statusBadge.textContent = 'オフライン';
         statusBadge.classList.remove('online');
 
-        showToast('退室しました。タブを閉じるか再入室できます');
+        showToast('退室しました');
     }
 
     // メッセージ送信
@@ -369,7 +436,6 @@
         }
     }
 
-    // メッセージ描画ヘルパー
     function addMessage(sender, text, type) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${type}`;
@@ -397,7 +463,27 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // トースト通知表示
+    // QRコード表示
+    function showQRModal() {
+        const qrContainer = document.getElementById('qrcode');
+        qrContainer.innerHTML = ""; // クリア
+
+        // ルームID付きのURLを生成（例: https://domain.com/index.html?room=room-123）
+        const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`;
+
+        new QRCode(qrContainer, {
+            text: inviteUrl,
+            width: 180,
+            height: 180
+        });
+
+        document.getElementById('qrModal').style.display = 'flex';
+    }
+
+    function closeQRModal() {
+        document.getElementById('qrModal').style.display = 'none';
+    }
+
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.textContent = msg;
