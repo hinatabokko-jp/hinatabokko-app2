@@ -9,7 +9,6 @@
     <!-- PeerJS & QRCode.js -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <style>
         :root {
             --bg-color: #121212;
@@ -21,7 +20,6 @@
             --my-msg-bg: #005b52;
             --peer-msg-bg: #2c2c2c;
             --border-color: #333333;
-            --ripple-color: rgba(0, 191, 165, 0.45);
         }
 
         * {
@@ -55,7 +53,6 @@
             display: flex;
             flex-direction: column;
             background-color: var(--card-bg);
-            position: relative;
         }
 
         @media (min-height: 700px) and (min-width: 520px) {
@@ -76,7 +73,6 @@
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
-            z-index: 10;
         }
 
         header h1 {
@@ -113,6 +109,7 @@
             display: flex;
         }
 
+        /* Connect View */
         #connect-view {
             padding: 20px;
             overflow-y: auto;
@@ -179,8 +176,6 @@
             color: var(--text-color);
             font-size: 1rem;
             outline: none;
-            position: relative;
-            z-index: 2;
         }
 
         input[type="text"]:focus {
@@ -196,18 +191,12 @@
             font-weight: bold;
             font-size: 0.95rem;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s active;
+            transition: background 0.2s;
             white-space: nowrap;
-            position: relative;
-            z-index: 2;
         }
 
         button:hover {
             background-color: var(--accent-hover);
-        }
-
-        button:active {
-            transform: scale(0.97);
         }
 
         button.secondary {
@@ -220,6 +209,7 @@
             background-color: #444;
         }
 
+        /* Chat View */
         #chat-messages {
             flex: 1;
             padding: 16px;
@@ -279,8 +269,8 @@
             margin: 4px 0;
         }
 
+        /* Chat Input Bar - Guaranteed Visible */
         .chat-input-area {
-            position: relative;
             padding: 10px 12px;
             background-color: #181818;
             border-top: 1px solid var(--border-color);
@@ -289,7 +279,6 @@
             align-items: center;
             flex-shrink: 0;
             width: 100%;
-            overflow: hidden; /* 波紋を入力エリア内に収める */
         }
 
         .file-btn {
@@ -303,8 +292,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            z-index: 2;
         }
 
         #file-input {
@@ -314,50 +301,6 @@
         #message-input {
             flex: 1;
             min-width: 0;
-            position: relative;
-            z-index: 2;
-        }
-
-        /* テキストボックスやボタンを半透明の波紋の上に表示するスタイル */
-        .chat-input-area > * {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* ボタン・テキストボックスの上に拡がる波紋エフェクト要素 */
-        .ripple-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 10; /* テキストボックスやボタンの上に重なるように設定 */
-            border-radius: 0;
-        }
-
-        .ripple-circle {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 230, 195, 0.6) 0%, rgba(0, 137, 123, 0.35) 60%, rgba(0, 137, 123, 0) 100%);
-            transform: scale(0);
-            animation: expandRipple 0.65s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
-            pointer-events: none;
-        }
-
-        @keyframes expandRipple {
-            0% {
-                transform: scale(0);
-                opacity: 0.95;
-            }
-            50% {
-                opacity: 0.6;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 0;
-            }
         }
 
         /* Toast Notification */
@@ -391,6 +334,7 @@
         <div id="status-badge" class="status-badge">初期化中...</div>
     </header>
 
+    <!-- 接続画面 -->
     <div id="connect-view" class="view active">
         <!-- 自分のIDカード -->
         <div class="card">
@@ -420,14 +364,12 @@
         </div>
     </div>
 
+    <!-- チャット画面 -->
     <div id="chat-view" class="view">
         <div id="chat-messages">
             <div class="system-msg">暗号化P2P接続が確立されました</div>
         </div>
-        <div class="chat-input-area" id="chat-input-area">
-            <!-- 波紋エフェクト用のオーバーレイ層 -->
-            <div class="ripple-overlay" id="ripple-overlay"></div>
-
+        <div class="chat-input-area">
             <label for="file-input" class="file-btn" title="画像を送信">📷</label>
             <input type="file" id="file-input" accept="image/*">
             <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
@@ -439,6 +381,7 @@
 <div id="toast" class="toast"></div>
 
 <script>
+    // Global State
     let peer = null;
     let conn = null;
     let myPeerId = null;
@@ -457,49 +400,13 @@
     const sendBtn = document.getElementById('send-btn');
     const chatMessages = document.getElementById('chat-messages');
     const fileInput = document.getElementById('file-input');
-    const chatInputArea = document.getElementById('chat-input-area');
-    const rippleOverlay = document.getElementById('ripple-overlay');
 
+    // UI Toast
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    // 安定したクリップボードコピー関数
-    function copyToClipboard(text, successMsg) {
-        if (!text) return;
-        
-        // フォールバックコピー処理
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        textArea.style.top = '0';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
-        let successful = false;
-        try {
-            successful = document.execCommand('copy');
-        } catch (err) {
-            successful = false;
-        }
-        document.body.removeChild(textArea);
-
-        if (successful) {
-            showToast(successMsg);
-        } else if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast(successMsg);
-            }).catch(() => {
-                showToast('コピーに失敗しました');
-            });
-        } else {
-            showToast('コピーに失敗しました');
-        }
     }
 
     // View Switcher
@@ -517,7 +424,9 @@
         }
     }
 
+    // Initialize Peer
     function initPeer() {
+        // Generate compact readable ID
         const randomId = 'chat-' + Math.random().toString(36).substring(2, 8);
 
         peer = new Peer(randomId, {
@@ -534,6 +443,7 @@
             myIdDisplay.textContent = id;
             statusBadge.textContent = '接続待ち';
 
+            // Generate QR Code
             const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
             qrcodeDiv.innerHTML = '';
             new QRCode(qrcodeDiv, {
@@ -545,6 +455,7 @@
                 correctLevel: QRCode.CorrectLevel.M
             });
 
+            // Auto-connect via URL Parameter
             const urlParams = new URLSearchParams(window.location.search);
             const peerParam = urlParams.get('peer');
             if (peerParam) {
@@ -553,6 +464,7 @@
             }
         });
 
+        // Incoming Connection
         peer.on('connection', (incomingConn) => {
             setupConnection(incomingConn);
         });
@@ -564,6 +476,7 @@
         });
     }
 
+    // Connect Action
     function connectToPeer(targetId) {
         if (!targetId) return;
         statusBadge.textContent = '接続中...';
@@ -571,6 +484,7 @@
         setupConnection(outgoingConn);
     }
 
+    // Setup Connection Handling
     function setupConnection(connection) {
         conn = connection;
 
@@ -595,62 +509,10 @@
         });
     }
 
-    /**
-     * 送信ボタンや入力エリア全体に広がる波紋エフェクトを生成・再生する関数
-     * @param {Event} e - クリックまたはキーボードのイベントオブジェクト
-     */
-    function triggerSendRipple(e) {
-        if (!chatInputArea || !rippleOverlay) return;
-
-        const areaRect = chatInputArea.getBoundingClientRect();
-        let clickX, clickY;
-
-        // イベント座標を取得（クリック/タップ位置、または送信ボタンの中心位置）
-        if (e && (e.clientX || (e.touches && e.touches[0]))) {
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            clickX = clientX - areaRect.left;
-            clickY = clientY - areaRect.top;
-        } else {
-            // Enterキー等の場合、送信ボタンの中心を起点にする
-            const btnRect = sendBtn.getBoundingClientRect();
-            clickX = (btnRect.left + btnRect.width / 2) - areaRect.left;
-            clickY = (btnRect.top + btnRect.height / 2) - areaRect.top;
-        }
-
-        // 入力エリア全体を覆うのに十分な対角線サイズ（直径）を計算
-        const maxDistX = Math.max(clickX, areaRect.width - clickX);
-        const maxDistY = Math.max(clickY, areaRect.height - clickY);
-        const maxRadius = Math.sqrt(maxDistX * maxDistX + maxDistY * maxDistY);
-        const diameter = maxRadius * 2.2; // 確実に外側まで広がるよう余裕を持たせる
-
-        // 波紋要素を作成
-        const circle = document.createElement('div');
-        circle.className = 'ripple-circle';
-        circle.style.width = `${diameter}px`;
-        circle.style.height = `${diameter}px`;
-        circle.style.left = `${clickX - diameter / 2}px`;
-        circle.style.top = `${clickY - diameter / 2}px`;
-
-        rippleOverlay.appendChild(circle);
-
-        // アニメーション終了後に要素を削除
-        circle.addEventListener('animationend', () => {
-            circle.remove();
-        });
-    }
-
-    function sendMessage(e) {
+    // Send Text Message
+    function sendMessage() {
         const text = messageInput.value.trim();
-        if (!text) return;
-
-        // 送信ボタン・テキストボックスの上に広がる波紋エフェクトを発動
-        triggerSendRipple(e);
-
-        if (!conn) {
-            showToast('接続されていません');
-            return;
-        }
+        if (!text || !conn) return;
 
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const payload = { type: 'text', text: text, time: time };
@@ -660,25 +522,15 @@
         messageInput.value = '';
     }
 
-    // 画像ファイル送信
+    // Send Image File
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        if (!conn) {
-            showToast('相手と接続されていません');
-            fileInput.value = '';
-            return;
-        }
+        if (!file || !conn) return;
 
         if (file.size > 5 * 1024 * 1024) {
             showToast('画像サイズは5MB以下にしてください');
-            fileInput.value = '';
             return;
         }
-
-        // 画像送信時にも波紋を発動
-        triggerSendRipple(e);
 
         const reader = new FileReader();
         reader.onload = (evt) => {
@@ -692,6 +544,7 @@
         fileInput.value = '';
     });
 
+    // UI Render Helpers
     function appendMessage(text, sender, time) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
@@ -738,13 +591,17 @@
     // Copy Handlers
     copyIdBtn.addEventListener('click', () => {
         if (!myPeerId) return;
-        copyToClipboard(myPeerId, 'IDをコピーしました');
+        navigator.clipboard.writeText(myPeerId).then(() => {
+            showToast('IDをコピーしました');
+        });
     });
 
     copyLinkBtn.addEventListener('click', () => {
         if (!myPeerId) return;
         const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
-        copyToClipboard(shareUrl, '接続URLをコピーしました');
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast('接続URLをコピーしました');
+        });
     });
 
     // Action Listeners
@@ -757,14 +614,11 @@
         }
     });
 
-    sendBtn.addEventListener('click', (e) => {
-        sendMessage(e);
-    });
+    sendBtn.addEventListener('click', sendMessage);
 
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault();
-            sendMessage(e);
+            sendMessage();
         }
     });
 
