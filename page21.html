@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AirChat - 即時P2Pチャット & ファイル共有</title>
+    <title>AirChat - 即時P2Pチャット</title>
     <!-- Manifest for PWA -->
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkhpbmF0YWJva2tvIEFpckNoYXQiLAogICJzaG9ydF9uYW1lIjogIkFpckNoYXQiLAogICJzdGFydF91cmwiOiAiaW5kZXguaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzEyMTIxMiIsCiAgInRoZW1lX2NvbG9yIjogIiMxMjEyMTIiCn0=">
     <!-- PeerJS & QRCode.js -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         :root {
             --bg-color: #121212;
@@ -182,7 +183,10 @@
             border-color: var(--accent-color);
         }
 
+        /* Button & Ripple Effect Styling */
         button {
+            position: relative;
+            overflow: hidden;
             padding: 12px 18px;
             border-radius: 8px;
             border: none;
@@ -193,6 +197,7 @@
             cursor: pointer;
             transition: background 0.2s;
             white-space: nowrap;
+            user-select: none;
         }
 
         button:hover {
@@ -207,6 +212,23 @@
 
         button.secondary:hover {
             background-color: #444;
+        }
+
+        /* Dynamic Ripple Element */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple-animation 600ms linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(2.5);
+                opacity: 0;
+            }
         }
 
         /* Chat View */
@@ -252,49 +274,6 @@
             object-fit: cover;
         }
 
-        /* File Card Styling */
-        .file-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0,0,0,0.2);
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-top: 4px;
-            text-decoration: none;
-            color: inherit;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .file-card:hover {
-            background: rgba(0,0,0,0.3);
-        }
-
-        .file-icon {
-            font-size: 1.8rem;
-            line-height: 1;
-        }
-
-        .file-info {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .file-name {
-            font-weight: bold;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 180px;
-        }
-
-        .file-size {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
         .message-time {
             font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.5);
@@ -325,6 +304,8 @@
         }
 
         .file-btn {
+            position: relative;
+            overflow: hidden;
             background: #2a2a2a;
             border: 1px solid var(--border-color);
             color: var(--text-color);
@@ -335,10 +316,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .file-btn:hover {
-            background: #333;
+            user-select: none;
         }
 
         #file-input {
@@ -417,9 +395,8 @@
             <div class="system-msg">暗号化P2P接続が確立されました</div>
         </div>
         <div class="chat-input-area">
-            <!-- accept属性を削除して全ファイルを選択可能に -->
-            <label for="file-input" class="file-btn" title="ファイルを送信">📎</label>
-            <input type="file" id="file-input">
+            <label for="file-input" class="file-btn" title="画像を送信">📷</label>
+            <input type="file" id="file-input" accept="image/*">
             <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
             <button id="send-btn">送信</button>
         </div>
@@ -449,6 +426,42 @@
     const chatMessages = document.getElementById('chat-messages');
     const fileInput = document.getElementById('file-input');
 
+    // Ripple Effect Logic
+    function createRipple(event) {
+        const button = event.currentTarget;
+        
+        // Remove existing ripple element if any
+        const existingRipple = button.getElementsByClassName("ripple")[0];
+        if (existingRipple) {
+            existingRipple.remove();
+        }
+
+        const circle = document.createElement("span");
+        const diameter = Math.max(button.clientWidth, button.clientHeight);
+        const radius = diameter / 2;
+
+        const rect = button.getBoundingClientRect();
+        
+        // Calculate position relative to the button
+        const clientX = event.clientX || (event.touches && event.touches[0].clientX) || 0;
+        const clientY = event.clientY || (event.touches && event.touches[0].clientY) || 0;
+
+        circle.style.width = circle.style.height = `${diameter}px`;
+        circle.style.left = `${clientX - rect.left - radius}px`;
+        circle.style.top = `${clientY - rect.top - radius}px`;
+        circle.classList.add("ripple");
+
+        button.appendChild(circle);
+    }
+
+    // Attach Ripple effect to interactive elements
+    function attachRippleEffects() {
+        const rippleElements = document.querySelectorAll('button, .file-btn');
+        rippleElements.forEach(element => {
+            element.addEventListener('pointerdown', createRipple);
+        });
+    }
+
     // UI Toast
     function showToast(msg) {
         const toast = document.getElementById('toast');
@@ -472,28 +485,6 @@
         }
     }
 
-    // Format File Size Helper
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
-
-    // Helper: DataURL to Blob
-    function dataURLtoBlob(dataurl) {
-        const arr = dataurl.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new Blob([u8arr], { type: mime });
-    }
-
     // Initialize Peer
     function initPeer() {
         const randomId = 'chat-' + Math.random().toString(36).substring(2, 8);
@@ -512,6 +503,7 @@
             myIdDisplay.textContent = id;
             statusBadge.textContent = '接続待ち';
 
+            // Generate QR Code
             const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
             qrcodeDiv.innerHTML = '';
             new QRCode(qrcodeDiv, {
@@ -523,6 +515,7 @@
                 correctLevel: QRCode.CorrectLevel.M
             });
 
+            // Auto-connect via URL Parameter
             const urlParams = new URLSearchParams(window.location.search);
             const peerParam = urlParams.get('peer');
             if (peerParam) {
@@ -531,6 +524,7 @@
             }
         });
 
+        // Incoming Connection
         peer.on('connection', (incomingConn) => {
             setupConnection(incomingConn);
         });
@@ -562,8 +556,8 @@
         conn.on('data', (data) => {
             if (data.type === 'text') {
                 appendMessage(data.text, 'peer', data.time);
-            } else if (data.type === 'file') {
-                appendFileMessage(data.fileData, data.fileName, data.fileType, data.fileSize, 'peer', data.time);
+            } else if (data.type === 'image') {
+                appendImageMessage(data.imgData, 'peer', data.time);
             }
         });
 
@@ -588,33 +582,23 @@
         messageInput.value = '';
     }
 
-    // Send Any File
+    // Send Image File
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file || !conn) return;
 
-        // PeerJS Direct Data Transfer Limit Notice (15MB Limit for Safety)
-        if (file.size > 15 * 1024 * 1024) {
-            showToast('ファイルサイズは15MB以下にしてください');
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('画像サイズは5MB以下にしてください');
             return;
         }
-
-        showToast('ファイルを送信中...');
 
         const reader = new FileReader();
         reader.onload = (evt) => {
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const payload = {
-                type: 'file',
-                fileData: evt.target.result,
-                fileName: file.name,
-                fileType: file.type,
-                fileSize: file.size,
-                time: time
-            };
+            const payload = { type: 'image', imgData: evt.target.result, time: time };
 
             conn.send(payload);
-            appendFileMessage(evt.target.result, file.name, file.type, file.size, 'my', time);
+            appendImageMessage(evt.target.result, 'my', time);
         };
         reader.readAsDataURL(file);
         fileInput.value = '';
@@ -638,43 +622,14 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Display Images or General Files
-    function appendFileMessage(fileData, fileName, fileType, fileSize, sender, time) {
+    function appendImageMessage(imgData, sender, time) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
 
-        // 画像の場合はこれまで通りプレビュー表示
-        if (fileType && fileType.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = fileData;
-            img.alt = fileName;
-            img.onclick = () => window.open(fileData, '_blank');
-            msgDiv.appendChild(img);
-        } else {
-            // その他のファイル（PDF, Word, Excel, ZIP等）はダウンロードカード表示
-            const blob = dataURLtoBlob(fileData);
-            const blobUrl = URL.createObjectURL(blob);
-
-            const fileCard = document.createElement('a');
-            fileCard.className = 'file-card';
-            fileCard.href = blobUrl;
-            fileCard.download = fileName || 'download';
-
-            let icon = '📄';
-            if (fileType.includes('pdf')) icon = '📕';
-            else if (fileType.includes('zip') || fileType.includes('compressed')) icon = '📦';
-            else if (fileType.includes('audio')) icon = '🎵';
-            else if (fileType.includes('video')) icon = '🎬';
-
-            fileCard.innerHTML = `
-                <div class="file-icon">${icon}</div>
-                <div class="file-info">
-                    <div class="file-name">${fileName}</div>
-                    <div class="file-size">${formatBytes(fileSize)}</div>
-                </div>
-            `;
-            msgDiv.appendChild(fileCard);
-        }
+        const img = document.createElement('img');
+        img.src = imgData;
+        img.onclick = () => window.open(imgData, '_blank');
+        msgDiv.appendChild(img);
 
         const timeDiv = document.createElement('div');
         timeDiv.className = 'message-time';
@@ -728,7 +683,10 @@
     });
 
     // App Init
-    window.addEventListener('load', initPeer);
+    window.addEventListener('load', () => {
+        attachRippleEffects();
+        initPeer();
+    });
 </script>
 </body>
 </html>
