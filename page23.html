@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111318">
+<title>1対1 ビデオ通話</title>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0f13;color:#f4f5f7;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:900px;margin:auto;padding:20px}
+h1{font-size:24px;margin:0 0 6px}
+p{color:#aeb4bf}
+.panel{background:#171a20;border:1px solid #292e38;border-radius:18px;padding:18px;margin:14px 0}
+.videos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.video-box{position:relative;background:#050608;border-radius:14px;overflow:hidden;aspect-ratio:16/10}
+video{width:100%;height:100%;object-fit:cover;display:block}
+.label{position:absolute;left:10px;bottom:10px;background:#0009;padding:5px 9px;border-radius:999px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input{flex:1;min-width:220px;background:#0d0f13;color:#fff;border:1px solid #3a404c;border-radius:10px;padding:12px;font-size:16px}
+button{border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;background:#e8ebf0;color:#111318}
+button.secondary{background:#292e38;color:#f4f5f7}
+button.danger{background:#a83a3a;color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.status{padding:10px 12px;border-radius:10px;background:#101319;color:#cbd1da;font-size:14px}
+.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;word-break:break-all}
+small{color:#8e96a3}
+@media(max-width:650px){.videos{grid-template-columns:1fr}.row{flex-direction:column;align-items:stretch}input{min-width:0}}
+</style>
+</head>
+<body>
+<main>
+  <h1>1対1 ビデオ通話</h1>
+  <p>最小構成の試作版。PeerJS + WebRTCで、2人だけを接続します。</p>
+
+  <section class="panel">
+    <div class="status" id="status">接続準備中…</div>
+    <p>あなたのID</p>
+    <div class="id" id="myId">取得中…</div>
+    <small>このIDを相手に伝えてください。</small>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <input id="remoteId" placeholder="相手のIDを入力">
+      <button id="callBtn" disabled>発信する</button>
+    </div>
+  </section>
+
+  <section class="panel videos">
+    <div class="video-box">
+      <video id="localVideo" autoplay muted playsinline></video>
+      <span class="label">あなた</span>
+    </div>
+    <div class="video-box">
+      <video id="remoteVideo" autoplay playsinline></video>
+      <span class="label">相手</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <button id="micBtn" class="secondary" disabled>🎙 ミュート</button>
+      <button id="cameraBtn" class="secondary" disabled>📷 カメラOFF</button>
+      <button id="hangupBtn" class="danger" disabled>通話終了</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const status = document.getElementById("status");
+  const myId = document.getElementById("myId");
+  const remoteId = document.getElementById("remoteId");
+  const callBtn = document.getElementById("callBtn");
+  const hangupBtn = document.getElementById("hangupBtn");
+  const micBtn = document.getElementById("micBtn");
+  const cameraBtn = document.getElementById("cameraBtn");
+  const localVideo = document.getElementById("localVideo");
+  const remoteVideo = document.getElementById("remoteVideo");
+
+  let peer = null;
+  let localStream = null;
+  let currentCall = null;
+
+  function setStatus(message) {
+    status.textContent = message;
+  }
+
+  async function startCamera() {
+    if (localStream) return localStream;
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+    localVideo.srcObject = localStream;
+    micBtn.disabled = false;
+    cameraBtn.disabled = false;
+    return localStream;
+  }
+
+  function finishCall() {
+    if (currentCall) {
+      currentCall.close();
+      currentCall = null;
+    }
+    remoteVideo.srcObject = null;
+    hangupBtn.disabled = true;
+    setStatus("通話終了。相手のIDを入れて、もう一度発信できます。");
+  }
+
+  function handleCall(call) {
+    currentCall = call;
+    setStatus("着信中…接続しています。");
+    startCamera()
+      .then(stream => {
+        call.answer(stream);
+        call.on("stream", remoteStream => {
+          remoteVideo.srcObject = remoteStream;
+          hangupBtn.disabled = false;
+          setStatus("通話中");
+        });
+        call.on("close", finishCall);
+        call.on("error", () => {
+          setStatus("通話中にエラーが発生しました。");
+          finishCall();
+        });
+      })
+      .catch(err => {
+        setStatus("カメラ・マイクを許可できませんでした。");
+        console.error(err);
+        call.close();
+      });
+  }
+
+  async function init() {
+    if (!window.Peer) {
+      setStatus("PeerJSの読み込みに失敗しました。インターネット接続を確認してください。");
+      return;
+    }
+    try {
+      await startCamera();
+      peer = new Peer();
+
+      peer.on("open", id => {
+        myId.textContent = id;
+        callBtn.disabled = false;
+        setStatus("準備完了。相手にこのIDを伝えてください。");
+      });
+
+      peer.on("call", handleCall);
+
+      peer.on("disconnected", () => {
+        setStatus("接続サーバーから切断されました。再接続を試みています…");
+        peer.reconnect();
+      });
+
+      peer.on("error", err => {
+        console.error(err);
+        if (err.type === "peer-unavailable") {
+          setStatus("その相手IDは見つかりません。相手がページを開いているか確認してください。");
+        } else {
+          setStatus("接続エラー: " + err.type);
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      setStatus("カメラ・マイクへのアクセスが必要です。HTTPSまたはlocalhostで開いてください。");
+    }
+  }
+
+  callBtn.addEventListener("click", async () => {
+    const id = remoteId.value.trim();
+    if (!id || !peer) return;
+    try {
+      const stream = await startCamera();
+      setStatus("発信中…");
+      const call = peer.call(id, stream);
+      currentCall = call;
+      hangupBtn.disabled = false;
+
+      call.on("stream", remoteStream => {
+        remoteVideo.srcObject = remoteStream;
+        setStatus("通話中");
+      });
+      call.on("close", finishCall);
+      call.on("error", () => {
+        setStatus("通話中にエラーが発生しました。");
+        finishCall();
+      });
+    } catch (err) {
+      console.error(err);
+      setStatus("発信できませんでした。");
+    }
+  });
+
+  hangupBtn.addEventListener("click", finishCall);
+
+  micBtn.addEventListener("click", () => {
+    if (!localStream) return;
+    const track = localStream.getAudioTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    micBtn.textContent = track.enabled ? "🎙 ミュート" : "🔇 ミュート解除";
+  });
+
+  cameraBtn.addEventListener("click", () => {
+    if (!localStream) return;
+    const track = localStream.getVideoTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    cameraBtn.textContent = track.enabled ? "📷 カメラOFF" : "📷 カメラON";
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (currentCall) currentCall.close();
+    if (peer) peer.destroy();
+    if (localStream) localStream.getTracks().forEach(track => track.stop());
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
