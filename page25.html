@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram改行コメントメーカー</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --primary-color: #00bcd4;
+            --primary-hover: #00acc1;
+            --border-color: #333333;
+            --input-bg: #2a2a2a;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        p.description {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        /* 絵文字パレット */
+        .emoji-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .emoji-btn {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .emoji-btn:hover {
+            background-color: #3a3a3a;
+            transform: scale(1.05);
+        }
+
+        .emoji-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* テキストエリア */
+        textarea {
+            width: 100%;
+            height: 160px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* アクションボタン */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button.action-btn {
+            flex: 1;
+            background-color: var(--primary-color);
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button.action-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.secondary-btn {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary-btn:hover {
+            background-color: #3a3a3a;
+        }
+
+        /* プレビューエリア */
+        .preview-box {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 80px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        /* トースト通知 */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            background-color: #00bcd4;
+            color: #121212;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Instagram改行コメントメーカー</h1>
+        <p class="description">改行を含んだきれいなコメントを簡単に作成できます</p>
+
+        <!-- 絵文字パレット -->
+        <div class="section-title">ワンタップ絵文字</div>
+        <div class="emoji-palette" id="emojiPalette">
+            <!-- JavaScriptで動的生成 -->
+        </div>
+
+        <!-- 入力エリア -->
+        <div class="section-title">コメント入力</div>
+        <textarea id="commentInput" placeholder="ここにコメントを入力してください... (Enterで改行できます)"></textarea>
+
+        <!-- ボタン群 -->
+        <div class="actions">
+            <button class="action-btn secondary-btn" id="clearBtn">クリア</button>
+            <button class="action-btn" id="copyBtn">コピーする</button>
+        </div>
+
+        <!-- プレビュー -->
+        <div class="section-title">プレビュー</div>
+        <div class="preview-box" id="previewBox">ここにリアルタイムでプレビューが表示されます</div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast">コピーしました！</div>
+
+    <script>
+        // よく使う絵文字リスト
+        const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
+
+        const emojiPalette = document.getElementById('emojiPalette');
+        const commentInput = document.getElementById('commentInput');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const previewBox = document.getElementById('previewBox');
+        const toast = document.getElementById('toast');
+
+        // 絵文字ボタンの生成
+        emojis.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'emoji-btn';
+            btn.textContent = emoji;
+            btn.type = 'button';
+            btn.addEventListener('click', () => {
+                insertAtCursor(commentInput, emoji);
+                updatePreview();
+            });
+            emojiPalette.appendChild(btn);
+        });
+
+        // カーソル位置に文字を挿入する関数
+        function insertAtCursor(field, text) {
+            const startPos = field.selectionStart;
+            const endPos = field.selectionEnd;
+            field.value = field.value.substring(0, startPos) + text + field.value.substring(endPos, field.value.length);
+            field.focus();
+            field.setSelectionRange(startPos + text.length, startPos + text.length);
+        }
+
+        // プレビューの更新
+        function updatePreview() {
+            const text = commentInput.value;
+            previewBox.textContent = text ? text : 'ここにリアルタイムでプレビューが表示されます';
+        }
+
+        commentInput.addEventListener('input', updatePreview);
+
+        // コピーボタンの処理
+        copyBtn.addEventListener('click', async () => {
+            const text = commentInput.value;
+            if (!text.trim()) {
+                showToast('コメントが空です');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('コピーしました！');
+            } catch (err) {
+                // フォールバック
+                commentInput.select();
+                document.execCommand('copy');
+                showToast('コピーしました！');
+            }
+        });
+
+        // クリアボタン
+        clearBtn.addEventListener('click', () => {
+            commentInput.value = '';
+            updatePreview();
+            commentInput.focus();
+        });
+
+        // トースト表示関数
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
