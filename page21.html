@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AirChat - 即時P2Pチャット</title>
     <!-- Manifest for PWA -->
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkhpbmF0YWJva2tvIEFpckNoYXQiLAogICJzaG9ydF9uYW1lIjogIkFpckNoYXQiLAogICJzdGFydF91cmwiOiAiaW5kZXguaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzEyMTIxMiIsCiAgInRoZW1lX2NvbG9yIjogIiMxMjEyMTIiCn0=">
@@ -27,27 +27,32 @@
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            overflow: hidden;
+            align-items: center;
         }
 
         .container {
             width: 100%;
             max-width: 500px;
-            height: 100vh;
+            height: 100%;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             background-color: var(--card-bg);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         @media (min-height: 700px) and (min-width: 520px) {
@@ -55,21 +60,23 @@
                 height: 90vh;
                 border-radius: 16px;
                 overflow: hidden;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             }
         }
 
         /* Header */
         header {
-            padding: 16px;
+            padding: 12px 16px;
             background-color: #181818;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         header h1 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #00bfa5;
             display: flex;
             align-items: center;
@@ -104,49 +111,70 @@
 
         /* Connect View */
         #connect-view {
-            padding: 24px;
+            padding: 20px;
+            overflow-y: auto;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .card {
+            width: 100%;
+            background: #252525;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .my-id-box {
+            display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            overflow-y: auto;
+            gap: 8px;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .my-id-text {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00bfa5;
+            letter-spacing: 1px;
         }
 
         .qr-box {
             background: white;
-            padding: 16px;
-            border-radius: 12px;
-            margin: 20px 0;
+            padding: 12px;
+            border-radius: 8px;
             display: inline-block;
-        }
-
-        .info-text {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .manual-connect {
-            width: 100%;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
+            margin: 8px 0;
         }
 
         .input-group {
             display: flex;
             gap: 8px;
-            margin-top: 8px;
+            width: 100%;
         }
 
         input[type="text"] {
             flex: 1;
-            padding: 12px 16px;
+            padding: 12px 14px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            background-color: #2a2a2a;
+            background-color: #1a1a1a;
             color: var(--text-color);
-            font-size: 0.95rem;
+            font-size: 1rem;
             outline: none;
         }
 
@@ -155,23 +183,30 @@
         }
 
         button {
-            padding: 12px 20px;
+            padding: 12px 18px;
             border-radius: 8px;
             border: none;
             background-color: var(--accent-color);
             color: white;
             font-weight: bold;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: background 0.2s;
+            white-space: nowrap;
         }
 
         button:hover {
             background-color: var(--accent-hover);
         }
 
-        button:disabled {
+        button.secondary {
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary:hover {
             background-color: #444;
-            cursor: not-allowed;
         }
 
         /* Chat View */
@@ -182,6 +217,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .message {
@@ -209,9 +245,11 @@
 
         .message img {
             max-width: 100%;
+            max-height: 200px;
             border-radius: 8px;
             margin-top: 4px;
             cursor: pointer;
+            object-fit: cover;
         }
 
         .message-time {
@@ -231,34 +269,41 @@
             margin: 4px 0;
         }
 
-        /* Chat Input Bar */
+        /* Chat Input Bar - Guaranteed Visible */
         .chat-input-area {
-            padding: 12px 16px;
+            padding: 10px 12px;
             background-color: #181818;
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-shrink: 0;
+            width: 100%;
         }
 
         .file-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.4rem;
+            background: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-size: 1.2rem;
             cursor: pointer;
-            padding: 4px 8px;
-        }
-
-        .file-btn:hover {
-            color: var(--accent-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #file-input {
             display: none;
         }
 
-        /* Toast */
+        #message-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Toast Notification */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -269,7 +314,7 @@
             padding: 10px 20px;
             border-radius: 20px;
             font-size: 0.85rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
@@ -286,24 +331,35 @@
 <div class="container">
     <header>
         <h1>💬 AirChat</h1>
-        <div id="status-badge" class="status-badge">準備中...</div>
+        <div id="status-badge" class="status-badge">初期化中...</div>
     </header>
 
-    <!-- 接続待ち画面 -->
+    <!-- 接続画面 -->
     <div id="connect-view" class="view active">
-        <p class="info-text">相手のスマホで下記のQRコードを読み取ると、リアルタイムでチャットが始まります。</p>
-        
-        <div class="qr-box">
-            <div id="qrcode"></div>
+        <!-- 自分のIDカード -->
+        <div class="card">
+            <div class="card-title">あなたの接続ID（相手に教えて接続）</div>
+            <div class="my-id-box">
+                <span id="my-id-display" class="my-id-text">取得中...</span>
+                <button id="copy-id-btn" class="secondary" style="padding: 6px 10px; font-size: 0.8rem;">コピー</button>
+            </div>
+            <button id="copy-link-btn" class="secondary" style="width: 100%; font-size: 0.85rem;">🔗 接続URLをコピーして送る</button>
         </div>
 
-        <p class="info-text" style="font-size: 0.8rem;">※端末同士で直接通信するため、メッセージは外部に保存されず安全です。</p>
-
-        <div class="manual-connect">
-            <p class="info-text" style="margin-bottom: 8px;">手動で接続IDを入力して接続：</p>
+        <!-- 相手のID入力カード -->
+        <div class="card">
+            <div class="card-title">相手のIDを入力して接続</div>
             <div class="input-group">
-                <input type="text" id="target-id-input" placeholder="相手のIDを入力">
+                <input type="text" id="target-id-input" placeholder="例: chat-xxxxxx" autocomplete="off" capitalize="off">
                 <button id="connect-btn">接続</button>
+            </div>
+        </div>
+
+        <!-- 近距離用QRコード -->
+        <div class="card">
+            <div class="card-title">近くの人とつながる（QR読み取り）</div>
+            <div class="qr-box">
+                <div id="qrcode"></div>
             </div>
         </div>
     </div>
@@ -325,7 +381,7 @@
 <div id="toast" class="toast"></div>
 
 <script>
-    // App State
+    // Global State
     let peer = null;
     let conn = null;
     let myPeerId = null;
@@ -334,6 +390,9 @@
     const statusBadge = document.getElementById('status-badge');
     const connectView = document.getElementById('connect-view');
     const chatView = document.getElementById('chat-view');
+    const myIdDisplay = document.getElementById('my-id-display');
+    const copyIdBtn = document.getElementById('copy-id-btn');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
     const qrcodeDiv = document.getElementById('qrcode');
     const targetIdInput = document.getElementById('target-id-input');
     const connectBtn = document.getElementById('connect-btn');
@@ -342,7 +401,7 @@
     const chatMessages = document.getElementById('chat-messages');
     const fileInput = document.getElementById('file-input');
 
-    // UI Helper
+    // UI Toast
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.textContent = msg;
@@ -350,6 +409,7 @@
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
+    // View Switcher
     function switchView(viewName) {
         connectView.classList.remove('active');
         chatView.classList.remove('active');
@@ -364,11 +424,11 @@
         }
     }
 
-    // Initialize PeerJS
+    // Initialize Peer
     function initPeer() {
-        // Unique Peer ID creation
-        const randomId = 'chat-' + Math.random().toString(36).substr(2, 8);
-        
+        // Generate compact readable ID
+        const randomId = 'chat-' + Math.random().toString(36).substring(2, 8);
+
         peer = new Peer(randomId, {
             config: {
                 iceServers: [
@@ -380,49 +440,51 @@
 
         peer.on('open', (id) => {
             myPeerId = id;
+            myIdDisplay.textContent = id;
             statusBadge.textContent = '接続待ち';
-            
-            // Check URL for target peer ID
+
+            // Generate QR Code
+            const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
+            qrcodeDiv.innerHTML = '';
+            new QRCode(qrcodeDiv, {
+                text: shareUrl,
+                width: 140,
+                height: 140,
+                colorDark: "#121212",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            // Auto-connect via URL Parameter
             const urlParams = new URLSearchParams(window.location.search);
             const peerParam = urlParams.get('peer');
-
             if (peerParam) {
-                // Auto-connect if peer param exists in URL
+                targetIdInput.value = peerParam;
                 connectToPeer(peerParam);
-            } else {
-                // Generate QR Code with shareable URL
-                const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
-                qrcodeDiv.innerHTML = '';
-                new QRCode(qrcodeDiv, {
-                    text: shareUrl,
-                    width: 180,
-                    height: 180,
-                    colorDark: "#121212",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
             }
         });
 
-        // Incoming connection handler
+        // Incoming Connection
         peer.on('connection', (incomingConn) => {
             setupConnection(incomingConn);
         });
 
         peer.on('error', (err) => {
-            console.error('Peer error:', err);
+            console.error('PeerJS error:', err);
             showToast('接続エラーが発生しました');
+            statusBadge.textContent = 'エラー';
         });
     }
 
-    // Connect to Target Peer
+    // Connect Action
     function connectToPeer(targetId) {
+        if (!targetId) return;
         statusBadge.textContent = '接続中...';
         const outgoingConn = peer.connect(targetId, { reliable: true });
         setupConnection(outgoingConn);
     }
 
-    // Setup Connection Events
+    // Setup Connection Handling
     function setupConnection(connection) {
         conn = connection;
 
@@ -432,7 +494,11 @@
         });
 
         conn.on('data', (data) => {
-            handleIncomingData(data);
+            if (data.type === 'text') {
+                appendMessage(data.text, 'peer', data.time);
+            } else if (data.type === 'image') {
+                appendImageMessage(data.imgData, 'peer', data.time);
+            }
         });
 
         conn.on('close', () => {
@@ -443,16 +509,7 @@
         });
     }
 
-    // Handle Incoming Data
-    function handleIncomingData(data) {
-        if (data.type === 'text') {
-            appendMessage(data.text, 'peer', data.time);
-        } else if (data.type === 'image') {
-            appendImageMessage(data.imgData, 'peer', data.time);
-        }
-    }
-
-    // Send Messages
+    // Send Text Message
     function sendMessage() {
         const text = messageInput.value.trim();
         if (!text || !conn) return;
@@ -465,7 +522,7 @@
         messageInput.value = '';
     }
 
-    // Send Image
+    // Send Image File
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file || !conn) return;
@@ -479,7 +536,7 @@
         reader.onload = (evt) => {
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const payload = { type: 'image', imgData: evt.target.result, time: time };
-            
+
             conn.send(payload);
             appendImageMessage(evt.target.result, 'my', time);
         };
@@ -487,11 +544,11 @@
         fileInput.value = '';
     });
 
-    // Append Messages to UI
+    // UI Render Helpers
     function appendMessage(text, sender, time) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
-        
+
         const textDiv = document.createElement('div');
         textDiv.textContent = text;
         msgDiv.appendChild(textDiv);
@@ -531,11 +588,29 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Event Listeners
+    // Copy Handlers
+    copyIdBtn.addEventListener('click', () => {
+        if (!myPeerId) return;
+        navigator.clipboard.writeText(myPeerId).then(() => {
+            showToast('IDをコピーしました');
+        });
+    });
+
+    copyLinkBtn.addEventListener('click', () => {
+        if (!myPeerId) return;
+        const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast('接続URLをコピーしました');
+        });
+    });
+
+    // Action Listeners
     connectBtn.addEventListener('click', () => {
         const targetId = targetIdInput.value.trim();
         if (targetId) {
             connectToPeer(targetId);
+        } else {
+            showToast('相手のIDを入力してください');
         }
     });
 
@@ -547,7 +622,7 @@
         }
     });
 
-    // App Initialization
+    // App Init
     window.addEventListener('load', initPeer);
 </script>
 </body>
