@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirDrop Lite - WebRTC File Transfer</title>
-    <!-- Tailwind CSS -->
+    <title>AirBridge - Fast WebRTC P2P File Transfer</title>
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PeerJS Library -->
+    <!-- PeerJS CDN -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- QRCode.js Library -->
+    <!-- QRCode.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -20,177 +23,235 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0f9ff',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                        }
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            accent: '#3b82f6',
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     }
                 }
             }
         }
     </script>
+
     <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+
+        /* Glassmorphism subtle effect */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card-hover:hover {
+            border-color: rgba(45, 212, 191, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.15);
+        }
+
+        /* Radar Pulse Animation */
+        .radar-box {
+            position: relative;
+        }
+        .radar-box::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.4) 0%, rgba(45, 212, 191, 0) 70%);
+            animation: radar-pulse 2.5s infinite ease-out;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes radar-pulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #1f2937;
+            background: #0f172a;
         }
         ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
+            background: #334155;
+            border-radius: 9999px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        .pulse-ring {
-            animation: pulse-border 2s infinite;
-        }
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+            background: #0d9488;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+<body class="min-h-screen flex flex-col font-sans selection:bg-teal-500 selection:text-white">
 
-    <!-- Header / Navbar -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-sky-500/20">
-                    <i class="fa-solid font-bold fa-bolt"></i>
+                <div class="radar-box relative">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-500/20 relative z-10">
+                        <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                    </div>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-wide">AirDrop Lite</h1>
-                    <p class="text-xs text-slate-400">P2P クロスプラットフォーム共有</p>
+                    <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-teal-300 bg-clip-text text-transparent">AirBridge</h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Direct WebRTC File Sharing</p>
                 </div>
             </div>
 
-            <!-- Connection Status -->
-            <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
-                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                <span id="statusText">サーバー接続中...</span>
+            <!-- Global Status Indicator -->
+            <div id="statusBadge" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800 border border-slate-700/80 text-slate-300 text-xs font-medium transition-all duration-300">
+                <span id="statusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="statusText">Initializing...</span>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 grid gap-6 md:grid-cols-12">
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 grid gap-6 md:grid-cols-12">
 
-        <!-- Left Column: My ID & QR Code / Join Connection (5 cols) -->
-        <section class="md:col-span-5 space-y-6">
-            
-            <!-- My Device Info Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-mobile-screen text-sky-400"></i> この端末のID
+        <!-- Left Panel: My ID, QR Code & Peer Connect (5 columns) -->
+        <section class="md:col-span-5 space-y-5">
+
+            <!-- My Device Card -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3.5">
+                    <h2 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-mobile-screen-button"></i> This Device
                     </h2>
-                    <button id="refreshIdBtn" title="IDを更新" class="text-slate-400 hover:text-white text-xs transition">
-                        <i class="fa-solid fa-rotate-right"></i>
+                    <button id="refreshIdBtn" title="Regenerate ID" class="text-slate-400 hover:text-white text-xs transition p-1 hover:bg-slate-800 rounded">
+                        <i class="fa-solid fa-arrows-rotate"></i>
                     </button>
                 </div>
 
-                <div class="flex items-center gap-2 bg-slate-950/70 border border-slate-800 rounded-xl p-3 mb-4">
-                    <span id="myPeerId" class="font-mono text-sm font-bold text-sky-300 truncate flex-1">生成中...</span>
-                    <button id="copyIdBtn" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition border border-slate-700 active:scale-95">
-                        <i class="fa-regular fa-copy"></i> コピー
+                <!-- Peer ID Box -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 mb-4 flex items-center gap-2">
+                    <div class="flex-1 truncate">
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Your Peer ID</p>
+                        <p id="myPeerId" class="font-mono text-sm font-bold text-teal-300 truncate tracking-wide">Connecting...</p>
+                    </div>
+                    <button id="copyIdBtn" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-teal-600 text-slate-200 hover:text-white font-medium rounded-lg transition border border-slate-700/80 active:scale-95 flex items-center gap-1.5 shrink-0">
+                        <i class="fa-regular fa-copy"></i> Copy
                     </button>
                 </div>
 
-                <!-- QR Code Display Area -->
-                <div class="flex flex-col items-center justify-center p-4 bg-slate-950/40 rounded-xl border border-slate-800/80">
-                    <div id="qrcode" class="p-3 bg-white rounded-xl shadow-md"></div>
-                    <p class="text-xs text-slate-400 mt-3 text-center">
-                        <i class="fa-solid fa-camera mr-1"></i> iPhoneのカメラで読み取ると自動接続できます
+                <!-- QR Code Block -->
+                <div class="flex flex-col items-center justify-center p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <div id="qrcode" class="p-2.5 bg-white rounded-xl shadow-md min-h-[144px] min-w-[144px] flex items-center justify-center">
+                        <span class="text-xs text-slate-400">Generating QR...</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-3 text-center flex items-center gap-1.5">
+                        <i class="fa-solid fa-qrcode text-teal-400"></i> Scan with iPhone or Android to connect
                     </p>
                 </div>
             </div>
 
-            <!-- Manual Connect Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-link text-sky-400"></i> 相手の端末に接続
+            <!-- Connect to Remote Device Card -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 shadow-2xl">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3.5 flex items-center gap-2">
+                    <i class="fa-solid fa-link text-blue-400"></i> Connect to Device
                 </h2>
                 <div class="space-y-3">
-                    <div>
-                        <input type="text" id="targetPeerId" placeholder="相手のPeer IDを入力" 
-                            class="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm outline-none transition placeholder-slate-600 font-mono">
+                    <div class="relative">
+                        <input type="text" id="targetPeerId" placeholder="Enter target Peer ID" 
+                            class="w-full bg-slate-950/80 border border-slate-800 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-xl px-4 py-2.5 text-sm outline-none transition placeholder-slate-600 font-mono text-teal-300">
                     </div>
-                    <button id="connectBtn" class="w-full bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-sky-600/20 text-sm flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-paper-plane"></i> 接続を開始する
+                    <button id="connectBtn" class="w-full bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 active:scale-[0.99] text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-teal-600/20 text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plug"></i> Connect Peer
                     </button>
                 </div>
             </div>
 
         </section>
 
-        <!-- Right Column: Active Connection & Transfer UI (7 cols) -->
-        <section class="md:col-span-7 space-y-6">
+        <!-- Right Panel: Connection Status, File Transfer Zone & Feed (7 columns) -->
+        <section class="md:col-span-7 space-y-5">
 
-            <!-- Connection Control / Peer Details -->
-            <div id="activePeerCard" class="hidden bg-slate-900 border border-sky-500/30 rounded-2xl p-5 shadow-xl">
+            <!-- Active Peer Info Banner (Hidden until connected) -->
+            <div id="activePeerCard" class="hidden glass-card border-teal-500/40 rounded-2xl p-4 shadow-xl bg-gradient-to-r from-teal-950/30 to-slate-900/60">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
                         <div>
-                            <span class="text-xs text-slate-400 block">接続中の端末</span>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Active Peer Link</span>
                             <span id="remotePeerIdDisplay" class="font-mono text-sm font-bold text-emerald-400">---</span>
                         </div>
                     </div>
-                    <button id="disconnectBtn" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg transition">
-                        切断する
+                    <button id="disconnectBtn" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg transition active:scale-95">
+                        Disconnect
                     </button>
                 </div>
             </div>
 
-            <!-- Drag & Drop Zone -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-share-nodes text-sky-400"></i> ファイル送信
+            <!-- Drag & Drop Transfer Zone -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 shadow-2xl">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3.5 flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-teal-400"></i> Send File
                 </h2>
 
-                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-sky-500/60 bg-slate-950/50 hover:bg-slate-950 rounded-xl p-8 text-center transition cursor-pointer group flex flex-col items-center justify-center min-h-[200px]">
+                <div id="dropZone" class="border-2 border-dashed border-slate-700/80 hover:border-teal-500/80 bg-slate-950/40 hover:bg-slate-950/80 rounded-xl p-8 text-center transition cursor-pointer group flex flex-col items-center justify-center min-h-[190px]">
                     <input type="file" id="fileInput" class="hidden" multiple>
-                    <div class="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-sky-500/10 group-hover:scale-110 flex items-center justify-center text-slate-400 group-hover:text-sky-400 transition duration-300 mb-3">
+                    <div class="w-14 h-14 rounded-full bg-slate-800/80 group-hover:bg-teal-500/10 group-hover:scale-110 flex items-center justify-center text-slate-400 group-hover:text-teal-400 transition duration-300 mb-3 shadow-inner">
                         <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                     </div>
-                    <p class="text-sm font-medium text-slate-200">
-                        ここにファイルをドラッグ＆ドロップ
+                    <p class="text-sm font-semibold text-slate-200">
+                        Drag & drop files here
                     </p>
-                    <p class="text-xs text-slate-500 mt-1">またはクリックしてファイルを選択</p>
+                    <p class="text-xs text-slate-500 mt-1">or click to browse from device</p>
                 </div>
 
-                <!-- Progress Indicator (Hidden by default) -->
-                <div id="transferProgressContainer" class="hidden mt-4 bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <div class="flex items-center justify-between text-xs text-slate-300 mb-2">
-                        <span id="transferFileName" class="truncate font-medium max-w-[200px]">filename.ext</span>
-                        <span id="transferSpeed" class="font-mono text-slate-400">0 KB/s</span>
+                <!-- Progress Bar Container (Hidden by default) -->
+                <div id="transferProgressContainer" class="hidden mt-4 bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <div class="flex items-center justify-between text-xs text-slate-300">
+                        <span id="transferFileName" class="truncate font-semibold max-w-[220px]">filename.ext</span>
+                        <span id="transferSpeed" class="font-mono text-teal-400">0 KB/s</span>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mb-1">
-                        <div id="transferProgressBar" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+                    <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="transferProgressBar" class="bg-gradient-to-r from-teal-500 to-blue-500 h-2.5 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                     <div class="flex justify-between text-[11px] text-slate-500 font-mono">
                         <span id="transferPercentage">0%</span>
-                        <span id="transferStatusText">送信中...</span>
+                        <span id="transferStatusText">Transferring...</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Received Files List -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-inbox text-sky-400"></i> 受信したファイル
-                </h2>
+            <!-- Transferred Files Feed -->
+            <div class="glass-card glass-card-hover rounded-2xl p-5 shadow-2xl">
+                <div class="flex items-center justify-between mb-3.5">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-inbox text-blue-400"></i> Received Files
+                    </h2>
+                    <span id="receivedCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">0 files</span>
+                </div>
 
-                <div id="receivedFilesList" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                    <!-- Empty State -->
-                    <div id="emptyReceivedState" class="text-center py-8 text-slate-600 text-xs">
-                        まだ受信したファイルはありません
+                <div id="receivedFilesList" class="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                    <!-- Empty Placeholder -->
+                    <div id="emptyReceivedState" class="text-center py-10 text-slate-600 text-xs flex flex-col items-center gap-2">
+                        <i class="fa-regular fa-folder-open text-2xl text-slate-700"></i>
+                        <span>No files received yet. Connect a device to start sharing!</span>
                     </div>
                 </div>
             </div>
@@ -199,7 +260,7 @@
     </main>
 
     <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
 
     <script>
         // State Management
@@ -207,16 +268,17 @@
         let activeConn = null;
         let myId = null;
 
-        // Receiving File Chunk Logic
+        // Receiving Chunk Buffer
         let incomingFileInfo = null;
         let incomingChunks = [];
-        let receivedSize = 0;
+        let receivedBytes = 0;
 
-        // Sending File Chunk Logic
-        const CHUNK_SIZE = 16 * 1024; // 16KB per WebRTC data chunk for stability
+        // Chunking Configuration (16KB for high WebRTC cross-platform stability)
+        const CHUNK_SIZE = 16 * 1024;
 
         // DOM Elements
         const statusBadge = document.getElementById('statusBadge');
+        const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const myPeerIdEl = document.getElementById('myPeerId');
         const qrcodeEl = document.getElementById('qrcode');
@@ -232,56 +294,65 @@
 
         const transferProgressContainer = document.getElementById('transferProgressContainer');
         const transferFileName = document.getElementById('transferFileName');
-        const transferSpeed = document.getElementById('transferSpeed');
         const transferProgressBar = document.getElementById('transferProgressBar');
         const transferPercentage = document.getElementById('transferPercentage');
         const transferStatusText = document.getElementById('transferStatusText');
+        const transferSpeed = document.getElementById('transferSpeed');
         const receivedFilesList = document.getElementById('receivedFilesList');
         const emptyReceivedState = document.getElementById('emptyReceivedState');
+        const receivedCountBadge = document.getElementById('receivedCountBadge');
 
+        let totalReceivedFilesCount = 0;
+
+        // Initialize App
         window.addEventListener('load', () => {
             initPeer();
             setupEventListeners();
-            checkUrlParameters();
         });
 
+        // Toast Notification System
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `pointer-events-auto flex items-center justify-between p-3.5 rounded-xl shadow-xl text-xs font-medium border transition-all duration-300 transform translate-y-2 opacity-0 ${
-                type === 'error' ? 'bg-rose-950/90 border-rose-800 text-rose-200' :
-                type === 'success' ? 'bg-emerald-950/90 border-emerald-800 text-emerald-200' :
-                'bg-slate-800/90 border-slate-700 text-slate-200'
-            }`;
-            toast.innerHTML = `<span>${message}</span>`;
+            
+            const bgClass = type === 'error' ? 'bg-rose-950/90 border-rose-800 text-rose-200' :
+                            type === 'success' ? 'bg-emerald-950/90 border-emerald-800 text-emerald-200' :
+                            'bg-slate-800/90 border-slate-700 text-slate-200';
+
+            toast.className = `pointer-events-auto flex items-center justify-between p-3.5 rounded-xl shadow-2xl text-xs font-medium border backdrop-blur transition-all duration-300 transform translate-y-3 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="${type === 'error' ? 'fa-solid fa-circle-exclamation text-rose-400' : type === 'success' ? 'fa-solid fa-circle-check text-emerald-400' : 'fa-solid fa-circle-info text-blue-400'} text-sm"></i>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
             container.appendChild(toast);
 
             setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
+                toast.classList.remove('translate-y-3', 'opacity-0');
             }, 10);
 
             setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
+                toast.classList.add('opacity-0', 'translate-y-3');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
 
-        // Initialize PeerJS Connection
+        // Initialize PeerJS
         function initPeer() {
-            updateStatus('connecting', 'サーバー接続中...');
+            updateStatus('connecting', 'Connecting Signaling Server...');
             
-            // Random short ID for better UX
-            const randomId = Math.random().toString(36).substring(2, 8);
+            // Random short readable ID
+            const shortId = 'drop-' + Math.random().toString(36).substring(2, 8);
             
-            peer = new Peer(randomId, {
-                debug: 1
-            });
+            peer = new Peer(shortId, { debug: 1 });
 
             peer.on('open', (id) => {
                 myId = id;
                 myPeerIdEl.textContent = id;
-                updateStatus('ready', '待機中 (接続準備完了)');
+                updateStatus('ready', 'Peer Ready');
                 generateQRCode(id);
+                checkUrlParameters();
             });
 
             peer.on('connection', (conn) => {
@@ -291,41 +362,46 @@
             peer.on('error', (err) => {
                 console.error("PeerJS Error:", err);
                 if (err.type === 'peer-not-found') {
-                    showToast('指定されたIDが見つかりませんでした', 'error');
+                    showToast('Target Peer ID not found. Verify the ID.', 'error');
                 } else {
-                    showToast('通信エラーが発生しました: ' + err.type, 'error');
+                    showToast('Connection error: ' + err.type, 'error');
                 }
-                updateStatus('ready', '待機中');
+                updateStatus('ready', 'Peer Ready');
             });
 
             peer.on('disconnected', () => {
-                updateStatus('error', '切断されました');
+                updateStatus('disconnected', 'Disconnected from signaling server');
             });
         }
 
-        function updateStatus(type, text) {
+        function updateStatus(state, text) {
             statusText.textContent = text;
-            statusBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ';
-            
-            if (type === 'connecting') {
-                statusBadge.className += 'bg-amber-500/10 border-amber-500/20 text-amber-400';
-            } else if (type === 'ready') {
-                statusBadge.className += 'bg-sky-500/10 border-sky-500/20 text-sky-400';
-            } else if (type === 'connected') {
-                statusBadge.className += 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+            statusDot.className = 'w-2 h-2 rounded-full ';
+            statusBadge.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border ';
+
+            if (state === 'connecting') {
+                statusDot.className += 'bg-amber-400 animate-pulse';
+                statusBadge.className += 'bg-amber-500/10 border-amber-500/30 text-amber-300';
+            } else if (state === 'ready') {
+                statusDot.className += 'bg-teal-400';
+                statusBadge.className += 'bg-teal-500/10 border-teal-500/30 text-teal-300';
+            } else if (state === 'connected') {
+                statusDot.className += 'bg-emerald-400 animate-pulse';
+                statusBadge.className += 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
             } else {
-                statusBadge.className += 'bg-rose-500/10 border-rose-500/20 text-rose-400';
+                statusDot.className += 'bg-rose-400';
+                statusBadge.className += 'bg-rose-500/10 border-rose-500/30 text-rose-300';
             }
         }
 
         function generateQRCode(peerId) {
             qrcodeEl.innerHTML = "";
-            const connectUrl = `${window.location.origin}${window.location.pathname}?join=${peerId}`;
+            const connectUrl = `${window.location.origin}${window.location.pathname}?peer=${peerId}`;
             new QRCode(qrcodeEl, {
                 text: connectUrl,
-                width: 128,
-                height: 128,
-                colorDark: "#0284c7",
+                width: 140,
+                height: 140,
+                colorDark: "#0d9488",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
             });
@@ -333,30 +409,25 @@
 
         function checkUrlParameters() {
             const urlParams = new URLSearchParams(window.location.search);
-            const joinId = urlParams.get('join');
-            if (joinId) {
-                targetPeerIdInput.value = joinId;
-                // Wait briefly for peer open before connecting
-                const checkInterval = setInterval(() => {
-                    if (peer && !peer.disconnected && myId) {
-                        clearInterval(checkInterval);
-                        connectToPeer(joinId);
-                    }
-                }, 300);
+            const targetParam = urlParams.get('peer');
+            if (targetParam && targetParam !== myId) {
+                targetPeerIdInput.value = targetParam;
+                showToast(`Auto-connecting to target ${targetParam}...`, 'info');
+                connectToPeer(targetParam);
             }
         }
 
         function connectToPeer(targetId) {
             if (!targetId) {
-                showToast('IDを入力してください', 'error');
+                showToast('Please enter a target Peer ID', 'error');
                 return;
             }
             if (targetId === myId) {
-                showToast('自分自身には接続できません', 'error');
+                showToast('Cannot connect to your own device', 'error');
                 return;
             }
 
-            updateStatus('connecting', '接続中...');
+            updateStatus('connecting', 'Connecting Peer...');
             const conn = peer.connect(targetId, { reliable: true });
             handleConnection(conn);
         }
@@ -369,10 +440,10 @@
             activeConn = conn;
 
             activeConn.on('open', () => {
-                updateStatus('connected', '接続済み');
+                updateStatus('connected', 'Connected');
                 remotePeerIdDisplay.textContent = activeConn.peer;
                 activePeerCard.classList.remove('hidden');
-                showToast(`${activeConn.peer} と接続しました！`, 'success');
+                showToast(`Connected to ${activeConn.peer}!`, 'success');
             });
 
             activeConn.on('data', (data) => {
@@ -380,44 +451,43 @@
             });
 
             activeConn.on('close', () => {
-                showToast('接続が切断されました', 'info');
+                showToast('Peer connection closed', 'info');
                 activeConn = null;
                 activePeerCard.classList.add('hidden');
-                updateStatus('ready', '待機中');
+                updateStatus('ready', 'Peer Ready');
             });
 
             activeConn.on('error', (err) => {
-                showToast('接続エラー: ' + err, 'error');
+                showToast('Data connection error: ' + err, 'error');
             });
         }
 
+        // Handle Receiving File Data Chunks
         function handleIncomingData(data) {
-            // Header Object
             if (data.type === 'file-header') {
                 incomingFileInfo = data;
                 incomingChunks = [];
-                receivedSize = 0;
+                receivedBytes = 0;
                 
                 transferProgressContainer.classList.remove('hidden');
                 transferFileName.textContent = data.name;
-                transferStatusText.textContent = '受信中...';
+                transferStatusText.textContent = 'Receiving file...';
                 updateProgress(0, 0);
             } 
-            // Chunk ArrayBuffer
             else if (data.type === 'file-chunk') {
                 incomingChunks.push(data.chunk);
-                receivedSize += data.chunk.byteLength;
+                receivedBytes += data.chunk.byteLength;
 
-                const progress = (receivedSize / incomingFileInfo.size) * 100;
-                updateProgress(progress, receivedSize);
+                const progress = (receivedBytes / incomingFileInfo.size) * 100;
+                updateProgress(progress, receivedBytes);
 
-                if (receivedSize >= incomingFileInfo.size) {
-                    // File receive complete
-                    const blob = new Blob(incomingChunks, { type: incomingFileInfo.fileType });
-                    addReceivedFile(incomingFileInfo.name, blob, incomingFileInfo.size);
+                if (receivedBytes >= incomingFileInfo.size) {
+                    // Reassemble chunks into Blob
+                    const fileBlob = new Blob(incomingChunks, { type: incomingFileInfo.fileType });
+                    addReceivedFile(incomingFileInfo.name, fileBlob, incomingFileInfo.size);
                     
-                    showToast(`${incomingFileInfo.name} を受信しました`, 'success');
-                    transferStatusText.textContent = '受信完了';
+                    showToast(`Received ${incomingFileInfo.name}`, 'success');
+                    transferStatusText.textContent = 'Completed';
                     setTimeout(() => {
                         transferProgressContainer.classList.add('hidden');
                     }, 2000);
@@ -428,18 +498,19 @@
             }
         }
 
+        // Chunk and Send Files
         async function sendFiles(files) {
             if (!activeConn || !activeConn.open) {
-                showToast('まず相手の端末に接続してください', 'error');
+                showToast('Please connect to a device first', 'error');
                 return;
             }
 
             for (let file of files) {
                 transferProgressContainer.classList.remove('hidden');
                 transferFileName.textContent = file.name;
-                transferStatusText.textContent = '送信準備中...';
+                transferStatusText.textContent = 'Preparing send...';
                 
-                // 1. Send Header
+                // Send File Header Metadata
                 activeConn.send({
                     type: 'file-header',
                     name: file.name,
@@ -447,11 +518,9 @@
                     fileType: file.type
                 });
 
-                // 2. Read and Chunk File
                 let offset = 0;
                 const startTime = Date.now();
-
-                transferStatusText.textContent = '送信中...';
+                transferStatusText.textContent = 'Sending...';
 
                 while (offset < file.size) {
                     const slice = file.slice(offset, offset + CHUNK_SIZE);
@@ -464,16 +533,21 @@
 
                     offset += buffer.byteLength;
                     const progress = (offset / file.size) * 100;
-                    updateProgress(progress, offset, startTime);
+                    
+                    const elapsedTime = (Date.now() - startTime) / 1000;
+                    const speedKB = elapsedTime > 0 ? (offset / 1024 / elapsedTime).toFixed(1) : 0;
+                    transferSpeed.textContent = `${speedKB} KB/s`;
 
-                    // Slight pause to prevent WebRTC queue overflow
-                    if (offset % (CHUNK_SIZE * 10) === 0) {
-                        await new Promise(r => setTimeout(r, 10));
+                    updateProgress(progress, offset);
+
+                    // Pacing delay to prevent buffer overflows
+                    if (offset % (CHUNK_SIZE * 8) === 0) {
+                        await new Promise(r => setTimeout(r, 8));
                     }
                 }
 
-                showToast(`${file.name} の送信が完了しました`, 'success');
-                transferStatusText.textContent = '送信完了';
+                showToast(`Successfully sent ${file.name}`, 'success');
+                transferStatusText.textContent = 'Completed';
                 setTimeout(() => {
                     transferProgressContainer.classList.add('hidden');
                 }, 2000);
@@ -481,31 +555,33 @@
         }
 
         function updateProgress(percent, bytesProcessed) {
-            transferProgressBar.style.width = `${percent.toFixed(1)}%`;
-            transferPercentage.textContent = `${percent.toFixed(0)}%`;
+            transferProgressBar.style.width = `${Math.min(percent, 100).toFixed(1)}%`;
+            transferPercentage.textContent = `${Math.min(percent, 100).toFixed(0)}%`;
         }
 
         function addReceivedFile(name, blob, size) {
             emptyReceivedState.classList.add('hidden');
+            totalReceivedFilesCount++;
+            receivedCountBadge.textContent = `${totalReceivedFilesCount} file${totalReceivedFilesCount > 1 ? 's' : ''}`;
 
             const fileUrl = URL.createObjectURL(blob);
             const isImage = blob.type.startsWith('image/');
 
             const item = document.createElement('div');
-            item.className = 'flex items-center justify-between p-3 bg-slate-950/60 border border-slate-800 rounded-xl hover:border-slate-700 transition';
+            item.className = 'flex items-center justify-between p-3 bg-slate-950/80 border border-slate-800 rounded-xl hover:border-slate-700 transition shadow-md';
 
             item.innerHTML = `
                 <div class="flex items-center gap-3 overflow-hidden mr-2">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400">
-                        ${isImage ? `<img src="${fileUrl}" class="w-full h-full object-cover rounded-lg">` : '<i class="fa-solid fa-file"></i>'}
+                    <div class="w-11 h-11 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 text-teal-400 overflow-hidden">
+                        ${isImage ? `<img src="${fileUrl}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-file-lines text-lg"></i>'}
                     </div>
                     <div class="truncate">
-                        <p class="text-xs font-medium text-slate-200 truncate">${escapeHtml(name)}</p>
-                        <p class="text-[10px] text-slate-500">${formatBytes(size)}</p>
+                        <p class="text-xs font-semibold text-slate-200 truncate">${escapeHtml(name)}</p>
+                        <p class="text-[10px] text-slate-500 font-mono mt-0.5">${formatBytes(size)}</p>
                     </div>
                 </div>
-                <a href="${fileUrl}" download="${escapeHtml(name)}" class="shrink-0 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-download"></i> 保存
+                <a href="${fileUrl}" download="${escapeHtml(name)}" class="shrink-0 px-3.5 py-1.5 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md active:scale-95">
+                    <i class="fa-solid fa-download"></i> Save
                 </a>
             `;
 
@@ -513,16 +589,19 @@
         }
 
         function setupEventListeners() {
-            // Copy ID Button
+            // Copy ID
             copyIdBtn.addEventListener('click', () => {
                 if (!myId) return;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myId}`;
+                
                 const tempInput = document.createElement('input');
-                tempInput.value = myId;
+                tempInput.value = shareUrl;
                 document.body.appendChild(tempInput);
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                showToast('IDをコピーしました', 'success');
+                
+                showToast('Share link copied to clipboard!', 'success');
             });
 
             // Refresh ID
@@ -531,7 +610,7 @@
                 initPeer();
             });
 
-            // Manual Connect
+            // Connect
             connectBtn.addEventListener('click', () => {
                 const targetId = targetPeerIdInput.value.trim();
                 connectToPeer(targetId);
@@ -544,23 +623,23 @@
                 }
             });
 
-            // Drag and Drop
+            // File Drop Zone
             dropZone.addEventListener('click', () => fileInput.click());
 
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                dropZone.classList.add('border-sky-500', 'bg-sky-500/10');
+                dropZone.classList.add('border-teal-500', 'bg-teal-500/10');
             });
 
             ['dragleave', 'dragend'].forEach(type => {
                 dropZone.addEventListener(type, () => {
-                    dropZone.classList.remove('border-sky-500', 'bg-sky-500/10');
+                    dropZone.classList.remove('border-teal-500', 'bg-teal-500/10');
                 });
             });
 
             dropZone.addEventListener('drop', (e) => {
                 e.preventDefault();
-                dropZone.classList.remove('border-sky-500', 'bg-sky-500/10');
+                dropZone.classList.remove('border-teal-500', 'bg-teal-500/10');
                 if (e.dataTransfer.files.length > 0) {
                     sendFiles(e.dataTransfer.files);
                 }
