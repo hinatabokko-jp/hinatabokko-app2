@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リアルタイム出欠確認アプリ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            hover: '#334155'
+                        },
+                        status: {
+                            attend: '#10b981',
+                            absent: '#ef4444',
+                            maybe: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for dark UI */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Application Container -->
+    <div id="app" class="flex-1 flex flex-col min-h-screen relative overflow-x-hidden">
+
+        <!-- Top Navigation Bar -->
+        <header class="bg-dark-card/80 backdrop-blur-md border-b border-dark-border sticky top-0 z-30 px-4 py-3 sm:px-6">
+            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <button id="toggleSidebarBtn" class="p-2 text-slate-400 hover:text-white hover:bg-dark-border rounded-lg transition-colors md:hidden">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                            <i data-lucide="calendar-check-2" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
+                                CheckIn Pro
+                                <span id="onlineIndicator" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
+                                    リアルタイム接続中
+                                </span>
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Event Info & Action Header Buttons -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button id="shareEventBtn" class="flex items-center gap-2 px-3.5 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-lg shadow-indigo-600/20 transition-all">
+                        <i data-lucide="share-2" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">イベントURL共有</span>
+                    </button>
+                    <button id="exportCsvBtn" class="flex items-center gap-2 px-3 py-1.5 text-sm bg-dark-border hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-600/50 transition-all">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">CSV出力</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout with Sidebar and Content -->
+        <div class="flex-1 flex max-w-7xl w-full mx-auto">
+            
+            <!-- Sidebar Overlay for Mobile -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+
+            <!-- Sidebar Panel -->
+            <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-72 bg-dark-card border-r border-dark-border transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full md:h-auto">
+                <div class="p-4 border-b border-dark-border flex items-center justify-between">
+                    <h2 class="font-semibold text-slate-200 flex items-center gap-2 text-sm uppercase tracking-wider">
+                        <i data-lucide="folder" class="w-4 h-4 text-indigo-400"></i>
+                        イベント一覧
+                    </h2>
+                    <button id="closeSidebarBtn" class="p-1 text-slate-400 hover:text-white md:hidden">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Create Event Button -->
+                <div class="p-4">
+                    <button id="openNewEventModalBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium rounded-xl shadow-md transition-all text-sm">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        新規イベント作成
+                    </button>
+                </div>
+
+                <!-- Event List -->
+                <div class="flex-1 overflow-y-auto px-3 space-y-1" id="eventListContainer">
+                    <!-- Dynamic Event Items loaded via JS -->
+                    <div class="p-4 text-center text-slate-500 text-sm">読み込み中...</div>
+                </div>
+
+                <!-- User Profile / ID Footer -->
+                <div class="p-4 border-t border-dark-border bg-slate-900/40">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-300" id="userAvatar">
+                            ?
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-slate-400 truncate">あなたの端末ID</p>
+                            <p class="text-xs font-mono font-medium text-slate-300 truncate" id="userIdDisplay">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Container -->
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-full overflow-hidden">
+
+                <!-- Active Event Summary Banner -->
+                <div class="bg-dark-card border border-dark-border rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                        <div>
+                            <div class="flex items-center gap-2 text-indigo-400 text-xs font-semibold tracking-wider uppercase mb-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                <span id="eventDateDisplay">日時未設定</span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight" id="eventTitleDisplay">イベントを選択してください</h2>
+                            <p class="text-slate-400 text-sm mt-1" id="eventDescDisplay">左のメニューからイベントを選択するか、新しいイベントを作成してください。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Stats Counter Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    <!-- Total Responses -->
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-slate-400 font-medium">回答総数</span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-white" id="statTotal">0</span>
+                            <span class="text-xs text-slate-500">人</span>
+                        </div>
+                    </div>
+                    <!-- Attending Counter -->
+                    <div class="bg-emerald-950/20 border border-emerald-800/40 rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>出席
+                        </span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-emerald-400" id="statAttend">0</span>
+                            <span class="text-xs text-emerald-600/80" id="statAttendPercent">0%</span>
+                        </div>
+                    </div>
+                    <!-- Absent Counter -->
+                    <div class="bg-rose-950/20 border border-rose-800/40 rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-rose-400 font-medium flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>欠席
+                        </span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-rose-400" id="statAbsent">0</span>
+                            <span class="text-xs text-rose-600/80" id="statAbsentPercent">0%</span>
+                        </div>
+                    </div>
+                    <!-- Maybe Counter -->
+                    <div class="bg-amber-950/20 border border-amber-800/40 rounded-xl p-4 flex flex-col justify-between">
+                        <span class="text-xs text-amber-400 font-medium flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>保留 / 保留
+                        </span>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <span class="text-2xl sm:text-3xl font-extrabold text-amber-400" id="statMaybe">0</span>
+                            <span class="text-xs text-amber-600/80" id="statMaybePercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Form Section -->
+                <div class="bg-dark-card border border-dark-border rounded-2xl p-5 sm:p-6 shadow-md">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="edit-3" class="w-5 h-5 text-indigo-400"></i>
+                        出欠の入力・変更
+                    </h3>
+
+                    <form id="attendanceForm" class="space-y-4">
+                        <input type="hidden" id="editMemberId" value="">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Name Input -->
+                            <div>
+                                <label for="memberName" class="block text-xs font-semibold text-slate-300 mb-1.5">お名前 / ニックネーム <span class="text-rose-500">*</span></label>
+                                <input type="text" id="memberName" required placeholder="例: 山田 太郎" class="w-full bg-slate-900/80 border border-dark-border focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all">
+                            </div>
+
+                            <!-- Status Radio Buttons -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">出欠ステータス <span class="text-rose-500">*</span></label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="status" value="出席" checked class="peer sr-only">
+                                        <div class="px-3 py-2 text-center rounded-xl border border-dark-border text-slate-400 text-sm font-medium peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500 peer-checked:text-emerald-300 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5">
+                                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                                            出席
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="status" value="欠席" class="peer sr-only">
+                                        <div class="px-3 py-2 text-center rounded-xl border border-dark-border text-slate-400 text-sm font-medium peer-checked:bg-rose-500/20 peer-checked:border-rose-500 peer-checked:text-rose-300 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5">
+                                            <i data-lucide="x-circle" class="w-4 h-4 text-rose-400"></i>
+                                            欠席
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="status" value="保留" class="peer sr-only">
+                                        <div class="px-3 py-2 text-center rounded-xl border border-dark-border text-slate-400 text-sm font-medium peer-checked:bg-amber-500/20 peer-checked:border-amber-500 peer-checked:text-amber-300 hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5">
+                                            <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i>
+                                            保留
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comment Input -->
+                        <div>
+                            <label for="memberComment" class="block text-xs font-semibold text-slate-300 mb-1.5">コメント・備考（任意）</label>
+                            <input type="text" id="memberComment" placeholder="例: 10分ほど遅れて参加します / オンライン参加希望" class="w-full bg-slate-900/80 border border-dark-border focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all">
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button type="button" id="cancelEditBtn" class="hidden px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">
+                                キャンセル
+                            </button>
+                            <button type="submit" id="submitAttendanceBtn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-indigo-600/25 transition-all text-sm flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                出欠を送信する
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Attendance List View -->
+                <div class="bg-dark-card border border-dark-border rounded-2xl p-5 sm:p-6 shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i>
+                            出欠メンバー一覧
+                        </h3>
+                        <!-- Filter Tabs -->
+                        <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-dark-border text-xs">
+                            <button class="filter-tab active px-3 py-1.5 rounded-lg font-medium text-white bg-indigo-600 transition-all" data-filter="all">すべて</button>
+                            <button class="filter-tab px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all" data-filter="出席">出席</button>
+                            <button class="filter-tab px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all" data-filter="欠席">欠席</button>
+                            <button class="filter-tab px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all" data-filter="保留">保留</button>
+                        </div>
+                    </div>
+
+                    <!-- Member Cards Container -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="memberListContainer">
+                        <!-- Dynamic items loaded via JS -->
+                        <div class="col-span-full text-center py-8 text-slate-500 text-sm">
+                            メンバーがまだ登録されていません。上のフォームから最初の出欠を登録してみましょう！
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal: New Event -->
+    <div id="newEventModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i>
+                新規出欠イベント作成
+            </h3>
+            <form id="newEventForm" class="space-y-4">
+                <div>
+                    <label for="newEventTitle" class="block text-xs font-semibold text-slate-300 mb-1.5">イベント名 <span class="text-rose-500">*</span></label>
+                    <input type="text" id="newEventTitle" required placeholder="例: 10月度 開発チームキックオフ" class="w-full bg-slate-900 border border-dark-border focus:border-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 text-sm outline-none">
+                </div>
+                <div>
+                    <label for="newEventDate" class="block text-xs font-semibold text-slate-300 mb-1.5">開催日時</label>
+                    <input type="text" id="newEventDate" placeholder="例: 2026年10月15日(木) 19:00〜" class="w-full bg-slate-900 border border-dark-border focus:border-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 text-sm outline-none">
+                </div>
+                <div>
+                    <label for="newEventDesc" class="block text-xs font-semibold text-slate-300 mb-1.5">詳細・概要（任意）</label>
+                    <textarea id="newEventDesc" rows="3" placeholder="場所や目的などの共有メモ" class="w-full bg-slate-900 border border-dark-border focus:border-indigo-500 rounded-xl px-4 py-2.5 text-slate-100 text-sm outline-none resize-none"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" id="closeNewEventModalBtn" class="px-4 py-2 text-sm text-slate-400 hover:text-white">キャンセル</button>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm shadow-md">作成する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Firebase Module Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Variables / Configuration setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'checkin-app-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State Management
+        let currentUser = null;
+        let activeEventId = null;
+        let activeFilter = 'all';
+        let eventsList = [];
+        let memberData = [];
+        let unsubscribeEvents = null;
+        let unsubscribeMembers = null;
+
+        // Toast Notification Helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : 
+                            type === 'error' ? 'bg-rose-600 text-white' : 
+                            'bg-slate-800 text-slate-100 border border-slate-700';
+
+            toast.className = `px-4 py-3 rounded-xl shadow-xl ${bgClass} text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-5 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-5', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Authentication Handler
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Exception:", err);
+                showToast("認証に失敗しました", "error");
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('userIdDisplay').textContent = user.uid;
+                document.getElementById('userAvatar').textContent = user.uid.substring(0, 2).toUpperCase();
+                
+                // Parse URL parameter for direct event link
+                const urlParams = new URLSearchParams(window.location.search);
+                const sharedEventId = urlParams.get('event');
+                
+                subscribeEvents(sharedEventId);
+            }
+        });
+
+        // Firestore: Realtime Listen to Public Events Collection
+        function subscribeEvents(targetEventId = null) {
+            if (unsubscribeEvents) unsubscribeEvents();
+
+            const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+            
+            unsubscribeEvents = onSnapshot(eventsRef, (snapshot) => {
+                eventsList = [];
+                snapshot.forEach(docSnap => {
+                    eventsList.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // Sort by createdAt descending
+                eventsList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                renderEventSidebar();
+
+                // If no active event or requested shared event
+                if (targetEventId && eventsList.some(e => e.id === targetEventId)) {
+                    selectEvent(targetEventId);
+                } else if (!activeEventId && eventsList.length > 0) {
+                    selectEvent(eventsList[0].id);
+                } else if (eventsList.length === 0) {
+                    createDefaultEvent();
+                }
+            }, (error) => {
+                console.error("Firestore Events snapshot error:", error);
+                showToast("データ同期エラーが発生しました", "error");
+            });
+        }
+
+        // Default Event initialization if DB is empty
+        async function createDefaultEvent() {
+            if (!currentUser) return;
+            try {
+                const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+                const defaultDoc = await addDoc(eventsRef, {
+                    title: "第1回 出欠確認サンプミーティング",
+                    date: "2026年10月10日 20:00〜",
+                    description: "出欠確認アプリの動作テスト用イベントです。ぜひ出欠を入力してみてください！",
+                    createdAt: Date.now(),
+                    createdBy: currentUser.uid
+                });
+                selectEvent(defaultDoc.id);
+            } catch (e) {
+                console.error("Default event creation error:", e);
+            }
+        }
+
+        // Firestore: Realtime Listen to Attendance Data for Selected Event
+        function subscribeAttendance(eventId) {
+            if (unsubscribeMembers) unsubscribeMembers();
+
+            const membersRef = collection(db, 'artifacts', appId, 'public', 'data', `attendance_${eventId}`);
+            
+            unsubscribeMembers = onSnapshot(membersRef, (snapshot) => {
+                memberData = [];
+                snapshot.forEach(docSnap => {
+                    memberData.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // Sort by updatedAt descending
+                memberData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                renderAttendanceStats();
+                renderMemberList();
+            }, (error) => {
+                console.error("Firestore Attendance snapshot error:", error);
+            });
+        }
+
+        // Render Event Sidebar
+        function renderEventSidebar() {
+            const container = document.getElementById('eventListContainer');
+            if (eventsList.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-slate-500 text-sm">イベントがありません</div>';
+                return;
+            }
+
+            container.innerHTML = eventsList.map(evt => {
+                const isActive = evt.id === activeEventId;
+                return `
+                    <button onclick="window.selectEvent('${evt.id}')" class="w-full text-left p-3 rounded-xl transition-all ${isActive ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 font-medium' : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'}">
+                        <div class="truncate text-sm font-semibold">${escapeHtml(evt.title)}</div>
+                        <div class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(evt.date || '日時未設定')}</div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Switch Active Event
+        window.selectEvent = function(eventId) {
+            activeEventId = eventId;
+            const eventObj = eventsList.find(e => e.id === eventId);
+            
+            if (eventObj) {
+                document.getElementById('eventTitleDisplay').textContent = eventObj.title;
+                document.getElementById('eventDateDisplay').textContent = eventObj.date || '日時未指定';
+                document.getElementById('eventDescDisplay').textContent = eventObj.description || '概要なし';
+                
+                // Update URL parameter without reload
+                const newUrl = `${window.location.pathname}?event=${eventId}`;
+                window.history.pushState({ path: newUrl }, '', newUrl);
+
+                renderEventSidebar();
+                subscribeAttendance(eventId);
+            }
+        };
+
+        // Render Attendance Stats
+        function renderAttendanceStats() {
+            const total = memberData.length;
+            const attend = memberData.filter(m => m.status === '出席').length;
+            const absent = memberData.filter(m => m.status === '欠席').length;
+            const maybe = memberData.filter(m => m.status === '保留').length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statAttend').textContent = attend;
+            document.getElementById('statAbsent').textContent = absent;
+            document.getElementById('statMaybe').textContent = maybe;
+
+            document.getElementById('statAttendPercent').textContent = total > 0 ? `${Math.round((attend / total) * 100)}%` : '0%';
+            document.getElementById('statAbsentPercent').textContent = total > 0 ? `${Math.round((absent / total) * 100)}%` : '0%';
+            document.getElementById('statMaybePercent').textContent = total > 0 ? `${Math.round((maybe / total) * 100)}%` : '0%';
+        }
+
+        // Render Member Attendance List
+        function renderMemberList() {
+            const container = document.getElementById('memberListContainer');
+            
+            const filtered = activeFilter === 'all' 
+                ? memberData 
+                : memberData.filter(m => m.status === activeFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-10 text-slate-500 text-sm">
+                        ${activeFilter === 'all' ? 'まだ登録がありません。出欠フォームから記入してみましょう！' : `'${activeFilter}' の該当者がいません。`}
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const isOwner = currentUser && item.userId === currentUser.uid;
+                
+                let badgeClass = '';
+                let badgeIcon = '';
+                if (item.status === '出席') {
+                    badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                    badgeIcon = 'check-circle-2';
+                } else if (item.status === '欠席') {
+                    badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                    badgeIcon = 'x-circle';
+                } else {
+                    badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                    badgeIcon = 'help-circle';
+                }
+
+                const updatedTime = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+                return `
+                    <div class="bg-slate-900/60 border border-dark-border/80 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition-all">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-300">
+                                    ${escapeHtml(item.name.substring(0, 1))}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-200 text-sm truncate flex items-center gap-1.5">
+                                        ${escapeHtml(item.name)}
+                                        ${isOwner ? '<span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.2 rounded font-normal">あなた</span>' : ''}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">${updatedTime} 更新</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${badgeClass}">
+                                <i data-lucide="${badgeIcon}" class="w-3.5 h-3.5"></i>
+                                ${item.status}
+                            </span>
+                        </div>
+                        
+                        ${item.comment ? `<p class="text-xs text-slate-400 mt-3 pt-2 border-t border-slate-800/60 bg-slate-950/30 p-2 rounded-lg italic">"${escapeHtml(item.comment)}"</p>` : ''}
+
+                        ${isOwner ? `
+                            <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-800/40">
+                                <button onclick="window.editMember('${item.id}', '${escapeHtml(item.name)}', '${item.status}', '${escapeHtml(item.comment || '')}')" class="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-1 rounded hover:bg-indigo-500/10 transition-colors">編集</button>
+                                <button onclick="window.deleteMember('${item.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-500/10 transition-colors">削除</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // Helper to sanitize strings
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            })[m]);
+        }
+
+        // Form Submit: Add / Update Attendance Record
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser || !activeEventId) {
+                showToast("イベントが選択されていません", "error");
+                return;
+            }
+
+            const name = document.getElementById('memberName').value.trim();
+            const status = document.querySelector('input[name="status"]:checked').value;
+            const comment = document.getElementById('memberComment').value.trim();
+            const editId = document.getElementById('editMemberId').value;
+
+            if (!name) return;
+
+            try {
+                const membersRef = collection(db, 'artifacts', appId, 'public', 'data', `attendance_${activeEventId}`);
+                
+                if (editId) {
+                    // Update existing record
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', `attendance_${activeEventId}`, editId);
+                    await updateDoc(docRef, {
+                        name,
+                        status,
+                        comment,
+                        updatedAt: Date.now()
+                    });
+                    showToast("出欠情報を更新しました", "success");
+                } else {
+                    // Create new record
+                    await addDoc(membersRef, {
+                        userId: currentUser.uid,
+                        name,
+                        status,
+                        comment,
+                        updatedAt: Date.now()
+                    });
+                    showToast("出欠を登録しました", "success");
+                }
+
+                resetForm();
+            } catch (err) {
+                console.error("Save Error:", err);
+                showToast("保存に失敗しました", "error");
+            }
+        });
+
+        // Edit Member Record Setup
+        window.editMember = function(id, name, status, comment) {
+            document.getElementById('editMemberId').value = id;
+            document.getElementById('memberName').value = name;
+            document.getElementById('memberComment').value = comment;
+            
+            const radio = document.querySelector(`input[name="status"][value="${status}"]`);
+            if (radio) radio.checked = true;
+
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('submitAttendanceBtn').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> 変更を更新する`;
+            lucide.createIcons();
+
+            document.getElementById('attendanceForm').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Delete Member Record
+        window.deleteMember = async function(id) {
+            if (!activeEventId) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `attendance_${activeEventId}`, id);
+                await deleteDoc(docRef);
+                showToast("出欠情報を削除しました", "info");
+                resetForm();
+            } catch (err) {
+                console.error("Delete Error:", err);
+                showToast("削除に失敗しました", "error");
+            }
+        };
+
+        function resetForm() {
+            document.getElementById('editMemberId').value = '';
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberComment').value = '';
+            document.querySelector('input[name="status"][value="出席"]').checked = true;
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('submitAttendanceBtn').innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> 出欠を送信する`;
+            lucide.createIcons();
+        }
+
+        document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+        // Filter Tabs Handling
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-tab').forEach(t => {
+                    t.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    t.classList.add('text-slate-400');
+                });
+                e.target.classList.add('active', 'bg-indigo-600', 'text-white');
+                e.target.classList.remove('text-slate-400');
+                
+                activeFilter = e.target.dataset.filter;
+                renderMemberList();
+            });
+        });
+
+        // Modal Controls
+        const modal = document.getElementById('newEventModal');
+        document.getElementById('openNewEventModalBtn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('closeNewEventModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
+
+        // New Event Submit
+        document.getElementById('newEventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const title = document.getElementById('newEventTitle').value.trim();
+            const date = document.getElementById('newEventDate').value.trim();
+            const description = document.getElementById('newEventDesc').value.trim();
+
+            try {
+                const eventsRef = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+                const docRef = await addDoc(eventsRef, {
+                    title,
+                    date,
+                    description,
+                    createdAt: Date.now(),
+                    createdBy: currentUser.uid
+                });
+
+                modal.classList.add('hidden');
+                document.getElementById('newEventForm').reset();
+                showToast("新しいイベントを作成しました！", "success");
+                selectEvent(docRef.id);
+            } catch (err) {
+                console.error("Create Event Error:", err);
+                showToast("イベント作成に失敗しました", "error");
+            }
+        });
+
+        // Share URL Button Action
+        document.getElementById('shareEventBtn').addEventListener('click', () => {
+            if (!activeEventId) return;
+            const shareUrl = `${window.location.origin}${window.location.pathname}?event=${activeEventId}`;
+            
+            // Clipboard Copy fallback
+            const tempInput = document.createElement('input');
+            tempInput.value = shareUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("イベントの共有リンクをクリップボードにコピーしました！", "success");
+        });
+
+        // Export Attendance Data as CSV
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            if (memberData.length === 0) {
+                showToast("出力するデータがありません", "error");
+                return;
+            }
+
+            const activeEvt = eventsList.find(e => e.id === activeEventId);
+            const title = activeEvt ? activeEvt.title : '出欠一覧';
+
+            let csvContent = "\uFEFFお名前,出欠ステータス,コメント,更新日時\n";
+            memberData.forEach(item => {
+                const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString('ja-JP') : '';
+                const row = [
+                    `"${(item.name || '').replace(/"/g, '""')}"`,
+                    `"${(item.status || '').replace(/"/g, '""')}"`,
+                    `"${(item.comment || '').replace(/"/g, '""')}"`,
+                    `"${timeStr}"`
+                ].join(',');
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${title}_出欠一覧.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("CSVファイルをダウンロードしました", "success");
+        });
+
+        // Mobile Sidebar Controls
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+        }
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+
+        document.getElementById('toggleSidebarBtn').addEventListener('click', openSidebar);
+        document.getElementById('closeSidebarBtn').addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        // App Initialization Trigger
+        window.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
