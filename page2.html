@@ -296,7 +296,7 @@
                 },
 
                 // --------------------------------------------------
-                // 1. 退院証明書チェック (旧: 2日間の期間計算)
+                // 1. 退院証明書チェック
                 // --------------------------------------------------
                 span: {
                     startRaw: '',
@@ -362,7 +362,7 @@
                 },
 
                 // --------------------------------------------------
-                // 2. ステルベン郵送 (旧: 日付加減算)
+                // 2. ステルベン郵送
                 // --------------------------------------------------
                 addsub: {
                     baseRaw: getTodayMMDD(), // 基準日は本日
@@ -509,7 +509,7 @@
                 </template>
             </div>
 
-            <!-- Tab Navigation Buttons (2 Tabs: 退院証明書チェック / ステルベン郵送) -->
+            <!-- Tab Navigation Buttons -->
             <nav class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button @click="currentTab = 'span'"
                         :class="currentTab === 'span' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
@@ -530,7 +530,7 @@
     <main class="max-w-2xl mx-auto px-3 sm:px-4 py-4 flex-grow w-full space-y-4">
 
         <!-- ==================================================== -->
-        <!-- 1. 退院証明書チェック (旧: ２日間の差) -->
+        <!-- 1. 退院証明書チェック -->
         <!-- ==================================================== -->
         <div x-show="currentTab === 'span'" x-transition:enter="transition ease-out duration-150">
             <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
@@ -566,7 +566,7 @@
                             <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplayDate(span.startRaw, span.startYear) ? '認識: ' + formatDisplayDate(span.startRaw, span.startYear) : ''"></span>
                         </div>
                         <div class="relative">
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.startRaw" placeholder="0401"
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.startRaw"
                                    class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
                             <button x-show="span.startRaw" @click="span.startRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
                                 <i class="fa-solid fa-circle-xmark text-lg"></i>
@@ -598,7 +598,7 @@
                             <span class="text-xs font-mono font-bold text-indigo-400" x-text="formatDisplayDate(span.endRaw, spanEndYear) ? '認識: ' + formatDisplayDate(span.endRaw, spanEndYear) : ''"></span>
                         </div>
                         <div class="relative">
-                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.endRaw" placeholder="0501"
+                            <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="span.endRaw"
                                    class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2.5 text-2xl font-mono focus:outline-none focus:border-indigo-500 transition shadow-inner placeholder-slate-700 tracking-wider">
                             <button x-show="span.endRaw" @click="span.endRaw = ''" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300">
                                 <i class="fa-solid fa-circle-xmark text-lg"></i>
@@ -645,7 +645,7 @@
                                     </div>
                                 </div>
 
-                                <!-- 日数計算結果の下に配置された大きめの病棟/表示文字列（標準フォントに変更） -->
+                                <!-- 日数計算結果の下に配置された病棟/表示文字列 -->
                                 <div class="bg-indigo-950/60 border border-indigo-500/30 rounded-xl p-3.5 shadow-inner">
                                     <div class="text-[11px] font-bold text-indigo-300 mb-1 flex items-center gap-1">
                                         <i class="fa-solid fa-hospital-user"></i> 適用区分・入院料
@@ -664,7 +664,7 @@
         </div>
 
         <!-- ==================================================== -->
-        <!-- 2. ステルベン郵送 (旧: 日付加減算) -->
+        <!-- 2. ステルベン郵送 -->
         <!-- ==================================================== -->
         <div x-show="currentTab === 'addsub'" x-transition:enter="transition ease-out duration-150">
             <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
@@ -730,8 +730,8 @@
                             <div class="py-3">
                                 <div class="text-xs text-teal-400 font-bold mb-1" x-text="`計算: ${addsubResult.opText}`"></div>
                                 <div class="text-2xl sm:text-4xl font-black font-mono tracking-tight text-white" x-text="addsubResult.resultDateStr"></div>
-                                <!-- 計算結果のすぐ下に少し小さめ・標準フォントのメッセージを表示 -->
-                                <div class="text-sm sm:text-base font-normal text-teal-200/90 mt-2 tracking-wide">以前の退院分の請求書を郵送する。</div>
+                                <!-- フォントサイズを小さく・灰色に変更 -->
+                                <div class="text-xs sm:text-sm font-normal text-slate-400 mt-2 tracking-wide">以前の退院分の請求書を郵送する。</div>
                             </div>
                         </template>
 
