@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>エフェクト & 効果音 サンプルプレビュー</title>
+  <style>
+    :root {
+      --bg-color: #121214;
+      --card-bg: #1e1e24;
+      --primary: #4f46e5;
+      --primary-hover: #6366f1;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* エフェクト用キャンバス */
+    #effect-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* シェイクアニメーション */
+    .shake-target {
+      transition: transform 0.05s ease;
+    }
+    .shaking {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    /* 暗転・スポットライトオーバーレイ */
+    #spotlight-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      background: radial-gradient(circle at center, transparent 120px, rgba(0, 0, 0, 0.85) 200px);
+    }
+    #spotlight-overlay.active {
+      opacity: 1;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    p.sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .section {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .section h2 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--primary);
+      padding-left: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+    }
+
+    button {
+      background-color: #2a2a35;
+      color: var(--text);
+      border: 1px solid #3f3f4e;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background-color: var(--primary);
+      border-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button span.sub-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    button:hover span.sub-text {
+      color: #e0e7ff;
+    }
+
+    .combination-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+
+    .btn-combo {
+      background-color: #312e81;
+      border-color: #4338ca;
+    }
+  </style>
+</head>
+<body id="body">
+
+  <canvas id="effect-canvas"></canvas>
+  <div id="spotlight-overlay"></div>
+
+  <div class="container shake-target" id="main-container">
+    <header>
+      <h1>エフェクト &amp; 効果音 テストプレビュー</h1>
+      <p class="sub">Geminiでアプリ作成時に指定できる組み込みエフェクトの一覧です</p>
+    </header>
+
+    <!-- 視覚エフェクト -->
+    <div class="section">
+      <h2>視覚エフェクト (Visual Effects)</h2>
+      <div class="grid">
+        <button onclick="playConfetti()">
+          🎉 紙吹雪
+          <span class="sub-text">Confetti</span>
+        </button>
+        <button onclick="playPopper()">
+          🎊 クラッカー
+          <span class="sub-text">Party Popper</span>
+        </button>
+        <button onclick="playFireworks()">
+          🎆 花火
+          <span class="sub-text">Fireworks</span>
+        </button>
+        <button onclick="playSparkles()">
+          ✨ キラキラ
+          <span class="sub-text">Sparkles</span>
+        </button>
+        <button onclick="playShake()">
+          📳 画面シェイク
+          <span class="sub-text">Shake</span>
+        </button>
+        <button onclick="playSpotlight()">
+          🔦 スポットライト
+          <span class="sub-text">Spotlight</span>
+        </button>
+        <button onclick="playSpeedLines()">
+          💨 集中線
+          <span class="sub-text">Speed Lines</span>
+        </button>
+        <button onclick="playRipple(event)">
+          🔘 波紋 (タップ位置)
+          <span class="sub-text">Ripple</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 効果音 -->
+    <div class="section">
+      <h2>効果音 (Sound Effects / Web Audio API)</h2>
+      <div class="grid">
+        <button onclick="playSE('correct')">
+          ⭕ 正解音
+          <span class="sub-text">ピンポン</span>
+        </button>
+        <button onclick="playSE('wrong')">
+          ❌ 不正解音
+          <span class="sub-text">ブブー</span>
+        </button>
+        <button onclick="playSE('fanfare')">
+          🎺 ファンファーレ
+          <span class="sub-text">合格・クリア</span>
+        </button>
+        <button onclick="playSE('levelup')">
+          🆙 レベルアップ
+          <span class="sub-text">能力上昇</span>
+        </button>
+        <button onclick="playSE('click')">
+          🔘 操作音
+          <span class="sub-text">ピッ</span>
+        </button>
+        <button onclick="playSE('countdown')">
+          ⏱ カウントダウン
+          <span class="sub-text">時間経過</span>
+        </button>
+        <button onclick="playSE('slash')">
+          ⚔️ 決定 / 斬撃
+          <span class="sub-text">シャキーン</span>
+        </button>
+        <button onclick="playSE('coin')">
+          🪙 コイン獲得
+          <span class="sub-text">チャリン</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- おすすめ組み合わせ例 -->
+    <div class="section">
+      <h2>アプリでよく使う組み合わせ例</h2>
+      <div class="grid combination-grid">
+        <button class="btn-combo" onclick="comboCorrect()">
+          ✅ 正解（漢字・クイズ等）
+          <span class="sub-text">正解音 + キラキラ</span>
+        </button>
+        <button class="btn-combo" onclick="comboIncorrect()">
+          ❌ 不正解
+          <span class="sub-text">不正解音 + 画面シェイク</span>
+        </button>
+        <button class="btn-combo" onclick="comboComplete()">
+          🏆 満点・全問クリア
+          <span class="sub-text">ファンファーレ + 花火</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- キャンバスのセットアップ ---
+    const canvas = document.getElementById('effect-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // アニメーションループ
+    function animationLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(ctx);
+        if (p.isDead()) {
+          particles.splice(i, 1);
+        }
+      }
+      requestAnimationFrame(animationLoop);
+    }
+    animationLoop();
+
+    // --- 視覚エフェクトの実装 ---
+
+    // 1. 紙吹雪 (Confetti)
+    function playConfetti() {
+      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+      for (let i = 0; i < 80; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: -20,
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 3 + 2,
+          size: Math.random() * 8 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10,
+          life: 1,
+          decay: 0.005,
+          update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += this.vRot;
+            this.life -= this.decay;
+          },
+          draw(ctx) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate((this.rotation * Math.PI) / 180);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 2);
+            ctx.restore();
+          },
+          isDead() { return this.life <= 0 || this.y > canvas.height; }
+        });
+      }
+    }
+
+    // 2. クラッカー (Party Popper)
+    function playPopper() {
+      const colors = ['#ff4b4b', '#ffcd3c', '#25d366', '#128c7e', '#3498db', '#9b59b6'];
+      // 左下と右下から射出
+      const origins = [{ x: 50, y: canvas.height }, { x: canvas.width - 50, y: canvas.height }];
+      origins.forEach(ori => {
+        for (let i = 0; i < 60; i++) {
+          const angle = ori.x < canvas.width / 2 
+            ? (Math.random() * 50 + 20) * (Math.PI / 180)  // 右上方向
+            : (Math.random() * 50 + 110) * (Math.PI / 180); // 左上方向
+          const speed = Math.random() * 18 + 10;
+          particles.push({
+            x: ori.x,
+            y: ori.y,
+            vx: Math.cos(angle) * speed,
+            vy: -Math.sin(angle) * speed,
+            gravity: 0.4,
+            size: Math.random() * 6 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            life: 1,
+            decay: 0.015,
+            update() {
+              this.vx *= 0.98;
+              this.vy += this.gravity;
+              this.x += this.vx;
+              this.y += this.vy;
+              this.life -= this.decay;
+            },
+            draw(ctx) {
+              ctx.save();
+              ctx.fillStyle = this.color;
+              ctx.globalAlpha = Math.max(0, this.life);
+              ctx.beginPath();
+              ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            },
+            isDead() { return this.life <= 0; }
+          });
+        }
+      });
+    }
+
+    // 3. 花火 (Fireworks)
+    function playFireworks() {
+      const cx = canvas.width / 2 + (Math.random() - 0.5) * 200;
+      const cy = canvas.height * 0.35 + (Math.random() - 0.5) * 100;
+      const colors = ['#ff3366', '#33ccff', '#ffcc00', '#ff66ff', '#33ff99'];
+      const mainColor = colors[Math.floor(Math.random() * colors.length)];
+
+      for (let i = 0; i < 100; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 8 + 2;
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          gravity: 0.1,
+          color: mainColor,
+          size: Math.random() * 3 + 2,
+          life: 1,
+          decay: Math.random() * 0.015 + 0.01,
+          update() {
+            this.vx *= 0.96;
+            this.vy *= 0.96;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+          },
+          draw(ctx) {
+            ctx.save();
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          },
+          isDead() { return this.life <= 0; }
+        });
+      }
+    }
+
+    // 4. 星くずキラキラ (Sparkles)
+    function playSparkles() {
+      for (let i = 0; i < 40; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 12 + 6,
+          color: '#fbbf24',
+          life: 1,
+          decay: Math.random() * 0.02 + 0.01,
+          rotation: Math.random() * 360,
+          update() {
+            this.life -= this.decay;
+          },
+          draw(ctx) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = Math.max(0, this.life);
+            // 4点星の描画
+            ctx.beginPath();
+            for (let j = 0; j < 4; j++) {
+              ctx.lineTo(Math.cos((j * 90 * Math.PI) / 180) * this.size, Math.sin((j * 90 * Math.PI) / 180) * this.size);
+              ctx.lineTo(Math.cos(((j * 90 + 45) * Math.PI) / 180) * (this.size / 3), Math.sin(((j * 90 + 45) * Math.PI) / 180) * (this.size / 3));
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          },
+          isDead() { return this.life <= 0; }
+        });
+      }
+    }
+
+    // 5. 画面シェイク
+    function playShake() {
+      const container = document.getElementById('main-container');
+      container.classList.remove('shaking');
+      void container.offsetWidth; // リフロー強制
+      container.classList.add('shaking');
+    }
+
+    // 6. スポットライト
+    function playSpotlight() {
+      const overlay = document.getElementById('spotlight-overlay');
+      overlay.classList.add('active');
+      setTimeout(() => overlay.classList.remove('active'), 1200);
+    }
+
+    // 7. 集中線 (Speed Lines)
+    function playSpeedLines() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        particles.push({
+          angle: angle,
+          length: Math.random() * 200 + 100,
+          dist: Math.max(canvas.width, canvas.height),
+          speed: Math.random() * 30 + 20,
+          life: 1,
+          decay: 0.04,
+          update() {
+            this.dist -= this.speed;
+            this.life -= this.decay;
+          },
+          draw(ctx) {
+            ctx.save();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.random() * 3 + 1;
+            ctx.globalAlpha = Math.max(0, this.life);
+            const x1 = cx + Math.cos(this.angle) * this.dist;
+            const y1 = cy + Math.sin(this.angle) * this.dist;
+            const x2 = cx + Math.cos(this.angle) * (this.dist + this.length);
+            const y2 = cy + Math.sin(this.angle) * (this.dist + this.length);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+          },
+          isDead() { return this.life <= 0; }
+        });
+      }
+    }
+
+    // 8. 波紋 (Ripple)
+    function playRipple(e) {
+      const x = e.clientX || canvas.width / 2;
+      const y = e.clientY || canvas.height / 2;
+      particles.push({
+        x: x,
+        y: y,
+        radius: 5,
+        maxRadius: 80,
+        color: '#6366f1',
+        life: 1,
+        decay: 0.02,
+        update() {
+          this.radius += (this.maxRadius - this.radius) * 0.1;
+          this.life -= this.decay;
+        },
+        draw(ctx) {
+          ctx.save();
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 3;
+          ctx.globalAlpha = Math.max(0, this.life);
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        },
+        isDead() { return this.life <= 0; }
+      });
+    }
+
+    // --- 音声生成 (Web Audio API) ---
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSE(type) {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+
+      switch (type) {
+        case 'correct': { // ピンポン
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+
+          osc1.frequency.setValueAtTime(1046.50, now); // C6
+          osc2.frequency.setValueAtTime(1318.51, now + 0.15); // E6
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc1.start(now);
+          osc1.stop(now + 0.15);
+          osc2.start(now + 0.15);
+          osc2.stop(now + 0.5);
+          break;
+        }
+
+        case 'wrong': { // ブブー
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.setValueAtTime(120, now + 0.15);
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.4);
+          break;
+        }
+
+        case 'fanfare': { // ファンファーレ
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const start = now + idx * 0.1;
+            const duration = idx === notes.length - 1 ? 0.4 : 0.1;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, start);
+
+            gain.gain.setValueAtTime(0.3, start);
+            gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(start);
+            osc.stop(start + duration);
+          });
+          break;
+        }
+
+        case 'levelup': { // レベルアップ
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const start = now + idx * 0.06;
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+
+            gain.gain.setValueAtTime(0.25, start);
+            gain.gain.exponentialRampToValueAtTime(0.01, start + 0.12);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(start);
+            osc.stop(start + 0.12);
+          });
+          break;
+        }
+
+        case 'click': { // ピッ
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1200, now);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.05);
+          break;
+        }
+
+        case 'countdown': { // カウントダウン (ピッ)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now); // A5
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.08);
+          break;
+        }
+
+        case 'slash': { // シャキーン
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(2000, now);
+          osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.15);
+          break;
+        }
+
+        case 'coin': { // コイン
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+
+          osc1.frequency.setValueAtTime(987.77, now); // B5
+          osc2.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc1.start(now);
+          osc1.stop(now + 0.08);
+          osc2.start(now + 0.08);
+          osc2.stop(now + 0.3);
+          break;
+        }
+      }
+    }
+
+    // --- 組み合わせプロンプト例 ---
+    function comboCorrect() {
+      playSE('correct');
+      playSparkles();
+    }
+
+    function comboIncorrect() {
+      playSE('wrong');
+      playShake();
+    }
+
+    function comboComplete() {
+      playSE('fanfare');
+      playFireworks();
+      setTimeout(playConfetti, 300);
+    }
+  </script>
+</body>
+</html>
