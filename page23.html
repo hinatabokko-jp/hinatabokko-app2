@@ -499,12 +499,22 @@
 
         let qrCodeStyling = null;
 
+        // 日本語（UTF-8）などのマルチバイト文字をQRコード用に安全に変換するヘルパー
+        function encodeUtf8(str) {
+            if (!str) return '';
+            try {
+                return unescape(encodeURIComponent(str));
+            } catch (e) {
+                return str;
+            }
+        }
+
         function initQRCode() {
             qrCodeStyling = new QRCodeStyling({
                 width: 280,
                 height: 280,
                 type: 'canvas',
-                data: state.data,
+                data: encodeUtf8(state.data),
                 image: state.logoUrl,
                 dotsOptions: {
                     color: state.dotsColor,
@@ -549,7 +559,7 @@
             buildDataPayload();
 
             qrCodeStyling.update({
-                data: state.data,
+                data: encodeUtf8(state.data),
                 image: state.logoUrl,
                 dotsOptions: {
                     color: state.dotsColor,
@@ -585,7 +595,7 @@
         function buildDataPayload() {
             switch(state.type) {
                 case 'url': {
-                    const text = document.getElementById('inputUrlText').value.trim();
+                    let text = document.getElementById('inputUrlText').value.trim();
                     state.data = text || 'https://example.com';
                     break;
                 }
@@ -602,21 +612,46 @@
                     break;
                 }
                 case 'vcard': {
-                    const name = document.getElementById('vcardName').value.trim();
+                    const name = document.getElementById('vcardName').value.trim() || '山田 太郎';
                     const org = document.getElementById('vcardOrg').value.trim();
                     const title = document.getElementById('vcardTitle').value.trim();
                     const tel = document.getElementById('vcardTel').value.trim();
                     const email = document.getElementById('vcardEmail').value.trim();
                     const url = document.getElementById('vcardUrl').value.trim();
 
-                    state.data = `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nFN:${name}\nORG:${org}\nTITLE:${title}\nTEL:${tel}\nEMAIL:${email}\nURL:${url}\nEND:VCARD`;
+                    // vCard v3.0 標準フォーマットに準拠（空行・不正タグを除去しCRLF改行を使用）
+                    const vcardLines = ['BEGIN:VCARD', 'VERSION:3.0'];
+                    if (name) {
+                        const parts = name.split(/\s+/);
+                        if (parts.length > 1) {
+                            vcardLines.push(`N:${parts[0]};${parts.slice(1).join(' ')};;;`);
+                        } else {
+                            vcardLines.push(`N:${name};;;;`);
+                        }
+                        vcardLines.push(`FN:${name}`);
+                    }
+                    if (org) vcardLines.push(`ORG:${org}`);
+                    if (title) vcardLines.push(`TITLE:${title}`);
+                    if (tel) vcardLines.push(`TEL;TYPE=CELL:${tel}`);
+                    if (email) vcardLines.push(`EMAIL;TYPE=INTERNET:${email}`);
+                    if (url) vcardLines.push(`URL:${url.startsWith('http') ? url : 'https://' + url}`);
+                    vcardLines.push('END:VCARD');
+
+                    state.data = vcardLines.join('\r\n');
                     break;
                 }
                 case 'email': {
                     const to = document.getElementById('emailTo').value.trim();
                     const sub = document.getElementById('emailSubject').value.trim();
                     const body = document.getElementById('emailBody').value.trim();
-                    state.data = `mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+                    if (!to) {
+                        state.data = 'mailto:info@example.com';
+                    } else {
+                        const params = [];
+                        if (sub) params.push(`subject=${encodeURIComponent(sub)}`);
+                        if (body) params.push(`body=${encodeURIComponent(body)}`);
+                        state.data = `mailto:${to}` + (params.length ? `?${params.join('&')}` : '');
+                    }
                     break;
                 }
                 case 'phone': {
@@ -624,9 +659,9 @@
                     const isSms = document.getElementById('isSms').checked;
                     const smsBody = document.getElementById('smsBody').value.trim();
                     if (isSms) {
-                        state.data = `SMSTO:${num}:${smsBody}`;
+                        state.data = `smsto:${num || '09000000000'}:${smsBody}`;
                     } else {
-                        state.data = `tel:${num}`;
+                        state.data = `tel:${num || '09000000000'}`;
                     }
                     break;
                 }
@@ -829,7 +864,7 @@
                 width: size,
                 height: size,
                 type: 'canvas',
-                data: state.data,
+                data: encodeUtf8(state.data),
                 image: state.logoUrl,
                 dotsOptions: {
                     color: state.dotsColor,
@@ -918,10 +953,32 @@
         // History Management
         function saveToHistory() {
             let history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            
+            const formInputs = {
+                inputUrlText: document.getElementById('inputUrlText').value,
+                wifiSsid: document.getElementById('wifiSsid').value,
+                wifiPassword: document.getElementById('wifiPassword').value,
+                wifiType: document.getElementById('wifiType').value,
+                wifiHidden: document.getElementById('wifiHidden').checked,
+                vcardName: document.getElementById('vcardName').value,
+                vcardOrg: document.getElementById('vcardOrg').value,
+                vcardTitle: document.getElementById('vcardTitle').value,
+                vcardTel: document.getElementById('vcardTel').value,
+                vcardEmail: document.getElementById('vcardEmail').value,
+                vcardUrl: document.getElementById('vcardUrl').value,
+                emailTo: document.getElementById('emailTo').value,
+                emailSubject: document.getElementById('emailSubject').value,
+                emailBody: document.getElementById('emailBody').value,
+                phoneNum: document.getElementById('phoneNum').value,
+                isSms: document.getElementById('isSms').checked,
+                smsBody: document.getElementById('smsBody').value
+            };
+
             const newItem = {
                 id: Date.now(),
                 type: state.type,
                 data: state.data,
+                formInputs: formInputs,
                 date: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
             };
             
@@ -950,7 +1007,7 @@
                 <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 hover:border-blue-200 transition group">
                     <div class="overflow-hidden mr-2">
                         <span class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/50 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
-                        <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.data)}</p>
+                        <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.data.split('\r\n')[0])}</p>
                         <p class="text-[10px] text-slate-400 mt-0.5">${item.date}</p>
                     </div>
                     <button onclick="loadFromHistory('${item.id}')" class="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 font-medium whitespace-nowrap">
@@ -969,13 +1026,27 @@
             const item = history.find(i => i.id == id);
             if (!item) return;
 
-            // Trigger click on corresponding type button
+            // Switch active type tab
             const btn = document.querySelector(`.type-btn[data-type="${item.type}"]`);
             if (btn) btn.click();
 
-            if (item.type === 'url') {
+            // Restore form input fields
+            if (item.formInputs) {
+                Object.keys(item.formInputs).forEach(key => {
+                    const el = document.getElementById(key);
+                    if (el) {
+                        if (el.type === 'checkbox') {
+                            el.checked = item.formInputs[key];
+                        } else {
+                            el.value = item.formInputs[key];
+                        }
+                    }
+                });
+                document.getElementById('smsMessageArea').classList.toggle('hidden', !document.getElementById('isSms').checked);
+            } else if (item.type === 'url') {
                 document.getElementById('inputUrlText').value = item.data;
             }
+
             updateQRCode();
             showToast('履歴から読み込みました');
         };
