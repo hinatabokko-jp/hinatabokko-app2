@@ -47,7 +47,7 @@
                     <i data-lucide="lock" class="w-7 h-7"></i>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">おみこし 10月28日</h1>
-                <p class="text-slate-400 text-xs sm:text-sm mt-1.5">出欠ボードを表示するには、合言葉（パスコード）を入力してください。</p>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1.5">出欠ボードを表示するには、合言葉（パスワード）を入力してください。</p>
             </div>
 
             <form id="passcodeForm" class="space-y-4">
@@ -261,7 +261,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
         let activeFilter = 'all';
         let memberData = [];
         let unsubscribeMembers = null;
@@ -270,6 +269,7 @@
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
             const toast = document.createElement('div');
             
             const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : 
@@ -287,36 +287,46 @@
             }, 3000);
         }
 
-        // Authentication Init
-        async function initAuth() {
+        // Robust Authentication Init with Guaranteed Anonymous / Custom Token Sign-In
+        async function ensureAuth() {
+            if (auth.currentUser) return auth.currentUser;
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
+                return auth.currentUser;
             } catch (err) {
                 console.error("Auth Exception:", err);
+                // Fallback to anonymous if custom token fails
+                try {
+                    await signInAnonymously(auth);
+                    return auth.currentUser;
+                } catch (fallbackErr) {
+                    console.error("Fallback Auth Exception:", fallbackErr);
+                    return null;
+                }
             }
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                if (sessionStorage.getItem('omikoshi_auth') === 'true') {
-                    unlockApp();
-                }
+        // Initialize Auth state right away
+        ensureAuth().then(user => {
+            if (user && sessionStorage.getItem('omikoshi_auth') === 'true') {
+                unlockApp();
             }
         });
 
         // Passcode Submission
-        document.getElementById('passcodeForm').addEventListener('submit', (e) => {
+        document.getElementById('passcodeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const inputVal = document.getElementById('passcodeInput').value.trim();
             const errorEl = document.getElementById('passcodeError');
 
             if (inputVal === CORRECT_PASSCODE) {
                 errorEl.classList.add('hidden');
+                // Ensure authentication is active before unlocking
+                await ensureAuth();
                 sessionStorage.setItem('omikoshi_auth', 'true');
                 unlockApp();
                 showToast("認証成功！おみこし出欠ボードへようこそ", "success");
@@ -379,6 +389,7 @@
 
         function renderMemberList() {
             const container = document.getElementById('memberListContainer');
+            const user = auth.currentUser;
             
             const filtered = activeFilter === 'all' 
                 ? memberData 
@@ -393,7 +404,7 @@
             }
 
             container.innerHTML = filtered.map(item => {
-                const isOwner = currentUser && item.userId === currentUser.uid;
+                const isOwner = user && item.userId === user.uid;
                 
                 let badgeClass = '';
                 let badgeIcon = '';
@@ -452,11 +463,13 @@
             })[m]);
         }
 
-        // Form Submit: Attendance
+        // Form Submit: Attendance with rigorous auth check
         document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) {
-                showToast("認証セッションが無効です", "error");
+            
+            const user = await ensureAuth();
+            if (!user) {
+                showToast("認証セッションの確立に失敗しました。ページを再読み込みしてください。", "error");
                 return;
             }
 
@@ -481,7 +494,7 @@
                     showToast("出欠情報を更新しました", "success");
                 } else {
                     await addDoc(membersRef, {
-                        userId: currentUser.uid,
+                        userId: user.uid,
                         name,
                         status,
                         comment,
@@ -582,7 +595,6 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-            initAuth();
             lucide.createIcons();
         });
     </script>
