@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to JPG Converter</title>
+    <meta name="description" content="PDFファイルを高画質なJPG画像にローカル環境で安全に変換できるPWA対応アプリ">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            800: '#1e293b',
+                            850: '#131c2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            primary: '#6366f1', // Indigo
+                            secondary: '#06b6d4', // Cyan
+                            hover: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- PDF.js & JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- PWA Manifest Data URI -->
+    <link rel="manifest" id="manifest-placeholder">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Glassmorphism effects */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Drag & Drop Highlight */
+        .drag-over {
+            border-color: #06b6d4 !important;
+            background-color: rgba(6, 182, 212, 0.08) !important;
+        }
+
+        /* Image Checkered pattern for transparency check (if any) */
+        .bg-checkered {
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 glass-panel border-b border-slate-800 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-file-pdf text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PDF to JPG</h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">ローカル・安全・高画質変換</p>
+                </div>
+            </div>
+
+            <!-- Header Controls & PWA Install -->
+            <div class="flex items-center space-x-3">
+                <button id="pwa-install-btn" class="hidden flex items-center space-x-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg transition-all shadow-md shadow-indigo-600/30">
+                    <i class="fa-solid fa-download"></i>
+                    <span>アプリをインストール</span>
+                </button>
+                <div class="text-xs text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/50 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>完全ローカル処理</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Controls Banner -->
+        <section class="glass-panel rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-cyan-400 text-base"></i> 変換設定
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">画質・解像度を設定してからPDFファイルを読み込んでください</p>
+                </div>
+                
+                <!-- Settings Grid -->
+                <div class="flex flex-wrap items-center gap-4">
+                    <!-- Scale / Quality Selection -->
+                    <div class="flex flex-col space-y-1">
+                        <label class="text-xs text-slate-400 font-medium">解像度 (DPI/Scale)</label>
+                        <select id="scale-select" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-2 outline-none transition-all cursor-pointer">
+                            <option value="1.0">標準 (1.0x / 約100 DPI)</option>
+                            <option value="1.5" selected>高画質 (1.5x / 約150 DPI)</option>
+                            <option value="2.0">超高画質 (2.0x / 約200 DPI)</option>
+                            <option value="3.0">最高画質 (3.0x / 約300 DPI)</option>
+                        </select>
+                    </div>
+
+                    <!-- JPG Quality Range -->
+                    <div class="flex flex-col space-y-1 min-w-[140px]">
+                        <div class="flex justify-between text-xs text-slate-400 font-medium">
+                            <span>JPG圧縮率</span>
+                            <span id="quality-val" class="text-cyan-400 font-bold">92%</span>
+                        </div>
+                        <input type="range" id="quality-range" min="0.4" max="1.0" step="0.05" value="0.92" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Upload Dropzone -->
+            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500/80 rounded-xl p-8 sm:p-12 text-center transition-all duration-200 bg-slate-900/40 cursor-pointer group relative overflow-hidden">
+                <input type="file" id="file-input" accept="application/pdf" class="hidden">
+                
+                <div class="flex flex-col items-center justify-center space-y-3 relative z-10">
+                    <div class="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-indigo-600/20 group-hover:scale-110 flex items-center justify-center transition-all duration-300 text-slate-400 group-hover:text-indigo-400 border border-slate-700 group-hover:border-indigo-500/40">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-base font-semibold text-slate-200 group-hover:text-white transition-colors">
+                            ここにPDFファイルをドラッグ＆ドロップ
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">
+                            または <span class="text-cyan-400 underline underline-offset-2">ファイルを選択</span> して参照
+                        </p>
+                    </div>
+                    <p class="text-[11px] text-slate-500">※ ブラウザ内処理のためファイルがサーバーに送信されることはありません</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress Container (Hidden by default) -->
+        <section id="progress-container" class="hidden glass-panel rounded-2xl p-5 border border-indigo-500/30 space-y-3 animate-fade-in">
+            <div class="flex items-center justify-between text-sm">
+                <span id="progress-status" class="font-medium text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-spinner fa-spin text-indigo-400"></i>
+                    変換準備中...
+                </span>
+                <span id="progress-percent" class="font-bold text-indigo-400 font-mono">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400 h-full rounded-full w-0 transition-all duration-300 shadow-lg shadow-indigo-500/50"></div>
+            </div>
+        </section>
+
+        <!-- Results Section (Hidden until files processed) -->
+        <section id="result-section" class="hidden space-y-6">
+            <!-- Global Action Bar -->
+            <div class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3 w-full sm:w-auto">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-circle-check text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 id="pdf-file-name" class="font-semibold text-slate-200 text-sm truncate max-w-[200px] sm:max-w-xs">document.pdf</h3>
+                        <p id="pdf-page-count" class="text-xs text-slate-400">全 0 ページ完了</p>
+                    </div>
+                </div>
+
+                <!-- Download Actions -->
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                    <button id="reset-btn" class="px-4 py-2.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-all">
+                        <i class="fa-solid fa-arrows-rotate mr-1.5"></i> 別のPDFを選択
+                    </button>
+                    <button id="download-all-btn" class="flex-1 sm:flex-initial px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 rounded-xl transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-zipper text-sm"></i>
+                        <span>全ページ一括ZIP保存</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page Cards Grid -->
+            <div id="pages-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Dynamically generated image preview cards go here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Zoom Modal -->
+    <div id="zoom-modal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fade-in">
+        <div class="relative max-w-5xl max-h-full w-full h-full flex flex-col items-center justify-between">
+            <!-- Modal Header -->
+            <div class="w-full flex justify-between items-center py-2 px-4 text-white">
+                <span id="modal-page-title" class="text-sm font-semibold text-slate-300">ページ 1</span>
+                <button id="close-modal-btn" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-all border border-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <!-- Modal Image Container -->
+            <div class="flex-grow w-full flex items-center justify-center p-2 overflow-auto">
+                <img id="modal-img" src="" alt="Page Preview" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl border border-slate-800">
+            </div>
+            <!-- Modal Footer -->
+            <div class="py-3">
+                <a id="modal-download-btn" download="page.jpg" href="#" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>このページを保存</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-slate-800 mt-12 py-6 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 PDF to JPG PWA Converter. All browser operations processed locally.</p>
+            <div class="flex items-center space-x-4">
+                <span class="hover:text-slate-400 transition-colors"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> セキュア変換</span>
+                <span class="hover:text-slate-400 transition-colors"><i class="fa-solid fa-bolt text-cyan-400 mr-1"></i> 高速処理</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-3 rounded-xl border border-slate-700 shadow-2xl flex items-center space-x-3 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-cyan-400"></i>
+        <span id="toast-msg" class="text-xs font-medium">通知メッセージ</span>
+    </div>
+
+    <script>
+        // PDF.js Worker Configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // PWA Manifest Generation via Data URI
+        const manifestData = {
+            "name": "PDF to JPG Converter",
+            "short_name": "PDF2JPG",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "description": "Convert PDF documents to JPG images locally inside your browser.",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366f1'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='50' fill='white' font-family='sans-serif'>PDF</text></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+        // State Variables
+        let currentPdf = null;
+        let pdfFileName = 'converted';
+        let pageImages = []; // Stores Data URIs & Blobs for pages
+
+        // DOM Element Selectors
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const scaleSelect = document.getElementById('scale-select');
+        const qualityRange = document.getElementById('quality-range');
+        const qualityVal = document.getElementById('quality-val');
+        
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressStatus = document.getElementById('progress-status');
+        const progressPercent = document.getElementById('progress-percent');
+        
+        const resultSection = document.getElementById('result-section');
+        const pagesGrid = document.getElementById('pages-grid');
+        const pdfFileNameDisplay = document.getElementById('pdf-file-name');
+        const pdfPageCountDisplay = document.getElementById('pdf-page-count');
+        
+        const downloadAllBtn = document.getElementById('download-all-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const zoomModal = document.getElementById('zoom-modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalPageTitle = document.getElementById('modal-page-title');
+        const modalDownloadBtn = document.getElementById('modal-download-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // UI Helpers
+        const showToast = (message, icon = 'fa-circle-info text-cyan-400') => {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            toastIcon.className = `fa-solid ${icon}`;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        };
+
+        // Update JPG Quality Label
+        qualityRange.addEventListener('input', (e) => {
+            qualityVal.textContent = `${Math.round(e.target.value * 100)}%`;
+        });
+
+        // Drag & Drop Interactions
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('drag-over');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            resultSection.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            pageImages = [];
+            pagesGrid.innerHTML = '';
+        });
+
+        // Main PDF Handler Function
+        async function handleFile(file) {
+            if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+                showToast('PDFファイルを選択してください。', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+
+            pdfFileName = file.name.replace(/\.[^/.]+$/, "");
+            pdfFileNameDisplay.textContent = file.name;
+
+            try {
+                // Read File Buffer
+                const arrayBuffer = await file.arrayBuffer();
+                
+                // Show Progress Bar UI
+                progressContainer.classList.remove('hidden');
+                resultSection.classList.add('hidden');
+                dropZone.classList.add('hidden');
+                pagesGrid.innerHTML = '';
+                pageImages = [];
+
+                updateProgress(0, 'PDF文書を解析中...');
+
+                // Load Document via PDF.js
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                currentPdf = await loadingTask.promise;
+
+                const totalPages = currentPdf.numPages;
+                pdfPageCountDisplay.textContent = `全 ${totalPages} ページ`;
+
+                const scale = parseFloat(scaleSelect.value);
+                const quality = parseFloat(qualityRange.value);
+
+                // Render each page sequentially
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    updateProgress(
+                        Math.round(((pageNum - 1) / totalPages) * 100),
+                        `ページ ${pageNum} / ${totalPages} を高画質レンダリング中...`
+                    );
+
+                    const pageData = await renderPageToJpg(currentPdf, pageNum, scale, quality);
+                    pageImages.push(pageData);
+                    appendPageCard(pageData, pageNum);
+                }
+
+                updateProgress(100, '変換完了！');
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    showToast('すべてのページの変換が完了しました。', 'fa-circle-check text-emerald-400');
+                }, 400);
+
+            } catch (error) {
+                console.error('PDF Conversion Error:', error);
+                showToast('PDFの読み込みに失敗しました。', 'fa-circle-xmark text-rose-500');
+                progressContainer.classList.add('hidden');
+                dropZone.classList.remove('hidden');
+            }
+        }
+
+        // Render Individual PDF Page to JPG Data URI
+        async function renderPageToJpg(pdf, pageNum, scale, quality) {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: scale });
+
+            // Offscreen Canvas creation
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // White background fill for transparent PDF elements
+            context.fillStyle = '#FFFFFF';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+
+            // Convert Canvas to JPG Data URL
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+            return {
+                pageNum: pageNum,
+                dataUrl: dataUrl,
+                width: canvas.width,
+                height: canvas.height
+            };
+        }
+
+        // Update Progress Bar Component
+        function updateProgress(percent, text) {
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+            progressStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-indigo-400"></i> ${text}`;
+        }
+
+        // Append Rendered Page Card to Grid
+        function appendPageCard(pageData, pageNum) {
+            const card = document.createElement('div');
+            card.className = 'glass-card rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-700 transition-all duration-300 flex flex-col group';
+
+            card.innerHTML = `
+                <div class="relative overflow-hidden bg-slate-950 aspect-[3/4] flex items-center justify-center p-2 bg-checkered cursor-pointer" onclick="openZoomModal(${pageNum - 1})">
+                    <img src="${pageData.dataUrl}" alt="Page ${pageNum}" class="max-h-full max-w-full object-contain rounded shadow-lg transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                    <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <span class="w-10 h-10 rounded-full bg-slate-900/80 text-white flex items-center justify-center backdrop-blur-sm border border-slate-700">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                        </span>
+                    </div>
+                    <span class="absolute top-3 left-3 bg-slate-900/80 text-slate-300 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-700/50 backdrop-blur-sm">
+                        Page ${pageNum}
+                    </span>
+                </div>
+                <div class="p-3 bg-slate-900/60 border-t border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-400 font-mono">${pageData.width} x ${pageData.height} px</span>
+                    <a download="${pdfFileName}_page_${pageNum}.jpg" href="${pageData.dataUrl}" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 border border-slate-700">
+                        <i class="fa-solid fa-download text-[10px]"></i>
+                        <span>保存</span>
+                    </a>
+                </div>
+            `;
+            pagesGrid.appendChild(card);
+        }
+
+        // Zoom Modal Control
+        window.openZoomModal = function(index) {
+            const pageData = pageImages[index];
+            if (!pageData) return;
+
+            modalImg.src = pageData.dataUrl;
+            modalPageTitle.textContent = `ページ ${pageData.pageNum}`;
+            modalDownloadBtn.href = pageData.dataUrl;
+            modalDownloadBtn.download = `${pdfFileName}_page_${pageData.pageNum}.jpg`;
+
+            zoomModal.classList.remove('hidden');
+        };
+
+        closeModalBtn.addEventListener('click', () => zoomModal.classList.add('hidden'));
+        zoomModal.addEventListener('click', (e) => {
+            if (e.target === zoomModal) zoomModal.classList.add('hidden');
+        });
+
+        // ZIP Batch Download using JSZip
+        downloadAllBtn.addEventListener('click', async () => {
+            if (pageImages.length === 0) return;
+
+            const zip = new JSZip();
+            const imgFolder = zip.folder("jpg_pages");
+
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>ZIP生成中...</span>`;
+
+            try {
+                pageImages.forEach((img, idx) => {
+                    // Extract base64 content
+                    const base64Data = img.dataUrl.replace(/^data:image\/jpeg;base64,/, "");
+                    const pageNumPadded = String(idx + 1).padStart(3, '0');
+                    imgFolder.file(`${pdfFileName}_page_${pageNumPadded}.jpg`, base64Data, { base64: true });
+                });
+
+                const content = await zip.generateAsync({ type: "blob" });
+                
+                // Trigger Download
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${pdfFileName}_JPG_images.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showToast('ZIPアーカイブをダウンロードしました。', 'fa-circle-check text-emerald-400');
+            } catch (err) {
+                console.error(err);
+                showToast('ZIPの作成に失敗しました。', 'fa-circle-xmark text-rose-500');
+            } finally {
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.innerHTML = `<i class="fa-solid fa-file-zipper text-sm"></i> <span>全ページ一括ZIP保存</span>`;
+            }
+        });
+
+        // PWA Service Worker Registration using Data URI Blob
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'pdf2jpg-v1';
+                self.addEventListener('install', (e) => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', (e) => {
+                    e.waitUntil(clients.claim());
+                });
+                self.addEventListener('fetch', (e) => {
+                    // Cache-first / Network fallback standard strategy
+                    e.respondWith(
+                        caches.match(e.request).then((res) => res || fetch(e.request))
+                    );
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl).catch(err => {
+                    console.log('ServiceWorker registration deferred:', err);
+                });
+            });
+        }
+
+        // PWA Install Prompt Handler
+        let deferredPrompt;
+        const pwaInstallBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaInstallBtn.classList.remove('hidden');
+        });
+
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                showToast('アプリをインストールしました。', 'fa-circle-check text-emerald-400');
+            }
+            deferredPrompt = null;
+            pwaInstallBtn.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
