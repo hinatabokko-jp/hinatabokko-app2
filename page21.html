@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirChat - 即時P2Pチャット</title>
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkhpbmF0YWJva2tvIEFpckNoYXQiLAogICJzaG9ydF9uYW1lIjogIkFpckNoYXQiLAogICJzdGFydF91cmwiOiAiaW5kZXguaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzEyMTIxMiIsCiAgInRoZW1lX2NvbG9yIjogIiMxMjEyMTIiCn0=">
+    <!-- PeerJS & QRCode.js -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #00897b;
+            --accent-hover: #00796b;
+            --text-color: #e0e0e0;
+            --text-muted: #9e9e9e;
+            --my-msg-bg: #005b52;
+            --peer-msg-bg: #2c2c2c;
+            --border-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        @media (min-height: 700px) and (min-width: 520px) {
+            .container {
+                height: 90vh;
+                border-radius: 16px;
+                overflow: hidden;
+            }
+        }
+
+        /* Header */
+        header {
+            padding: 16px;
+            background-color: #181818;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            color: #00bfa5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background-color: #333;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        .status-badge.connected {
+            background-color: #1b5e20;
+            color: #81c784;
+        }
+
+        /* Views */
+        .view {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* Connect View */
+        #connect-view {
+            padding: 24px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .qr-box {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: inline-block;
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .manual-connect {
+            width: 100%;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #444;
+            cursor: not-allowed;
+        }
+
+        /* Chat View */
+        #chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.my {
+            align-self: flex-end;
+            background-color: var(--my-msg-bg);
+            color: #e0f2f1;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.peer {
+            align-self: flex-start;
+            background-color: var(--peer-msg-bg);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+
+        .message-time {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .system-msg {
+            align-self: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: #252525;
+            padding: 4px 12px;
+            border-radius: 10px;
+            margin: 4px 0;
+        }
+
+        /* Chat Input Bar */
+        .chat-input-area {
+            padding: 12px 16px;
+            background-color: #181818;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .file-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .file-btn:hover {
+            color: var(--accent-color);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #323232;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>💬 AirChat</h1>
+        <div id="status-badge" class="status-badge">準備中...</div>
+    </header>
+
+    <!-- 接続待ち画面 -->
+    <div id="connect-view" class="view active">
+        <p class="info-text">相手のスマホで下記のQRコードを読み取ると、リアルタイムでチャットが始まります。</p>
+        
+        <div class="qr-box">
+            <div id="qrcode"></div>
+        </div>
+
+        <p class="info-text" style="font-size: 0.8rem;">※端末同士で直接通信するため、メッセージは外部に保存されず安全です。</p>
+
+        <div class="manual-connect">
+            <p class="info-text" style="margin-bottom: 8px;">手動で接続IDを入力して接続：</p>
+            <div class="input-group">
+                <input type="text" id="target-id-input" placeholder="相手のIDを入力">
+                <button id="connect-btn">接続</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- チャット画面 -->
+    <div id="chat-view" class="view">
+        <div id="chat-messages">
+            <div class="system-msg">暗号化P2P接続が確立されました</div>
+        </div>
+        <div class="chat-input-area">
+            <label for="file-input" class="file-btn" title="画像を送信">📷</label>
+            <input type="file" id="file-input" accept="image/*">
+            <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
+            <button id="send-btn">送信</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    // App State
+    let peer = null;
+    let conn = null;
+    let myPeerId = null;
+
+    // DOM Elements
+    const statusBadge = document.getElementById('status-badge');
+    const connectView = document.getElementById('connect-view');
+    const chatView = document.getElementById('chat-view');
+    const qrcodeDiv = document.getElementById('qrcode');
+    const targetIdInput = document.getElementById('target-id-input');
+    const connectBtn = document.getElementById('connect-btn');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const fileInput = document.getElementById('file-input');
+
+    // UI Helper
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function switchView(viewName) {
+        connectView.classList.remove('active');
+        chatView.classList.remove('active');
+        if (viewName === 'chat') {
+            chatView.classList.add('active');
+            statusBadge.textContent = '通信中';
+            statusBadge.classList.add('connected');
+        } else {
+            connectView.classList.add('active');
+            statusBadge.textContent = '接続待ち';
+            statusBadge.classList.remove('connected');
+        }
+    }
+
+    // Initialize PeerJS
+    function initPeer() {
+        // Unique Peer ID creation
+        const randomId = 'chat-' + Math.random().toString(36).substr(2, 8);
+        
+        peer = new Peer(randomId, {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        });
+
+        peer.on('open', (id) => {
+            myPeerId = id;
+            statusBadge.textContent = '接続待ち';
+            
+            // Check URL for target peer ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const peerParam = urlParams.get('peer');
+
+            if (peerParam) {
+                // Auto-connect if peer param exists in URL
+                connectToPeer(peerParam);
+            } else {
+                // Generate QR Code with shareable URL
+                const shareUrl = `${window.location.origin}${window.location.pathname}?peer=${myPeerId}`;
+                qrcodeDiv.innerHTML = '';
+                new QRCode(qrcodeDiv, {
+                    text: shareUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#121212",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        });
+
+        // Incoming connection handler
+        peer.on('connection', (incomingConn) => {
+            setupConnection(incomingConn);
+        });
+
+        peer.on('error', (err) => {
+            console.error('Peer error:', err);
+            showToast('接続エラーが発生しました');
+        });
+    }
+
+    // Connect to Target Peer
+    function connectToPeer(targetId) {
+        statusBadge.textContent = '接続中...';
+        const outgoingConn = peer.connect(targetId, { reliable: true });
+        setupConnection(outgoingConn);
+    }
+
+    // Setup Connection Events
+    function setupConnection(connection) {
+        conn = connection;
+
+        conn.on('open', () => {
+            switchView('chat');
+            showToast('相手と接続しました！');
+        });
+
+        conn.on('data', (data) => {
+            handleIncomingData(data);
+        });
+
+        conn.on('close', () => {
+            showToast('接続が切断されました');
+            appendSystemMessage('相手が退出しました');
+            statusBadge.textContent = '切断';
+            statusBadge.classList.remove('connected');
+        });
+    }
+
+    // Handle Incoming Data
+    function handleIncomingData(data) {
+        if (data.type === 'text') {
+            appendMessage(data.text, 'peer', data.time);
+        } else if (data.type === 'image') {
+            appendImageMessage(data.imgData, 'peer', data.time);
+        }
+    }
+
+    // Send Messages
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !conn) return;
+
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const payload = { type: 'text', text: text, time: time };
+
+        conn.send(payload);
+        appendMessage(text, 'my', time);
+        messageInput.value = '';
+    }
+
+    // Send Image
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file || !conn) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('画像サイズは5MB以下にしてください');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const payload = { type: 'image', imgData: evt.target.result, time: time };
+            
+            conn.send(payload);
+            appendImageMessage(evt.target.result, 'my', time);
+        };
+        reader.readAsDataURL(file);
+        fileInput.value = '';
+    });
+
+    // Append Messages to UI
+    function appendMessage(text, sender, time) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        
+        const textDiv = document.createElement('div');
+        textDiv.textContent = text;
+        msgDiv.appendChild(textDiv);
+
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(timeDiv);
+
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendImageMessage(imgData, sender, time) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+
+        const img = document.createElement('img');
+        img.src = imgData;
+        img.onclick = () => window.open(imgData, '_blank');
+        msgDiv.appendChild(img);
+
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(timeDiv);
+
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendSystemMessage(text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'system-msg';
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Event Listeners
+    connectBtn.addEventListener('click', () => {
+        const targetId = targetIdInput.value.trim();
+        if (targetId) {
+            connectToPeer(targetId);
+        }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // App Initialization
+    window.addEventListener('load', initPeer);
+</script>
+</body>
+</html>
