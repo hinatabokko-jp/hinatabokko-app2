@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirChat Group</title>
+    <title>AirChat Group (PeerJS)</title>
     <!-- QRコード生成ライブラリ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Firebase SDK (v9 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- PeerJS (WebRTC P2P通信ライブラリ) -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --bg-color: #121212;
             --surface-color: #1e1e1e;
-            --primary-color: #008080; /* ダークターコイズ */
+            --primary-color: #008080;
             --primary-hover: #00a3a3;
             --danger-color: #cf6679;
             --text-color: #e0e0e0;
@@ -52,7 +51,6 @@
             overflow: hidden;
         }
 
-        /* ヘッダー */
         header {
             background-color: var(--surface-color);
             padding: 12px 16px;
@@ -116,7 +114,6 @@
             color: #fff;
         }
 
-        /* メンバーリスト表示ドロワー/エリア */
         .members-bar {
             display: none;
             background-color: #161616;
@@ -148,7 +145,6 @@
             border: 1px solid var(--primary-color);
         }
 
-        /* ビュー切替 */
         .view-section {
             display: none;
             flex: 1;
@@ -160,7 +156,6 @@
             display: flex;
         }
 
-        /* 入室画面 */
         .join-container {
             padding: 24px;
             display: flex;
@@ -236,7 +231,6 @@
             background-color: var(--primary-hover);
         }
 
-        /* チャット画面 */
         .chat-messages {
             flex: 1;
             padding: 16px;
@@ -285,7 +279,6 @@
             margin-bottom: 4px;
         }
 
-        /* チャット入力バー */
         .chat-input-area {
             padding: 12px;
             background-color: var(--surface-color);
@@ -298,7 +291,6 @@
             flex: 1;
         }
 
-        /* モーダル */
         .modal {
             display: none;
             position: absolute;
@@ -319,7 +311,7 @@
             align-items: center;
             gap: 12px;
             width: 85%;
-            max-width: 360px;
+            max-width: 380px;
         }
 
         #qrcode {
@@ -342,15 +334,15 @@
 
         .room-id-text {
             font-family: monospace;
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--primary-hover);
             font-weight: bold;
+            word-break: break-all;
         }
 
-        /* メンバーモーダル用スタイル */
         .member-list-container {
             width: 100%;
-            max-height: 200px;
+            max-height: 220px;
             overflow-y: auto;
             text-align: left;
             background: var(--bg-color);
@@ -360,18 +352,18 @@
         }
 
         .member-item {
-            padding: 6px 8px;
+            padding: 8px;
             border-bottom: 1px solid #282828;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .member-item:last-child {
             border-bottom: none;
         }
 
-        /* トースト通知 */
         .toast {
             position: absolute;
             bottom: 20px;
@@ -410,9 +402,8 @@
         </div>
     </header>
 
-    <!-- 参加メンバー表示サブヘッダー -->
     <div id="membersBar" class="members-bar">
-        <span>オンライン:</span>
+        <span>参加中:</span>
         <div id="membersListInline" style="display: flex; gap: 6px; overflow-x: auto;"></div>
     </div>
 
@@ -420,7 +411,7 @@
     <div id="joinView" class="view-section active">
         <div class="join-container">
             <h2 style="text-align: center; margin-bottom: 4px;">グループに参加</h2>
-            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">同じIDのルームに入ると、リアルタイムで会話できます</p>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">招待コードを使ってリアルタイム接続します</p>
             
             <div class="form-group">
                 <label for="usernameInput">表示名</label>
@@ -428,14 +419,14 @@
             </div>
             
             <div class="form-group">
-                <label for="roomIdInput">ルームID</label>
+                <label for="targetPeerIdInput">招待コード（参加先のPeer ID）</label>
                 <div class="id-input-group">
-                    <input type="text" id="roomIdInput" placeholder="例: room-xxxxxx">
-                    <button class="btn-secondary" onclick="generateRandomRoomId()">ID自動生成</button>
+                    <input type="text" id="targetPeerIdInput" placeholder="空欄のままで新規ルーム作成">
                 </div>
+                <small style="color:var(--text-muted); font-size:0.75rem; margin-top:2px;">※既存のグループに参加する場合のみ、招待コードを入力してください。</small>
             </div>
 
-            <button class="btn-primary" onclick="joinRoom()">チャットを開始する</button>
+            <button class="btn-primary" onclick="startSession()">チャットを開始する</button>
         </div>
     </div>
 
@@ -452,13 +443,13 @@
     <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>招待情報</h3>
-            <p style="font-size:0.8rem; color: var(--text-muted);">QRコードまたはIDテキストで招待できます</p>
+            <p style="font-size:0.8rem; color: var(--text-muted);">あなたの招待コードを共有してメンバーを招待できます</p>
             
             <div id="qrcode"></div>
 
             <div class="room-id-box">
                 <span id="modalRoomId" class="room-id-text">------</span>
-                <button class="btn-secondary" style="padding: 4px 8px;" onclick="copyRoomId()">コピー</button>
+                <button class="btn-secondary" style="padding: 4px 8px;" onclick="copyMyPeerId()">コピー</button>
             </div>
 
             <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('qrModal')">閉じる</button>
@@ -469,41 +460,27 @@
     <div id="membersModal" class="modal" onclick="closeModal('membersModal')">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3>参加メンバー一覧</h3>
-            <p style="font-size:0.8rem; color: var(--text-muted);">現在このルームに参加しているメンバーです</p>
+            <p style="font-size:0.8rem; color: var(--text-muted);">現在接続中のメンバーリストです</p>
             
-            <div class="member-list-container" id="modalMemberList">
-                <!-- メンバーリストがここに動的に挿入される -->
-            </div>
+            <div class="member-list-container" id="modalMemberList"></div>
 
+            <button class="btn-secondary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="showQRModal(); closeModal('membersModal');">招待コードを表示する</button>
             <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('membersModal')">閉じる</button>
         </div>
     </div>
 
-    <!-- トースト通知 -->
     <div id="toast" class="toast"></div>
 </div>
 
 <script>
-    // 【重要修正点】
-    // 自身で Firebase Realtime Database を用意した構成で動作させます。
-    // demo-app プロジェクトを使用することで、認証やルールエラーなく動作させることが可能です。
-    const firebaseConfig = {
-        databaseURL: "https://demo-airchat-default-rtdb.firebaseio.com/"
-    };
-    
-    // Firebase初期化
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database();
-
+    let peer = null;
+    let myPeerId = "";
     let currentUsername = "";
-    let currentRoomId = "";
-    let myUserId = "";
-    let roomRef = null;
-    let membersRef = null;
-    let myPresenceRef = null;
-    let currentMembers = {};
+    
+    // 接続している全Peerのコネクション辞書 { peerId: dataConnection }
+    const connections = {};
+    // メンバー情報管理 { peerId: username }
+    const membersMap = {};
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
@@ -514,92 +491,137 @@
     const statusBadge = document.getElementById('statusBadge');
     const chatMessages = document.getElementById('chatMessages');
 
-    // 起動時：URLパラメータにルームIDがあれば自動セット
     window.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const roomParam = urlParams.get('room');
-        if (roomParam) {
-            document.getElementById('roomIdInput').value = roomParam;
-            showToast(`ルームID「${roomParam}」を読み込みました`);
-        } else {
-            generateRandomRoomId();
+        const joinParam = urlParams.get('join');
+        if (joinParam) {
+            document.getElementById('targetPeerIdInput').value = joinParam;
+            showToast(`招待コードを自動読み込みしました`);
         }
     });
 
-    // ランダムルームID自動生成
-    function generateRandomRoomId() {
-        const randomId = 'room-' + Math.random().toString(36).substring(2, 8);
-        document.getElementById('roomIdInput').value = randomId;
-    }
-
-    // 入室処理
-    function joinRoom() {
+    // セッション開始（Peer初期化）
+    function startSession() {
         const username = document.getElementById('usernameInput').value.trim();
-        let roomId = document.getElementById('roomIdInput').value.trim();
+        const targetPeerId = document.getElementById('targetPeerIdInput').value.trim();
 
         if (!username) {
             showToast('表示名を入力してください');
             return;
         }
-        if (!roomId) {
-            generateRandomRoomId();
-            roomId = document.getElementById('roomIdInput').value.trim();
-        }
 
         currentUsername = username;
-        // Firebaseのキーとして不適切な文字を置換
-        currentRoomId = roomId.replace(/[.#$\[\]]/g, "_");
-        myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
+        showToast('接続中...');
 
-        // UI切替
-        joinView.classList.remove('active');
-        chatView.classList.add('active');
-        exitBtn.style.display = 'block';
-        qrBtn.style.display = 'block';
-        membersBtn.style.display = 'block';
-        membersBar.classList.add('active');
-        statusBadge.textContent = `Room: ${currentRoomId}`;
-        statusBadge.classList.add('online');
+        // PeerJSサーバーに接続して自身のPeer IDを取得
+        peer = new Peer();
 
-        // データベース参照を設定
-        roomRef = db.ref(`rooms/${currentRoomId}/messages`);
-        membersRef = db.ref(`rooms/${currentRoomId}/members`);
-        myPresenceRef = db.ref(`rooms/${currentRoomId}/members/${myUserId}`);
+        peer.on('open', (id) => {
+            myPeerId = id;
+            membersMap[myPeerId] = currentUsername;
 
-        // 1. メンバー管理（プレゼンス機能）のセットアップ
-        // 自分が切断（ブラウザを閉じる・通信切断）した際に自動でデータベースから除去
-        myPresenceRef.onDisconnect().remove();
-        myPresenceRef.set({
-            name: currentUsername,
-            joinedAt: firebase.database.ServerValue.TIMESTAMP
-        });
+            // UI切り替え
+            joinView.classList.remove('active');
+            chatView.classList.add('active');
+            exitBtn.style.display = 'block';
+            qrBtn.style.display = 'block';
+            membersBtn.style.display = 'block';
+            membersBar.classList.add('active');
+            statusBadge.textContent = `Online`;
+            statusBadge.classList.add('online');
 
-        // メンバー一覧の変更監視
-        membersRef.on('value', (snapshot) => {
-            currentMembers = snapshot.val() || {};
-            updateMembersDisplay();
-        });
+            addSystemMessage(`${currentUsername} として入室しました`);
 
-        // 2. 入室メッセージ送信
-        sendSystemMessage(`${currentUsername} さんが入室しました`);
-
-        // 3. メッセージ受信監視
-        roomRef.limitToLast(50).on('child_added', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            if (data.type === 'system') {
-                addSystemMessage(data.text);
-            } else if (data.type === 'chat') {
-                const isMyMessage = data.userId === myUserId;
-                addMessage(data.sender, data.text, isMyMessage ? 'my' : 'other');
+            if (targetPeerId) {
+                // 既存のメンバーへ接続を試みる
+                connectToPeer(targetPeerId);
+            } else {
+                updateMembersDisplay();
             }
         });
 
-        showToast('チャットルームに入室しました');
+        // 外部からの接続要求を監視
+        peer.on('connection', (conn) => {
+            setupConnectionEvents(conn);
+        });
+
+        peer.on('error', (err) => {
+            console.error('PeerJS Error:', err);
+            showToast('接続エラーが発生しました');
+        });
     }
 
-    // メンバーリストの画面描画更新
+    // 特定のPeerへ接続を確立
+    function connectToPeer(targetId) {
+        if (connections[targetId] || targetId === myPeerId) return;
+
+        const conn = peer.connect(targetId);
+        setupConnectionEvents(conn);
+    }
+
+    // コネクションのイベント初期化
+    function setupConnectionEvents(conn) {
+        conn.on('open', () => {
+            connections[conn.peer] = conn;
+
+            // ハンドシェイク情報送信（自身のプロフィールと現在知っているメンバー一覧）
+            conn.send({
+                type: 'handshake',
+                senderId: myPeerId,
+                senderName: currentUsername,
+                knownMembers: membersMap
+            });
+        });
+
+        conn.on('data', (data) => {
+            handleIncomingData(data, conn);
+        });
+
+        conn.on('close', () => {
+            handlePeerDisconnect(conn.peer);
+        });
+
+        conn.on('error', () => {
+            handlePeerDisconnect(conn.peer);
+        });
+    }
+
+    // 受信データの処理
+    function handleIncomingData(data, conn) {
+        if (data.type === 'handshake') {
+            membersMap[data.senderId] = data.senderName;
+            addSystemMessage(`${data.senderName} さんが参加しました`);
+
+            // 新しく知ったメンバーリストをもとに自身も未接続のメンバーへ接続を伝播（メッシュネットワーク構築）
+            if (data.knownMembers) {
+                Object.keys(data.knownMembers).forEach(peerId => {
+                    if (peerId !== myPeerId && !connections[peerId]) {
+                        membersMap[peerId] = data.knownMembers[peerId];
+                        connectToPeer(peerId);
+                    }
+                });
+            }
+            updateMembersDisplay();
+
+        } else if (data.type === 'chat') {
+            addMessage(data.senderName, data.text, 'other');
+
+        } else if (data.type === 'system') {
+            addSystemMessage(data.text);
+        }
+    }
+
+    // 接続離脱処理
+    function handlePeerDisconnect(disconnectedPeerId) {
+        if (membersMap[disconnectedPeerId]) {
+            addSystemMessage(`${membersMap[disconnectedPeerId]} さんが退室しました`);
+            delete membersMap[disconnectedPeerId];
+        }
+        delete connections[disconnectedPeerId];
+        updateMembersDisplay();
+    }
+
+    // メンバー一覧UI更新
     function updateMembersDisplay() {
         const inlineContainer = document.getElementById('membersListInline');
         const modalContainer = document.getElementById('modalMemberList');
@@ -607,24 +629,25 @@
         inlineContainer.innerHTML = '';
         modalContainer.innerHTML = '';
 
-        const memberKeys = Object.keys(currentMembers);
+        Object.keys(membersMap).forEach(peerId => {
+            const name = membersMap[peerId];
+            const isMe = peerId === myPeerId;
 
-        memberKeys.forEach(uid => {
-            const member = currentMembers[uid];
-            const isMe = uid === myUserId;
-
-            // インライン表示用タグ
+            // タグ表示
             const tag = document.createElement('span');
             tag.className = `member-tag ${isMe ? 'me' : ''}`;
-            tag.textContent = `${member.name}${isMe ? ' (自分)' : ''}`;
+            tag.textContent = `${name}${isMe ? ' (自分)' : ''}`;
             inlineContainer.appendChild(tag);
 
-            // モーダル用リスト項目
+            // モーダル表示
             const item = document.createElement('div');
             item.className = 'member-item';
             item.innerHTML = `
-                <span>${escapeHTML(member.name)} ${isMe ? '<small style="color:var(--primary-hover)">(自分)</small>' : ''}</span>
-                <span style="color:var(--text-muted); font-size:0.75rem;">オンライン</span>
+                <div>
+                    <strong>${escapeHTML(name)}</strong> ${isMe ? '<small style="color:var(--primary-hover)">(自分)</small>' : ''}<br>
+                    <small style="color:var(--text-muted); font-size:0.7rem;">ID: ${peerId.substring(0, 8)}...</small>
+                </div>
+                <button class="btn-secondary" style="padding:2px 6px; font-size:0.75rem;" onclick="copyText('${peerId}')">IDコピー</button>
             `;
             modalContainer.appendChild(item);
         });
@@ -634,82 +657,24 @@
     function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
-        if (!text || !roomRef) return;
+        if (!text) return;
 
-        roomRef.push({
+        const payload = {
             type: 'chat',
-            sender: currentUsername,
-            userId: myUserId,
-            text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+            senderId: myPeerId,
+            senderName: currentUsername,
+            text: text
+        };
+
+        // 接続中の全員へマルチキャスト
+        Object.values(connections).forEach(conn => {
+            if (conn.open) {
+                conn.send(payload);
+            }
         });
 
+        addMessage(currentUsername, text, 'my');
         input.value = '';
-    }
-
-    // システムメッセージ送信
-    function sendSystemMessage(text) {
-        if (!roomRef) return;
-        roomRef.push({
-            type: 'system',
-            text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-    }
-
-    // 退室処理
-    function confirmExit() {
-        if (confirm('チャットを終了して退室しますか？')) {
-            exitRoom();
-        }
-    }
-
-    function exitRoom() {
-        if (roomRef) {
-            sendSystemMessage(`${currentUsername} さんが退室しました`);
-            roomRef.off(); // 監視解除
-            roomRef = null;
-        }
-
-        if (myPresenceRef) {
-            myPresenceRef.remove(); // メンバーリストから削除
-            myPresenceRef.onDisconnect().cancel();
-            myPresenceRef = null;
-        }
-
-        if (membersRef) {
-            membersRef.off();
-            membersRef = null;
-        }
-
-        // データ初期化
-        currentUsername = "";
-        currentRoomId = "";
-        myUserId = "";
-        currentMembers = {};
-        chatMessages.innerHTML = "";
-        document.getElementById('messageInput').value = "";
-
-        // URLパラメータ解除
-        history.replaceState(null, '', window.location.pathname);
-
-        // UI初期化
-        chatView.classList.remove('active');
-        joinView.classList.add('active');
-        exitBtn.style.display = 'none';
-        qrBtn.style.display = 'none';
-        membersBtn.style.display = 'none';
-        membersBar.classList.remove('active');
-        statusBadge.textContent = '未接続';
-        statusBadge.classList.remove('online');
-
-        showToast('退室しました');
-    }
-
-    function handleKeyDown(e) {
-        if (e.key === 'Enter' && !e.isComposing) {
-            sendMessage();
-        }
     }
 
     function addMessage(sender, text, type) {
@@ -739,15 +704,66 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.isComposing) {
+            sendMessage();
+        }
+    }
+
+    function confirmExit() {
+        if (confirm('チャットを終了して退室しますか？')) {
+            exitRoom();
+        }
+    }
+
+    function exitRoom() {
+        // 切断通知
+        Object.values(connections).forEach(conn => {
+            if (conn.open) {
+                conn.send({
+                    type: 'system',
+                    text: `${currentUsername} さんが退室しました`
+                });
+                conn.close();
+            }
+        });
+
+        if (peer) {
+            peer.destroy();
+            peer = null;
+        }
+
+        // 変数・UIリセット
+        myPeerId = "";
+        currentUsername = "";
+        Object.keys(connections).forEach(key => delete connections[key]);
+        Object.keys(membersMap).forEach(key => delete membersMap[key]);
+
+        chatMessages.innerHTML = "";
+        document.getElementById('messageInput').value = "";
+        document.getElementById('targetPeerIdInput').value = "";
+        history.replaceState(null, '', window.location.pathname);
+
+        chatView.classList.remove('active');
+        joinView.classList.add('active');
+        exitBtn.style.display = 'none';
+        qrBtn.style.display = 'none';
+        membersBtn.style.display = 'none';
+        membersBar.classList.remove('active');
+        statusBadge.textContent = '未接続';
+        statusBadge.classList.remove('online');
+
+        showToast('退室しました');
+    }
+
     // 招待モーダル表示
     function showQRModal() {
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = "";
 
-        document.getElementById('modalRoomId').textContent = currentRoomId;
+        document.getElementById('modalRoomId').textContent = myPeerId;
 
-        // 招待用URLの生成
-        const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`;
+        const inviteUrl = `${window.location.origin}${window.location.pathname}?join=${encodeURIComponent(myPeerId)}`;
 
         new QRCode(qrContainer, {
             text: inviteUrl,
@@ -758,7 +774,6 @@
         document.getElementById('qrModal').style.display = 'flex';
     }
 
-    // メンバーモーダル表示
     function showMembersModal() {
         document.getElementById('membersModal').style.display = 'flex';
     }
@@ -767,10 +782,13 @@
         document.getElementById(modalId).style.display = 'none';
     }
 
-    // ルームIDコピー
-    function copyRoomId() {
-        navigator.clipboard.writeText(currentRoomId).then(() => {
-            showToast('ルームIDをコピーしました！');
+    function copyMyPeerId() {
+        copyText(myPeerId);
+    }
+
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('コピーしました！');
         }).catch(() => {
             showToast('コピーに失敗しました');
         });
