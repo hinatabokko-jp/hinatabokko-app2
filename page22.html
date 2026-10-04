@@ -279,16 +279,57 @@
             margin-bottom: 4px;
         }
 
+        /* 添付ファイル表示用 */
+        .chat-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .file-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--primary-hover);
+            font-size: 0.85rem;
+            margin-top: 6px;
+            word-break: break-all;
+        }
+
         .chat-input-area {
             padding: 12px;
             background-color: var(--surface-color);
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
-        .chat-input-area input {
+        .chat-input-area input[type="text"] {
             flex: 1;
+        }
+
+        .btn-attach {
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-attach:hover {
+            background-color: #444;
         }
 
         .modal {
@@ -434,6 +475,9 @@
     <div id="chatView" class="view-section">
         <div id="chatMessages" class="chat-messages"></div>
         <div class="chat-input-area">
+            <!-- ファイル選択用非表示input -->
+            <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+            <button class="btn-attach" title="ファイルを送信" onclick="document.getElementById('fileInput').click()">📎</button>
             <input type="text" id="messageInput" placeholder="メッセージを入力..." onkeydown="handleKeyDown(event)">
             <button class="btn-primary" style="padding: 10px 18px; margin-top:0;" onclick="sendMessage()">送信</button>
         </div>
@@ -464,8 +508,21 @@
             
             <div class="member-list-container" id="modalMemberList"></div>
 
+            <button class="btn-secondary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="showNameChangeModal(); closeModal('membersModal');">自分の表示名を変更する</button>
             <button class="btn-secondary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="showQRModal(); closeModal('membersModal');">招待コードを表示する</button>
             <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('membersModal')">閉じる</button>
+        </div>
+    </div>
+
+    <!-- 名前変更専用モーダル（PC/スマホで確実に動作させるための独自ダイアログ） -->
+    <div id="nameModal" class="modal" onclick="closeModal('nameModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3>表示名の変更</h3>
+            <div class="form-group" style="width:100%; margin:8px 0;">
+                <input type="text" id="newNameInput" placeholder="新しい表示名" maxlength="15">
+            </div>
+            <button class="btn-primary" style="padding: 10px 24px; width: 100%; margin-top:0;" onclick="submitNameChange()">保存する</button>
+            <button class="btn-secondary" style="padding: 8px 24px; width: 100%;" onclick="closeModal('nameModal')">キャンセル</button>
         </div>
     </div>
 
@@ -513,14 +570,12 @@
         currentUsername = username;
         showToast('接続中...');
 
-        // PeerJSサーバーに接続して自身のPeer IDを取得
         peer = new Peer();
 
         peer.on('open', (id) => {
             myPeerId = id;
             membersMap[myPeerId] = currentUsername;
 
-            // UI切り替え
             joinView.classList.remove('active');
             chatView.classList.add('active');
             exitBtn.style.display = 'block';
@@ -533,14 +588,12 @@
             addSystemMessage(`${currentUsername} として入室しました`);
 
             if (targetPeerId) {
-                // 既存のメンバーへ接続を試みる
                 connectToPeer(targetPeerId);
             } else {
                 updateMembersDisplay();
             }
         });
 
-        // 外部からの接続要求を監視
         peer.on('connection', (conn) => {
             setupConnectionEvents(conn);
         });
@@ -551,7 +604,6 @@
         });
     }
 
-    // 特定のPeerへ接続を確立
     function connectToPeer(targetId) {
         if (connections[targetId] || targetId === myPeerId) return;
 
@@ -559,12 +611,10 @@
         setupConnectionEvents(conn);
     }
 
-    // コネクションのイベント初期化
     function setupConnectionEvents(conn) {
         conn.on('open', () => {
             connections[conn.peer] = conn;
 
-            // ハンドシェイク情報送信（自身のプロフィールと現在知っているメンバー一覧）
             conn.send({
                 type: 'handshake',
                 senderId: myPeerId,
@@ -586,13 +636,11 @@
         });
     }
 
-    // 受信データの処理
     function handleIncomingData(data, conn) {
         if (data.type === 'handshake') {
             membersMap[data.senderId] = data.senderName;
             addSystemMessage(`${data.senderName} さんが参加しました`);
 
-            // 新しく知ったメンバーリストをもとに自身も未接続のメンバーへ接続を伝播（メッシュネットワーク構築）
             if (data.knownMembers) {
                 Object.keys(data.knownMembers).forEach(peerId => {
                     if (peerId !== myPeerId && !connections[peerId]) {
@@ -604,13 +652,12 @@
             updateMembersDisplay();
 
         } else if (data.type === 'chat') {
-            addMessage(data.senderName, data.text, 'other');
+            addMessage(data.senderName, data.text, 'other', data.file);
 
         } else if (data.type === 'system') {
             addSystemMessage(data.text);
 
         } else if (data.type === 'nameChange') {
-            // 他ユーザーの名前変更を適用
             const oldName = membersMap[data.senderId] || '誰か';
             membersMap[data.senderId] = data.newName;
             addSystemMessage(`${oldName} さんが名前を 「${data.newName}」 に変更しました`);
@@ -618,16 +665,28 @@
         }
     }
 
-    // 自分の名前を変更する機能
-    function changeMyName() {
-        const newName = prompt('新しい表示名を入力してください:', currentUsername);
-        if (!newName || !newName.trim() || newName.trim() === currentUsername) return;
+    // 名前変更用モーダル開閉
+    function showNameChangeModal() {
+        document.getElementById('newNameInput').value = currentUsername;
+        document.getElementById('nameModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('newNameInput').focus(), 100);
+    }
+
+    function submitNameChange() {
+        const newName = document.getElementById('newNameInput').value.trim();
+        if (!newName) {
+            showToast('表示名を入力してください');
+            return;
+        }
+        if (newName === currentUsername) {
+            closeModal('nameModal');
+            return;
+        }
 
         const oldName = currentUsername;
-        currentUsername = newName.trim();
+        currentUsername = newName;
         membersMap[myPeerId] = currentUsername;
 
-        // 全員に変更イベントを通知
         const payload = {
             type: 'nameChange',
             senderId: myPeerId,
@@ -642,10 +701,53 @@
 
         addSystemMessage(`名前を 「${currentUsername}」 に変更しました`);
         updateMembersDisplay();
-        showToast('表示名を更新しました');
+        closeModal('nameModal');
+        showToast('表示名を変更しました');
     }
 
-    // 接続離脱処理
+    // ファイル送信の処理
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 大容量ファイル対策（5MB制限）
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('ファイルサイズは5MB以下にしてください');
+            e.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const fileData = {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                data: evt.target.result // Base64形式
+            };
+
+            const payload = {
+                type: 'chat',
+                senderId: myPeerId,
+                senderName: currentUsername,
+                text: `${file.name} を送信しました`,
+                file: fileData
+            };
+
+            Object.values(connections).forEach(conn => {
+                if (conn.open) {
+                    conn.send(payload);
+                }
+            });
+
+            addMessage(currentUsername, `${file.name} を送信しました`, 'my', fileData);
+            showToast('ファイルを送信しました');
+        };
+
+        reader.readAsDataURL(file);
+        e.target.value = ''; // リセット
+    }
+
     function handlePeerDisconnect(disconnectedPeerId) {
         if (membersMap[disconnectedPeerId]) {
             addSystemMessage(`${membersMap[disconnectedPeerId]} さんが退室しました`);
@@ -655,7 +757,6 @@
         updateMembersDisplay();
     }
 
-    // メンバー一覧UI更新
     function updateMembersDisplay() {
         const inlineContainer = document.getElementById('membersListInline');
         const modalContainer = document.getElementById('modalMemberList');
@@ -667,13 +768,11 @@
             const name = membersMap[peerId];
             const isMe = peerId === myPeerId;
 
-            // タグ表示
             const tag = document.createElement('span');
             tag.className = `member-tag ${isMe ? 'me' : ''}`;
             tag.textContent = `${name}${isMe ? ' (自分)' : ''}`;
             inlineContainer.appendChild(tag);
 
-            // モーダル表示
             const item = document.createElement('div');
             item.className = 'member-item';
             item.innerHTML = `
@@ -682,7 +781,7 @@
                     <small style="color:var(--text-muted); font-size:0.7rem;">ID: ${peerId.substring(0, 8)}...</small>
                 </div>
                 <div>
-                    ${isMe ? '<button class="btn-secondary" style="padding:2px 6px; font-size:0.75rem; margin-right:4px;" onclick="changeMyName()">変更</button>' : ''}
+                    ${isMe ? '<button class="btn-secondary" style="padding:2px 6px; font-size:0.75rem; margin-right:4px;" onclick="showNameChangeModal(); closeModal(\'membersModal\');">変更</button>' : ''}
                     <button class="btn-secondary" style="padding:2px 6px; font-size:0.75rem;" onclick="copyText('${peerId}')">IDコピー</button>
                 </div>
             `;
@@ -690,7 +789,6 @@
         });
     }
 
-    // チャットメッセージ送信
     function sendMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
@@ -703,7 +801,6 @@
             text: text
         };
 
-        // 接続中の全員へマルチキャスト
         Object.values(connections).forEach(conn => {
             if (conn.open) {
                 conn.send(payload);
@@ -714,7 +811,7 @@
         input.value = '';
     }
 
-    function addMessage(sender, text, type) {
+    function addMessage(sender, text, type, fileObj = null) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${type}`;
         
@@ -728,6 +825,23 @@
         const textDiv = document.createElement('div');
         textDiv.textContent = text;
         msgDiv.appendChild(textDiv);
+
+        // 添付ファイルの描写
+        if (fileObj) {
+            if (fileObj.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = fileObj.data;
+                img.className = 'chat-image';
+                msgDiv.appendChild(img);
+            } else {
+                const link = document.createElement('a');
+                link.href = fileObj.data;
+                link.download = fileObj.name;
+                link.className = 'file-link';
+                link.innerHTML = `📄 ${escapeHTML(fileObj.name)} <small>(${Math.round(fileObj.size / 1024)}KB)</small>`;
+                msgDiv.appendChild(link);
+            }
+        }
 
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -754,7 +868,6 @@
     }
 
     function exitRoom() {
-        // 切断通知
         Object.values(connections).forEach(conn => {
             if (conn.open) {
                 conn.send({
@@ -770,7 +883,6 @@
             peer = null;
         }
 
-        // 変数・UIリセット
         myPeerId = "";
         currentUsername = "";
         Object.keys(connections).forEach(key => delete connections[key]);
@@ -793,7 +905,6 @@
         showToast('退室しました');
     }
 
-    // 招待モーダル表示
     function showQRModal() {
         const qrContainer = document.getElementById('qrcode');
         qrContainer.innerHTML = "";
