@@ -133,8 +133,6 @@
       border-color: #00bcd4;
     }
     button {
-      position: relative;
-      overflow: hidden;
       background-color: #00bcd4;
       color: #121212;
       border: none;
@@ -147,24 +145,6 @@
     }
     button:active {
       background-color: #008ba3;
-    }
-
-    /* 最上層波紋エフェクト */
-    .ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.6);
-      transform: scale(0);
-      animation: ripple-animation 0.6s linear;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    @keyframes ripple-animation {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
     }
   </style>
 </head>
@@ -224,27 +204,6 @@
       localStorage.setItem('family_chat_user', userSelect.value);
     });
 
-    // 波紋エフェクト生成関数
-    function createRipple(e) {
-      const button = e.currentTarget;
-      const circle = document.createElement('span');
-      const diameter = Math.max(button.clientWidth, button.clientHeight);
-      const radius = diameter / 2;
-
-      const rect = button.getBoundingClientRect();
-      circle.style.width = circle.style.height = `${diameter}px`;
-      circle.style.left = `${e.clientX - rect.left - radius}px`;
-      circle.style.top = `${e.clientY - rect.top - radius}px`;
-      circle.classList.add('ripple');
-
-      const ripple = button.getElementsByClassName('ripple')[0];
-      if (ripple) {
-        ripple.remove();
-      }
-
-      button.appendChild(circle);
-    }
-
     // メッセージ送信機能
     function sendMessage() {
       const text = messageInput.value.trim();
@@ -253,49 +212,3 @@
       const currentUser = userSelect.value;
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-      push(messagesRef, {
-        sender: currentUser,
-        text: text,
-        time: timeStr,
-        timestamp: Date.now()
-      });
-
-      messageInput.value = '';
-    }
-
-    sendBtn.addEventListener('click', (e) => {
-      createRipple(e);
-      sendMessage();
-    });
-
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    // メッセージのリアルタイム受信
-    onChildAdded(messagesRef, (snapshot) => {
-      const data = snapshot.val();
-      const currentUser = userSelect.value;
-      const isMe = (data.sender === currentUser);
-
-      const msgEl = document.createElement('div');
-      msgEl.classList.add('message', isMe ? 'sent' : 'received');
-
-      msgEl.innerHTML = `
-        <div class="sender-name">${escapeHtml(data.sender)}</div>
-        <div class="bubble">${escapeHtml(data.text)}</div>
-        <div class="timestamp">${escapeHtml(data.time)}</div>
-      `;
-
-      chatBox.appendChild(msgEl);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    // エスケープ処理
-    function escapeHtml(str) {
-      return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
-    }
-  </script>
-</body>
-</html>
