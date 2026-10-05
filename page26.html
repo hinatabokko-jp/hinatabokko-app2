@@ -20,6 +20,61 @@
       height: 100dvh;
     }
 
+    /* パスワードロック画面 */
+    #lock-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #121212;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      gap: 16px;
+      padding: 20px;
+    }
+    #lock-screen h2 {
+      font-size: 1.2rem;
+      color: #00bcd4;
+    }
+    #pass-input {
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+      width: 200px;
+    }
+    #pass-btn {
+      background-color: #00bcd4;
+      color: #121212;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    #pass-error {
+      color: #ff5252;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* メインコンテンツ（ロック解除前は非表示） */
+    #app-content {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
     /* ヘッダー */
     header {
       background-color: #1e1e1e;
@@ -150,30 +205,47 @@
 </head>
 <body>
 
-  <header>
-    <div class="header-title">family chat</div>
-    <div class="user-select-container">
-      <span class="user-select-label">私は:</span>
-      <select id="user-select">
-        <option value="おかあさん">おかあさん</option>
-        <option value="むすめ">むすめ</option>
-      </select>
-    </div>
-  </header>
+  <!-- ロック画面 -->
+  <div id="lock-screen">
+    <h2>パスワードを入力してください</h2>
+    <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
+    <button id="pass-btn">解除</button>
+    <div id="pass-error">パスワードが違います</div>
+  </div>
 
-  <main id="chat-box"></main>
+  <!-- アプリ本体 -->
+  <div id="app-content">
+    <header>
+      <div class="header-title">family chat</div>
+      <div class="user-select-container">
+        <span class="user-select-label">私は:</span>
+        <select id="user-select">
+          <option value="おかあさん">おかあさん</option>
+          <option value="むすめ">むすめ</option>
+        </select>
+      </div>
+    </header>
 
-  <footer>
-    <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
-    <button id="send-btn">送信</button>
-  </footer>
+    <main id="chat-box"></main>
+
+    <footer>
+      <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
+      <button id="send-btn">送信</button>
+    </footer>
+  </div>
 
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase 設定情報（組み込み済み）
+    // ★ パスワードの設定（お好みの数字や文字列に変更可能）
+    const SECRET_PASSWORD = "1234";
+
+    // 7日間のミリ秒数 (7日 × 24時間 × 60分 × 60秒 × 1000ミリ秒)
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    // Firebase 設定情報
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
       authDomain: "family-chat-3e0d6.firebaseapp.com",
@@ -185,68 +257,133 @@
       measurementId: "G-CT2HGLK75T"
     };
 
-    // Firebaseの初期化
+    // Firebase初期化
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
 
     // DOM要素
+    const lockScreen = document.getElementById('lock-screen');
+    const appContent = document.getElementById('app-content');
+    const passInput = document.getElementById('pass-input');
+    const passBtn = document.getElementById('pass-btn');
+    const passError = document.getElementById('pass-error');
+
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const userSelect = document.getElementById('user-select');
 
-    // 選択されたユーザーの保存・復元
-    const savedUser = localStorage.getItem('family_chat_user');
-    if (savedUser) {
-      userSelect.value = savedUser;
+    // パスワード認証処理
+    function checkPassword() {
+      if (passInput.value === SECRET_PASSWORD) {
+        localStorage.setItem('family_chat_auth', 'true');
+        unlockApp();
+      } else {
+        passError.style.display = 'block';
+      }
     }
-    userSelect.addEventListener('change', () => {
-      localStorage.setItem('family_chat_user', userSelect.value);
+
+    function unlockApp() {
+      lockScreen.style.display = 'none';
+      appContent.style.display = 'flex';
+      initChat();
+    }
+
+    // 自動ログインチェック
+    if (localStorage.getItem('family_chat_auth') === 'true') {
+      unlockApp();
+    }
+
+    passBtn.addEventListener('click', checkPassword);
+    passInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkPassword();
     });
 
-    // メッセージ送信機能
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
+    // チャット初期化
+    function initChat() {
+      // ユーザー復元
+      const savedUser = localStorage.getItem('family_chat_user');
+      if (savedUser) userSelect.value = savedUser;
 
-      const currentUser = userSelect.value;
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-      push(messagesRef, {
-        sender: currentUser,
-        text: text,
-        time: timeStr,
-        timestamp: Date.now()
+      userSelect.addEventListener('change', () => {
+        localStorage.setItem('family_chat_user', userSelect.value);
+        renderMessages();
       });
 
-      messageInput.value = '';
+      // メッセージデータ監視＆自動削除処理
+      let cachedMessages = {};
+
+      onValue(messagesRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        cachedMessages = data;
+        
+        // 7日以上前のデータクリーンアップ
+        cleanOldMessages(data);
+        
+        renderMessages();
+      });
+
+      // 7日経過したメッセージをFirebaseから削除する関数
+      function cleanOldMessages(data) {
+        const now = Date.now();
+        Object.keys(data).forEach((key) => {
+          const msg = data[key];
+          if (msg.timestamp && (now - msg.timestamp > SEVEN_DAYS_MS)) {
+            // 7日超えのデータをFirebaseから削除
+            const itemRef = ref(db, `messages/${key}`);
+            remove(itemRef);
+          }
+        });
+      }
+
+      // 描画関数
+      function renderMessages() {
+        chatBox.innerHTML = '';
+        const currentUser = userSelect.value;
+
+        Object.values(cachedMessages).forEach((data) => {
+          const isMe = (data.sender === currentUser);
+
+          const msgEl = document.createElement('div');
+          msgEl.classList.add('message', isMe ? 'sent' : 'received');
+
+          msgEl.innerHTML = `
+            <div class="sender-name">${escapeHtml(data.sender)}</div>
+            <div class="bubble">${escapeHtml(data.text)}</div>
+            <div class="timestamp">${escapeHtml(data.time)}</div>
+          `;
+
+          chatBox.appendChild(msgEl);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // 送信処理
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        const currentUser = userSelect.value;
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        push(messagesRef, {
+          sender: currentUser,
+          text: text,
+          time: timeStr,
+          timestamp: Date.now()
+        });
+
+        messageInput.value = '';
+      }
+
+      sendBtn.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
     }
-
-    sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    // メッセージのリアルタイム受信
-    onChildAdded(messagesRef, (snapshot) => {
-      const data = snapshot.val();
-      const currentUser = userSelect.value;
-      const isMe = (data.sender === currentUser);
-
-      const msgEl = document.createElement('div');
-      msgEl.classList.add('message', isMe ? 'sent' : 'received');
-
-      msgEl.innerHTML = `
-        <div class="sender-name">${escapeHtml(data.sender)}</div>
-        <div class="bubble">${escapeHtml(data.text)}</div>
-        <div class="timestamp">${escapeHtml(data.time)}</div>
-      `;
-
-      chatBox.appendChild(msgEl);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
 
     // エスケープ処理
     function escapeHtml(str) {
