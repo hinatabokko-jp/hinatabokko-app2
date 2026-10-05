@@ -212,3 +212,45 @@
       const currentUser = userSelect.value;
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      push(messagesRef, {
+        sender: currentUser,
+        text: text,
+        time: timeStr,
+        timestamp: Date.now()
+      });
+
+      messageInput.value = '';
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // メッセージのリアルタイム受信
+    onChildAdded(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      const currentUser = userSelect.value;
+      const isMe = (data.sender === currentUser);
+
+      const msgEl = document.createElement('div');
+      msgEl.classList.add('message', isMe ? 'sent' : 'received');
+
+      msgEl.innerHTML = `
+        <div class="sender-name">${escapeHtml(data.sender)}</div>
+        <div class="bubble">${escapeHtml(data.text)}</div>
+        <div class="timestamp">${escapeHtml(data.time)}</div>
+      `;
+
+      chatBox.appendChild(msgEl);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // エスケープ処理
+    function escapeHtml(str) {
+      return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+    }
+  </script>
+</body>
+</html>
