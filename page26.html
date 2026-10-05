@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>family chat</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: #1e1e1e;
+      padding: 12px 16px;
+      border-bottom: 1px solid #2d2d2d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #00bcd4;
+    }
+    .user-select-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-select-label {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    select {
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* チャット表示エリア */
+    #chat-box {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* メッセージバルーン */
+    .message {
+      max-width: 75%;
+      display: flex;
+      flex-direction: column;
+    }
+    .message.sent {
+      align-self: flex-end;
+    }
+    .message.received {
+      align-self: flex-start;
+    }
+    .sender-name {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 3px;
+      padding: 0 4px;
+    }
+    .message.sent .sender-name {
+      text-align: right;
+    }
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .message.sent .bubble {
+      background-color: #00796b;
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .message.received .bubble {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      border-bottom-left-radius: 2px;
+    }
+    .timestamp {
+      font-size: 0.65rem;
+      color: #666;
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+    .message.sent .timestamp {
+      text-align: right;
+    }
+
+    /* 入力エリア */
+    footer {
+      background-color: #1e1e1e;
+      padding: 12px 16px;
+      border-top: 1px solid #2d2d2d;
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"] {
+      flex: 1;
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: #00bcd4;
+    }
+    button {
+      position: relative;
+      overflow: hidden;
+      background-color: #00bcd4;
+      color: #121212;
+      border: none;
+      border-radius: 20px;
+      padding: 0 18px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:active {
+      background-color: #008ba3;
+    }
+
+    /* 最上層波紋エフェクト */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      transform: scale(0);
+      animation: ripple-animation 0.6s linear;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    @keyframes ripple-animation {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">family chat</div>
+    <div class="user-select-container">
+      <span class="user-select-label">私は:</span>
+      <select id="user-select">
+        <option value="おかあさん">おかあさん</option>
+        <option value="むすめ">むすめ</option>
+      </select>
+    </div>
+  </header>
+
+  <main id="chat-box"></main>
+
+  <footer>
+    <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
+    <button id="send-btn">送信</button>
+  </footer>
+
+  <!-- Firebase SDK (v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // ★★★ 以下の Firebase 設定情報をご自身のプロジェクトのものに置き換えてください ★★★
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Firebaseの初期化
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, 'messages');
+
+    // DOM要素
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const userSelect = document.getElementById('user-select');
+
+    // 選択されたユーザーの保存・復元
+    const savedUser = localStorage.getItem('family_chat_user');
+    if (savedUser) {
+      userSelect.value = savedUser;
+    }
+    userSelect.addEventListener('change', () => {
+      localStorage.setItem('family_chat_user', userSelect.value);
+    });
+
+    // 波紋エフェクト生成関数
+    function createRipple(e) {
+      const button = e.currentTarget;
+      const circle = document.createElement('span');
+      const diameter = Math.max(button.clientWidth, button.clientHeight);
+      const radius = diameter / 2;
+
+      const rect = button.getBoundingClientRect();
+      circle.style.width = circle.style.height = `${diameter}px`;
+      circle.style.left = `${e.clientX - rect.left - radius}px`;
+      circle.style.top = `${e.clientY - rect.top - radius}px`;
+      circle.classList.add('ripple');
+
+      const ripple = button.getElementsByClassName('ripple')[0];
+      if (ripple) {
+        ripple.remove();
+      }
+
+      button.appendChild(circle);
+    }
+
+    // メッセージ送信機能
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const currentUser = userSelect.value;
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      push(messagesRef, {
+        sender: currentUser,
+        text: text,
+        time: timeStr,
+        timestamp: Date.now()
+      });
+
+      messageInput.value = '';
+    }
+
+    sendBtn.addEventListener('click', (e) => {
+      createRipple(e);
+      sendMessage();
+    });
+
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // メッセージのリアルタイム受信
+    onChildAdded(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      const currentUser = userSelect.value;
+      const isMe = (data.sender === currentUser);
+
+      const msgEl = document.createElement('div');
+      msgEl.classList.add('message', isMe ? 'sent' : 'received');
+
+      msgEl.innerHTML = `
+        <div class="sender-name">${escapeHtml(data.sender)}</div>
+        <div class="bubble">${escapeHtml(data.text)}</div>
+        <div class="timestamp">${escapeHtml(data.time)}</div>
+      `;
+
+      chatBox.appendChild(msgEl);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // エスケープ処理
+    function escapeHtml(str) {
+      return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+    }
+  </script>
+</body>
+</html>
