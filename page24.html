@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>おみこし 10月28日 - リアルタイム出欠管理</title>
+    <title>出欠確認</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -46,7 +46,7 @@
                 <div class="w-14 h-14 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
                     <i data-lucide="lock" class="w-7 h-7"></i>
                 </div>
-                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">おみこし 10月28日</h1>
+                <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">出欠確認</h1>
                 <p class="text-slate-400 text-xs sm:text-sm mt-1.5">出欠ボードを表示するには、合言葉（パスワード）を入力してください。</p>
             </div>
 
@@ -71,7 +71,7 @@
 
             <div class="mt-6 pt-4 border-t border-dark-border/60 text-center">
                 <p class="text-[11px] text-slate-500">
-                    ※ 初期合言葉: <code class="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">omikoshi1028</code>
+                    ※ 初期合言葉: <code class="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">shukketsu123</code>
                 </p>
             </div>
         </div>
@@ -85,17 +85,13 @@
             <div class="max-w-5xl mx-auto flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
-                        <i data-lucide="flame" class="w-6 h-6"></i>
+                        <i data-lucide="calendar-check-2" class="w-6 h-6"></i>
                     </div>
                     <div>
                         <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
-                            おみこし 10月28日
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
-                                リアルタイム同期中
-                            </span>
+                            出欠確認
                         </h1>
-                        <p class="text-xs text-slate-400">開催日: 2026年10月28日</p>
+                        <p class="text-xs text-slate-400">リアルタイム出欠管理ボード</p>
                     </div>
                 </div>
 
@@ -200,7 +196,7 @@
 
                     <div>
                         <label for="memberComment" class="block text-xs font-semibold text-slate-300 mb-1.5">コメント・備考（任意）</label>
-                        <input type="text" id="memberComment" placeholder="例: 遅れて参加します / 法被のサイズはLです等" class="w-full bg-slate-900/90 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all">
+                        <input type="text" id="memberComment" placeholder="例: 遅れて参加します 等" class="w-full bg-slate-900/90 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all">
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-2">
@@ -243,29 +239,12 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Firebase Module Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global Configuration & State
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'omikoshi-1028-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    <script>
+        const STORAGE_KEY = 'shukketsu_app_data';
+        const CORRECT_PASSCODE = "shukketsu123"; // 合言葉
 
         let activeFilter = 'all';
         let memberData = [];
-        let unsubscribeMembers = null;
-
-        const CORRECT_PASSCODE = "omikoshi1028"; // 合言葉
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -287,49 +266,22 @@
             }, 3000);
         }
 
-        // Robust Authentication Init with Guaranteed Anonymous / Custom Token Sign-In
-        async function ensureAuth() {
-            if (auth.currentUser) return auth.currentUser;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                return auth.currentUser;
-            } catch (err) {
-                console.error("Auth Exception:", err);
-                // Fallback to anonymous if custom token fails
-                try {
-                    await signInAnonymously(auth);
-                    return auth.currentUser;
-                } catch (fallbackErr) {
-                    console.error("Fallback Auth Exception:", fallbackErr);
-                    return null;
-                }
-            }
+        // 初期表示チェック
+        if (sessionStorage.getItem('shukketsu_auth') === 'true') {
+            unlockApp();
         }
 
-        // Initialize Auth state right away
-        ensureAuth().then(user => {
-            if (user && sessionStorage.getItem('omikoshi_auth') === 'true') {
-                unlockApp();
-            }
-        });
-
-        // Passcode Submission
-        document.getElementById('passcodeForm').addEventListener('submit', async (e) => {
+        // パスワード入力フォーム
+        document.getElementById('passcodeForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const inputVal = document.getElementById('passcodeInput').value.trim();
             const errorEl = document.getElementById('passcodeError');
 
             if (inputVal === CORRECT_PASSCODE) {
                 errorEl.classList.add('hidden');
-                // Ensure authentication is active before unlocking
-                await ensureAuth();
-                sessionStorage.setItem('omikoshi_auth', 'true');
+                sessionStorage.setItem('shukketsu_auth', 'true');
                 unlockApp();
-                showToast("認証成功！おみこし出欠ボードへようこそ", "success");
+                showToast("認証成功！出欠ボードへようこそ", "success");
             } else {
                 errorEl.classList.remove('hidden');
             }
@@ -338,37 +290,32 @@
         function unlockApp() {
             document.getElementById('authLockScreen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            subscribeAttendance();
+            loadData();
             lucide.createIcons();
         }
 
-        // Logout / Relock
+        // ログアウト
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            sessionStorage.removeItem('omikoshi_auth');
+            sessionStorage.removeItem('shukketsu_auth');
             document.getElementById('passcodeInput').value = '';
             document.getElementById('app').classList.add('hidden');
             document.getElementById('authLockScreen').classList.remove('hidden');
-            showToast("合言葉ロック画面に戻りました", "info");
+            showToast("ロック画面に戻りました", "info");
         });
 
-        // Firestore Realtime Subscription for Fixed Event "omikoshi_1028"
-        function subscribeAttendance() {
-            if (unsubscribeMembers) unsubscribeMembers();
+        // データの読み込み
+        function loadData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            memberData = raw ? JSON.parse(raw) : [];
+            memberData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            renderAttendanceStats();
+            renderMemberList();
+        }
 
-            const membersRef = collection(db, 'artifacts', appId, 'public', 'data', 'omikoshi_1028_attendance');
-            
-            unsubscribeMembers = onSnapshot(membersRef, (snapshot) => {
-                memberData = [];
-                snapshot.forEach(docSnap => {
-                    memberData.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                memberData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-                renderAttendanceStats();
-                renderMemberList();
-            }, (error) => {
-                console.error("Snapshot error:", error);
-            });
+        // データの保存
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(memberData));
+            loadData();
         }
 
         function renderAttendanceStats() {
@@ -389,7 +336,6 @@
 
         function renderMemberList() {
             const container = document.getElementById('memberListContainer');
-            const user = auth.currentUser;
             
             const filtered = activeFilter === 'all' 
                 ? memberData 
@@ -404,8 +350,6 @@
             }
 
             container.innerHTML = filtered.map(item => {
-                const isOwner = user && item.userId === user.uid;
-                
                 let badgeClass = '';
                 let badgeIcon = '';
                 if (item.status === '出席') {
@@ -426,12 +370,11 @@
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-amber-400">
-                                    ${escapeHtml(item.name.substring(0, 1))}
+                                    ${escapeHtml((item.name || '').substring(0, 1))}
                                 </div>
                                 <div class="min-w-0">
-                                    <div class="font-semibold text-slate-200 text-sm truncate flex items-center gap-1.5">
+                                    <div class="font-semibold text-slate-200 text-sm truncate">
                                         ${escapeHtml(item.name)}
-                                        ${isOwner ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-normal">あなた</span>' : ''}
                                     </div>
                                     <div class="text-[11px] text-slate-500">${updatedTime} 更新</div>
                                 </div>
@@ -444,12 +387,10 @@
                         
                         ${item.comment ? `<p class="text-xs text-slate-300 mt-3 pt-2 border-t border-slate-800/60 bg-slate-950/40 p-2 rounded-lg italic">"${escapeHtml(item.comment)}"</p>` : ''}
 
-                        ${isOwner ? `
-                            <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-800/40">
-                                <button onclick="window.editMember('${item.id}', '${escapeHtml(item.name)}', '${item.status}', '${escapeHtml(item.comment || '')}')" class="text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded hover:bg-amber-500/10 transition-colors font-medium">編集</button>
-                                <button onclick="window.deleteMember('${item.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1 rounded hover:bg-rose-500/10 transition-colors font-medium">削除</button>
-                            </div>
-                        ` : ''}
+                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-800/40">
+                            <button onclick="editMember('${item.id}', '${escapeHtml(item.name)}', '${item.status}', '${escapeHtml(item.comment || '')}')" class="text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded hover:bg-amber-500/10 transition-colors font-medium">編集</button>
+                            <button onclick="deleteMember('${item.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1 rounded hover:bg-rose-500/10 transition-colors font-medium">削除</button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -463,15 +404,9 @@
             })[m]);
         }
 
-        // Form Submit: Attendance with rigorous auth check
-        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
+        // 送信処理
+        document.getElementById('attendanceForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            const user = await ensureAuth();
-            if (!user) {
-                showToast("認証セッションの確立に失敗しました。ページを再読み込みしてください。", "error");
-                return;
-            }
 
             const name = document.getElementById('memberName').value.trim();
             const status = document.querySelector('input[name="status"]:checked').value;
@@ -480,37 +415,29 @@
 
             if (!name) return;
 
-            try {
-                const membersRef = collection(db, 'artifacts', appId, 'public', 'data', 'omikoshi_1028_attendance');
-                
-                if (editId) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'omikoshi_1028_attendance', editId);
-                    await updateDoc(docRef, {
-                        name,
-                        status,
-                        comment,
-                        updatedAt: Date.now()
-                    });
+            if (editId) {
+                const index = memberData.findIndex(m => m.id === editId);
+                if (index !== -1) {
+                    memberData[index] = { ...memberData[index], name, status, comment, updatedAt: Date.now() };
                     showToast("出欠情報を更新しました", "success");
-                } else {
-                    await addDoc(membersRef, {
-                        userId: user.uid,
-                        name,
-                        status,
-                        comment,
-                        updatedAt: Date.now()
-                    });
-                    showToast("出欠を登録しました！", "success");
                 }
-
-                resetForm();
-            } catch (err) {
-                console.error("Save Error:", err);
-                showToast("保存に失敗しました", "error");
+            } else {
+                const newItem = {
+                    id: 'm_' + Date.now(),
+                    name,
+                    status,
+                    comment,
+                    updatedAt: Date.now()
+                };
+                memberData.push(newItem);
+                showToast("出欠を登録しました！", "success");
             }
+
+            saveData();
+            resetForm();
         });
 
-        window.editMember = function(id, name, status, comment) {
+        function editMember(id, name, status, comment) {
             document.getElementById('editMemberId').value = id;
             document.getElementById('memberName').value = name;
             document.getElementById('memberComment').value = comment;
@@ -522,19 +449,16 @@
             document.getElementById('submitAttendanceBtn').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> 変更を更新する`;
             lucide.createIcons();
             document.getElementById('attendanceForm').scrollIntoView({ behavior: 'smooth' });
-        };
+        }
 
-        window.deleteMember = async function(id) {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'omikoshi_1028_attendance', id);
-                await deleteDoc(docRef);
+        function deleteMember(id) {
+            if (confirm("この出欠情報を削除してもよろしいですか？")) {
+                memberData = memberData.filter(m => m.id !== id);
+                saveData();
                 showToast("出欠情報を削除しました", "info");
                 resetForm();
-            } catch (err) {
-                console.error("Delete Error:", err);
-                showToast("削除に失敗しました", "error");
             }
-        };
+        }
 
         function resetForm() {
             document.getElementById('editMemberId').value = '';
@@ -548,7 +472,7 @@
 
         document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
 
-        // Filter Tabs
+        // フィルター切り替え
         document.querySelectorAll('.filter-tab').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.filter-tab').forEach(t => {
@@ -563,7 +487,7 @@
             });
         });
 
-        // CSV Export
+        // CSV出力機能
         document.getElementById('exportCsvBtn').addEventListener('click', () => {
             if (memberData.length === 0) {
                 showToast("出力するデータがありません", "error");
@@ -586,7 +510,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', `おみこし_10月28日_出欠一覧.csv`);
+            link.setAttribute('download', `出欠一覧.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
