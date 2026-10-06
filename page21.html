@@ -323,7 +323,7 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* メッセージラッパー（吹き出しと吹き出し外のリンクをグループ化） */
+        /* メッセージラッパー */
         .message-wrapper {
             display: flex;
             flex-direction: column;
@@ -347,6 +347,7 @@
             font-size: 0.95rem;
             line-height: 1.4;
             word-break: break-word;
+            white-space: pre-wrap; /* 改行を反映 */
         }
 
         .message-wrapper.my .message {
@@ -426,7 +427,7 @@
         /* 吹き出しの外側に配置する「取り消す」リンク */
         .cancel-link {
             font-size: 0.7rem;
-            color: #ccc; /* 白寄りの灰色の文字 */
+            color: #ccc;
             background: none;
             border: none;
             padding: 2px 4px 0 4px;
@@ -472,6 +473,27 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .icon-btn-style {
+            background-color: #2a2a2a;
+            color: #00bcd4;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .icon-btn-style:active {
+            background-color: #3a3a3a;
+            border-color: #00bcd4;
         }
 
         #file-input {
@@ -503,6 +525,144 @@
 
         .toast.show {
             opacity: 1;
+        }
+
+        /* モーダル表示スタイル (FamilyChat仕様を適用) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-container {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 550px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 14px 16px;
+            background-color: #252525;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: #00bcd4;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .modal-close-btn:hover {
+            color: #fff;
+        }
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }
+        .palette-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .palette-btn {
+            background-color: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            height: 38px;
+            padding: 0 10px;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .palette-btn:hover {
+            background-color: #3a3a3a;
+            transform: scale(1.03);
+        }
+        .palette-btn:active {
+            transform: scale(0.97);
+        }
+        .kaimoji-btn {
+            font-size: 0.85rem;
+        }
+        .modal-textarea {
+            width: 100%;
+            height: 120px;
+            background-color: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            resize: vertical;
+            outline: none;
+            line-height: 1.4;
+            font-family: inherit;
+        }
+        .modal-textarea:focus {
+            border-color: #00bcd4;
+        }
+        .modal-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #2d2d2d;
+            background-color: #1e1e1e;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .secondary-btn {
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .secondary-btn:hover {
+            background-color: #3a3a3a;
         }
     </style>
 </head>
@@ -554,6 +714,7 @@
         <div class="chat-input-area">
             <label for="file-input" class="file-btn" title="ファイルを送信">📎</label>
             <input type="file" id="file-input">
+            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
             <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
             <button id="send-btn">送信</button>
         </div>
@@ -574,6 +735,35 @@
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">family chat</a>
     </nav>
 </aside>
+
+<!-- コメント作成モーダル -->
+<div id="comment-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title">改行・絵文字コメント作成</div>
+            <button id="modal-close-x" class="modal-close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+            <div>
+                <div class="section-title">ワンタップ絵文字</div>
+                <div class="palette-grid" id="emoji-palette"></div>
+            </div>
+            <div>
+                <div class="section-title">顔文字</div>
+                <div class="palette-grid" id="kaimoji-palette"></div>
+            </div>
+            <div>
+                <div class="section-title">コメント編集</div>
+                <textarea id="modal-text-input" class="modal-textarea" placeholder="ここにメッセージを入力... (Enterで改行)"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="modal-clear-btn" class="secondary-btn">クリア</button>
+            <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
+            <button id="modal-submit-btn" style="background-color: #00bcd4; color: #121212; border: none; border-radius: 8px; padding: 8px 18px; font-weight: bold; cursor: pointer;">決定</button>
+        </div>
+    </div>
+</div>
 
 <div id="toast" class="toast"></div>
 
@@ -600,6 +790,75 @@
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+
+    // モーダル関連DOM要素
+    const modalOpenBtn = document.getElementById('modal-open-btn');
+    const commentModalOverlay = document.getElementById('comment-modal-overlay');
+    const modalCloseX = document.getElementById('modal-close-x');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalSubmitBtn = document.getElementById('modal-submit-btn');
+    const modalClearBtn = document.getElementById('modal-clear-btn');
+    const modalTextInput = document.getElementById('modal-text-input');
+    const emojiPalette = document.getElementById('emoji-palette');
+    const kaimojiPalette = document.getElementById('kaimoji-palette');
+
+    // 絵文字・顔文字リスト
+    const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
+    const kaimojis = ['( ﾟДﾟ)', '( *´艸｀)', '( ;∀;)', '(^^)ﾉｼ'];
+
+    // カーソル位置に文字列を挿入する関数
+    function insertAtCursor(field, text) {
+        const startPos = field.selectionStart;
+        const endPos = field.selectionEnd;
+        field.value = field.value.substring(0, startPos) + text + field.value.substring(endPos, field.value.length);
+        field.focus();
+        field.setSelectionRange(startPos + text.length, startPos + text.length);
+    }
+
+    // モーダル内パレットの生成
+    emojis.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.className = 'palette-btn';
+        btn.textContent = emoji;
+        btn.type = 'button';
+        btn.addEventListener('click', () => insertAtCursor(modalTextInput, emoji));
+        emojiPalette.appendChild(btn);
+    });
+
+    kaimojis.forEach(kaimoji => {
+        const btn = document.createElement('button');
+        btn.className = 'palette-btn kaimoji-btn';
+        btn.textContent = kaimoji;
+        btn.type = 'button';
+        btn.addEventListener('click', () => insertAtCursor(modalTextInput, kaimoji));
+        kaimojiPalette.appendChild(btn);
+    });
+
+    // モーダル開閉処理
+    function openModal() {
+        modalTextInput.value = messageInput.value;
+        commentModalOverlay.classList.add('active');
+        setTimeout(() => modalTextInput.focus(), 50);
+    }
+
+    function closeModal() {
+        commentModalOverlay.classList.remove('active');
+    }
+
+    modalOpenBtn.addEventListener('click', openModal);
+    modalCloseX.addEventListener('click', closeModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    modalClearBtn.addEventListener('click', () => {
+        modalTextInput.value = '';
+        modalTextInput.focus();
+    });
+
+    modalSubmitBtn.addEventListener('click', () => {
+        messageInput.value = modalTextInput.value;
+        closeModal();
+        messageInput.focus();
+    });
 
     function toggleSidebar() {
         sidebar.classList.toggle('open');
@@ -777,7 +1036,6 @@
 
         wrapper.appendChild(msgDiv);
 
-        // 吹き出しの外側に「取り消す」ボタンを設置
         if (sender === 'my' && msgId) {
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'cancel-link';
@@ -849,7 +1107,6 @@
 
         wrapper.appendChild(msgDiv);
 
-        // 吹き出しの外側に「取り消す」ボタンを設置
         if (sender === 'my' && msgId) {
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'cancel-link';
@@ -862,7 +1119,6 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 自分のメッセージ取り消し実行
     function cancelMessage(msgId) {
         const wrapperEl = document.querySelector(`[data-msg-id="${msgId}"]`);
         if (wrapperEl) {
@@ -874,7 +1130,6 @@
         }
     }
 
-    // 相手がメッセージを取り消した際の処理
     function handlePeerCancelMessage(msgId) {
         const wrapperEl = document.querySelector(`[data-msg-id="${msgId}"]`);
         if (wrapperEl) {
