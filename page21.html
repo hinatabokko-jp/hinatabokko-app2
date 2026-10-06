@@ -46,6 +46,26 @@
             align-items: center;
         }
 
+        /* 画面左上に固定配置するハンバーガーボタン */
+        #hamburger-btn {
+            position: fixed;
+            top: 12px;
+            left: 16px;
+            z-index: 80;
+            background: #181818;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px 10px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
         .container {
             width: 100%;
             max-width: 500px;
@@ -68,7 +88,7 @@
 
         /* Header */
         header {
-            padding: 12px 16px;
+            padding: 12px 16px 12px 60px; /* 左側に固定ハンバーガー用の余白を確保 */
             background-color: #181818;
             border-bottom: 1px solid var(--border-color);
             display: flex;
@@ -82,20 +102,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        /* ハンバーガーボタン */
-        #hamburger-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.4rem;
-            cursor: pointer;
-            padding: 4px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         header h1 {
@@ -324,6 +330,7 @@
             font-size: 0.95rem;
             line-height: 1.4;
             word-break: break-word;
+            position: relative;
         }
 
         .message.my {
@@ -394,11 +401,32 @@
             margin-top: 4px;
         }
 
+        /* メッセージフッター（時刻 & 送信取消リンク） */
+        .message-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .cancel-btn {
+            font-size: 0.7rem;
+            color: #ccc; /* 白寄りの灰色の文字 */
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .cancel-btn:hover {
+            color: #ffffff;
+        }
+
         .message-time {
             font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.5);
-            margin-top: 4px;
-            text-align: right;
         }
 
         .system-msg {
@@ -409,6 +437,7 @@
             padding: 4px 12px;
             border-radius: 10px;
             margin: 4px 0;
+            font-style: italic;
         }
 
         /* Chat Input Bar */
@@ -470,11 +499,13 @@
 </head>
 <body>
 
+<!-- 画面左上に固定されるハンバーガーボタン -->
+<button id="hamburger-btn" aria-label="メニューを開く">☰</button>
+
 <div class="container">
     <header>
         <div class="header-left">
-            <button id="hamburger-btn" aria-label="メニューを開く">☰</button>
-            <h1>💬 AirChat</h1>
+            <h1>AirChat</h1>
         </div>
         <div id="status-badge" class="status-badge">初期化中...</div>
     </header>
@@ -530,8 +561,8 @@
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3" class="sidebar-link">理科トレーニング</a>
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5" class="sidebar-link">社会科トレーニング</a>
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4" class="sidebar-link">百人一首</a>
-        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21" class="sidebar-link current">AairChat 1on1</a>
-        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">family chat</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21" class="sidebar-link current">AirChat 1on1</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">おかあさん</a>
     </nav>
 </aside>
 
@@ -659,9 +690,11 @@
 
         conn.on('data', (data) => {
             if (data.type === 'text') {
-                appendMessage(data.text, 'peer', data.time);
+                appendMessage(data.text, 'peer', data.time, data.msgId);
             } else if (data.type === 'file' || data.type === 'image') {
-                appendFileMessage(data, 'peer', data.time);
+                appendFileMessage(data, 'peer', data.time, data.msgId);
+            } else if (data.type === 'cancel-msg') {
+                handlePeerCancelMessage(data.msgId);
             }
         });
 
@@ -678,10 +711,11 @@
         if (!text || !conn) return;
 
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const payload = { type: 'text', text: text, time: time };
+        const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+        const payload = { type: 'text', text: text, time: time, msgId: msgId };
 
         conn.send(payload);
-        appendMessage(text, 'my', time);
+        appendMessage(text, 'my', time, msgId);
         messageInput.value = '';
     }
 
@@ -698,41 +732,66 @@
         const reader = new FileReader();
         reader.onload = (evt) => {
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
             const payload = {
                 type: 'file',
                 fileName: file.name,
                 fileType: file.type,
                 fileData: evt.target.result,
-                time: time
+                time: time,
+                msgId: msgId
             };
 
             conn.send(payload);
-            appendFileMessage(payload, 'my', time);
+            appendFileMessage(payload, 'my', time, msgId);
         };
         reader.readAsDataURL(file);
         fileInput.value = '';
     });
 
-    function appendMessage(text, sender, time) {
+    function createFooter(sender, time, msgId) {
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'message-footer';
+
+        if (sender === 'my' && msgId) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-btn';
+            cancelBtn.textContent = '取り消す';
+            cancelBtn.onclick = () => cancelMessage(msgId);
+            footerDiv.appendChild(cancelBtn);
+        }
+
+        const timeDiv = document.createElement('span');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        footerDiv.appendChild(timeDiv);
+
+        return footerDiv;
+    }
+
+    function appendMessage(text, sender, time, msgId) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
+        if (msgId) msgDiv.setAttribute('data-msg-id', msgId);
 
         const textDiv = document.createElement('div');
+        textDiv.className = 'msg-body';
         textDiv.textContent = text;
         msgDiv.appendChild(textDiv);
 
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'message-time';
-        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        msgDiv.appendChild(timeDiv);
+        msgDiv.appendChild(createFooter(sender, time, msgId));
 
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function appendFileMessage(data, sender, time) {
+    function appendFileMessage(data, sender, time, msgId) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
+        if (msgId) msgDiv.setAttribute('data-msg-id', msgId);
+
+        const bodyContainer = document.createElement('div');
+        bodyContainer.className = 'msg-body';
 
         const mime = data.fileType || '';
         const dataUrl = data.fileData || data.imgData;
@@ -742,19 +801,19 @@
             const img = document.createElement('img');
             img.src = dataUrl;
             img.onclick = () => window.open(dataUrl, '_blank');
-            msgDiv.appendChild(img);
+            bodyContainer.appendChild(img);
         } 
         else if (mime.startsWith('video/')) {
             const video = document.createElement('video');
             video.src = dataUrl;
             video.controls = true;
-            msgDiv.appendChild(video);
+            bodyContainer.appendChild(video);
         } 
         else if (mime.startsWith('audio/')) {
             const audio = document.createElement('audio');
             audio.src = dataUrl;
             audio.controls = true;
-            msgDiv.appendChild(audio);
+            bodyContainer.appendChild(audio);
         }
 
         const fileCard = document.createElement('div');
@@ -776,15 +835,34 @@
                 <a href="${dataUrl}" download="${escapeHtml(fileName)}" class="file-download-btn">保存・ダウンロード</a>
             </div>
         `;
-        msgDiv.appendChild(fileCard);
+        bodyContainer.appendChild(fileCard);
+        msgDiv.appendChild(bodyContainer);
 
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'message-time';
-        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        msgDiv.appendChild(timeDiv);
+        msgDiv.appendChild(createFooter(sender, time, msgId));
 
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // 自分のメッセージ取り消し実行
+    function cancelMessage(msgId) {
+        const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+        if (msgEl) {
+            msgEl.remove();
+            appendSystemMessage('メッセージを取り消しました');
+            if (conn) {
+                conn.send({ type: 'cancel-msg', msgId: msgId });
+            }
+        }
+    }
+
+    // 相手がメッセージを取り消した際の処理
+    function handlePeerCancelMessage(msgId) {
+        const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+        if (msgEl) {
+            msgEl.remove();
+            appendSystemMessage('相手がメッセージを取り消しました');
+        }
     }
 
     function appendSystemMessage(text) {
