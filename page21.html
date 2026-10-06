@@ -450,14 +450,14 @@
             font-style: italic;
         }
 
-        /* Chat Input Bar */
+        /* Chat Input Bar (textarea対応にスタイル更新) */
         .chat-input-area {
             padding: 10px 12px;
             background-color: #181818;
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
-            align-items: center;
+            align-items: flex-end; /* テキストエリアの高さ変化に対応 */
             flex-shrink: 0;
             width: 100%;
         }
@@ -474,6 +474,7 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            height: 42px;
         }
 
         .icon-btn-style {
@@ -488,6 +489,7 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            height: 42px;
             transition: background-color 0.2s, border-color 0.2s;
         }
 
@@ -500,9 +502,30 @@
             display: none;
         }
 
+        /* inputからtextareaへ変更に伴うスタイルの調整 */
         #message-input {
             flex: 1;
             min-width: 0;
+            height: 42px;
+            max-height: 120px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: #1a1a1a;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            resize: none;
+            line-height: 1.4;
+            font-family: inherit;
+        }
+
+        #message-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        #send-btn {
+            height: 42px;
         }
 
         /* Toast Notification */
@@ -527,7 +550,7 @@
             opacity: 1;
         }
 
-        /* モーダル表示スタイル (FamilyChat仕様を適用) */
+        /* モーダル表示スタイル */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -715,7 +738,8 @@
             <label for="file-input" class="file-btn" title="ファイルを送信">📎</label>
             <input type="file" id="file-input">
             <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
-            <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
+            <!-- メッセージ入力欄をtextareaに変更 -->
+            <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
             <button id="send-btn">送信</button>
         </div>
     </div>
@@ -856,9 +880,21 @@
 
     modalSubmitBtn.addEventListener('click', () => {
         messageInput.value = modalTextInput.value;
+        adjustTextareaHeight();
         closeModal();
         messageInput.focus();
     });
+
+    // メッセージ入力エリアの高さ自動調整機能
+    function adjustTextareaHeight() {
+        messageInput.style.height = '42px';
+        const scrollHeight = messageInput.scrollHeight;
+        if (scrollHeight > 42) {
+            messageInput.style.height = Math.min(scrollHeight, 120) + 'px';
+        }
+    }
+
+    messageInput.addEventListener('input', adjustTextareaHeight);
 
     function toggleSidebar() {
         sidebar.classList.toggle('open');
@@ -985,6 +1021,7 @@
         conn.send(payload);
         appendMessage(text, 'my', time, msgId);
         messageInput.value = '';
+        adjustTextareaHeight();
     }
 
     // 汎用ファイル送信処理
@@ -1178,8 +1215,10 @@
 
     sendBtn.addEventListener('click', sendMessage);
 
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+    // キーボード操作：Enterで送信、Shift+Enterで改行
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
     });
