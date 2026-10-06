@@ -20,6 +20,7 @@
             --my-msg-bg: #005b52;
             --peer-msg-bg: #2c2c2c;
             --border-color: #333333;
+            --sidebar-accent: #00bcd4;
         }
 
         * {
@@ -53,6 +54,7 @@
             display: flex;
             flex-direction: column;
             background-color: var(--card-bg);
+            position: relative;
         }
 
         @media (min-height: 700px) and (min-width: 520px) {
@@ -73,6 +75,27 @@
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ハンバーガーボタン */
+        #hamburger-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         header h1 {
@@ -95,6 +118,80 @@
         .status-badge.connected {
             background-color: #1b5e20;
             color: #81c784;
+        }
+
+        /* サイドバー & オーバーレイ */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 90;
+        }
+
+        #overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100%;
+            background-color: #1e1e1e;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background-color: #252525;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--sidebar-accent);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 12px 16px;
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: background 0.2s, border-left 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-link:hover {
+            background-color: #2a2a2a;
+        }
+
+        .sidebar-link.current {
+            background-color: #2a2a2a;
+            color: var(--sidebar-accent);
+            border-left: 4px solid var(--sidebar-accent);
+            font-weight: bold;
         }
 
         /* Views */
@@ -375,7 +472,10 @@
 
 <div class="container">
     <header>
-        <h1>💬 AirChat</h1>
+        <div class="header-left">
+            <button id="hamburger-btn" aria-label="メニューを開く">☰</button>
+            <h1>💬 AirChat</h1>
+        </div>
         <div id="status-badge" class="status-badge">初期化中...</div>
     </header>
 
@@ -413,13 +513,27 @@
         </div>
         <div class="chat-input-area">
             <label for="file-input" class="file-btn" title="ファイルを送信">📎</label>
-            <!-- accept属性を削除してすべての形式を選択可能に拡張 -->
             <input type="file" id="file-input">
             <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
             <button id="send-btn">送信</button>
         </div>
     </div>
 </div>
+
+<!-- サイドバーとオーバーレイ -->
+<div id="overlay"></div>
+<aside id="sidebar">
+    <div class="sidebar-header">メニュー</div>
+    <nav class="sidebar-nav">
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app/" class="sidebar-link">漢字テスト</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2" class="sidebar-link">計算トレーニング</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3" class="sidebar-link">理科トレーニング</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5" class="sidebar-link">社会科トレーニング</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4" class="sidebar-link">百人一首</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21" class="sidebar-link current">AairChat 1on1</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">family chat</a>
+    </nav>
+</aside>
 
 <div id="toast" class="toast"></div>
 
@@ -441,6 +555,24 @@
     const sendBtn = document.getElementById('send-btn');
     const chatMessages = document.getElementById('chat-messages');
     const fileInput = document.getElementById('file-input');
+
+    // サイドバー要素
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    }
+
+    hamburgerBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', closeSidebar);
 
     function showToast(msg) {
         const toast = document.getElementById('toast');
@@ -553,12 +685,11 @@
         messageInput.value = '';
     }
 
-    // 汎用ファイル送信処理 (PDF, TXT, MP3, MP4, Excel等に対応)
+    // 汎用ファイル送信処理
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file || !conn) return;
 
-        // WebRTC直接送信用の容量上限（20MB）
         if (file.size > 20 * 1024 * 1024) {
             showToast('ファイルサイズは20MB以下にしてください');
             return;
@@ -599,7 +730,6 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // ファイル種別に応じたUI描画 (画像、動画、音声、その他ドキュメント)
     function appendFileMessage(data, sender, time) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
@@ -608,21 +738,18 @@
         const dataUrl = data.fileData || data.imgData;
         const fileName = data.fileName || '受信ファイル';
 
-        // 画像の場合
         if (mime.startsWith('image/') || data.type === 'image') {
             const img = document.createElement('img');
             img.src = dataUrl;
             img.onclick = () => window.open(dataUrl, '_blank');
             msgDiv.appendChild(img);
         } 
-        // 動画の場合 (MP4, WebMなど)
         else if (mime.startsWith('video/')) {
             const video = document.createElement('video');
             video.src = dataUrl;
             video.controls = true;
             msgDiv.appendChild(video);
         } 
-        // 音声の場合 (MP3, WAVなど)
         else if (mime.startsWith('audio/')) {
             const audio = document.createElement('audio');
             audio.src = dataUrl;
@@ -630,7 +757,6 @@
             msgDiv.appendChild(audio);
         }
 
-        // ダウンロードリンク付ファイルカード（全ファイル共通表示）
         const fileCard = document.createElement('div');
         fileCard.className = 'file-card';
 
