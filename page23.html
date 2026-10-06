@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full">
+<html lang="ja" class="h-full dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -396,10 +396,10 @@
                         <i class="fa-solid fa-download"></i> QRコードをダウンロード
                     </button>
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="copyImageBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                        <button id="copyImageBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
                             <i class="fa-regular fa-copy"></i> 画像コピー
                         </button>
-                        <button id="saveCloudBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-400">
+                        <button id="saveCloudBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-400">
                             <i class="fa-solid fa-cloud-arrow-up"></i> クラウド保存
                         </button>
                     </div>
@@ -422,6 +422,7 @@
             getDatabase, 
             ref, 
             push, 
+            remove,
             onValue, 
             query, 
             limitToLast 
@@ -655,7 +656,7 @@
             }
         }
 
-        // Firebase Realtime Listener
+        // Firebase Realtime Listener & Render History
         function listenToHistory() {
             if (!historyRef) return;
             const recentQuery = query(historyRef, limitToLast(20));
@@ -676,19 +677,25 @@
                 historyList.innerHTML = items.map(item => {
                     const date = item.createdAt ? new Date(item.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '';
                     return `
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50">
-                            <div class="overflow-hidden mr-2">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 gap-2">
+                            <div class="overflow-hidden min-w-0 flex-1">
                                 <span class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/50 px-1.5 py-0.5 rounded mr-1.5">${item.type || 'URL'}</span>
                                 <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.displayText || item.data || '')}</p>
                                 <p class="text-[10px] text-slate-400 mt-0.5">${date}</p>
                             </div>
-                            <button data-content="${escapeHtml(item.data || '')}" data-type="${item.type || 'url'}" class="load-btn px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 font-medium">
-                                復元
-                            </button>
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                                <button data-content="${escapeHtml(item.data || '')}" data-type="${item.type || 'url'}" class="load-btn px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 font-medium transition-colors">
+                                    復元
+                                </button>
+                                <button data-id="${item.id}" class="delete-btn p-1.5 text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors" title="削除">
+                                    <i class="fa-regular fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
 
+                // 復元ボタンイベント
                 document.querySelectorAll('.load-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const content = e.currentTarget.dataset.content;
@@ -701,6 +708,23 @@
                         if (typeBtn) typeBtn.click();
 
                         showToast('データを反映しました');
+                    });
+                });
+
+                // 削除ボタンイベント
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.currentTarget.dataset.id;
+                        if (!id || !db) return;
+                        
+                        try {
+                            const itemRef = ref(db, `qr_history/${id}`);
+                            await remove(itemRef);
+                            showToast('履歴を削除しました');
+                        } catch (err) {
+                            console.error(err);
+                            showToast('削除エラーが発生しました', true);
+                        }
                     });
                 });
             });
@@ -741,7 +765,7 @@
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         }
 
-        // Dark Mode & Dynamic Init
+        // Dark Mode Toggle
         document.getElementById('themeToggleBtn').addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
         });
