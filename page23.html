@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Canvas Pro - 高機能QRコードジェネレーター</title>
+    <title>QR Canvas Pro - Firebase Sync</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -22,41 +22,17 @@
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f5ff',
-                            100: '#e5edff',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
                     }
                 }
             }
         }
     </script>
     <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569;
-        }
-        .tab-btn.active {
-            border-bottom: 2px solid #3b82f6;
-            color: #3b82f6;
-            font-weight: 600;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
@@ -70,11 +46,14 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">QR Canvas Pro</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">高機能QRコードデザインツール</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Firebase クラウド連携版 (RTDB)</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="themeToggleBtn" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" title="テーマ切り替え">
+            <div class="flex items-center gap-3">
+                <div id="firebaseStatus" class="flex items-center gap-1.5 text-xs text-amber-500 font-medium bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> 接続準備中...
+                </div>
+                <button id="themeToggleBtn" class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:block"></i>
                 </button>
@@ -117,45 +96,42 @@
 
             <!-- Settings Tabs & Input Content -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
-                <!-- Navigation Sub-tabs -->
-                <div class="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-4">
-                    <button id="tabInput" class="tab-btn active px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
-                        <i class="fa-solid fa-pen-to-square"></i> コンテンツ入力
+                <div class="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 px-4 overflow-x-auto">
+                    <button id="tabInput" class="tab-btn active px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap">
+                        <i class="fa-solid fa-pen-to-square"></i> 入力
                     </button>
-                    <button id="tabStyle" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
-                        <i class="fa-solid fa-palette"></i> スタイル設定
+                    <button id="tabStyle" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap">
+                        <i class="fa-solid fa-palette"></i> スタイル
                     </button>
-                    <button id="tabLogo" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
-                        <i class="fa-solid fa-image"></i> ロゴ・アイコン
+                    <button id="tabLogo" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap">
+                        <i class="fa-solid fa-image"></i> ロゴ
                     </button>
-                    <button id="tabHistory" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600">
-                        <i class="fa-solid fa-clock-rotate-left"></i> 履歴
+                    <button id="tabHistory" class="tab-btn px-4 py-3.5 text-sm font-medium text-slate-600 dark:text-slate-300 flex items-center gap-2 border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap">
+                        <i class="fa-solid fa-cloud text-blue-500"></i> クラウド保存履歴
                     </button>
                 </div>
 
                 <div class="p-6">
-                    <!-- Section 1: Content Inputs -->
+                    <!-- Input Form Content -->
                     <div id="contentSection" class="space-y-4">
-                        <!-- URL / Text Input -->
                         <div id="formUrl" class="space-y-3">
                             <label class="block text-sm font-medium">URLまたはテキスト</label>
-                            <textarea id="inputUrlText" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="https://example.com または 自由なテキストを入力"></textarea>
+                            <textarea id="inputUrlText" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com または 自由なテキストを入力"></textarea>
                         </div>
 
-                        <!-- Wi-Fi Input -->
                         <div id="formWifi" class="space-y-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium mb-1">ネットワーク名 (SSID)</label>
-                                <input type="text" id="wifiSsid" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Wi-Fiネットワーク名">
+                                <input type="text" id="wifiSsid" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="Wi-Fiネットワーク名">
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium mb-1">パスワード</label>
-                                    <input type="password" id="wifiPassword" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="パスワード">
+                                    <input type="password" id="wifiPassword" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="パスワード">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">暗号化方式</label>
-                                    <select id="wifiType" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <select id="wifiType" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none">
                                         <option value="WPA">WPA / WPA2 / WPA3</option>
                                         <option value="WEP">WEP</option>
                                         <option value="nopass">なし (オープン)</option>
@@ -163,81 +139,77 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" id="wifiHidden" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <input type="checkbox" id="wifiHidden" class="rounded text-blue-600 h-4 w-4">
                                 <label for="wifiHidden" class="text-sm">非公開ネットワーク (SSIDステルス)</label>
                             </div>
                         </div>
 
-                        <!-- vCard Input -->
                         <div id="formVcard" class="space-y-4 hidden">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium mb-1">氏名 (姓 名)</label>
-                                    <input type="text" id="vcardName" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="山田 太郎">
+                                    <label class="block text-sm font-medium mb-1">氏名</label>
+                                    <input type="text" id="vcardName" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="山田 太郎">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium mb-1">会社名 / 組織</label>
-                                    <input type="text" id="vcardOrg" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="株式会社サンプル">
+                                    <label class="block text-sm font-medium mb-1">会社名</label>
+                                    <input type="text" id="vcardOrg" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="株式会社サンプル">
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium mb-1">役職</label>
-                                    <input type="text" id="vcardTitle" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="マネージャー">
+                                    <input type="text" id="vcardTitle" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="マネージャー">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">電話番号</label>
-                                    <input type="tel" id="vcardTel" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="090-1234-5678">
+                                    <input type="tel" id="vcardTel" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="090-1234-5678">
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium mb-1">メールアドレス</label>
-                                    <input type="email" id="vcardEmail" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="example@domain.com">
+                                    <input type="email" id="vcardEmail" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="example@domain.com">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Webサイト URL</label>
-                                    <input type="url" id="vcardUrl" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://example.com">
+                                    <input type="url" id="vcardUrl" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="https://example.com">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Email Input -->
                         <div id="formEmail" class="space-y-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium mb-1">宛先メールアドレス</label>
-                                <input type="email" id="emailTo" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="contact@example.com">
+                                <input type="email" id="emailTo" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="contact@example.com">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">件名</label>
-                                <input type="text" id="emailSubject" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="件名を入力">
+                                <input type="text" id="emailSubject" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="件名を入力">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">本文</label>
-                                <textarea id="emailBody" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="本文を入力"></textarea>
+                                <textarea id="emailBody" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="本文を入力"></textarea>
                             </div>
                         </div>
 
-                        <!-- Phone/SMS Input -->
                         <div id="formPhone" class="space-y-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium mb-1">電話番号</label>
-                                <input type="tel" id="phoneNum" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="09012345678">
+                                <input type="tel" id="phoneNum" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="09012345678">
                             </div>
                             <div class="flex items-center gap-2 my-2">
-                                <input type="checkbox" id="isSms" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <input type="checkbox" id="isSms" class="rounded text-blue-600 h-4 w-4">
                                 <label for="isSms" class="text-sm font-medium">SMSメッセージとして生成する</label>
                             </div>
                             <div id="smsMessageArea" class="hidden">
                                 <label class="block text-sm font-medium mb-1">SMSメッセージ本文</label>
-                                <textarea id="smsBody" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="メッセージを入力"></textarea>
+                                <textarea id="smsBody" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none" placeholder="メッセージを入力"></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section 2: Style Options -->
+                    <!-- Style Options -->
                     <div id="styleSection" class="space-y-6 hidden">
-                        <!-- Color Customization -->
                         <div>
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-droplet text-blue-500"></i> カラー設定
@@ -259,18 +231,17 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 mt-3">
-                                <input type="checkbox" id="bgTransparent" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
-                                <label for="bgTransparent" class="text-sm">背景を透明にする (PNG/SVG選択時)</label>
+                                <input type="checkbox" id="bgTransparent" class="rounded text-blue-600 h-4 w-4">
+                                <label for="bgTransparent" class="text-sm">背景を透明にする</label>
                             </div>
                         </div>
 
-                        <!-- Gradient Option -->
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                     <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> グラデーションを使用
                                 </label>
-                                <input type="checkbox" id="useGradient" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                <input type="checkbox" id="useGradient" class="rounded text-blue-600 h-4 w-4">
                             </div>
                             <div id="gradientControls" class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hidden">
                                 <div>
@@ -290,55 +261,49 @@
                             </div>
                         </div>
 
-                        <!-- Pattern Shapes -->
                         <div class="space-y-4">
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                 <i class="fa-solid fa-shapes text-blue-500"></i> 形状とパターン
                             </h3>
-                            
-                            <!-- Dots Type -->
                             <div>
                                 <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">ドット形状</label>
                                 <div class="grid grid-cols-3 sm:grid-cols-6 gap-2" id="dotsStyleOptions">
                                     <button data-dotstyle="square" class="dot-style-btn active p-2 border border-blue-500 rounded-lg text-xs font-medium text-center bg-blue-50 dark:bg-blue-900/30">正方形</button>
-                                    <button data-dotstyle="dots" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">丸ドット</button>
-                                    <button data-dotstyle="rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">角丸</button>
-                                    <button data-dotstyle="extra-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">大角丸</button>
-                                    <button data-dotstyle="classy" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">クラシック</button>
-                                    <button data-dotstyle="classy-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">優美</button>
+                                    <button data-dotstyle="dots" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">丸ドット</button>
+                                    <button data-dotstyle="rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">角丸</button>
+                                    <button data-dotstyle="extra-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">大角丸</button>
+                                    <button data-dotstyle="classy" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">クラシック</button>
+                                    <button data-dotstyle="classy-rounded" class="dot-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">優美</button>
                                 </div>
                             </div>
 
-                            <!-- Corner Square Type -->
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">角の四角枠 (Corner Frame)</label>
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">角の四角枠</label>
                                 <div class="grid grid-cols-3 gap-2" id="cornerSquareOptions">
                                     <button data-cornerstyle="square" class="corner-style-btn active p-2 border border-blue-500 rounded-lg text-xs font-medium text-center bg-blue-50 dark:bg-blue-900/30">四角</button>
-                                    <button data-cornerstyle="dot" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">丸</button>
-                                    <button data-cornerstyle="extra-rounded" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center hover:bg-slate-50 dark:hover:bg-slate-700">角丸</button>
+                                    <button data-cornerstyle="dot" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">丸</button>
+                                    <button data-cornerstyle="extra-rounded" class="corner-style-btn p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-center">角丸</button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Error Correction -->
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">エラー訂正レベル (誤り訂正)</label>
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">エラー訂正レベル</label>
                             <select id="errorCorrectionLevel" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                                <option value="L">L - 低 (7%復元可能 - ロゴなしに最適)</option>
-                                <option value="M" selected>M - 中 (15%復元可能 - 標準)</option>
-                                <option value="Q">Q - 高 (25%復元可能)</option>
-                                <option value="H">H - 最高 (30%復元可能 - ロゴ埋め込み推奨)</option>
+                                <option value="L">L - 低 (7%復元)</option>
+                                <option value="M" selected>M - 中 (15%復元)</option>
+                                <option value="Q">Q - 高 (25%復元)</option>
+                                <option value="H">H - 最高 (30%復元 - ロゴ推奨)</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Section 3: Logo Upload & Preset Icons -->
+                    <!-- Logo Options -->
                     <div id="logoSection" class="space-y-6 hidden">
                         <div>
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-icons text-blue-500"></i> プリセットアイコン
                             </h3>
-                            <!-- 外部CORSエラーを防ぐため、安全なインラインSVGデータURIを使用 -->
                             <div class="grid grid-cols-4 sm:grid-cols-6 gap-3" id="presetLogoContainer">
                                 <button data-logo="" class="preset-logo-btn active p-3 rounded-xl border border-blue-500 bg-blue-50 dark:bg-blue-900/30 flex flex-col items-center gap-1">
                                     <i class="fa-solid fa-ban text-slate-400 text-xl"></i>
@@ -360,10 +325,6 @@
                                     <i class="fa-brands fa-line text-green-500 text-xl"></i>
                                     <span class="text-[10px]">LINE</span>
                                 </button>
-                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23EA4335'><path d='M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 338.7c-22.8 17.1-54 17.1-76.8 0L0 176z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
-                                    <i class="fa-solid fa-envelope text-red-400 text-xl"></i>
-                                    <span class="text-[10px]">Gmail</span>
-                                </button>
                             </div>
                         </div>
 
@@ -371,46 +332,21 @@
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-upload text-blue-500"></i> カスタムロゴ画像をアップロード
                             </h3>
-                            <div class="flex items-center justify-center w-full">
-                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">クリックして画像を選択（PNG/JPG）</p>
-                                    </div>
-                                    <input id="logoFileInput" type="file" accept="image/*" class="hidden" />
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="logoSizeSettings" class="space-y-4">
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">ロゴの大きさ</label>
-                                    <span id="logoSizeVal" class="text-xs font-semibold">0.4</span>
-                                </div>
-                                <input type="range" id="logoSizeRange" min="0.1" max="0.5" step="0.05" value="0.4" class="w-full accent-blue-600">
-                            </div>
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">ロゴの余白 (マージン)</label>
-                                    <span id="logoMarginVal" class="text-xs font-semibold">5</span>
-                                </div>
-                                <input type="range" id="logoMarginRange" min="0" max="20" step="1" value="5" class="w-full accent-blue-600">
-                            </div>
+                            <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 transition">
+                                <i class="fa-solid fa-cloud-arrow-up text-xl text-slate-400 mb-1"></i>
+                                <span class="text-xs text-slate-500 font-medium">画像ファイルを選択 (PNG/JPG)</span>
+                                <input id="logoFileInput" type="file" accept="image/*" class="hidden" />
+                            </label>
                         </div>
                     </div>
 
-                    <!-- Section 4: History -->
+                    <!-- Cloud History Section -->
                     <div id="historySection" class="space-y-4 hidden">
                         <div class="flex justify-between items-center">
-                            <p class="text-xs text-slate-500">過去に作成したQRコード履歴 (最新10件)</p>
-                            <button id="clearHistoryBtn" class="text-xs text-red-500 hover:text-red-600 flex items-center gap-1">
-                                <i class="fa-solid fa-trash"></i> 履歴消去
-                            </button>
+                            <p class="text-xs text-slate-500">Realtime Databaseに保存された履歴</p>
                         </div>
                         <div id="historyList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
-                            <!-- JS Inject -->
-                            <p class="text-sm text-slate-400 text-center py-6">履歴はありません</p>
+                            <p class="text-sm text-slate-400 text-center py-6">データを読み込み中...</p>
                         </div>
                     </div>
                 </div>
@@ -429,24 +365,23 @@
                     </span>
                 </div>
 
-                <!-- Canvas Preview Box -->
-                <div class="relative w-full aspect-square bg-slate-50 dark:bg-slate-900/50 rounded-2xl flex items-center justify-center p-6 border border-slate-100 dark:border-slate-700/50 shadow-inner group overflow-hidden">
-                    <div id="qrcode-container" class="transition-transform duration-200 flex items-center justify-center"></div>
+                <!-- Canvas Box -->
+                <div class="relative w-full aspect-square bg-slate-50 dark:bg-slate-900/50 rounded-2xl flex items-center justify-center p-6 border border-slate-100 dark:border-slate-700/50 shadow-inner overflow-hidden">
+                    <div id="qrcode-container" class="flex items-center justify-center"></div>
                 </div>
 
-                <!-- Size Select & Format -->
+                <!-- Export Options -->
                 <div class="w-full grid grid-cols-2 gap-3 mt-5">
                     <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">出力サイズ (px)</label>
+                        <label class="block text-xs text-slate-500 mb-1">出力サイズ</label>
                         <select id="exportSize" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                             <option value="300">300 x 300</option>
-                            <option value="600" selected>600 x 600 (高画質)</option>
-                            <option value="1200">1200 x 1200 (印刷用)</option>
-                            <option value="2000">2000 x 2000 (超高画質)</option>
+                            <option value="600" selected>600 x 600</option>
+                            <option value="1200">1200 x 1200</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">フォーマット</label>
+                        <label class="block text-xs text-slate-500 mb-1">形式</label>
                         <select id="exportFormat" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                             <option value="png">PNG 画像</option>
                             <option value="svg">SVG ベクター</option>
@@ -461,26 +396,49 @@
                         <i class="fa-solid fa-download"></i> QRコードをダウンロード
                     </button>
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="copyImageBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
+                        <button id="copyImageBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
                             <i class="fa-regular fa-copy"></i> 画像コピー
                         </button>
-                        <button id="saveHistoryBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-bookmark"></i> 履歴に保存
+                        <button id="saveCloudBtn" class="py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 font-medium text-xs rounded-xl transition flex items-center justify-center gap-1.5 text-blue-600 dark:text-blue-400">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> クラウド保存
                         </button>
                     </div>
                 </div>
 
-                <!-- Toast Notification -->
+                <!-- Toast -->
                 <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
                     <i id="toastIcon" class="fa-solid fa-circle-check text-green-400"></i>
-                    <span id="toastMsg" class="text-sm font-medium">通知メッセージ</span>
+                    <span id="toastMsg" class="text-sm font-medium">通知</span>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        // State Management
+    <!-- Firebase SDK (v10 Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { 
+            getDatabase, 
+            ref, 
+            push, 
+            onValue, 
+            query, 
+            limitToLast 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // 提供された Firebase Config & Database URL
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8I6VYP0qbRHJluCMoIpgAwgtw1Iy5XIA",
+            authDomain: "qrcode-7a6f4.firebaseapp.com",
+            databaseURL: "https://qrcode-7a6f4-default-rtdb.firebaseio.com",
+            projectId: "qrcode-7a6f4",
+            storageBucket: "qrcode-7a6f4.firebasestorage.app",
+            messagingSenderId: "426358794634",
+            appId: "1:426358794634:web:5f157eb162c36e961f0073",
+            measurementId: "G-SHSTBC3FYV"
+        };
+
         const state = {
             type: 'url',
             data: 'https://example.com',
@@ -499,15 +457,32 @@
         };
 
         let qrCodeStyling = null;
+        let db = null;
+        let historyRef = null;
 
-        // 日本語（UTF-8）を安全にエンコード
+        // Firebase Initialize
+        try {
+            const app = initializeApp(firebaseConfig);
+            try { getAnalytics(app); } catch (e) { console.log('Analytics bypass'); }
+            
+            db = getDatabase(app);
+            historyRef = ref(db, 'qr_history');
+            
+            const statusEl = document.getElementById('firebaseStatus');
+            statusEl.className = "flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800";
+            statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> RTDB 接続完了`;
+            
+            listenToHistory();
+        } catch (e) {
+            console.warn("Firebase Init Error:", e);
+            const statusEl = document.getElementById('firebaseStatus');
+            statusEl.className = "flex items-center gap-1.5 text-xs text-rose-500 font-medium bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-full";
+            statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> 接続エラー`;
+        }
+
         function encodeUtf8(str) {
             if (!str) return '';
-            try {
-                return unescape(encodeURIComponent(str));
-            } catch (e) {
-                return str;
-            }
+            try { return unescape(encodeURIComponent(str)); } catch (e) { return str; }
         }
 
         function initQRCode() {
@@ -527,30 +502,14 @@
                     type: state.dotsStyle,
                     gradient: state.useGradient ? {
                         type: state.gradientType,
-                        colorStops: [
-                            { offset: 0, color: state.dotsColor },
-                            { offset: 1, color: state.gradientEndColor }
-                        ]
+                        colorStops: [{ offset: 0, color: state.dotsColor }, { offset: 1, color: state.gradientEndColor }]
                     } : null
                 },
-                backgroundOptions: {
-                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
-                },
-                imageOptions: {
-                    crossOrigin: 'anonymous',
-                    imageSize: state.logoSize,
-                    margin: state.logoMargin
-                },
-                cornersSquareOptions: {
-                    type: state.cornerStyle,
-                    color: state.dotsColor
-                },
-                cornersDotOptions: {
-                    color: state.dotsColor
-                },
-                qrOptions: {
-                    errorCorrectionLevel: state.errorLevel
-                }
+                backgroundOptions: { color: state.isBgTransparent ? 'transparent' : state.bgColor },
+                imageOptions: { crossOrigin: 'anonymous', imageSize: state.logoSize, margin: state.logoMargin },
+                cornersSquareOptions: { type: state.cornerStyle, color: state.dotsColor },
+                cornersDotOptions: { color: state.dotsColor },
+                qrOptions: { errorCorrectionLevel: state.errorLevel }
             });
 
             const container = document.getElementById('qrcode-container');
@@ -560,7 +519,6 @@
 
         function updateQRCode() {
             if (!qrCodeStyling) return;
-            
             buildDataPayload();
 
             qrCodeStyling.update({
@@ -571,108 +529,61 @@
                     type: state.dotsStyle,
                     gradient: state.useGradient ? {
                         type: state.gradientType,
-                        colorStops: [
-                            { offset: 0, color: state.dotsColor },
-                            { offset: 1, color: state.gradientEndColor }
-                        ]
+                        colorStops: [{ offset: 0, color: state.dotsColor }, { offset: 1, color: state.gradientEndColor }]
                     } : null
                 },
-                backgroundOptions: {
-                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
-                },
-                imageOptions: {
-                    imageSize: state.logoSize,
-                    margin: state.logoMargin
-                },
-                cornersSquareOptions: {
-                    type: state.cornerStyle,
-                    color: state.dotsColor
-                },
-                cornersDotOptions: {
-                    color: state.dotsColor
-                },
-                qrOptions: {
-                    errorCorrectionLevel: state.errorLevel
-                }
+                backgroundOptions: { color: state.isBgTransparent ? 'transparent' : state.bgColor },
+                imageOptions: { imageSize: state.logoSize, margin: state.logoMargin },
+                cornersSquareOptions: { type: state.cornerStyle, color: state.dotsColor },
+                cornersDotOptions: { color: state.dotsColor },
+                qrOptions: { errorCorrectionLevel: state.errorLevel }
             });
         }
 
         function buildDataPayload() {
             switch(state.type) {
-                case 'url': {
-                    let text = document.getElementById('inputUrlText').value.trim();
-                    state.data = text || 'https://example.com';
+                case 'url':
+                    state.data = document.getElementById('inputUrlText').value.trim() || 'https://example.com';
                     break;
-                }
                 case 'wifi': {
                     const ssid = document.getElementById('wifiSsid').value.trim();
                     const pass = document.getElementById('wifiPassword').value;
                     const type = document.getElementById('wifiType').value;
                     const hidden = document.getElementById('wifiHidden').checked;
-                    if (!ssid) {
-                        state.data = 'WIFI:S:MyNetwork;T:WPA;P:password;;';
-                    } else {
-                        state.data = `WIFI:S:${ssid};T:${type};P:${pass};H:${hidden ? 'true' : 'false'};;`;
-                    }
+                    state.data = ssid ? `WIFI:S:${ssid};T:${type};P:${pass};H:${hidden};;` : 'WIFI:S:MyNetwork;T:WPA;P:password;;';
                     break;
                 }
                 case 'vcard': {
                     const name = document.getElementById('vcardName').value.trim() || '山田 太郎';
                     const org = document.getElementById('vcardOrg').value.trim();
-                    const title = document.getElementById('vcardTitle').value.trim();
                     const tel = document.getElementById('vcardTel').value.trim();
                     const email = document.getElementById('vcardEmail').value.trim();
-                    const url = document.getElementById('vcardUrl').value.trim();
-
-                    const vcardLines = ['BEGIN:VCARD', 'VERSION:3.0'];
-                    if (name) {
-                        const parts = name.split(/\s+/);
-                        if (parts.length > 1) {
-                            vcardLines.push(`N:${parts[0]};${parts.slice(1).join(' ')};;;`);
-                        } else {
-                            vcardLines.push(`N:${name};;;;`);
-                        }
-                        vcardLines.push(`FN:${name}`);
-                    }
-                    if (org) vcardLines.push(`ORG:${org}`);
-                    if (title) vcardLines.push(`TITLE:${title}`);
-                    if (tel) vcardLines.push(`TEL;TYPE=CELL:${tel}`);
-                    if (email) vcardLines.push(`EMAIL;TYPE=INTERNET:${email}`);
-                    if (url) vcardLines.push(`URL:${url.startsWith('http') ? url : 'https://' + url}`);
-                    vcardLines.push('END:VCARD');
-
-                    state.data = vcardLines.join('\r\n');
+                    const lines = ['BEGIN:VCARD', 'VERSION:3.0', `FN:${name}`];
+                    if (org) lines.push(`ORG:${org}`);
+                    if (tel) lines.push(`TEL;TYPE=CELL:${tel}`);
+                    if (email) lines.push(`EMAIL:${email}`);
+                    lines.push('END:VCARD');
+                    state.data = lines.join('\r\n');
                     break;
                 }
                 case 'email': {
                     const to = document.getElementById('emailTo').value.trim();
                     const sub = document.getElementById('emailSubject').value.trim();
                     const body = document.getElementById('emailBody').value.trim();
-                    if (!to) {
-                        state.data = 'mailto:info@example.com';
-                    } else {
-                        const params = [];
-                        if (sub) params.push(`subject=${encodeURIComponent(sub)}`);
-                        if (body) params.push(`body=${encodeURIComponent(body)}`);
-                        state.data = `mailto:${to}` + (params.length ? `?${params.join('&')}` : '');
-                    }
+                    state.data = to ? `mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}` : 'mailto:info@example.com';
                     break;
                 }
                 case 'phone': {
-                    const num = document.getElementById('phoneNum').value.trim();
+                    const num = document.getElementById('phoneNum').value.trim() || '09000000000';
                     const isSms = document.getElementById('isSms').checked;
                     const smsBody = document.getElementById('smsBody').value.trim();
-                    if (isSms) {
-                        state.data = `smsto:${num || '09000000000'}:${smsBody}`;
-                    } else {
-                        state.data = `tel:${num || '09000000000'}`;
-                    }
+                    state.data = isSms ? `smsto:${num}:${smsBody}` : `tel:${num}`;
                     break;
                 }
             }
         }
 
-        // UI Navigation Tabs
+        // Tab Handling
         const tabs = [
             { id: 'tabInput', sec: 'contentSection' },
             { id: 'tabStyle', sec: 'styleSection' },
@@ -691,41 +602,24 @@
             });
         });
 
-        // Type Buttons switching
-        const typeBtns = document.querySelectorAll('.type-btn');
-        const formSections = {
-            url: 'formUrl',
-            wifi: 'formWifi',
-            vcard: 'formVcard',
-            email: 'formEmail',
-            phone: 'formPhone'
-        };
-
-        typeBtns.forEach(btn => {
+        // Type Buttons
+        document.querySelectorAll('.type-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                typeBtns.forEach(b => {
+                document.querySelectorAll('.type-btn').forEach(b => {
                     b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30', 'text-blue-600', 'dark:text-blue-400');
                     b.classList.add('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-300');
                 });
                 btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30', 'text-blue-600', 'dark:text-blue-400');
-                btn.classList.remove('border-slate-200', 'dark:border-slate-700', 'text-slate-600', 'dark:text-slate-300');
 
                 state.type = btn.dataset.type;
-                Object.values(formSections).forEach(id => document.getElementById(id).classList.add('hidden'));
-                document.getElementById(formSections[state.type]).classList.remove('hidden');
-
+                ['formUrl', 'formWifi', 'formVcard', 'formEmail', 'formPhone'].forEach(id => document.getElementById(id).classList.add('hidden'));
+                document.getElementById('form' + state.type.charAt(0).toUpperCase() + state.type.slice(1)).classList.remove('hidden');
                 updateQRCode();
             });
         });
 
-        // Attach input listeners
-        const inputsToWatch = [
-            'inputUrlText', 'wifiSsid', 'wifiPassword', 'wifiType', 'wifiHidden',
-            'vcardName', 'vcardOrg', 'vcardTitle', 'vcardTel', 'vcardEmail', 'vcardUrl',
-            'emailTo', 'emailSubject', 'emailBody', 'phoneNum', 'smsBody'
-        ];
-
-        inputsToWatch.forEach(id => {
+        // Attach input events
+        ['inputUrlText', 'wifiSsid', 'wifiPassword', 'wifiType', 'wifiHidden', 'vcardName', 'vcardOrg', 'vcardTel', 'vcardEmail', 'emailTo', 'emailSubject', 'emailBody', 'phoneNum', 'smsBody'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('input', updateQRCode);
@@ -738,363 +632,122 @@
             updateQRCode();
         });
 
-        // Color & Gradient Pickers
-        const colorDot = document.getElementById('colorDot');
-        const colorDotText = document.getElementById('colorDotText');
-        colorDot.addEventListener('input', (e) => {
-            colorDotText.value = e.target.value;
-            state.dotsColor = e.target.value;
-            updateQRCode();
-        });
-        colorDotText.addEventListener('input', (e) => {
-            colorDot.value = e.target.value;
-            state.dotsColor = e.target.value;
-            updateQRCode();
-        });
-
-        const colorBg = document.getElementById('colorBg');
-        const colorBgText = document.getElementById('colorBgText');
-        colorBg.addEventListener('input', (e) => {
-            colorBgText.value = e.target.value;
-            state.bgColor = e.target.value;
-            updateQRCode();
-        });
-        colorBgText.addEventListener('input', (e) => {
-            colorBg.value = e.target.value;
-            state.bgColor = e.target.value;
-            updateQRCode();
-        });
-
-        document.getElementById('bgTransparent').addEventListener('change', (e) => {
-            state.isBgTransparent = e.target.checked;
-            updateQRCode();
-        });
-
-        // Gradient
-        document.getElementById('useGradient').addEventListener('change', (e) => {
-            state.useGradient = e.target.checked;
-            document.getElementById('gradientControls').classList.toggle('hidden', !e.target.checked);
-            updateQRCode();
-        });
-
-        const colorGradEnd = document.getElementById('colorGradientEnd');
-        const colorGradEndText = document.getElementById('colorGradientEndText');
-        colorGradEnd.addEventListener('input', (e) => {
-            colorGradEndText.value = e.target.value;
-            state.gradientEndColor = e.target.value;
-            updateQRCode();
-        });
-        document.getElementById('gradientType').addEventListener('change', (e) => {
-            state.gradientType = e.target.value;
-            updateQRCode();
-        });
-
-        // Style Buttons Selection (Dots)
-        const dotStyleBtns = document.querySelectorAll('.dot-style-btn');
-        dotStyleBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                dotStyleBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
-                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
-                state.dotsStyle = btn.dataset.dotstyle;
-                updateQRCode();
-            });
-        });
-
-        // Corner Style Buttons
-        const cornerBtns = document.querySelectorAll('.corner-style-btn');
-        cornerBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                cornerBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
-                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
-                state.cornerStyle = btn.dataset.cornerstyle;
-                updateQRCode();
-            });
-        });
-
-        // Error Level
-        document.getElementById('errorCorrectionLevel').addEventListener('change', (e) => {
-            state.errorLevel = e.target.value;
-            updateQRCode();
-        });
-
-        // Logo Preset Selection
-        const presetLogoBtns = document.querySelectorAll('.preset-logo-btn');
-        presetLogoBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                presetLogoBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
-                btn.classList.add('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30');
-                state.logoUrl = btn.dataset.logo;
-                updateQRCode();
-            });
-        });
-
-        // Custom Logo File Upload
-        document.getElementById('logoFileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    state.logoUrl = event.target.result;
-                    presetLogoBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/30'));
-                    updateQRCode();
-                    showToast('カスタムロゴを設定しました');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Logo Sliders
-        const logoSizeRange = document.getElementById('logoSizeRange');
-        logoSizeRange.addEventListener('input', (e) => {
-            document.getElementById('logoSizeVal').innerText = e.target.value;
-            state.logoSize = parseFloat(e.target.value);
-            updateQRCode();
-        });
-
-        const logoMarginRange = document.getElementById('logoMarginRange');
-        logoMarginRange.addEventListener('input', (e) => {
-            document.getElementById('logoMarginVal').innerText = e.target.value;
-            state.logoMargin = parseInt(e.target.value, 10);
-            updateQRCode();
-        });
-
-        // Export & Download Function
-        document.getElementById('downloadBtn').addEventListener('click', async () => {
-            try {
-                const size = parseInt(document.getElementById('exportSize').value, 10);
-                const format = document.getElementById('exportFormat').value;
-
-                const downloadQr = new QRCodeStyling({
-                    width: size,
-                    height: size,
-                    type: 'canvas',
-                    data: encodeUtf8(state.data),
-                    image: state.logoUrl,
-                    dotsOptions: {
-                        color: state.dotsColor,
-                        type: state.dotsStyle,
-                        gradient: state.useGradient ? {
-                            type: state.gradientType,
-                            colorStops: [
-                                { offset: 0, color: state.dotsColor },
-                                { offset: 1, color: state.gradientEndColor }
-                            ]
-                        } : null
-                    },
-                    backgroundOptions: {
-                        color: state.isBgTransparent ? 'transparent' : state.bgColor,
-                    },
-                    imageOptions: {
-                        crossOrigin: 'anonymous',
-                        imageSize: state.logoSize,
-                        margin: state.logoMargin
-                    },
-                    cornersSquareOptions: {
-                        type: state.cornerStyle,
-                        color: state.dotsColor
-                    },
-                    cornersDotOptions: {
-                        color: state.dotsColor
-                    },
-                    qrOptions: {
-                        errorCorrectionLevel: state.errorLevel
-                    }
-                });
-
-                await downloadQr.download({
-                    name: 'qrcode_' + Date.now(),
-                    extension: format
-                });
-
-                showToast('ダウンロードを開始しました！');
-            } catch (err) {
-                showToast('ダウンロードに失敗しました', true);
-            }
-        });
-
-        // Copy QR Image to Clipboard
-        document.getElementById('copyImageBtn').addEventListener('click', async () => {
-            try {
-                const canvas = document.querySelector('#qrcode-container canvas');
-                if (!canvas) {
-                    showToast('コピーできる画像がありません', true);
-                    return;
-                }
-                
-                canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        showToast('画像の変換に失敗しました', true);
-                        return;
-                    }
-                    try {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                        showToast('クリップボードに画像をコピーしました！');
-                    } catch (err) {
-                        showToast('クリップボードへのコピーが許可されていません', true);
-                    }
-                }, 'image/png');
-            } catch (err) {
-                showToast('コピー処理に失敗しました', true);
-            }
-        });
-
-        // Toast Notification System
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            const toastIcon = document.getElementById('toastIcon');
-
-            toastMsg.innerText = msg;
-            if (isError) {
-                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400';
-            } else {
-                toastIcon.className = 'fa-solid fa-circle-check text-green-400';
-            }
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // History Management
-        function saveToHistory() {
-            try {
-                let history = JSON.parse(localStorage.getItem('qr_history') || '[]');
-                
-                const formInputs = {
-                    inputUrlText: document.getElementById('inputUrlText').value,
-                    wifiSsid: document.getElementById('wifiSsid').value,
-                    wifiPassword: document.getElementById('wifiPassword').value,
-                    wifiType: document.getElementById('wifiType').value,
-                    wifiHidden: document.getElementById('wifiHidden').checked,
-                    vcardName: document.getElementById('vcardName').value,
-                    vcardOrg: document.getElementById('vcardOrg').value,
-                    vcardTitle: document.getElementById('vcardTitle').value,
-                    vcardTel: document.getElementById('vcardTel').value,
-                    vcardEmail: document.getElementById('vcardEmail').value,
-                    vcardUrl: document.getElementById('vcardUrl').value,
-                    emailTo: document.getElementById('emailTo').value,
-                    emailSubject: document.getElementById('emailSubject').value,
-                    emailBody: document.getElementById('emailBody').value,
-                    phoneNum: document.getElementById('phoneNum').value,
-                    isSms: document.getElementById('isSms').checked,
-                    smsBody: document.getElementById('smsBody').value
-                };
-
-                const newItem = {
-                    id: Date.now(),
-                    type: state.type,
-                    data: state.data,
-                    formInputs: formInputs,
-                    date: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                };
-                
-                history = history.filter(item => item.data !== newItem.data);
-                history.unshift(newItem);
-
-                if (history.length > 10) history.pop();
-
-                localStorage.setItem('qr_history', JSON.stringify(history));
-                renderHistory();
-                showToast('履歴に保存しました');
-            } catch (err) {
-                showToast('履歴の保存に失敗しました', true);
-            }
-        }
-
-        function renderHistory() {
-            const historyList = document.getElementById('historyList');
-            let history = [];
-            try {
-                history = JSON.parse(localStorage.getItem('qr_history') || '[]');
-            } catch(e) {
-                history = [];
-            }
-
-            if (history.length === 0) {
-                historyList.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">保存された履歴はありません</p>`;
+        // Save to Firebase Realtime Database
+        async function saveToCloud() {
+            if (!historyRef) {
+                showToast('Firebaseが初期化されていません', true);
                 return;
             }
 
-            historyList.innerHTML = history.map(item => `
-                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 hover:border-blue-200 transition group">
-                    <div class="overflow-hidden mr-2">
-                        <span class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/50 px-1.5 py-0.5 rounded mr-1.5">${item.type}</span>
-                        <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.data.split('\r\n')[0])}</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">${item.date}</p>
-                    </div>
-                    <button onclick="loadFromHistory('${item.id}')" class="px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 font-medium whitespace-nowrap">
-                        再読み込み
-                    </button>
-                </div>
-            `).join('');
+            try {
+                const payload = {
+                    type: state.type,
+                    data: state.data,
+                    createdAt: new Date().toISOString(),
+                    displayText: state.data.substring(0, 40)
+                };
+
+                await push(historyRef, payload);
+                showToast('Realtime Databaseへ保存しました！');
+            } catch (err) {
+                console.error(err);
+                showToast('保存エラー: 権限を確認してください', true);
+            }
+        }
+
+        // Firebase Realtime Listener
+        function listenToHistory() {
+            if (!historyRef) return;
+            const recentQuery = query(historyRef, limitToLast(20));
+
+            onValue(recentQuery, (snapshot) => {
+                const historyList = document.getElementById('historyList');
+                if (!snapshot.exists()) {
+                    historyList.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">保存された履歴はありません</p>`;
+                    return;
+                }
+
+                const dataObj = snapshot.val();
+                const items = Object.keys(dataObj).map(key => ({
+                    id: key,
+                    ...dataObj[key]
+                })).reverse();
+
+                historyList.innerHTML = items.map(item => {
+                    const date = item.createdAt ? new Date(item.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '';
+                    return `
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50">
+                            <div class="overflow-hidden mr-2">
+                                <span class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/50 px-1.5 py-0.5 rounded mr-1.5">${item.type || 'URL'}</span>
+                                <p class="text-xs font-medium truncate inline text-slate-700 dark:text-slate-200">${escapeHtml(item.displayText || item.data || '')}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">${date}</p>
+                            </div>
+                            <button data-content="${escapeHtml(item.data || '')}" data-type="${item.type || 'url'}" class="load-btn px-2.5 py-1 text-xs bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 font-medium">
+                                復元
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.load-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const content = e.currentTarget.dataset.content;
+                        const type = e.currentTarget.dataset.type;
+
+                        if (type === 'url') {
+                            document.getElementById('inputUrlText').value = content;
+                        }
+                        const typeBtn = document.querySelector(`.type-btn[data-type="${type}"]`);
+                        if (typeBtn) typeBtn.click();
+
+                        showToast('データを反映しました');
+                    });
+                });
+            });
         }
 
         function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        window.loadFromHistory = function(id) {
-            let history = [];
-            try {
-                history = JSON.parse(localStorage.getItem('qr_history') || '[]');
-            } catch(e) {
-                return;
-            }
-            const item = history.find(i => i.id == id);
-            if (!item) return;
+        // Download & Copy Actions
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const size = parseInt(document.getElementById('exportSize').value, 10);
+            const format = document.getElementById('exportFormat').value;
+            await qrCodeStyling.download({ name: 'qrcode_' + Date.now(), extension: format });
+            showToast('ダウンロードを開始しました');
+        });
 
-            const btn = document.querySelector(`.type-btn[data-type="${item.type}"]`);
-            if (btn) btn.click();
-
-            if (item.formInputs) {
-                Object.keys(item.formInputs).forEach(key => {
-                    const el = document.getElementById(key);
-                    if (el) {
-                        if (el.type === 'checkbox') {
-                            el.checked = item.formInputs[key];
-                        } else {
-                            el.value = item.formInputs[key];
-                        }
+        document.getElementById('copyImageBtn').addEventListener('click', async () => {
+            const canvas = document.querySelector('#qrcode-container canvas');
+            if (canvas) {
+                canvas.toBlob(async (blob) => {
+                    try {
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                        showToast('クリップボードにコピーしました！');
+                    } catch(e) {
+                        showToast('コピーに対応していません', true);
                     }
                 });
-                document.getElementById('smsMessageArea').classList.toggle('hidden', !document.getElementById('isSms').checked);
-            } else if (item.type === 'url') {
-                document.getElementById('inputUrlText').value = item.data;
             }
-
-            updateQRCode();
-            showToast('履歴から読み込みました');
-        };
-
-        document.getElementById('saveHistoryBtn').addEventListener('click', saveToHistory);
-
-        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-            localStorage.removeItem('qr_history');
-            renderHistory();
-            showToast('履歴を削除しました');
         });
 
-        // Dark Mode Toggle
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        themeToggleBtn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        });
+        document.getElementById('saveCloudBtn').addEventListener('click', saveToCloud);
 
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         }
 
-        // Window Onload Initialization
+        // Dark Mode & Dynamic Init
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             initQRCode();
-            renderHistory();
         });
     </script>
 </body>
