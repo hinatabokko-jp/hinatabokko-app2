@@ -247,6 +247,7 @@
       font-size: 0.95rem;
       line-height: 1.4;
       word-break: break-word;
+      white-space: pre-wrap; /* 改行を反省・保持するために追加 */
     }
     .message.sent .bubble {
       background-color: #00796b;
@@ -275,7 +276,7 @@
     .delete-btn {
       background: none;
       border: none;
-      color: #aaa;
+      color: #ff5252;
       font-size: 0.7rem;
       cursor: pointer;
       padding: 0;
@@ -292,19 +293,25 @@
       padding: 12px 16px;
       border-top: 1px solid #2d2d2d;
       display: flex;
+      align-items: flex-end;
       gap: 8px;
     }
-    input[type="text"] {
+    textarea {
       flex: 1;
       background-color: #2a2a2a;
       border: 1px solid #444;
-      border-radius: 20px;
-      padding: 10px 16px;
+      border-radius: 18px;
+      padding: 8px 14px;
       color: #fff;
       font-size: 0.95rem;
       outline: none;
+      resize: none;
+      height: 40px;
+      max-height: 120px;
+      font-family: inherit;
+      line-height: 1.4;
     }
-    input[type="text"]:focus {
+    textarea:focus {
       border-color: #00bcd4;
     }
     button.send-btn-style {
@@ -313,10 +320,12 @@
       border: none;
       border-radius: 20px;
       padding: 0 18px;
+      height: 40px;
       font-weight: bold;
       font-size: 0.95rem;
       cursor: pointer;
       transition: background-color 0.2s;
+      flex-shrink: 0;
     }
     button.send-btn-style:active {
       background-color: #008ba3;
@@ -335,7 +344,7 @@
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3">理科トレーニング</a></li>
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5">社会科トレーニング</a></li>
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21">AairChat 1on1</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html">おかあさん</a></li>
       <li><a href="#" class="sidebar-link current">family chat</a></li>
     </ul>
   </aside>
@@ -370,7 +379,7 @@
     <main id="chat-box"></main>
 
     <footer>
-      <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
+      <textarea id="message-input" placeholder="メッセージを入力... (Shift+Enterで改行)" rows="1"></textarea>
       <button id="send-btn" class="send-btn-style">送信</button>
     </footer>
   </div>
@@ -419,6 +428,8 @@
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
 
+    let cachedMessages = {};
+
     // ハンバーガーメニューの開閉機能
     function toggleSidebar() {
       sidebar.classList.toggle('open');
@@ -459,6 +470,80 @@
       if (e.key === 'Enter') checkPassword();
     });
 
+    // メッセージ送信処理
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const sender = userSelect.value;
+      push(messagesRef, {
+        sender: sender,
+        text: text,
+        timestamp: Date.now()
+      });
+
+      messageInput.value = '';
+      messageInput.style.height = '40px';
+    }
+
+    // メッセージの削除
+    function deleteMessage(key) {
+      if (confirm('このメッセージを削除しますか？')) {
+        const targetRef = ref(db, `messages/${key}`);
+        remove(targetRef);
+      }
+    }
+
+    // 画面への描画
+    function renderMessages() {
+      chatBox.innerHTML = '';
+      const currentUser = userSelect.value;
+
+      Object.keys(cachedMessages).forEach((key) => {
+        const msg = cachedMessages[key];
+        const isSent = msg.sender === currentUser;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+
+        const senderName = document.createElement('div');
+        senderName.className = 'sender-name';
+        senderName.textContent = msg.sender;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = msg.text;
+
+        const metaInfo = document.createElement('div');
+        metaInfo.className = 'meta-info';
+
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp';
+        const date = new Date(msg.timestamp);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        timestamp.textContent = `${hours}:${minutes}`;
+
+        metaInfo.appendChild(timestamp);
+
+        if (isSent) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.textContent = '削除';
+          deleteBtn.addEventListener('click', () => deleteMessage(key));
+          metaInfo.appendChild(deleteBtn);
+        }
+
+        msgDiv.appendChild(senderName);
+        msgDiv.appendChild(bubble);
+        msgDiv.appendChild(metaInfo);
+
+        chatBox.appendChild(msgDiv);
+      });
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
     // チャット初期化
     function initChat() {
       // ユーザー復元
@@ -471,8 +556,6 @@
       });
 
       // メッセージデータ監視＆自動削除処理
-      let cachedMessages = {};
-
       onValue(messagesRef, (snapshot) => {
         const data = snapshot.val() || {};
         cachedMessages = data;
@@ -489,86 +572,34 @@
         Object.keys(data).forEach((key) => {
           const msg = data[key];
           if (msg.timestamp && (now - msg.timestamp > SEVEN_DAYS_MS)) {
-            const itemRef = ref(db, `messages/${key}`);
-            remove(itemRef);
+            remove(ref(db, `messages/${key}`));
           }
         });
       }
 
-      // 描画関数
-      function renderMessages() {
-        chatBox.innerHTML = '';
-        const currentUser = userSelect.value;
-
-        Object.keys(cachedMessages).forEach((key) => {
-          const data = cachedMessages[key];
-          const isMe = (data.sender === currentUser);
-
-          const msgEl = document.createElement('div');
-          msgEl.classList.add('message', isMe ? 'sent' : 'received');
-
-          // 送信取り消しボタン（自分の送信メッセージのみ表示）
-          const deleteBtnHtml = isMe ? `<button class="delete-btn" data-key="${key}">取り消し</button>` : '';
-
-          msgEl.innerHTML = `
-            <div class="sender-name">${escapeHtml(data.sender)}</div>
-            <div class="bubble">${escapeHtml(data.text)}</div>
-            <div class="meta-info">
-              ${deleteBtnHtml}
-              <span class="timestamp">${escapeHtml(data.time)}</span>
-            </div>
-          `;
-
-          chatBox.appendChild(msgEl);
-        });
-
-        // 取り消しボタンのイベントリスナー設定
-        document.querySelectorAll('.delete-btn').forEach((btn) => {
-          btn.addEventListener('click', (e) => {
-            const msgKey = e.target.getAttribute('data-key');
-            if (confirm('このメッセージを取り消しますか？')) {
-              deleteMessage(msgKey);
-            }
-          });
-        });
-
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-
-      // メッセージ削除処理
-      function deleteMessage(key) {
-        const itemRef = ref(db, `messages/${key}`);
-        remove(itemRef);
-      }
-
-      // 送信処理
-      function sendMessage() {
-        const text = messageInput.value.trim();
-        if (!text) return;
-
-        const currentUser = userSelect.value;
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-        push(messagesRef, {
-          sender: currentUser,
-          text: text,
-          time: timeStr,
-          timestamp: Date.now()
-        });
-
-        messageInput.value = '';
-      }
-
       sendBtn.addEventListener('click', sendMessage);
-      messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-      });
-    }
 
-    // エスケープ処理
-    function escapeHtml(str) {
-      return str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+      // Enterで送信、Shift+Enterで改行
+      messageInput.addEventListener('keydown', (e) => {
+        if (e.isComposing || e.keyCode === 229) {
+          return;
+        }
+
+        if (e.key === 'Enter') {
+          if (e.shiftKey) {
+            return; // Shift+Enterは改行
+          } else {
+            e.preventDefault();
+            sendMessage();
+          }
+        }
+      });
+
+      // テキスト入力に合わせてtextareaの高さを自動調節
+      messageInput.addEventListener('input', () => {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+      });
     }
   </script>
 </body>
