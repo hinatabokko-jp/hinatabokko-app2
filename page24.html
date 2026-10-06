@@ -90,6 +90,10 @@
                     <div>
                         <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
                             出欠確認
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
+                                オンラインリアルタイム同期中
+                            </span>
                         </h1>
                         <p class="text-xs text-slate-400">リアルタイム出欠管理ボード</p>
                     </div>
@@ -239,10 +243,28 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <script>
-        const STORAGE_KEY = 'shukketsu_app_data';
-        const CORRECT_PASSCODE = "shukketsu123"; // 合言葉
+    <!-- Firebase Script Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoQJUGnoCLdCw6CI9OVBshefrjedp1kuE",
+            authDomain: "attendancecheck-98146.firebaseapp.com",
+            databaseURL: "https://attendancecheck-98146-default-rtdb.firebaseio.com",
+            projectId: "attendancecheck-98146",
+            storageBucket: "attendancecheck-98146.firebasestorage.app",
+            messagingSenderId: "764590686398",
+            appId: "1:764590686398:web:f837b1a220778d679f5eef",
+            measurementId: "G-VNB89EB2DQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const CORRECT_PASSCODE = "shukketsu123"; // 合言葉
         let activeFilter = 'all';
         let memberData = [];
 
@@ -266,12 +288,12 @@
             }, 3000);
         }
 
-        // 初期表示チェック
+        // 入室済みチェック
         if (sessionStorage.getItem('shukketsu_auth') === 'true') {
             unlockApp();
         }
 
-        // パスワード入力フォーム
+        // 合言葉認証
         document.getElementById('passcodeForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const inputVal = document.getElementById('passcodeInput').value.trim();
@@ -290,7 +312,7 @@
         function unlockApp() {
             document.getElementById('authLockScreen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            loadData();
+            subscribeRealtimeData();
             lucide.createIcons();
         }
 
@@ -303,19 +325,24 @@
             showToast("ロック画面に戻りました", "info");
         });
 
-        // データの読み込み
-        function loadData() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            memberData = raw ? JSON.parse(raw) : [];
-            memberData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-            renderAttendanceStats();
-            renderMemberList();
-        }
-
-        // データの保存
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(memberData));
-            loadData();
+        // Firebase Realtime Database リアルタイム受信設定
+        function subscribeRealtimeData() {
+            const attendanceRef = ref(db, 'attendance');
+            onValue(attendanceRef, (snapshot) => {
+                const data = snapshot.val();
+                memberData = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        memberData.push({ id: key, ...data[key] });
+                    });
+                }
+                memberData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                renderAttendanceStats();
+                renderMemberList();
+            }, (error) => {
+                console.error("Firebase Read Error:", error);
+                showToast("データの読み込みに失敗しました（セキュリティルールを確認してください）", "error");
+            });
         }
 
         function renderAttendanceStats() {
@@ -388,8 +415,8 @@
                         ${item.comment ? `<p class="text-xs text-slate-300 mt-3 pt-2 border-t border-slate-800/60 bg-slate-950/40 p-2 rounded-lg italic">"${escapeHtml(item.comment)}"</p>` : ''}
 
                         <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-800/40">
-                            <button onclick="editMember('${item.id}', '${escapeHtml(item.name)}', '${item.status}', '${escapeHtml(item.comment || '')}')" class="text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded hover:bg-amber-500/10 transition-colors font-medium">編集</button>
-                            <button onclick="deleteMember('${item.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1 rounded hover:bg-rose-500/10 transition-colors font-medium">削除</button>
+                            <button onclick="window.editMember('${item.id}', '${escapeHtml(item.name)}', '${item.status}', '${escapeHtml(item.comment || '')}')" class="text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1 rounded hover:bg-amber-500/10 transition-colors font-medium">編集</button>
+                            <button onclick="window.deleteMember('${item.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1 rounded hover:bg-rose-500/10 transition-colors font-medium">削除</button>
                         </div>
                     </div>
                 `;
@@ -404,8 +431,8 @@
             })[m]);
         }
 
-        // 送信処理
-        document.getElementById('attendanceForm').addEventListener('submit', (e) => {
+        // 送信処理（登録・編集）
+        document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const name = document.getElementById('memberName').value.trim();
@@ -415,29 +442,35 @@
 
             if (!name) return;
 
-            if (editId) {
-                const index = memberData.findIndex(m => m.id === editId);
-                if (index !== -1) {
-                    memberData[index] = { ...memberData[index], name, status, comment, updatedAt: Date.now() };
+            try {
+                if (editId) {
+                    const itemRef = ref(db, `attendance/${editId}`);
+                    await update(itemRef, {
+                        name,
+                        status,
+                        comment,
+                        updatedAt: Date.now()
+                    });
                     showToast("出欠情報を更新しました", "success");
+                } else {
+                    const attendanceRef = ref(db, 'attendance');
+                    const newRef = push(attendanceRef);
+                    await set(newRef, {
+                        name,
+                        status,
+                        comment,
+                        updatedAt: Date.now()
+                    });
+                    showToast("出欠を登録しました！", "success");
                 }
-            } else {
-                const newItem = {
-                    id: 'm_' + Date.now(),
-                    name,
-                    status,
-                    comment,
-                    updatedAt: Date.now()
-                };
-                memberData.push(newItem);
-                showToast("出欠を登録しました！", "success");
+                resetForm();
+            } catch (err) {
+                console.error("Save Error:", err);
+                showToast("保存に失敗しました。Firebaseの書き込み権限を確認してください。", "error");
             }
-
-            saveData();
-            resetForm();
         });
 
-        function editMember(id, name, status, comment) {
+        window.editMember = function(id, name, status, comment) {
             document.getElementById('editMemberId').value = id;
             document.getElementById('memberName').value = name;
             document.getElementById('memberComment').value = comment;
@@ -449,16 +482,21 @@
             document.getElementById('submitAttendanceBtn').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> 変更を更新する`;
             lucide.createIcons();
             document.getElementById('attendanceForm').scrollIntoView({ behavior: 'smooth' });
-        }
+        };
 
-        function deleteMember(id) {
+        window.deleteMember = async function(id) {
             if (confirm("この出欠情報を削除してもよろしいですか？")) {
-                memberData = memberData.filter(m => m.id !== id);
-                saveData();
-                showToast("出欠情報を削除しました", "info");
-                resetForm();
+                try {
+                    const itemRef = ref(db, `attendance/${id}`);
+                    await remove(itemRef);
+                    showToast("出欠情報を削除しました", "info");
+                    resetForm();
+                } catch (err) {
+                    console.error("Delete Error:", err);
+                    showToast("削除に失敗しました", "error");
+                }
             }
-        }
+        };
 
         function resetForm() {
             document.getElementById('editMemberId').value = '';
@@ -487,7 +525,7 @@
             });
         });
 
-        // CSV出力機能
+        // CSV出力
         document.getElementById('exportCsvBtn').addEventListener('click', () => {
             if (memberData.length === 0) {
                 showToast("出力するデータがありません", "error");
