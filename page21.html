@@ -323,25 +323,39 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .message {
+        /* メッセージラッパー（吹き出しと吹き出し外のリンクをグループ化） */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
             max-width: 85%;
+        }
+
+        .message-wrapper.my {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-wrapper.peer {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message {
+            width: 100%;
             padding: 10px 14px;
             border-radius: 16px;
             font-size: 0.95rem;
             line-height: 1.4;
             word-break: break-word;
-            position: relative;
         }
 
-        .message.my {
-            align-self: flex-end;
+        .message-wrapper.my .message {
             background-color: var(--my-msg-bg);
             color: #e0f2f1;
             border-bottom-right-radius: 4px;
         }
 
-        .message.peer {
-            align-self: flex-start;
+        .message-wrapper.peer .message {
             background-color: var(--peer-msg-bg);
             color: var(--text-color);
             border-bottom-left-radius: 4px;
@@ -401,32 +415,27 @@
             margin-top: 4px;
         }
 
-        /* メッセージフッター（時刻 & 送信取消リンク） */
-        .message-footer {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 8px;
+        /* 吹き出し内の時刻表示 */
+        .message-time {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
             margin-top: 4px;
+            text-align: right;
         }
 
-        .cancel-btn {
+        /* 吹き出しの外側に配置する「取り消す」リンク */
+        .cancel-link {
             font-size: 0.7rem;
             color: #ccc; /* 白寄りの灰色の文字 */
             background: none;
             border: none;
-            padding: 0;
+            padding: 2px 4px 0 4px;
             cursor: pointer;
             text-decoration: underline;
         }
 
-        .cancel-btn:hover {
+        .cancel-link:hover {
             color: #ffffff;
-        }
-
-        .message-time {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.5);
         }
 
         .system-msg {
@@ -562,7 +571,7 @@
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5" class="sidebar-link">社会科トレーニング</a>
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4" class="sidebar-link">百人一首</a>
         <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21" class="sidebar-link current">AirChat 1on1</a>
-        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">おかあさん</a>
+        <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26" class="sidebar-link">family chat</a>
     </nav>
 </aside>
 
@@ -749,49 +758,45 @@
         fileInput.value = '';
     });
 
-    function createFooter(sender, time, msgId) {
-        const footerDiv = document.createElement('div');
-        footerDiv.className = 'message-footer';
-
-        if (sender === 'my' && msgId) {
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'cancel-btn';
-            cancelBtn.textContent = '取り消す';
-            cancelBtn.onclick = () => cancelMessage(msgId);
-            footerDiv.appendChild(cancelBtn);
-        }
-
-        const timeDiv = document.createElement('span');
-        timeDiv.className = 'message-time';
-        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        footerDiv.appendChild(timeDiv);
-
-        return footerDiv;
-    }
-
     function appendMessage(text, sender, time, msgId) {
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper ${sender}`;
+        if (msgId) wrapper.setAttribute('data-msg-id', msgId);
+
         const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${sender}`;
-        if (msgId) msgDiv.setAttribute('data-msg-id', msgId);
+        msgDiv.className = 'message';
 
         const textDiv = document.createElement('div');
-        textDiv.className = 'msg-body';
         textDiv.textContent = text;
         msgDiv.appendChild(textDiv);
 
-        msgDiv.appendChild(createFooter(sender, time, msgId));
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(timeDiv);
 
-        chatMessages.appendChild(msgDiv);
+        wrapper.appendChild(msgDiv);
+
+        // 吹き出しの外側に「取り消す」ボタンを設置
+        if (sender === 'my' && msgId) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-link';
+            cancelBtn.textContent = '取り消す';
+            cancelBtn.onclick = () => cancelMessage(msgId);
+            wrapper.appendChild(cancelBtn);
+        }
+
+        chatMessages.appendChild(wrapper);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function appendFileMessage(data, sender, time, msgId) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${sender}`;
-        if (msgId) msgDiv.setAttribute('data-msg-id', msgId);
+        const wrapper = document.createElement('div');
+        wrapper.className = `message-wrapper ${sender}`;
+        if (msgId) wrapper.setAttribute('data-msg-id', msgId);
 
-        const bodyContainer = document.createElement('div');
-        bodyContainer.className = 'msg-body';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message';
 
         const mime = data.fileType || '';
         const dataUrl = data.fileData || data.imgData;
@@ -801,19 +806,19 @@
             const img = document.createElement('img');
             img.src = dataUrl;
             img.onclick = () => window.open(dataUrl, '_blank');
-            bodyContainer.appendChild(img);
+            msgDiv.appendChild(img);
         } 
         else if (mime.startsWith('video/')) {
             const video = document.createElement('video');
             video.src = dataUrl;
             video.controls = true;
-            bodyContainer.appendChild(video);
+            msgDiv.appendChild(video);
         } 
         else if (mime.startsWith('audio/')) {
             const audio = document.createElement('audio');
             audio.src = dataUrl;
             audio.controls = true;
-            bodyContainer.appendChild(audio);
+            msgDiv.appendChild(audio);
         }
 
         const fileCard = document.createElement('div');
@@ -835,20 +840,33 @@
                 <a href="${dataUrl}" download="${escapeHtml(fileName)}" class="file-download-btn">保存・ダウンロード</a>
             </div>
         `;
-        bodyContainer.appendChild(fileCard);
-        msgDiv.appendChild(bodyContainer);
+        msgDiv.appendChild(fileCard);
 
-        msgDiv.appendChild(createFooter(sender, time, msgId));
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgDiv.appendChild(timeDiv);
 
-        chatMessages.appendChild(msgDiv);
+        wrapper.appendChild(msgDiv);
+
+        // 吹き出しの外側に「取り消す」ボタンを設置
+        if (sender === 'my' && msgId) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-link';
+            cancelBtn.textContent = '取り消す';
+            cancelBtn.onclick = () => cancelMessage(msgId);
+            wrapper.appendChild(cancelBtn);
+        }
+
+        chatMessages.appendChild(wrapper);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     // 自分のメッセージ取り消し実行
     function cancelMessage(msgId) {
-        const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
-        if (msgEl) {
-            msgEl.remove();
+        const wrapperEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+        if (wrapperEl) {
+            wrapperEl.remove();
             appendSystemMessage('メッセージを取り消しました');
             if (conn) {
                 conn.send({ type: 'cancel-msg', msgId: msgId });
@@ -858,9 +876,9 @@
 
     // 相手がメッセージを取り消した際の処理
     function handlePeerCancelMessage(msgId) {
-        const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
-        if (msgEl) {
-            msgEl.remove();
+        const wrapperEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+        if (wrapperEl) {
+            wrapperEl.remove();
             appendSystemMessage('相手がメッセージを取り消しました');
         }
     }
