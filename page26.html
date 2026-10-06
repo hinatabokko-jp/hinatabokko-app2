@@ -18,6 +18,8 @@
       flex-direction: column;
       height: 100vh;
       height: 100dvh;
+      position: relative;
+      overflow: hidden;
     }
 
     /* パスワードロック画面 */
@@ -67,7 +69,7 @@
       display: none;
     }
 
-    /* メインコンテンツ（ロック解除前は非表示） */
+    /* メインコンテンツ */
     #app-content {
       display: none;
       flex-direction: column;
@@ -78,34 +80,134 @@
     /* ヘッダー */
     header {
       background-color: #1e1e1e;
-      padding: 12px 16px;
+      padding: 10px 16px;
       border-bottom: 1px solid #2d2d2d;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-title-container {
+      display: flex;
+      flex-direction: column;
     }
     .header-title {
       font-size: 1.1rem;
       font-weight: bold;
       color: #00bcd4;
+      line-height: 1.2;
+    }
+    .header-subtitle {
+      font-size: 0.65rem;
+      color: #aaa;
+      margin-top: 2px;
+      line-height: 1.2;
     }
     .user-select-container {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
     .user-select-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #aaa;
     }
     select {
       background-color: #2a2a2a;
       color: #fff;
       border: 1px solid #444;
-      padding: 6px 12px;
+      padding: 4px 8px;
       border-radius: 6px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       outline: none;
+    }
+
+    /* ハンバーガーボタン & サイドバーUI */
+    .hamburger-btn {
+      background: none;
+      border: none;
+      color: #00bcd4;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+    .hamburger-btn:active {
+      background-color: rgba(0, 188, 212, 0.1);
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px;
+      width: 260px;
+      height: 100%;
+      background-color: #1e1e1e;
+      z-index: 1001;
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    .sidebar.open {
+      transform: translateX(260px);
+    }
+    .sidebar-header {
+      padding: 16px;
+      background-color: #252525;
+      border-bottom: 1px solid #333;
+      font-weight: bold;
+      color: #00bcd4;
+      font-size: 1rem;
+    }
+    .sidebar-menu {
+      list-style: none;
+      padding: 10px 0;
+      margin: 0;
+      overflow-y: auto;
+    }
+    .sidebar-menu li a {
+      display: block;
+      padding: 12px 20px;
+      color: #e0e0e0;
+      text-decoration: none;
+      font-size: 0.95rem;
+      border-left: 4px solid transparent;
+      transition: background 0.2s;
+    }
+    .sidebar-menu li a:hover,
+    .sidebar-menu li a:active {
+      background-color: #2a2a2a;
+    }
+    .sidebar-menu li a.sidebar-link.current {
+      background-color: #2a2a2a;
+      color: #00bcd4;
+      border-left-color: #00bcd4;
+      font-weight: bold;
     }
 
     /* チャット表示エリア */
@@ -156,14 +258,32 @@
       color: #e0e0e0;
       border-bottom-left-radius: 2px;
     }
-    .timestamp {
-      font-size: 0.65rem;
-      color: #666;
+    .meta-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       margin-top: 3px;
       padding: 0 4px;
     }
-    .message.sent .timestamp {
-      text-align: right;
+    .message.sent .meta-info {
+      justify-content: flex-end;
+    }
+    .timestamp {
+      font-size: 0.65rem;
+      color: #666;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ff5252;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+    .delete-btn:hover {
+      opacity: 1;
     }
 
     /* 入力エリア */
@@ -187,7 +307,7 @@
     input[type="text"]:focus {
       border-color: #00bcd4;
     }
-    button {
+    button.send-btn-style {
       background-color: #00bcd4;
       color: #121212;
       border: none;
@@ -198,25 +318,46 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-    button:active {
+    button.send-btn-style:active {
       background-color: #008ba3;
     }
   </style>
 </head>
 <body>
 
+  <!-- サイドバー＆オーバーレイ -->
+  <div id="overlay" class="overlay"></div>
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3">理科トレーニング</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5">社会科トレーニング</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
+      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html">おかあさん</a></li>
+      <li><a href="#" class="sidebar-link current">family chat</a></li>
+    </ul>
+  </aside>
+
   <!-- ロック画面 -->
   <div id="lock-screen">
     <h2>パスワードを入力してください</h2>
     <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
-    <button id="pass-btn">解除</button>
+    <button id="pass-btn" class="send-btn-style">解除</button>
     <div id="pass-error">パスワードが違います</div>
   </div>
 
   <!-- アプリ本体 -->
   <div id="app-content">
     <header>
-      <div class="header-title">family chat</div>
+      <div class="header-left">
+        <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
+        <div class="header-title-container">
+          <div class="header-title">family chat</div>
+          <div class="header-subtitle">完全に暗号化されているわけではないので、あくまで 連絡用として使いましょう。</div>
+        </div>
+      </div>
       <div class="user-select-container">
         <span class="user-select-label">私は:</span>
         <select id="user-select">
@@ -230,7 +371,7 @@
 
     <footer>
       <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
-      <button id="send-btn">送信</button>
+      <button id="send-btn" class="send-btn-style">送信</button>
     </footer>
   </div>
 
@@ -239,10 +380,10 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // ★ パスワードの設定（お好みの数字や文字列に変更可能）
+    // パスワードの設定
     const SECRET_PASSWORD = "1234";
 
-    // 7日間のミリ秒数 (7日 × 24時間 × 60分 × 60秒 × 1000ミリ秒)
+    // 7日間のミリ秒数
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
     // Firebase 設定情報
@@ -273,6 +414,24 @@
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const userSelect = document.getElementById('user-select');
+
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    // ハンバーガーメニューの開閉機能
+    function toggleSidebar() {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    }
+
+    hamburgerBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', closeSidebar);
 
     // パスワード認証処理
     function checkPassword() {
@@ -330,7 +489,6 @@
         Object.keys(data).forEach((key) => {
           const msg = data[key];
           if (msg.timestamp && (now - msg.timestamp > SEVEN_DAYS_MS)) {
-            // 7日超えのデータをFirebaseから削除
             const itemRef = ref(db, `messages/${key}`);
             remove(itemRef);
           }
@@ -342,22 +500,45 @@
         chatBox.innerHTML = '';
         const currentUser = userSelect.value;
 
-        Object.values(cachedMessages).forEach((data) => {
+        Object.keys(cachedMessages).forEach((key) => {
+          const data = cachedMessages[key];
           const isMe = (data.sender === currentUser);
 
           const msgEl = document.createElement('div');
           msgEl.classList.add('message', isMe ? 'sent' : 'received');
 
+          // 送信取り消しボタン（自分の送信メッセージのみ表示）
+          const deleteBtnHtml = isMe ? `<button class="delete-btn" data-key="${key}">取り消し</button>` : '';
+
           msgEl.innerHTML = `
             <div class="sender-name">${escapeHtml(data.sender)}</div>
             <div class="bubble">${escapeHtml(data.text)}</div>
-            <div class="timestamp">${escapeHtml(data.time)}</div>
+            <div class="meta-info">
+              ${deleteBtnHtml}
+              <span class="timestamp">${escapeHtml(data.time)}</span>
+            </div>
           `;
 
           chatBox.appendChild(msgEl);
         });
 
+        // 取り消しボタンのイベントリスナー設定
+        document.querySelectorAll('.delete-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            const msgKey = e.target.getAttribute('data-key');
+            if (confirm('このメッセージを取り消しますか？')) {
+              deleteMessage(msgKey);
+            }
+          });
+        });
+
         chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      // メッセージ削除処理
+      function deleteMessage(key) {
+        const itemRef = ref(db, `messages/${key}`);
+        remove(itemRef);
       }
 
       // 送信処理
