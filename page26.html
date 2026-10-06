@@ -287,54 +287,44 @@
       opacity: 1;
     }
 
-    /* 添付ファイル表示スタイル */
-    .file-attachment {
-      margin-top: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .file-attachment img {
+    /* メディア・ファイル関連スタイル */
+    .chat-image {
       max-width: 100%;
-      max-height: 200px;
+      max-height: 250px;
       border-radius: 8px;
-      object-fit: cover;
+      margin-bottom: 6px;
       display: block;
+      object-fit: cover;
+    }
+    .file-attachment {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+    .file-name {
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 160px;
     }
     .download-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
+      display: inline-block;
+      margin-top: 4px;
       color: #00bcd4;
+      font-size: 0.8rem;
       text-decoration: none;
-      background-color: rgba(0, 0, 0, 0.2);
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(0, 188, 212, 0.3);
-      word-break: break-all;
+      font-weight: bold;
+    }
+    .message.sent .download-link {
+      color: #80deea;
     }
     .download-link:hover {
-      background-color: rgba(0, 188, 212, 0.1);
-    }
-
-    /* 添付プレビューエリア */
-    #file-preview-area {
-      display: none;
-      padding: 6px 16px;
-      background-color: #1e1e1e;
-      border-top: 1px solid #2d2d2d;
-      font-size: 0.8rem;
-      color: #00bcd4;
-      align-items: center;
-      justify-content: space-between;
-    }
-    #file-preview-area .cancel-file-btn {
-      background: none;
-      border: none;
-      color: #ff5252;
-      cursor: pointer;
-      font-size: 0.9rem;
+      text-decoration: underline;
     }
 
     /* 入力エリア */
@@ -585,17 +575,9 @@
 
     <main id="chat-box"></main>
 
-    <!-- ファイル選択プレビューエリア -->
-    <div id="file-preview-area">
-      <span id="file-preview-name">📎 ファイルが選択されました</span>
-      <button class="cancel-file-btn" id="cancel-file-btn">✕ 削除</button>
-    </div>
-
     <footer>
-      <!-- 隠しファイルインプット -->
+      <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
       <input type="file" id="file-input" style="display: none;">
-      <label for="file-input" class="icon-btn-style" title="ファイルを選択">📎</label>
-
       <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
       <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
       <button id="send-btn" class="send-btn-style">送信</button>
@@ -626,7 +608,7 @@
       <div class="modal-footer">
         <button id="modal-clear-btn" class="secondary-btn">クリア</button>
         <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
-        <button id="modal-submit-btn" class="send-btn-style">決定</button>
+        <button id="modal-submit-btn" class="send-btn-style">送信</button>
       </div>
     </div>
   </div>
@@ -670,11 +652,7 @@
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const userSelect = document.getElementById('user-select');
-
     const fileInput = document.getElementById('file-input');
-    const filePreviewArea = document.getElementById('file-preview-area');
-    const filePreviewName = document.getElementById('file-preview-name');
-    const cancelFileBtn = document.getElementById('cancel-file-btn');
 
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebar = document.getElementById('sidebar');
@@ -692,7 +670,6 @@
     const kaimojiPalette = document.getElementById('kaimoji-palette');
 
     let cachedMessages = {};
-    let attachedFile = null;
 
     // 絵文字・顔文字リスト
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
@@ -750,46 +727,21 @@
       modalTextInput.focus();
     });
 
-    // モーダルの「決定」ボタンを押したときの処理（決定時にそのまま即送信）
+    // モーダルの「決定」ボタンを押したときの処理（送信＋クローズ）
     modalSubmitBtn.addEventListener('click', () => {
-      const message = modalTextInput.value.trim();
-      if (!message && !attachedFile) return;
-
-      messageInput.value = message;
-      sendMessage();
-      closeModal();
-    });
-
-    // ファイル選択ハンドラ
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      // 10MB容量上限チェック
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズが大きすぎます (10MB以下を選択してください)');
-        fileInput.value = '';
-        return;
+      const text = modalTextInput.value.trim();
+      if (text) {
+        const sender = userSelect.value;
+        push(messagesRef, {
+          sender: sender,
+          text: text,
+          timestamp: Date.now()
+        });
+        modalTextInput.value = '';
+        messageInput.value = '';
+        messageInput.style.height = '40px';
       }
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        attachedFile = {
-          name: file.name,
-          type: file.type,
-          data: evt.target.result
-        };
-        filePreviewName.textContent = `📎 ${file.name}`;
-        filePreviewArea.style.display = 'flex';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // 添付ファイルの解除
-    cancelFileBtn.addEventListener('click', () => {
-      attachedFile = null;
-      fileInput.value = '';
-      filePreviewArea.style.display = 'none';
+      closeModal();
     });
 
     // ハンバーガーメニューの開閉機能
@@ -835,28 +787,51 @@
     // メッセージ送信処理
     function sendMessage() {
       const text = messageInput.value.trim();
-      if (!text && !attachedFile) return;
+      if (!text) return;
 
       const sender = userSelect.value;
-      const payload = {
+      push(messagesRef, {
         sender: sender,
         text: text,
         timestamp: Date.now()
-      };
+      });
 
-      if (attachedFile) {
-        payload.file = attachedFile;
-      }
-
-      push(messagesRef, payload);
-
-      // クリア
       messageInput.value = '';
       messageInput.style.height = '40px';
-      attachedFile = null;
-      fileInput.value = '';
-      filePreviewArea.style.display = 'none';
     }
+
+    // ファイル送信処理 (Base64変換)
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // 10MB制限
+      if (file.size > 10 * 1024 * 1024) {
+        alert('ファイルサイズは10MB以下にしてください。');
+        fileInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const fileData = event.target.result;
+        const sender = userSelect.value;
+        const isImage = file.type.startsWith('image/');
+
+        push(messagesRef, {
+          sender: sender,
+          text: '',
+          fileData: fileData,
+          fileName: file.name,
+          fileType: file.type,
+          isImage: isImage,
+          timestamp: Date.now()
+        });
+
+        fileInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
 
     // メッセージの削除
     function deleteMessage(key) {
@@ -884,35 +859,35 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-        
+
+        // 画像・ファイルが存在する場合の表示処理
+        if (msg.fileData) {
+          if (msg.isImage) {
+            const img = document.createElement('img');
+            img.src = msg.fileData;
+            img.className = 'chat-image';
+            img.alt = msg.fileName || '画像';
+            bubble.appendChild(img);
+          } else {
+            const fileAttachment = document.createElement('div');
+            fileAttachment.className = 'file-attachment';
+            fileAttachment.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
+            bubble.appendChild(fileAttachment);
+          }
+
+          const dlLink = document.createElement('a');
+          dlLink.href = msg.fileData;
+          dlLink.download = msg.fileName || 'download';
+          dlLink.className = 'download-link';
+          dlLink.textContent = '⬇ ダウンロード';
+          bubble.appendChild(dlLink);
+        }
+
+        // テキストが存在する場合
         if (msg.text) {
           const textNode = document.createElement('div');
           textNode.textContent = msg.text;
           bubble.appendChild(textNode);
-        }
-
-        // 添付ファイルの表示とダウンロード対応
-        if (msg.file) {
-          const fileDiv = document.createElement('div');
-          fileDiv.className = 'file-attachment';
-
-          // 画像の場合プレビューを表示
-          if (msg.file.type && msg.file.type.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = msg.file.data;
-            img.alt = msg.file.name;
-            fileDiv.appendChild(img);
-          }
-
-          // ダウンロードリンク
-          const dlLink = document.createElement('a');
-          dlLink.href = msg.file.data;
-          dlLink.download = msg.file.name;
-          dlLink.className = 'download-link';
-          dlLink.innerHTML = `💾 ${msg.file.name} を保存`;
-          fileDiv.appendChild(dlLink);
-
-          bubble.appendChild(fileDiv);
         }
 
         const metaInfo = document.createElement('div');
