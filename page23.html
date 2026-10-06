@@ -338,28 +338,29 @@
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-icons text-blue-500"></i> プリセットアイコン
                             </h3>
+                            <!-- 外部CORSエラーを防ぐため、安全なインラインSVGデータURIを使用 -->
                             <div class="grid grid-cols-4 sm:grid-cols-6 gap-3" id="presetLogoContainer">
                                 <button data-logo="" class="preset-logo-btn active p-3 rounded-xl border border-blue-500 bg-blue-50 dark:bg-blue-900/30 flex flex-col items-center gap-1">
                                     <i class="fa-solid fa-ban text-slate-400 text-xl"></i>
                                     <span class="text-[10px]">なし</span>
                                 </button>
-                                <button data-logo="https://cdn-icons-png.flaticon.com/512/733/733579.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000000'><path d='M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H173l100.2 132.5L389.2 48z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
                                     <i class="fa-brands fa-x-twitter text-xl"></i>
                                     <span class="text-[10px]">X (Twitter)</span>
                                 </button>
-                                <button data-logo="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512' fill='%23E4405F'><path d='M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
                                     <i class="fa-brands fa-instagram text-pink-500 text-xl"></i>
                                     <span class="text-[10px]">Instagram</span>
                                 </button>
-                                <button data-logo="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512' fill='%23FF0000'><path d='M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.206-142.739 81.200z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
                                     <i class="fa-brands fa-youtube text-red-500 text-xl"></i>
                                     <span class="text-[10px]">YouTube</span>
                                 </button>
-                                <button data-logo="https://cdn-icons-png.flaticon.com/512/124/124034.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512' fill='%2300B900'><path d='M272.1 215.5H252v-17c0-4.4-3.6-8-8-8h-16c-4.4 0-8 3.6-8 8v17h-20.1c-4.4 0-8 3.6-8 8v16c0 4.4 3.6 8 8 8H212v57c0 4.4 3.6 8 8 8h16c0 4.4 8-3.6 8-8v-57h20.1c4.4 0 8-3.6 8-8v-16c0-4.4-3.6-8-8-8zM224 32C100.3 32 0 120.5 0 229.7c0 98.2 79.8 178.5 186.2 195.1 7.2 1.6 17 4.8 19.5 11 2.2 5.6 1.4 14.4.7 20.1-2.2 18.2-10 70.9-10.4 74.3-.6 4.7 2.2 9.3 6.8 9.3 3.6 0 7.8-2 11.2-4.5 17.5-12.8 98.4-71.1 138-106.1 63.8-56.3 96-121.2 96-198.3C448 120.5 347.7 32 224 32z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
                                     <i class="fa-brands fa-line text-green-500 text-xl"></i>
                                     <span class="text-[10px]">LINE</span>
                                 </button>
-                                <button data-logo="https://cdn-icons-png.flaticon.com/512/281/281769.png" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
+                                <button data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23EA4335'><path d='M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4l217.6 163.2c11.4 8.5 27 8.5 38.4 0l217.6-163.2c12.1-9.1 19.2-23.3 19.2-38.4 0-26.5-21.5-48-48-48H48zM0 176v208c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64V176L294.4 338.7c-22.8 17.1-54 17.1-76.8 0L0 176z'/></svg>" class="preset-logo-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex flex-col items-center gap-1">
                                     <i class="fa-solid fa-envelope text-red-400 text-xl"></i>
                                     <span class="text-[10px]">Gmail</span>
                                 </button>
@@ -481,7 +482,7 @@
     <script>
         // State Management
         const state = {
-            type: 'url', // url, wifi, vcard, email, phone
+            type: 'url',
             data: 'https://example.com',
             dotsColor: '#000000',
             bgColor: '#ffffff',
@@ -489,8 +490,8 @@
             useGradient: false,
             gradientEndColor: '#3b82f6',
             gradientType: 'linear',
-            dotsStyle: 'square', // square, dots, rounded, extra-rounded, classy, classy-rounded
-            cornerStyle: 'square', // square, dot, extra-rounded
+            dotsStyle: 'square',
+            cornerStyle: 'square',
             errorLevel: 'M',
             logoUrl: '',
             logoSize: 0.4,
@@ -499,7 +500,7 @@
 
         let qrCodeStyling = null;
 
-        // 日本語（UTF-8）などのマルチバイト文字をQRコード用に安全に変換するヘルパー
+        // 日本語（UTF-8）を安全にエンコード
         function encodeUtf8(str) {
             if (!str) return '';
             try {
@@ -510,6 +511,11 @@
         }
 
         function initQRCode() {
+            if (typeof QRCodeStyling === 'undefined') {
+                setTimeout(initQRCode, 100);
+                return;
+            }
+
             qrCodeStyling = new QRCodeStyling({
                 width: 280,
                 height: 280,
@@ -555,7 +561,6 @@
         function updateQRCode() {
             if (!qrCodeStyling) return;
             
-            // Build text payload based on selected type
             buildDataPayload();
 
             qrCodeStyling.update({
@@ -619,7 +624,6 @@
                     const email = document.getElementById('vcardEmail').value.trim();
                     const url = document.getElementById('vcardUrl').value.trim();
 
-                    // vCard v3.0 標準フォーマットに準拠（空行・不正タグを除去しCRLF改行を使用）
                     const vcardLines = ['BEGIN:VCARD', 'VERSION:3.0'];
                     if (name) {
                         const parts = name.split(/\s+/);
@@ -855,53 +859,57 @@
         });
 
         // Export & Download Function
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            const size = parseInt(document.getElementById('exportSize').value, 10);
-            const format = document.getElementById('exportFormat').value;
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            try {
+                const size = parseInt(document.getElementById('exportSize').value, 10);
+                const format = document.getElementById('exportFormat').value;
 
-            // Create temporary high-res QR instance for export
-            const downloadQr = new QRCodeStyling({
-                width: size,
-                height: size,
-                type: 'canvas',
-                data: encodeUtf8(state.data),
-                image: state.logoUrl,
-                dotsOptions: {
-                    color: state.dotsColor,
-                    type: state.dotsStyle,
-                    gradient: state.useGradient ? {
-                        type: state.gradientType,
-                        colorStops: [
-                            { offset: 0, color: state.dotsColor },
-                            { offset: 1, color: state.gradientEndColor }
-                        ]
-                    } : null
-                },
-                backgroundOptions: {
-                    color: state.isBgTransparent ? 'transparent' : state.bgColor,
-                },
-                imageOptions: {
-                    imageSize: state.logoSize,
-                    margin: state.logoMargin
-                },
-                cornersSquareOptions: {
-                    type: state.cornerStyle,
-                    color: state.dotsColor
-                },
-                cornersDotOptions: {
-                    color: state.dotsColor
-                },
-                qrOptions: {
-                    errorCorrectionLevel: state.errorLevel
-                }
-            });
+                const downloadQr = new QRCodeStyling({
+                    width: size,
+                    height: size,
+                    type: 'canvas',
+                    data: encodeUtf8(state.data),
+                    image: state.logoUrl,
+                    dotsOptions: {
+                        color: state.dotsColor,
+                        type: state.dotsStyle,
+                        gradient: state.useGradient ? {
+                            type: state.gradientType,
+                            colorStops: [
+                                { offset: 0, color: state.dotsColor },
+                                { offset: 1, color: state.gradientEndColor }
+                            ]
+                        } : null
+                    },
+                    backgroundOptions: {
+                        color: state.isBgTransparent ? 'transparent' : state.bgColor,
+                    },
+                    imageOptions: {
+                        crossOrigin: 'anonymous',
+                        imageSize: state.logoSize,
+                        margin: state.logoMargin
+                    },
+                    cornersSquareOptions: {
+                        type: state.cornerStyle,
+                        color: state.dotsColor
+                    },
+                    cornersDotOptions: {
+                        color: state.dotsColor
+                    },
+                    qrOptions: {
+                        errorCorrectionLevel: state.errorLevel
+                    }
+                });
 
-            downloadQr.download({
-                name: 'qrcode_' + Date.now(),
-                extension: format
-            });
+                await downloadQr.download({
+                    name: 'qrcode_' + Date.now(),
+                    extension: format
+                });
 
-            showToast('ダウンロードを開始しました！');
+                showToast('ダウンロードを開始しました！');
+            } catch (err) {
+                showToast('ダウンロードに失敗しました', true);
+            }
         });
 
         // Copy QR Image to Clipboard
@@ -923,11 +931,11 @@
                         await navigator.clipboard.write([item]);
                         showToast('クリップボードに画像をコピーしました！');
                     } catch (err) {
-                        showToast('クリップボードの操作が許可されていません', true);
+                        showToast('クリップボードへのコピーが許可されていません', true);
                     }
-                });
+                }, 'image/png');
             } catch (err) {
-                showToast('コピーに失敗しました', true);
+                showToast('コピー処理に失敗しました', true);
             }
         });
 
@@ -952,51 +960,58 @@
 
         // History Management
         function saveToHistory() {
-            let history = JSON.parse(localStorage.getItem('qr_history') || '[]');
-            
-            const formInputs = {
-                inputUrlText: document.getElementById('inputUrlText').value,
-                wifiSsid: document.getElementById('wifiSsid').value,
-                wifiPassword: document.getElementById('wifiPassword').value,
-                wifiType: document.getElementById('wifiType').value,
-                wifiHidden: document.getElementById('wifiHidden').checked,
-                vcardName: document.getElementById('vcardName').value,
-                vcardOrg: document.getElementById('vcardOrg').value,
-                vcardTitle: document.getElementById('vcardTitle').value,
-                vcardTel: document.getElementById('vcardTel').value,
-                vcardEmail: document.getElementById('vcardEmail').value,
-                vcardUrl: document.getElementById('vcardUrl').value,
-                emailTo: document.getElementById('emailTo').value,
-                emailSubject: document.getElementById('emailSubject').value,
-                emailBody: document.getElementById('emailBody').value,
-                phoneNum: document.getElementById('phoneNum').value,
-                isSms: document.getElementById('isSms').checked,
-                smsBody: document.getElementById('smsBody').value
-            };
+            try {
+                let history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+                
+                const formInputs = {
+                    inputUrlText: document.getElementById('inputUrlText').value,
+                    wifiSsid: document.getElementById('wifiSsid').value,
+                    wifiPassword: document.getElementById('wifiPassword').value,
+                    wifiType: document.getElementById('wifiType').value,
+                    wifiHidden: document.getElementById('wifiHidden').checked,
+                    vcardName: document.getElementById('vcardName').value,
+                    vcardOrg: document.getElementById('vcardOrg').value,
+                    vcardTitle: document.getElementById('vcardTitle').value,
+                    vcardTel: document.getElementById('vcardTel').value,
+                    vcardEmail: document.getElementById('vcardEmail').value,
+                    vcardUrl: document.getElementById('vcardUrl').value,
+                    emailTo: document.getElementById('emailTo').value,
+                    emailSubject: document.getElementById('emailSubject').value,
+                    emailBody: document.getElementById('emailBody').value,
+                    phoneNum: document.getElementById('phoneNum').value,
+                    isSms: document.getElementById('isSms').checked,
+                    smsBody: document.getElementById('smsBody').value
+                };
 
-            const newItem = {
-                id: Date.now(),
-                type: state.type,
-                data: state.data,
-                formInputs: formInputs,
-                date: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-            };
-            
-            // Avoid exact duplicates
-            history = history.filter(item => item.data !== newItem.data);
-            history.unshift(newItem);
+                const newItem = {
+                    id: Date.now(),
+                    type: state.type,
+                    data: state.data,
+                    formInputs: formInputs,
+                    date: new Date().toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                };
+                
+                history = history.filter(item => item.data !== newItem.data);
+                history.unshift(newItem);
 
-            // Limit to 10 items
-            if (history.length > 10) history.pop();
+                if (history.length > 10) history.pop();
 
-            localStorage.setItem('qr_history', JSON.stringify(history));
-            renderHistory();
-            showToast('履歴に保存しました');
+                localStorage.setItem('qr_history', JSON.stringify(history));
+                renderHistory();
+                showToast('履歴に保存しました');
+            } catch (err) {
+                showToast('履歴の保存に失敗しました', true);
+            }
         }
 
         function renderHistory() {
             const historyList = document.getElementById('historyList');
-            const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            } catch(e) {
+                history = [];
+            }
 
             if (history.length === 0) {
                 historyList.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">保存された履歴はありません</p>`;
@@ -1022,15 +1037,18 @@
         }
 
         window.loadFromHistory = function(id) {
-            const history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            let history = [];
+            try {
+                history = JSON.parse(localStorage.getItem('qr_history') || '[]');
+            } catch(e) {
+                return;
+            }
             const item = history.find(i => i.id == id);
             if (!item) return;
 
-            // Switch active type tab
             const btn = document.querySelector(`.type-btn[data-type="${item.type}"]`);
             if (btn) btn.click();
 
-            // Restore form input fields
             if (item.formInputs) {
                 Object.keys(item.formInputs).forEach(key => {
                     const el = document.getElementById(key);
@@ -1067,7 +1085,6 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
 
-        // Initialize theme based on preference
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -1075,10 +1092,10 @@
         }
 
         // Window Onload Initialization
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', () => {
             initQRCode();
             renderHistory();
-        };
+        });
     </script>
 </body>
 </html>
