@@ -279,6 +279,7 @@
       font-size: 0.65rem;
       color: #666;
     }
+    /* 小さい文字ボタン（削除・ダウンロード共通） */
     .delete-btn {
       background: none;
       border: none;
@@ -307,7 +308,7 @@
       max-height: 180px;
       display: block;
       user-select: none;
-      pointer-events: none; /* 長押し保存等の発火を抑止 */
+      pointer-events: none;
     }
     .chat-link {
       color: #80deea;
@@ -332,20 +333,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       max-width: 160px;
-    }
-    .download-link {
-      display: inline-block;
-      margin-top: 4px;
-      color: #00bcd4;
-      font-size: 0.8rem;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    .message.sent .download-link {
-      color: #80deea;
-    }
-    .download-link:hover {
-      text-decoration: underline;
     }
 
     /* 入力エリア */
@@ -902,7 +889,7 @@
   <div id="history-modal-overlay" class="modal-overlay">
     <div class="modal-container">
       <div class="modal-header">
-        <div class="modal-title">スタンプ作成履歴</div>
+        <div class="modal-title">スタンプ作成履歴 (家族共有)</div>
         <button id="history-modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body">
@@ -942,6 +929,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
+    const stampHistoryRef = ref(db, 'stamp_history'); // 共有スタンプ履歴用ノード
 
     // DOM要素
     const lockScreen = document.getElementById('lock-screen');
@@ -1008,6 +996,7 @@
     const toolClear = document.getElementById('tool-clear');
 
     let cachedMessages = {};
+    let cachedStampHistory = {};
     let isDrawing = false;
     let currentTool = 'pen'; // 'pen', 'brush', 'fill', 'eraser'
     let activeLayerId = 3; // 3 or 2
@@ -1290,7 +1279,6 @@
         ctx.strokeStyle = stampColorInput.value;
         ctx.shadowBlur = 0;
       } else if (currentTool === 'brush') {
-        // 水彩・エアブラシ風のソフトエフェクト
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = stampColorInput.value;
         ctx.shadowColor = stampColorInput.value;
@@ -1308,7 +1296,7 @@
       if (isDrawing) {
         const { ctx } = getActiveLayer();
         ctx.closePath();
-        ctx.shadowBlur = 0; // 影の初期化
+        ctx.shadowBlur = 0;
         isDrawing = false;
         updateLayerPreviews();
       }
@@ -1336,6 +1324,7 @@
       const stampDataUrl = exportCanvas.toDataURL('image/png');
 
       const sender = userSelect.value;
+      // チャットに送信
       push(messagesRef, {
         sender: sender,
         text: '',
@@ -1345,7 +1334,8 @@
         timestamp: Date.now()
       });
 
-      saveStampToHistory(stampDataUrl);
+      // Firebaseのスタンプ履歴ノードにも保存
+      saveStampToFirebaseHistory(stampDataUrl);
 
       ctx2.clearRect(0, 0, layer2.width, layer2.height);
       ctx3.clearRect(0, 0, layer3.width, layer3.height);
@@ -1354,28 +1344,35 @@
       stampModalOverlay.classList.remove('active');
     });
 
-    /* --- スタンプ履歴処理 --- */
-    function getStampHistory() {
-      return JSON.parse(localStorage.getItem('family_chat_stamp_history') || '[]');
+    /* --- スタンプ履歴処理 (Firebase連動) --- */
+    function saveStampToFirebaseHistory(dataUrl) {
+      push(stampHistoryRef, {
+        dataUrl: dataUrl,
+        creator: userSelect.value,
+        timestamp: Date.now()
+      });
     }
 
-    function saveStampToHistory(dataUrl) {
-      let history = getStampHistory();
-      history.unshift(dataUrl);
-      if (history.length > 20) history = history.slice(0, 20);
-      localStorage.setItem('family_chat_stamp_history', JSON.stringify(history));
-    }
+    // Firebaseのスタンプ履歴データを監視
+    onValue(stampHistoryRef, (snapshot) => {
+      cachedStampHistory = snapshot.val() || {};
+      if (historyModalOverlay.classList.contains('active')) {
+        renderStampHistory();
+      }
+    });
 
     function renderStampHistory() {
       historyGrid.innerHTML = '';
-      const history = getStampHistory();
+      const keys = Object.keys(cachedStampHistory);
 
-      if (history.length === 0) {
+      if (keys.length === 0) {
         historyGrid.innerHTML = '<div style="color:#aaa; font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
         return;
       }
 
-      history.forEach((dataUrl, index) => {
+      // 降順（新しい順）で表示
+      keys.reverse().forEach((key) => {
+        const item = cachedStampHistory[key];
         const card = document.createElement('div');
         card.className = 'history-card';
 
@@ -1383,7 +1380,7 @@
         imgWrapper.className = 'history-img-wrapper';
 
         const img = document.createElement('img');
-        img.src = dataUrl;
+        img.src = item.dataUrl;
         img.className = 'history-img';
         imgWrapper.appendChild(img);
 
@@ -1399,7 +1396,7 @@
           push(messagesRef, {
             sender: sender,
             text: '',
-            fileData: dataUrl,
+            fileData: item.dataUrl,
             fileName: `stamp_${Date.now()}.png`,
             isStamp: true,
             timestamp: Date.now()
@@ -1413,17 +1410,19 @@
         downloadBtn.innerHTML = '⬇ ダウンロード';
         downloadBtn.addEventListener('click', () => {
           const a = document.createElement('a');
-          a.href = dataUrl;
+          a.href = item.dataUrl;
           a.download = `stamp_${Date.now()}.png`;
           a.click();
         });
 
-        // 削除
+        // 削除（Firebaseから削除）
         const delBtn = document.createElement('button');
         delBtn.className = 'history-action-btn del';
         delBtn.innerHTML = '🗑 削除';
         delBtn.addEventListener('click', () => {
-          deleteStampHistory(index);
+          if (confirm('共有スタンプ履歴からこのスタンプを削除しますか？')) {
+            remove(ref(db, `stamp_history/${key}`));
+          }
         });
 
         actions.appendChild(sendBtn);
@@ -1434,13 +1433,6 @@
         card.appendChild(actions);
         historyGrid.appendChild(card);
       });
-    }
-
-    function deleteStampHistory(index) {
-      let history = getStampHistory();
-      history.splice(index, 1);
-      localStorage.setItem('family_chat_stamp_history', JSON.stringify(history));
-      renderStampHistory();
     }
 
     goToHistoryBtn.addEventListener('click', () => {
@@ -1610,25 +1602,11 @@
             img.className = 'chat-image';
             img.alt = msg.fileName || '画像';
             bubble.appendChild(img);
-
-            const dlLink = document.createElement('a');
-            dlLink.href = msg.fileData;
-            dlLink.download = msg.fileName || 'download';
-            dlLink.className = 'download-link';
-            dlLink.textContent = '⬇ ダウンロード';
-            bubble.appendChild(dlLink);
           } else {
             const fileAttachment = document.createElement('div');
             fileAttachment.className = 'file-attachment';
             fileAttachment.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
             bubble.appendChild(fileAttachment);
-
-            const dlLink = document.createElement('a');
-            dlLink.href = msg.fileData;
-            dlLink.download = msg.fileName || 'download';
-            dlLink.className = 'download-link';
-            dlLink.textContent = '⬇ ダウンロード';
-            bubble.appendChild(dlLink);
           }
         }
 
@@ -1650,6 +1628,21 @@
 
         metaInfo.appendChild(timestamp);
 
+        // ファイルデータ（スタンプ・画像・添付ファイル）がある場合、小文字のダウンロードボタンを表示
+        if (msg.fileData) {
+          const downloadBtn = document.createElement('button');
+          downloadBtn.className = 'delete-btn';
+          downloadBtn.textContent = 'ダウンロード';
+          downloadBtn.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = msg.fileData;
+            a.download = msg.fileName || `download_${Date.now()}.${msg.isStamp ? 'png' : 'bin'}`;
+            a.click();
+          });
+          metaInfo.appendChild(downloadBtn);
+        }
+
+        // 送信者のメッセージのみ「削除」ボタンを表示
         if (isSent) {
           const deleteBtn = document.createElement('button');
           deleteBtn.className = 'delete-btn';
