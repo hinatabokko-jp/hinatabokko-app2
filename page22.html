@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirChat Group (PeerJS + Firebase)</title>
-    <!-- QRコード生成ライブラリ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- PeerJS (WebRTC P2P通信ライブラリ) -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>AirChat Group</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -76,11 +72,6 @@
             font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 12px;
-            background-color: #333;
-            color: var(--text-muted);
-        }
-
-        .status-badge.online {
             background-color: #1b5e20;
             color: #81c784;
         }
@@ -103,48 +94,6 @@
 
         .btn-action:hover {
             background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-exit {
-            border-color: var(--danger-color);
-            color: var(--danger-color);
-            display: none;
-        }
-
-        .btn-exit:hover {
-            background-color: var(--danger-color);
-            color: #fff;
-        }
-
-        .members-bar {
-            display: none;
-            background-color: #161616;
-            border-bottom: 1px solid var(--border-color);
-            padding: 8px 16px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-
-        .members-bar.active {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .member-tag {
-            background: #2a2a2a;
-            padding: 2px 8px;
-            border-radius: 10px;
-            color: var(--text-color);
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .member-tag.me {
-            border: 1px solid var(--primary-color);
         }
 
         .view-section {
@@ -190,15 +139,6 @@
 
         input[type="text"]:focus {
             border-color: var(--primary-color);
-        }
-
-        .id-input-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .id-input-group input {
-            flex: 1;
         }
 
         .btn-secondary {
@@ -260,12 +200,6 @@
             align-items: flex-start;
         }
 
-        .message-container.system {
-            align-self: center;
-            align-items: center;
-            max-width: 100%;
-        }
-
         .sender-name-outside {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -281,15 +215,6 @@
             word-break: break-word;
             white-space: pre-wrap;
             width: fit-content;
-        }
-
-        .message.system {
-            background-color: transparent;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            text-align: center;
-            margin: 4px 0;
-            padding: 0;
         }
 
         .message.my {
@@ -339,7 +264,7 @@
             color: var(--text-color);
         }
 
-        /* メディア・ファイル関連スタイル */
+        /* メディア・ファイル関連 */
         .chat-image {
             max-width: 100%;
             max-height: 250px;
@@ -485,57 +410,6 @@
 
         .modal-close-btn:hover {
             color: var(--text-color);
-        }
-
-        #qrcode {
-            background: #fff;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 8px auto;
-            width: fit-content;
-        }
-
-        .room-id-box {
-            background-color: var(--bg-color);
-            border: 1px dashed var(--border-color);
-            padding: 10px;
-            border-radius: 8px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .room-id-text {
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: var(--primary-hover);
-            font-weight: bold;
-            word-break: break-all;
-        }
-
-        .member-list-container {
-            width: 100%;
-            max-height: 220px;
-            overflow-y: auto;
-            text-align: left;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px;
-        }
-
-        .member-item {
-            padding: 8px;
-            border-bottom: 1px solid #282828;
-            font-size: 0.85rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .member-item:last-child {
-            border-bottom: none;
         }
 
         /* 改行・スタンプモーダル専用スタイル */
@@ -846,40 +720,25 @@
     <header>
         <div class="header-title">
             AirChat Group
-            <span id="statusBadge" class="status-badge">未接続</span>
+            <span id="statusBadge" class="status-badge">グループチャット</span>
         </div>
         <div class="header-actions">
-            <button id="membersBtn" class="btn-action" style="display:none;" onclick="showMembersModal()">👥 参加者</button>
-            <button id="qrBtn" class="btn-action" style="display:none;" onclick="showQRModal()">招待</button>
-            <button id="exitBtn" class="btn-action btn-exit" onclick="confirmExit()">退室</button>
+            <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="changeUser()">名前変更</button>
         </div>
     </header>
-
-    <div id="membersBar" class="members-bar">
-        <span>参加中:</span>
-        <div id="membersListInline" style="display: flex; gap: 6px; overflow-x: auto;"></div>
-    </div>
 
     <!-- 入室画面 -->
     <div id="joinView" class="view-section active">
         <div class="join-container">
-            <h2 style="text-align: center; margin-bottom: 4px;">グループに参加</h2>
-            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">招待コードを使ってリアルタイム接続します</p>
+            <h2 style="text-align: center; margin-bottom: 4px;">AirChat Group</h2>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">表示名を入力してグループに入ります</p>
             
             <div class="form-group">
                 <label for="usernameInput">表示名</label>
-                <input type="text" id="usernameInput" placeholder="例: ユーザーA" maxlength="15">
-            </div>
-            
-            <div class="form-group">
-                <label for="targetPeerIdInput">招待コード（参加先のPeer ID）</label>
-                <div class="id-input-group">
-                    <input type="text" id="targetPeerIdInput" placeholder="空欄のままで新規ルーム作成">
-                </div>
-                <small style="color:var(--text-muted); font-size:0.75rem; margin-top:2px;">※既存のグループに参加する場合のみ、招待コードを入力してください。</small>
+                <input type="text" id="usernameInput" placeholder="例: おかあさん" maxlength="15">
             </div>
 
-            <button class="btn-primary" onclick="startSession()">チャットを開始する</button>
+            <button class="btn-primary" onclick="startSession()">チャットに参加する</button>
         </div>
     </div>
 
@@ -892,42 +751,6 @@
             <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
             <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
             <button class="btn-primary" style="padding: 0 16px; margin-top:0; height: 40px; border-radius: 20px; flex-shrink: 0;" onclick="sendMessage()">送信</button>
-        </div>
-    </div>
-
-    <!-- 招待用モーダル -->
-    <div id="qrModal" class="modal" onclick="closeModal('qrModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title">招待情報</div>
-                <button class="modal-close-btn" onclick="closeModal('qrModal')">✕</button>
-            </div>
-            <p style="font-size:0.8rem; color: var(--text-muted);">あなたの招待コードを共有してメンバーを招待できます</p>
-            
-            <div id="qrcode"></div>
-
-            <div class="room-id-box">
-                <span id="modalRoomId" class="room-id-text">------</span>
-                <button class="btn-secondary" style="padding: 4px 8px;" onclick="copyMyPeerId()">コピー</button>
-            </div>
-
-            <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('qrModal')">閉じる</button>
-        </div>
-    </div>
-
-    <!-- メンバー管理モーダル -->
-    <div id="membersModal" class="modal" onclick="closeModal('membersModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title">参加メンバー一覧</div>
-                <button class="modal-close-btn" onclick="closeModal('membersModal')">✕</button>
-            </div>
-            <p style="font-size:0.8rem; color: var(--text-muted);">現在接続中のメンバーリストです</p>
-            
-            <div class="member-list-container" id="modalMemberList"></div>
-
-            <button class="btn-secondary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="showQRModal(); closeModal('membersModal');">招待コードを表示する</button>
-            <button class="btn-primary" style="padding: 8px 24px; width: 100%; margin-top:4px;" onclick="closeModal('membersModal')">閉じる</button>
         </div>
     </div>
 
@@ -1067,25 +890,17 @@
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
 
-    let peer = null;
-    let myPeerId = "";
     let currentUsername = "";
-    
-    const connections = {};
-    const membersMap = {};
     let cachedMessages = {};
     let cachedStampHistory = {};
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
-    const exitBtn = document.getElementById('exitBtn');
-    const qrBtn = document.getElementById('qrBtn');
-    const membersBtn = document.getElementById('membersBtn');
-    const membersBar = document.getElementById('membersBar');
-    const statusBadge = document.getElementById('statusBadge');
+    const changeUserBtn = document.getElementById('changeUserBtn');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const fileInput = document.getElementById('file-input');
+    const usernameInput = document.getElementById('usernameInput');
 
     // モーダル要素
     const modalOpenBtn = document.getElementById('modal-open-btn');
@@ -1128,143 +943,36 @@
     let historyStack = [];
 
     window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const joinParam = urlParams.get('join');
-        if (joinParam) {
-            document.getElementById('targetPeerIdInput').value = joinParam;
-            showToast(`招待コードを自動読み込みしました`);
+        // ローカルストレージに保存されたユーザー名があれば自動でチャット画面を開く
+        const savedUser = localStorage.getItem('airchat_username');
+        if (savedUser) {
+            usernameInput.value = savedUser;
+            startSession();
         }
     });
 
-    // WebRTC PeerJS & セッション初期化
     window.startSession = function() {
-        const username = document.getElementById('usernameInput').value.trim();
-        const targetPeerId = document.getElementById('targetPeerIdInput').value.trim();
-
+        const username = usernameInput.value.trim();
         if (!username) {
             showToast('表示名を入力してください');
             return;
         }
 
         currentUsername = username;
-        showToast('接続中...');
+        localStorage.setItem('airchat_username', currentUsername);
 
-        peer = new Peer();
+        joinView.classList.remove('active');
+        chatView.classList.add('active');
+        changeUserBtn.style.display = 'block';
 
-        peer.on('open', (id) => {
-            myPeerId = id;
-            membersMap[myPeerId] = currentUsername;
-
-            joinView.classList.remove('active');
-            chatView.classList.add('active');
-            exitBtn.style.display = 'block';
-            qrBtn.style.display = 'block';
-            membersBtn.style.display = 'block';
-            membersBar.classList.add('active');
-            statusBadge.textContent = `Online`;
-            statusBadge.classList.add('online');
-
-            initFirebaseRealtime();
-
-            if (targetPeerId) {
-                connectToPeer(targetPeerId);
-            } else {
-                updateMembersDisplay();
-            }
-        });
-
-        peer.on('connection', (conn) => {
-            setupConnectionEvents(conn);
-        });
-
-        peer.on('error', (err) => {
-            console.error('PeerJS Error:', err);
-            showToast('接続エラーが発生しました');
-        });
+        initFirebaseRealtime();
     };
 
-    function connectToPeer(targetId) {
-        if (connections[targetId] || targetId === myPeerId) return;
-        const conn = peer.connect(targetId);
-        setupConnectionEvents(conn);
-    }
-
-    function setupConnectionEvents(conn) {
-        conn.on('open', () => {
-            connections[conn.peer] = conn;
-            conn.send({
-                type: 'handshake',
-                senderId: myPeerId,
-                senderName: currentUsername,
-                knownMembers: membersMap
-            });
-        });
-
-        conn.on('data', (data) => {
-            handleIncomingData(data, conn);
-        });
-
-        conn.on('close', () => {
-            handlePeerDisconnect(conn.peer);
-        });
-
-        conn.on('error', () => {
-            handlePeerDisconnect(conn.peer);
-        });
-    }
-
-    function handleIncomingData(data, conn) {
-        if (data.type === 'handshake') {
-            membersMap[data.senderId] = data.senderName;
-
-            if (data.knownMembers) {
-                Object.keys(data.knownMembers).forEach(peerId => {
-                    if (peerId !== myPeerId && !connections[peerId]) {
-                        membersMap[peerId] = data.knownMembers[peerId];
-                        connectToPeer(peerId);
-                    }
-                });
-            }
-            updateMembersDisplay();
-        }
-    }
-
-    function handlePeerDisconnect(disconnectedPeerId) {
-        if (membersMap[disconnectedPeerId]) {
-            delete membersMap[disconnectedPeerId];
-        }
-        delete connections[disconnectedPeerId];
-        updateMembersDisplay();
-    }
-
-    function updateMembersDisplay() {
-        const inlineContainer = document.getElementById('membersListInline');
-        const modalContainer = document.getElementById('modalMemberList');
-        
-        inlineContainer.innerHTML = '';
-        modalContainer.innerHTML = '';
-
-        Object.keys(membersMap).forEach(peerId => {
-            const name = membersMap[peerId];
-            const isMe = peerId === myPeerId;
-
-            const tag = document.createElement('span');
-            tag.className = `member-tag ${isMe ? 'me' : ''}`;
-            tag.textContent = `${name}${isMe ? ' (自分)' : ''}`;
-            inlineContainer.appendChild(tag);
-
-            const item = document.createElement('div');
-            item.className = 'member-item';
-            item.innerHTML = `
-                <div>
-                    <strong>${escapeHTML(name)}</strong> ${isMe ? '<small style="color:var(--primary-hover)">(自分)</small>' : ''}<br>
-                    <small style="color:var(--text-muted); font-size:0.7rem;">ID: ${peerId.substring(0, 8)}...</small>
-                </div>
-                <button class="btn-secondary" style="padding:2px 6px; font-size:0.75rem;" onclick="copyText('${peerId}')">IDコピー</button>
-            `;
-            modalContainer.appendChild(item);
-        });
-    }
+    window.changeUser = function() {
+        joinView.classList.add('active');
+        chatView.classList.remove('active');
+        changeUserBtn.style.display = 'none';
+    };
 
     // Firebase 連動 & 7日自動削除
     function initFirebaseRealtime() {
@@ -1304,7 +1012,6 @@
             const container = document.createElement('div');
             container.className = `message-container ${isMe ? 'my' : 'other'}`;
 
-            // ふきだしのすぐ上に表示されるユーザー名
             const senderDiv = document.createElement('div');
             senderDiv.className = 'sender-name-outside';
             senderDiv.textContent = msg.sender;
@@ -1870,76 +1577,12 @@
         openModal('stampModal');
     };
 
-    /* --- 退室・ユーティリティ --- */
-    window.confirmExit = function() {
-        if (confirm('チャットを終了して退室しますか？')) {
-            exitRoom();
-        }
-    };
-
-    function exitRoom() {
-        Object.values(connections).forEach(conn => {
-            if (conn.open) conn.close();
-        });
-
-        if (peer) {
-            peer.destroy();
-            peer = null;
-        }
-
-        myPeerId = "";
-        currentUsername = "";
-        Object.keys(connections).forEach(key => delete connections[key]);
-        Object.keys(membersMap).forEach(key => delete membersMap[key]);
-
-        chatMessages.innerHTML = "";
-        messageInput.value = "";
-        document.getElementById('targetPeerIdInput').value = "";
-        history.replaceState(null, '', window.location.pathname);
-
-        chatView.classList.remove('active');
-        joinView.classList.add('active');
-        exitBtn.style.display = 'none';
-        qrBtn.style.display = 'none';
-        membersBtn.style.display = 'none';
-        membersBar.classList.remove('active');
-        statusBadge.textContent = '未接続';
-        statusBadge.classList.remove('online');
-
-        showToast('退室しました');
-    }
-
-    window.showQRModal = function() {
-        const qrContainer = document.getElementById('qrcode');
-        qrContainer.innerHTML = "";
-        document.getElementById('modalRoomId').textContent = myPeerId;
-        const inviteUrl = `${window.location.origin}${window.location.pathname}?join=${encodeURIComponent(myPeerId)}`;
-        new QRCode(qrContainer, { text: inviteUrl, width: 160, height: 160 });
-        openModal('qrModal');
-    };
-
-    window.showMembersModal = function() {
-        openModal('membersModal');
-    };
-
     window.openModal = function(id) {
         document.getElementById(id).style.display = 'flex';
     };
 
     window.closeModal = function(id) {
         document.getElementById(id).style.display = 'none';
-    };
-
-    window.copyMyPeerId = function() {
-        copyText(myPeerId);
-    };
-
-    window.copyText = function(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast('コピーしました！');
-        }).catch(() => {
-            showToast('コピーに失敗しました');
-        });
     };
 
     function showToast(msg) {
