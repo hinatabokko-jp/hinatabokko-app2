@@ -33,16 +33,71 @@
             align-items: center;
             min-height: 100vh;
             min-height: 100dvh;
+            position: relative;
         }
 
+        /* パスワードロック画面 */
+        #lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            gap: 16px;
+            padding: 20px;
+        }
+        #lock-screen h2 {
+            font-size: 1.2rem;
+            color: var(--primary-hover);
+        }
+        #pass-input {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #fff;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            width: 220px;
+        }
+        #pass-input:focus {
+            border-color: var(--primary-color);
+        }
+        #pass-btn {
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        #pass-btn:hover {
+            background-color: var(--primary-hover);
+        }
+        #pass-error {
+            color: var(--danger-color);
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        /* アプリ本体のコンテナ */
         .app-container {
+            display: none;
             width: 100%;
             max-width: 600px;
             height: 100vh;
             height: 100dvh;
             max-height: 900px;
             background-color: var(--surface-color);
-            display: flex;
             flex-direction: column;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             position: relative;
@@ -716,7 +771,15 @@
 </head>
 <body>
 
-<div class="app-container">
+<!-- ロック画面 -->
+<div id="lock-screen">
+    <h2>パスワードを入力してください</h2>
+    <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
+    <button id="pass-btn">解除</button>
+    <div id="pass-error">パスワードが違います</div>
+</div>
+
+<div class="app-container" id="app-container">
     <header>
         <div class="header-title">
             AirChat Group
@@ -872,6 +935,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // 暗号パスワード
+    const SECRET_PASSWORD = "1234";
+
     // Firebase 設定
     const firebaseConfig = {
       apiKey: "AIzaSyA_RGt_8WrtGIe5g9koL9XAPuUOY6Adz9s",
@@ -889,6 +955,13 @@
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
+
+    // パスワード画面要素
+    const lockScreen = document.getElementById('lock-screen');
+    const passInput = document.getElementById('pass-input');
+    const passBtn = document.getElementById('pass-btn');
+    const passError = document.getElementById('pass-error');
+    const appContainer = document.getElementById('app-container');
 
     let currentUsername = "";
     let cachedMessages = {};
@@ -942,13 +1015,35 @@
     let activeLayerId = 3;
     let historyStack = [];
 
-    window.addEventListener('DOMContentLoaded', () => {
-        // ローカルストレージに保存されたユーザー名があれば自動でチャット画面を開く
+    // パスワード認証処理
+    function checkPassword() {
+        if (passInput.value === SECRET_PASSWORD) {
+            localStorage.setItem('airchat_group_auth', 'true');
+            unlockApp();
+        } else {
+            passError.style.display = 'block';
+        }
+    }
+
+    function unlockApp() {
+        lockScreen.style.display = 'none';
+        appContainer.style.display = 'flex';
+        
+        // 保存済みのユーザー名があれば自動セッション開始
         const savedUser = localStorage.getItem('airchat_username');
         if (savedUser) {
             usernameInput.value = savedUser;
             startSession();
         }
+    }
+
+    if (localStorage.getItem('airchat_group_auth') === 'true') {
+        unlockApp();
+    }
+
+    passBtn.addEventListener('click', checkPassword);
+    passInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkPassword();
     });
 
     window.startSession = function() {
@@ -1001,7 +1096,7 @@
         });
     }
 
-    // メッセージ描画 (ふきだしの外上にユーザー名を表示)
+    // メッセージ描画
     function renderMessages() {
         chatMessages.innerHTML = '';
 
