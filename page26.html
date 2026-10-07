@@ -668,6 +668,12 @@
     }
 
     /* スタンプ履歴グリッド & アイテムカード */
+    .history-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
     .history-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -893,6 +899,14 @@
         <button id="history-modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body">
+        <!-- 履歴画面上部のアップロードボタン領域 -->
+        <div class="history-header-bar">
+          <span style="font-size: 0.8rem; color: #aaa;">登録済みスタンプ一覧</span>
+          <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">
+            📁 PNGを追加
+          </label>
+          <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
+        </div>
         <div id="history-grid" class="history-grid"></div>
       </div>
       <div class="modal-footer">
@@ -929,7 +943,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
-    const stampHistoryRef = ref(db, 'stamp_history'); // 共有スタンプ履歴用ノード
+    const stampHistoryRef = ref(db, 'stamp_history');
 
     // DOM要素
     const lockScreen = document.getElementById('lock-screen');
@@ -979,6 +993,7 @@
     const historyModalCloseX = document.getElementById('history-modal-close-x');
     const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
     const historyGrid = document.getElementById('history-grid');
+    const stampUploadInput = document.getElementById('stamp-upload-input');
 
     // キャンバス関連要素
     const layer2 = document.getElementById('layer2'); // 中層
@@ -1324,7 +1339,6 @@
       const stampDataUrl = exportCanvas.toDataURL('image/png');
 
       const sender = userSelect.value;
-      // チャットに送信
       push(messagesRef, {
         sender: sender,
         text: '',
@@ -1334,7 +1348,6 @@
         timestamp: Date.now()
       });
 
-      // Firebaseのスタンプ履歴ノードにも保存
       saveStampToFirebaseHistory(stampDataUrl);
 
       ctx2.clearRect(0, 0, layer2.width, layer2.height);
@@ -1353,6 +1366,26 @@
       });
     }
 
+    // 既存のPNG画像ファイルを履歴に追加登録する処理
+    stampUploadInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert('ファイルサイズは10MB以下にしてください。');
+        stampUploadInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const dataUrl = event.target.result;
+        saveStampToFirebaseHistory(dataUrl);
+        stampUploadInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
     // Firebaseのスタンプ履歴データを監視
     onValue(stampHistoryRef, (snapshot) => {
       cachedStampHistory = snapshot.val() || {};
@@ -1370,7 +1403,6 @@
         return;
       }
 
-      // 降順（新しい順）で表示
       keys.reverse().forEach((key) => {
         const item = cachedStampHistory[key];
         const card = document.createElement('div');
@@ -1415,7 +1447,7 @@
           a.click();
         });
 
-        // 削除（Firebaseから削除）
+        // 削除
         const delBtn = document.createElement('button');
         delBtn.className = 'history-action-btn del';
         delBtn.innerHTML = '🗑 削除';
@@ -1628,7 +1660,7 @@
 
         metaInfo.appendChild(timestamp);
 
-        // ファイルデータ（スタンプ・画像・添付ファイル）がある場合、小文字のダウンロードボタンを表示
+        // ファイルデータがある場合、小文字のダウンロードボタンを表示
         if (msg.fileData) {
           const downloadBtn = document.createElement('button');
           downloadBtn.className = 'delete-btn';
