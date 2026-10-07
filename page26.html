@@ -259,7 +259,6 @@
       color: #e0e0e0;
       border-bottom-left-radius: 2px;
     }
-    /* 手描きスタンプ用 */
     .bubble.stamp-bubble {
       background-color: transparent !important;
       padding: 4px;
@@ -279,7 +278,6 @@
       font-size: 0.65rem;
       color: #666;
     }
-    /* 小さい文字ボタン（削除・ダウンロード共通） */
     .delete-btn {
       background: none;
       border: none;
@@ -424,7 +422,7 @@
       border: 1px solid #333;
       border-radius: 12px;
       width: 100%;
-      max-width: 550px;
+      max-width: 580px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
@@ -571,7 +569,6 @@
       border: 2px dashed #444;
       border-radius: 12px;
       background-color: #1a1a1a;
-      /* 透過チェック背景 */
       background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
       background-size: 20px 20px;
       background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
@@ -585,12 +582,10 @@
       height: 100%;
       border-radius: 10px;
       touch-action: none;
+      /* アクティブレイヤーに応じて動的にpointer-eventsを切り替えます */
     }
-    #layer1 { z-index: 1; pointer-events: none; } /* 最下層 (透過) */
-    #layer2 { z-index: 2; } /* 中層 */
-    #layer3 { z-index: 3; } /* 最上層 */
 
-    /* Photoshop風 視覚的レイヤーパネル */
+    /* Photoshop風 視覚的レイヤーパネル（ドラッグ入れ替え対応） */
     .ps-layers-panel {
       display: flex;
       flex-direction: column;
@@ -609,8 +604,11 @@
       background-color: #262626;
       border: 2px solid transparent;
       border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      cursor: grab;
+      transition: background-color 0.2s;
+    }
+    .ps-layer-item:active {
+      cursor: grabbing;
     }
     .ps-layer-item:hover {
       background-color: #333;
@@ -618,6 +616,9 @@
     .ps-layer-item.active {
       border-color: #00bcd4;
       background-color: #2a383b;
+    }
+    .ps-layer-item.dragging {
+      opacity: 0.4;
     }
     .ps-layer-title {
       font-size: 0.7rem;
@@ -637,6 +638,7 @@
       background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
       background-size: 10px 10px;
       object-fit: contain;
+      pointer-events: none;
     }
 
     .stamp-tools {
@@ -665,6 +667,15 @@
       border-color: #00bcd4;
       color: #00bcd4;
       background-color: #333;
+    }
+    select.tool-select {
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      outline: none;
     }
 
     /* スタンプ履歴グリッド & アイテムカード */
@@ -794,6 +805,7 @@
       <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
       <input type="file" id="file-input" style="display: none;">
       <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
+      <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
       <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
       <button id="send-btn" class="send-btn-style">送信</button>
     </footer>
@@ -844,23 +856,22 @@
           <button id="go-to-history-btn" class="stamp-nav-btn">🕒 履歴</button>
         </div>
 
-        <!-- キャンバス＋Adobe Photoshop風視覚的レイヤーパネル -->
+        <!-- キャンバス＋Photoshop風視覚的レイヤーパネル -->
         <div class="editor-layout">
           <div class="canvas-wrapper">
-            <canvas id="layer1" class="stamp-canvas" width="250" height="250"></canvas>
-            <canvas id="layer2" class="stamp-canvas" width="250" height="250"></canvas>
-            <canvas id="layer3" class="stamp-canvas" width="250" height="250"></canvas>
+            <canvas id="layer-bottom" class="stamp-canvas" width="250" height="250"></canvas>
+            <canvas id="layer-top" class="stamp-canvas" width="250" height="250"></canvas>
           </div>
 
-          <!-- Photoshop風 レイヤーパネル -->
-          <div class="ps-layers-panel">
-            <div class="ps-layer-item active" id="layer-btn-3" title="Layer 3 (最上層)">
-              <div class="ps-layer-title">Layer 3</div>
-              <img id="ps-preview-3" class="ps-layer-preview" alt="Layer 3">
-            </div>
-            <div class="ps-layer-item" id="layer-btn-2" title="Layer 2 (中層)">
+          <!-- Photoshop風 レイヤーパネル（ドラッグで入れ替え可能） -->
+          <div class="ps-layers-panel" id="layers-panel-container">
+            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2" title="レイヤー2 (ドラッグで上下入替)">
               <div class="ps-layer-title">Layer 2</div>
               <img id="ps-preview-2" class="ps-layer-preview" alt="Layer 2">
+            </div>
+            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1" title="レイヤー1 (ドラッグで上下入替)">
+              <div class="ps-layer-title">Layer 1</div>
+              <img id="ps-preview-1" class="ps-layer-preview" alt="Layer 1">
             </div>
           </div>
         </div>
@@ -868,14 +879,29 @@
         <div class="stamp-tools">
           <div class="tool-group">
             <span style="font-size:0.8rem; color:#aaa;">色:</span>
-            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
+            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;" title="色選択">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:#aaa;">透明度:</span>
+            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;" title="透明度">
           </div>
           <div class="tool-group">
             <span style="font-size:0.8rem; color:#aaa;">太さ:</span>
-            <input type="range" id="stamp-size" min="2" max="20" value="5" style="width:60px;">
+            <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
           </div>
-          <button id="tool-pen" class="tool-btn active">ペン</button>
-          <button id="tool-brush" class="tool-btn">ブラシ</button>
+          <div class="tool-group">
+            <select id="brush-select" class="tool-select">
+              <option value="pen">ブラシ (通常)</option>
+              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
+              <option value="calligraphy-pen">カリグラフィ ペン</option>
+              <option value="airbrush">エアブラシ</option>
+              <option value="oil">油彩ブラシ</option>
+              <option value="crayon">クレヨン</option>
+              <option value="marker">マーカー</option>
+              <option value="pencil">鉛筆</option>
+              <option value="watercolor">水彩ブラシ</option>
+            </select>
+          </div>
           <button id="tool-fill" class="tool-btn">ペンキ</button>
           <button id="tool-eraser" class="tool-btn">消しゴム</button>
           <button id="tool-undo" class="tool-btn">1つ戻す</button>
@@ -900,7 +926,6 @@
         <button id="history-modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body">
-        <!-- 履歴画面上部のアップロードボタン領域 -->
         <div class="history-header-bar">
           <span style="font-size: 0.8rem; color: #aaa;">登録済みスタンプ一覧</span>
           <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">
@@ -922,13 +947,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // パスワードの設定
     const SECRET_PASSWORD = "1234";
-
-    // 7日間のミリ秒数
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-    // Firebase 設定情報
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
       authDomain: "family-chat-3e0d6.firebaseapp.com",
@@ -940,13 +961,11 @@
       measurementId: "G-CT2HGLK75T"
     };
 
-    // Firebase初期化
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
 
-    // DOM要素
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
     const passInput = document.getElementById('pass-input');
@@ -963,8 +982,8 @@
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
 
-    // モーダル関連DOM要素
     const modalOpenBtn = document.getElementById('modal-open-btn');
+    const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const modalCloseX = document.getElementById('modal-close-x');
     const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -974,7 +993,6 @@
     const emojiPalette = document.getElementById('emoji-palette');
     const kaimojiPalette = document.getElementById('kaimoji-palette');
 
-    // 手描きスタンプモーダル関連DOM要素
     const stampModalOverlay = document.getElementById('stamp-modal-overlay');
     const goToStampBtn = document.getElementById('go-to-stamp-btn');
     const stampModalCloseX = document.getElementById('stamp-modal-close-x');
@@ -983,29 +1001,30 @@
     const goToHistoryBtn = document.getElementById('go-to-history-btn');
     const stampSubmitBtn = document.getElementById('stamp-submit-btn');
 
-    // Photoshop風 レイヤー選択要素
-    const layerBtn2 = document.getElementById('layer-btn-2');
-    const layerBtn3 = document.getElementById('layer-btn-3');
+    const layerItem1 = document.getElementById('layer-item-1');
+    const layerItem2 = document.getElementById('layer-item-2');
+    const psPreview1 = document.getElementById('ps-preview-1');
     const psPreview2 = document.getElementById('ps-preview-2');
-    const psPreview3 = document.getElementById('ps-preview-3');
+    const layersPanelContainer = document.getElementById('layers-panel-container');
 
-    // 履歴モーダル関連DOM要素
     const historyModalOverlay = document.getElementById('history-modal-overlay');
     const historyModalCloseX = document.getElementById('history-modal-close-x');
     const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
     const historyGrid = document.getElementById('history-grid');
     const stampUploadInput = document.getElementById('stamp-upload-input');
 
-    // キャンバス関連要素
-    const layer2 = document.getElementById('layer2'); // 中層
-    const layer3 = document.getElementById('layer3'); // 最上層
-    const ctx2 = layer2.getContext('2d');
-    const ctx3 = layer3.getContext('2d');
+    const canvasA = document.getElementById('layer-bottom');
+    const canvasB = document.getElementById('layer-top');
+    const ctxA = canvasA.getContext('2d', { willReadFrequently: true });
+    const ctxB = canvasB.getContext('2d', { willReadFrequently: true });
+
+    let activeLayerId = 2;
+    let layerOrder = [1, 2];
 
     const stampColorInput = document.getElementById('stamp-color');
+    const stampOpacityInput = document.getElementById('stamp-opacity');
     const stampSizeInput = document.getElementById('stamp-size');
-    const toolPen = document.getElementById('tool-pen');
-    const toolBrush = document.getElementById('tool-brush');
+    const brushSelect = document.getElementById('brush-select');
     const toolFill = document.getElementById('tool-fill');
     const toolEraser = document.getElementById('tool-eraser');
     const toolUndo = document.getElementById('tool-undo');
@@ -1014,41 +1033,89 @@
     let cachedMessages = {};
     let cachedStampHistory = {};
     let isDrawing = false;
-    let currentTool = 'pen'; // 'pen', 'brush', 'fill', 'eraser'
-    let activeLayerId = 3; // 3 or 2
+    let currentTool = 'pen';
+    let currentBrushType = 'pen';
     let historyStack = [];
 
-    // アクティブなキャンバス層の取得
+    function getLayerObj(id) {
+      if (id === 1) return { canvas: canvasA, ctx: ctxA };
+      return { canvas: canvasB, ctx: ctxB };
+    }
+
     function getActiveLayer() {
-      return activeLayerId === 2 ? { canvas: layer2, ctx: ctx2 } : { canvas: layer3, ctx: ctx3 };
+      return getLayerObj(activeLayerId);
     }
 
-    // レイヤー切替関数
-    function setActiveLayer(layerId) {
-      activeLayerId = layerId;
-      if (layerId === 3) {
-        layerBtn3.classList.add('active');
-        layerBtn2.classList.remove('active');
+    function updateLayerDOMOrder() {
+      canvasA.style.zIndex = layerOrder.indexOf(1) + 1;
+      canvasB.style.zIndex = layerOrder.indexOf(2) + 1;
+
+      // 下にあるレイヤーのタッチ・マウスイベントが上に遮られないよう、
+      // 選択されているアクティブレイヤーの z-index を一時的に一番手前に引き上げるか、
+      // あるいは pointer-events を動的に制御して下にイベントを通すようにする
+      if (activeLayerId === 1) {
+        canvasA.style.zIndex = 10;
+        canvasB.style.zIndex = 5;
       } else {
-        layerBtn2.classList.add('active');
-        layerBtn3.classList.remove('active');
+        canvasA.style.zIndex = 5;
+        canvasB.style.zIndex = 10;
       }
+
+      layersPanelContainer.innerHTML = '';
+      [...layerOrder].reverse().forEach(id => {
+        if (id === 1) layersPanelContainer.appendChild(layerItem1);
+        if (id === 2) layersPanelContainer.appendChild(layerItem2);
+      });
+
+      layerItem1.classList.toggle('active', activeLayerId === 1);
+      layerItem2.classList.toggle('active', activeLayerId === 2);
     }
 
-    layerBtn3.addEventListener('click', () => setActiveLayer(3));
-    layerBtn2.addEventListener('click', () => setActiveLayer(2));
+    function setActiveLayer(id) {
+      activeLayerId = id;
+      updateLayerDOMOrder();
+    }
 
-    // Photoshop風 レイヤープレビュー更新
+    layerItem1.addEventListener('click', () => setActiveLayer(1));
+    layerItem2.addEventListener('click', () => setActiveLayer(2));
+
+    let draggedLayerId = null;
+
+    [layerItem1, layerItem2].forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedLayerId = parseInt(item.getAttribute('data-layer'));
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        draggedLayerId = null;
+      });
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const targetLayerId = parseInt(item.getAttribute('data-layer'));
+        if (draggedLayerId && draggedLayerId !== targetLayerId) {
+          const indexA = layerOrder.indexOf(draggedLayerId);
+          const indexB = layerOrder.indexOf(targetLayerId);
+          if (indexA !== -1 && indexB !== -1) {
+            layerOrder[indexA] = targetLayerId;
+            layerOrder[indexB] = draggedLayerId;
+            updateLayerDOMOrder();
+          }
+        }
+      });
+    });
+
     function updateLayerPreviews() {
-      psPreview3.src = layer3.toDataURL();
-      psPreview2.src = layer2.toDataURL();
+      psPreview1.src = canvasA.toDataURL();
+      psPreview2.src = canvasB.toDataURL();
     }
 
-    // 絵文字・顔文字リスト
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
     const kaimojis = ['( ﾟДﾟ)', '( *´艸｀)', '( ;∀;)', '(^^)ﾉｼ'];
 
-    // カーソル位置に文字列を挿入
     function insertAtCursor(field, text) {
       const startPos = field.selectionStart;
       const endPos = field.selectionEnd;
@@ -1057,7 +1124,6 @@
       field.setSelectionRange(startPos + text.length, startPos + text.length);
     }
 
-    // モーダル内パレットの動的生成
     emojis.forEach(emoji => {
       const btn = document.createElement('button');
       btn.className = 'palette-btn';
@@ -1076,7 +1142,6 @@
       kaimojiPalette.appendChild(btn);
     });
 
-    // モーダル開閉処理
     function openModal() {
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
@@ -1112,12 +1177,19 @@
       closeModal();
     });
 
-    /* --- 手描きスタンプ 描画＆ツール処理 --- */
+    footerStampOpenBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.add('active');
+      saveState();
+      updateLayerPreviews();
+      updateLayerDOMOrder();
+    });
+
     goToStampBtn.addEventListener('click', () => {
       closeModal();
       stampModalOverlay.classList.add('active');
       saveState();
       updateLayerPreviews();
+      updateLayerDOMOrder();
     });
 
     backToCommentBtn.addEventListener('click', () => {
@@ -1128,25 +1200,29 @@
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
-    // ツール切り替え
-    function setActiveTool(tool) {
-      currentTool = tool;
-      toolPen.classList.toggle('active', tool === 'pen');
-      toolBrush.classList.toggle('active', tool === 'brush');
-      toolFill.classList.toggle('active', tool === 'fill');
-      toolEraser.classList.toggle('active', tool === 'eraser');
-    }
+    brushSelect.addEventListener('change', () => {
+      currentTool = 'pen';
+      currentBrushType = brushSelect.value;
+      toolFill.classList.remove('active');
+      toolEraser.classList.remove('active');
+    });
 
-    toolPen.addEventListener('click', () => setActiveTool('pen'));
-    toolBrush.addEventListener('click', () => setActiveTool('brush'));
-    toolFill.addEventListener('click', () => setActiveTool('fill'));
-    toolEraser.addEventListener('click', () => setActiveTool('eraser'));
+    toolFill.addEventListener('click', () => {
+      currentTool = 'fill';
+      toolEraser.classList.remove('active');
+    });
+
+    toolEraser.addEventListener('click', () => {
+      currentTool = 'eraser';
+      toolFill.classList.remove('active');
+    });
 
     function saveState() {
       if (historyStack.length >= 10) historyStack.shift();
       const layerData = {
-        l2: ctx2.getImageData(0, 0, layer2.width, layer2.height),
-        l3: ctx3.getImageData(0, 0, layer3.width, layer3.height)
+        l1: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
+        l2: ctxB.getImageData(0, 0, canvasB.width, canvasB.height),
+        order: [...layerOrder]
       };
       historyStack.push(layerData);
     }
@@ -1154,8 +1230,10 @@
     toolUndo.addEventListener('click', () => {
       if (historyStack.length > 0) {
         const prevState = historyStack.pop();
-        ctx2.putImageData(prevState.l2, 0, 0);
-        ctx3.putImageData(prevState.l3, 0, 0);
+        ctxA.putImageData(prevState.l1, 0, 0);
+        ctxB.putImageData(prevState.l2, 0, 0);
+        layerOrder = [...prevState.order];
+        updateLayerDOMOrder();
         updateLayerPreviews();
       }
     });
@@ -1167,19 +1245,17 @@
       updateLayerPreviews();
     });
 
-    // 座標取得
-    function getCanvasCoords(e) {
-      const rect = layer3.getBoundingClientRect();
+    function getCanvasCoords(e, canvasEl) {
+      const rect = canvasEl.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       return {
-        x: Math.floor((clientX - rect.left) * (layer3.width / rect.width)),
-        y: Math.floor((clientY - rect.top) * (layer3.height / rect.height))
+        x: Math.floor((clientX - rect.left) * (canvasEl.width / rect.width)),
+        y: Math.floor((clientY - rect.top) * (canvasEl.height / rect.height))
       };
     }
 
-    // 塗りつぶし（Flood Fill）
-    function floodFill(startX, startY, fillColorHex) {
+    function floodFill(startX, startY, fillColorHex, opacity) {
       const { canvas, ctx } = getActiveLayer();
       const width = canvas.width;
       const height = canvas.height;
@@ -1189,7 +1265,7 @@
       const r = parseInt(fillColorHex.slice(1, 3), 16);
       const g = parseInt(fillColorHex.slice(3, 5), 16);
       const b = parseInt(fillColorHex.slice(5, 7), 16);
-      const a = 255;
+      const a = Math.round(opacity * 255);
 
       const startPos = (startY * width + startX) * 4;
       const startR = data[startPos];
@@ -1264,82 +1340,140 @@
       updateLayerPreviews();
     }
 
-    // 描画開始
-    function startDrawing(e) {
-      const pos = getCanvasCoords(e);
-      saveState();
+    [canvasA, canvasB].forEach(targetCanvas => {
+      let isTargetDrawing = false;
 
-      if (currentTool === 'fill') {
-        floodFill(pos.x, pos.y, stampColorInput.value);
-        return;
+      function startDraw(e) {
+        const activeObj = getActiveLayer();
+        if (targetCanvas !== activeObj.canvas) return;
+
+        const pos = getCanvasCoords(e, targetCanvas);
+        saveState();
+
+        if (currentTool === 'fill') {
+          floodFill(pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
+          return;
+        }
+
+        isTargetDrawing = true;
+        const ctx = activeObj.ctx;
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
       }
 
-      isDrawing = true;
-      const { ctx } = getActiveLayer();
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-    }
+      function moveDraw(e) {
+        if (!isTargetDrawing || currentTool === 'fill') return;
+        const activeObj = getActiveLayer();
+        if (targetCanvas !== activeObj.canvas) return;
 
-    function draw(e) {
-      if (!isDrawing || currentTool === 'fill') return;
-      e.preventDefault();
-      const pos = getCanvasCoords(e);
-      const { ctx } = getActiveLayer();
+        e.preventDefault();
+        const pos = getCanvasCoords(e, targetCanvas);
+        const ctx = activeObj.ctx;
+        const baseSize = parseFloat(stampSizeInput.value);
+        const colorHex = stampColorInput.value;
+        const opacity = parseFloat(stampOpacityInput.value);
 
-      ctx.lineWidth = stampSizeInput.value;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = opacity;
 
-      if (currentTool === 'pen') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = stampColorInput.value;
-        ctx.shadowBlur = 0;
-      } else if (currentTool === 'brush') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = stampColorInput.value;
-        ctx.shadowColor = stampColorInput.value;
-        ctx.shadowBlur = parseInt(stampSizeInput.value, 10);
-      } else if (currentTool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.shadowBlur = 0;
+        if (currentTool === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.lineWidth = baseSize * 1.5;
+          ctx.shadowBlur = 0;
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.strokeStyle = colorHex;
+
+          switch (currentBrushType) {
+            case 'calligraphy-brush':
+              ctx.lineWidth = baseSize * 1.2;
+              ctx.shadowBlur = 2;
+              ctx.shadowColor = colorHex;
+              break;
+            case 'calligraphy-pen':
+              ctx.lineWidth = Math.max(1, baseSize * 0.5);
+              ctx.shadowBlur = 0;
+              break;
+            case 'airbrush':
+              ctx.lineWidth = baseSize * 2;
+              ctx.shadowBlur = baseSize * 0.8;
+              ctx.shadowColor = colorHex;
+              ctx.globalAlpha = opacity * 0.4;
+              break;
+            case 'oil':
+              ctx.lineWidth = baseSize * 1.5;
+              ctx.shadowBlur = 1;
+              ctx.shadowColor = colorHex;
+              break;
+            case 'crayon':
+              ctx.lineWidth = baseSize;
+              ctx.shadowBlur = 3;
+              ctx.shadowColor = colorHex;
+              ctx.globalAlpha = opacity * 0.8;
+              break;
+            case 'marker':
+              ctx.lineWidth = baseSize * 1.8;
+              ctx.shadowBlur = 0;
+              ctx.globalAlpha = opacity * 0.7;
+              break;
+            case 'pencil':
+              ctx.lineWidth = Math.max(1, baseSize * 0.4);
+              ctx.shadowBlur = 0;
+              break;
+            case 'watercolor':
+              ctx.lineWidth = baseSize * 2;
+              ctx.shadowBlur = baseSize;
+              ctx.shadowColor = colorHex;
+              ctx.globalAlpha = opacity * 0.3;
+              break;
+            default:
+              ctx.lineWidth = baseSize;
+              ctx.shadowBlur = 0;
+              break;
+          }
+        }
+
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
       }
 
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    }
-
-    function stopDrawing() {
-      if (isDrawing) {
-        const { ctx } = getActiveLayer();
-        ctx.closePath();
-        ctx.shadowBlur = 0;
-        isDrawing = false;
-        updateLayerPreviews();
+      function endDraw() {
+        if (isTargetDrawing) {
+          const activeObj = getActiveLayer();
+          const ctx = activeObj.ctx;
+          ctx.closePath();
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 1.0;
+          isTargetDrawing = false;
+          updateLayerPreviews();
+        }
       }
-    }
 
-    layer3.addEventListener('mousedown', startDrawing);
-    layer3.addEventListener('mousemove', draw);
-    layer3.addEventListener('mouseup', stopDrawing);
-    layer3.addEventListener('mouseleave', stopDrawing);
+      targetCanvas.addEventListener('mousedown', startDraw);
+      targetCanvas.addEventListener('mousemove', moveDraw);
+      targetCanvas.addEventListener('mouseup', endDraw);
+      targetCanvas.addEventListener('mouseleave', endDraw);
 
-    layer3.addEventListener('touchstart', startDrawing, { passive: false });
-    layer3.addEventListener('touchmove', draw, { passive: false });
-    layer3.addEventListener('touchend', stopDrawing);
+      targetCanvas.addEventListener('touchstart', startDraw, { passive: false });
+      targetCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+      targetCanvas.addEventListener('touchend', endDraw);
+    });
 
-    // 完成・送信
     stampSubmitBtn.addEventListener('click', () => {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = 250;
       exportCanvas.height = 250;
       const expCtx = exportCanvas.getContext('2d');
 
-      expCtx.drawImage(layer2, 0, 0);
-      expCtx.drawImage(layer3, 0, 0);
+      layerOrder.forEach(id => {
+        const { canvas } = getLayerObj(id);
+        expCtx.drawImage(canvas, 0, 0);
+      });
 
       const stampDataUrl = exportCanvas.toDataURL('image/png');
-
       const sender = userSelect.value;
+
       push(messagesRef, {
         sender: sender,
         text: '',
@@ -1351,14 +1485,13 @@
 
       saveStampToFirebaseHistory(stampDataUrl);
 
-      ctx2.clearRect(0, 0, layer2.width, layer2.height);
-      ctx3.clearRect(0, 0, layer3.width, layer3.height);
+      ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
+      ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
       historyStack = [];
       updateLayerPreviews();
       stampModalOverlay.classList.remove('active');
     });
 
-    /* --- スタンプ履歴処理 (Firebase連動) --- */
     function saveStampToFirebaseHistory(dataUrl) {
       push(stampHistoryRef, {
         dataUrl: dataUrl,
@@ -1367,7 +1500,6 @@
       });
     }
 
-    // 既存のPNG画像ファイルを履歴に追加登録する処理
     stampUploadInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1380,14 +1512,12 @@
 
       const reader = new FileReader();
       reader.onload = function(event) {
-        const dataUrl = event.target.result;
-        saveStampToFirebaseHistory(dataUrl);
+        saveStampToFirebaseHistory(event.target.result);
         stampUploadInput.value = '';
       };
       reader.readAsDataURL(file);
     });
 
-    // Firebaseのスタンプ履歴データを監視
     onValue(stampHistoryRef, (snapshot) => {
       cachedStampHistory = snapshot.val() || {};
       if (historyModalOverlay.classList.contains('active')) {
@@ -1420,7 +1550,6 @@
         const actions = document.createElement('div');
         actions.className = 'history-actions';
 
-        // 再びスタンプとして送る
         const sendBtn = document.createElement('button');
         sendBtn.className = 'history-action-btn send';
         sendBtn.innerHTML = '💬 スタンプ送信';
@@ -1437,7 +1566,6 @@
           historyModalOverlay.classList.remove('active');
         });
 
-        // ダウンロード
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'history-action-btn';
         downloadBtn.innerHTML = '⬇ ダウンロード';
@@ -1448,7 +1576,6 @@
           a.click();
         });
 
-        // 削除
         const delBtn = document.createElement('button');
         delBtn.className = 'history-action-btn del';
         delBtn.innerHTML = '🗑 削除';
@@ -1481,7 +1608,6 @@
 
     historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 
-    // ハンバーガーメニューの開閉機能
     function toggleSidebar() {
       sidebar.classList.toggle('open');
       overlay.classList.toggle('active');
@@ -1495,7 +1621,6 @@
     hamburgerBtn.addEventListener('click', toggleSidebar);
     overlay.addEventListener('click', closeSidebar);
 
-    // パスワード認証処理
     function checkPassword() {
       if (passInput.value === SECRET_PASSWORD) {
         localStorage.setItem('family_chat_auth', 'true');
@@ -1520,7 +1645,6 @@
       if (e.key === 'Enter') checkPassword();
     });
 
-    // メッセージ送信処理
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
@@ -1536,7 +1660,6 @@
       messageInput.style.height = '40px';
     }
 
-    // ファイル送信処理
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1568,7 +1691,6 @@
       reader.readAsDataURL(file);
     });
 
-    // メッセージの削除
     function deleteMessage(key) {
       if (confirm('このメッセージを削除しますか？')) {
         const targetRef = ref(db, `messages/${key}`);
@@ -1576,7 +1698,6 @@
       }
     }
 
-    // テキスト内のURL判定とHTMLリンク化
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
       let lastIndex = 0;
@@ -1603,7 +1724,6 @@
       }
     }
 
-    // 画面への描画
     function renderMessages() {
       chatBox.innerHTML = '';
       const currentUser = userSelect.value;
@@ -1661,7 +1781,6 @@
 
         metaInfo.appendChild(timestamp);
 
-        // ファイルデータがある場合、小文字のダウンロードボタンを表示
         if (msg.fileData) {
           const downloadBtn = document.createElement('button');
           downloadBtn.className = 'delete-btn';
@@ -1675,7 +1794,6 @@
           metaInfo.appendChild(downloadBtn);
         }
 
-        // 送信者のメッセージのみ「削除」ボタンを表示
         if (isSent) {
           const deleteBtn = document.createElement('button');
           deleteBtn.className = 'delete-btn';
@@ -1694,7 +1812,6 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // チャット初期化
     function initChat() {
       const savedUser = localStorage.getItem('family_chat_user');
       if (savedUser) userSelect.value = savedUser;
