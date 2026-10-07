@@ -36,62 +36,9 @@
             position: relative;
         }
 
-        /* パスワードロック画面 */
-        #lock-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            gap: 16px;
-            padding: 20px;
-        }
-        #lock-screen h2 {
-            font-size: 1.2rem;
-            color: var(--primary-hover);
-        }
-        #pass-input {
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px 16px;
-            color: #fff;
-            font-size: 1rem;
-            text-align: center;
-            outline: none;
-            width: 220px;
-        }
-        #pass-input:focus {
-            border-color: var(--primary-color);
-        }
-        #pass-btn {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 24px;
-            font-weight: bold;
-            font-size: 0.95rem;
-            cursor: pointer;
-        }
-        #pass-btn:hover {
-            background-color: var(--primary-hover);
-        }
-        #pass-error {
-            color: var(--danger-color);
-            font-size: 0.85rem;
-            display: none;
-        }
-
         /* アプリ本体のコンテナ */
         .app-container {
-            display: none;
+            display: flex;
             width: 100%;
             max-width: 600px;
             height: 100vh;
@@ -611,6 +558,36 @@
             color: var(--text-color);
         }
 
+        /* オンラインメンバーリスト用スタイル */
+        .online-member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+            padding: 8px 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .online-member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #81c784;
+            box-shadow: 0 0 6px #81c784;
+        }
+
         /* 改行・スタンプモーダル専用スタイル */
         .section-title {
             font-size: 0.85rem;
@@ -915,14 +892,6 @@
 </head>
 <body>
 
-<!-- ロック画面 (パスワード: 2015) -->
-<div id="lock-screen">
-    <h2>パスワードを入力してください</h2>
-    <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
-    <button id="pass-btn">解除</button>
-    <div id="pass-error">パスワードが違います</div>
-</div>
-
 <div class="app-container" id="app-container">
     <header>
         <div class="header-title">
@@ -930,6 +899,8 @@
             <span id="statusBadge" class="status-badge">グループチャット</span>
         </div>
         <div class="header-actions">
+            <!-- 追加：メンバーボタン -->
+            <button id="membersBtn" class="btn-action" style="display:none;" onclick="openModal('membersModal')">👥 メンバー</button>
             <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="logoutUser()">ログアウト</button>
         </div>
     </header>
@@ -961,7 +932,7 @@
             <div id="registerForm" class="form-group" style="display: none;">
                 <div class="form-group">
                     <label for="regUsername">ユーザー名</label>
-                    <input type="text" id="regUsername" placeholder="ユーザー名" maxlength="15">
+                    <input type="text" id="regUsername" placeholder="ユーザー名を登録" maxlength="15">
                 </div>
                 <div class="form-group" style="margin-top: 10px;">
                     <label for="regPassword">パスワード</label>
@@ -992,6 +963,20 @@
                 <div class="admin-title">ユーザー管理画面 (Master)</div>
                 <div style="font-size:0.8rem; color:var(--text-muted);">登録されているユーザーのパスワード変更やアカウント削除ができます。</div>
                 <div id="userList" class="user-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 追加：オンラインメンバー一覧モーダル -->
+    <div id="membersModal" class="modal" onclick="closeModal('membersModal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">入室中のメンバー</div>
+                <button class="modal-close-btn" onclick="closeModal('membersModal')">✕</button>
+            </div>
+            <div id="onlineMemberList" class="online-member-list"></div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeModal('membersModal')">閉じる</button>
             </div>
         </div>
     </div>
@@ -1112,10 +1097,7 @@
 <!-- Firebase SDK v10 -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, update, get, set, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    // 暗号パスワード（要求仕様通り「2015」に変更）
-    const SECRET_PASSWORD = "2015";
+    import { getDatabase, ref, push, onValue, remove, update, get, set, child, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // Firebase 設定
     const firebaseConfig = {
@@ -1135,12 +1117,8 @@
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
     const usersRef = ref(db, 'users');
+    const presenceRef = ref(db, 'presence');
 
-    // パスワード画面要素
-    const lockScreen = document.getElementById('lock-screen');
-    const passInput = document.getElementById('pass-input');
-    const passBtn = document.getElementById('pass-btn');
-    const passError = document.getElementById('pass-error');
     const appContainer = document.getElementById('app-container');
 
     let currentUsername = "";
@@ -1148,16 +1126,19 @@
     let cachedMessages = {};
     let cachedStampHistory = {};
     let cachedUsers = {};
+    let cachedPresence = {};
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
     const changeUserBtn = document.getElementById('changeUserBtn');
+    const membersBtn = document.getElementById('membersBtn');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const fileInput = document.getElementById('file-input');
     const statusBadge = document.getElementById('statusBadge');
     const adminPanel = document.getElementById('adminPanel');
     const userList = document.getElementById('userList');
+    const onlineMemberList = document.getElementById('onlineMemberList');
 
     // モーダル要素
     const modalOpenBtn = document.getElementById('modal-open-btn');
@@ -1199,36 +1180,12 @@
     let activeLayerId = 3;
     let historyStack = [];
 
-    // パスワード認証処理
-    function checkPassword() {
-        if (passInput.value === SECRET_PASSWORD) {
-            localStorage.setItem('airchat_group_auth', 'true');
-            unlockApp();
-        } else {
-            passError.style.display = 'block';
-        }
+    // 保存済みのセッションチェック
+    const savedUser = localStorage.getItem('airchat_username');
+    if (savedUser) {
+        currentUsername = savedUser;
+        checkAndStartSession(savedUser);
     }
-
-    function unlockApp() {
-        lockScreen.style.display = 'none';
-        appContainer.style.display = 'flex';
-        
-        // 保存済みのセッションチェック
-        const savedUser = localStorage.getItem('airchat_username');
-        if (savedUser) {
-            currentUsername = savedUser;
-            checkAndStartSession(savedUser);
-        }
-    }
-
-    if (localStorage.getItem('airchat_group_auth') === 'true') {
-        unlockApp();
-    }
-
-    passBtn.addEventListener('click', checkPassword);
-    passInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkPassword();
-    });
 
     // 認証タブ切替
     window.switchAuthTab = function(type) {
@@ -1321,6 +1278,7 @@
         joinView.classList.remove('active');
         chatView.classList.add('active');
         changeUserBtn.style.display = 'block';
+        membersBtn.style.display = 'block';
 
         if (isAdmin) {
             statusBadge.textContent = "管理者モード";
@@ -1334,19 +1292,38 @@
             appContainer.classList.remove('admin-layout');
         }
 
+        setupPresence();
         initFirebaseRealtime();
     }
 
     window.logoutUser = function() {
+        if (currentUsername) {
+            remove(ref(db, `presence/${currentUsername}`));
+        }
         localStorage.removeItem('airchat_username');
         currentUsername = "";
         isAdmin = false;
         joinView.classList.add('active');
         chatView.classList.remove('active');
         changeUserBtn.style.display = 'none';
+        membersBtn.style.display = 'none';
         adminPanel.classList.remove('active');
         appContainer.classList.remove('admin-layout');
     };
+
+    // オンライン状態の設定（masterはpresenceに記録しない）
+    function setupPresence() {
+        if (!currentUsername || currentUsername === 'master') return;
+
+        const myPresenceRef = ref(db, `presence/${currentUsername}`);
+        set(myPresenceRef, {
+            online: true,
+            lastSeen: Date.now()
+        });
+
+        // ページ切断・閉じ時に自動削除
+        onDisconnect(myPresenceRef).remove();
+    }
 
     // Firebase 連動 & 7日自動削除
     function initFirebaseRealtime() {
@@ -1364,6 +1341,12 @@
             }
         });
 
+        // リアルタイムオンライン人数監視
+        onValue(presenceRef, (snapshot) => {
+            cachedPresence = snapshot.val() || {};
+            renderOnlineMembers();
+        });
+
         // 管理者用ユーザーリストリアルタイム取得
         if (isAdmin) {
             onValue(usersRef, (snapshot) => {
@@ -1371,6 +1354,27 @@
                 renderAdminUserList();
             });
         }
+    }
+
+    // オンラインメンバー表示（masterを除外）
+    function renderOnlineMembers() {
+        onlineMemberList.innerHTML = '';
+        const onlineUsers = Object.keys(cachedPresence).filter(user => user !== 'master');
+
+        if (onlineUsers.length === 0) {
+            onlineMemberList.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center;">入室中のメンバーはいません</div>';
+            return;
+        }
+
+        onlineUsers.forEach(uname => {
+            const item = document.createElement('div');
+            item.className = 'online-member-item';
+            item.innerHTML = `
+                <div class="online-dot"></div>
+                <span>${escapeHTML(uname)}</span>
+            `;
+            onlineMemberList.appendChild(item);
+        });
     }
 
     function cleanOldMessages(data) {
