@@ -102,6 +102,12 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             position: relative;
             overflow: hidden;
+            transition: max-width 0.3s ease;
+        }
+
+        /* 管理者画面のレスポンシブ拡張 */
+        .app-container.admin-layout {
+            max-width: 1100px;
         }
 
         header {
@@ -129,6 +135,11 @@
             border-radius: 12px;
             background-color: #1b5e20;
             color: #81c784;
+        }
+
+        .status-badge.admin {
+            background-color: #b71c1c;
+            color: #ff8a80;
         }
 
         .header-actions {
@@ -162,6 +173,7 @@
             display: flex;
         }
 
+        /* ログイン・登録切替タブ */
         .join-container {
             padding: 24px;
             display: flex;
@@ -169,6 +181,32 @@
             gap: 16px;
             justify-content: center;
             height: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 0.95rem;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-hover);
+            border-bottom-color: var(--primary-hover);
         }
 
         .form-group {
@@ -182,7 +220,7 @@
             color: var(--text-muted);
         }
 
-        input[type="text"] {
+        input[type="text"], input[type="password"] {
             padding: 12px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
@@ -192,7 +230,7 @@
             outline: none;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="password"]:focus {
             border-color: var(--primary-color);
         }
 
@@ -228,7 +266,49 @@
             background-color: var(--primary-hover);
         }
 
-        /* チャット表示エリア */
+        /* チャット表示エリア & 管理者画面エリア */
+        .chat-main-area {
+            display: flex;
+            flex: 1;
+            height: calc(100% - 50px);
+            overflow: hidden;
+        }
+
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .admin-panel {
+            width: 380px;
+            background-color: var(--bg-color);
+            border-left: 1px solid var(--border-color);
+            display: none;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .admin-panel.active {
+            display: flex;
+        }
+
+        @media (max-width: 768px) {
+            .chat-main-area {
+                flex-direction: column;
+            }
+            .admin-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+
         .chat-messages {
             flex: 1;
             padding: 16px;
@@ -410,6 +490,70 @@
         .icon-btn-style:active {
             background-color: #2a2a2a;
             border-color: var(--primary-color);
+        }
+
+        /* 管理画面用スタイル */
+        .admin-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary-hover);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .user-card-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .user-card-actions input {
+            padding: 6px;
+            font-size: 0.8rem;
+            width: 110px;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-edit {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-del {
+            background-color: var(--danger-color);
+            color: #fff;
         }
 
         /* モーダル基本スタイル */
@@ -771,7 +915,7 @@
 </head>
 <body>
 
-<!-- ロック画面 -->
+<!-- ロック画面 (パスワード: 2015) -->
 <div id="lock-screen">
     <h2>パスワードを入力してください</h2>
     <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
@@ -786,34 +930,69 @@
             <span id="statusBadge" class="status-badge">グループチャット</span>
         </div>
         <div class="header-actions">
-            <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="changeUser()">名前変更</button>
+            <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="logoutUser()">ログアウト</button>
         </div>
     </header>
 
-    <!-- 入室画面 -->
+    <!-- ログイン／新規登録 画面 -->
     <div id="joinView" class="view-section active">
         <div class="join-container">
             <h2 style="text-align: center; margin-bottom: 4px;">AirChat Group</h2>
-            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">表示名を入力してグループに入ります</p>
             
-            <div class="form-group">
-                <label for="usernameInput">表示名</label>
-                <input type="text" id="usernameInput" placeholder="例: おかあさん" maxlength="15">
+            <div class="tab-buttons">
+                <button id="tabLogin" class="tab-btn active" onclick="switchAuthTab('login')">ログイン</button>
+                <button id="tabRegister" class="tab-btn" onclick="switchAuthTab('register')">新規登録</button>
+            </div>
+            
+            <!-- ログインフォーム -->
+            <div id="loginForm" class="form-group">
+                <div class="form-group">
+                    <label for="loginUsername">ユーザー名</label>
+                    <input type="text" id="loginUsername" placeholder="ユーザー名を入力" maxlength="15">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="loginPassword">パスワード</label>
+                    <input type="password" id="loginPassword" placeholder="パスワードを入力">
+                </div>
+                <button class="btn-primary" onclick="loginUser()">ログインしてチャットに入る</button>
             </div>
 
-            <button class="btn-primary" onclick="startSession()">チャットに参加する</button>
+            <!-- 新規登録フォーム -->
+            <div id="registerForm" class="form-group" style="display: none;">
+                <div class="form-group">
+                    <label for="regUsername">ユーザー名</label>
+                    <input type="text" id="regUsername" placeholder="例: おかあさん" maxlength="15">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="regPassword">パスワード</label>
+                    <input type="password" id="regPassword" placeholder="パスワードを設定">
+                </div>
+                <button class="btn-primary" onclick="registerUser()">アカウント作成して参加</button>
+            </div>
         </div>
     </div>
 
-    <!-- チャット画面 -->
+    <!-- チャット画面＆管理パネルエリア -->
     <div id="chatView" class="view-section">
-        <div id="chatMessages" class="chat-messages"></div>
-        <div class="chat-input-area">
-            <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
-            <input type="file" id="file-input" style="display: none;">
-            <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
-            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
-            <button class="btn-primary" style="padding: 0 16px; margin-top:0; height: 40px; border-radius: 20px; flex-shrink: 0;" onclick="sendMessage()">送信</button>
+        <div class="chat-main-area">
+            <!-- 左側：チャットパネル -->
+            <div class="chat-panel">
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input-area">
+                    <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
+                    <input type="file" id="file-input" style="display: none;">
+                    <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                    <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
+                    <button class="btn-primary" style="padding: 0 16px; margin-top:0; height: 40px; border-radius: 20px; flex-shrink: 0;" onclick="sendMessage()">送信</button>
+                </div>
+            </div>
+
+            <!-- 右側：管理画面パネル (マスター用) -->
+            <div id="adminPanel" class="admin-panel">
+                <div class="admin-title">ユーザー管理画面 (Master)</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);">登録されているユーザーのパスワード変更やアカウント削除ができます。</div>
+                <div id="userList" class="user-list"></div>
+            </div>
         </div>
     </div>
 
@@ -933,10 +1112,10 @@
 <!-- Firebase SDK v10 -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, update, get, set, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 暗号パスワード
-    const SECRET_PASSWORD = "1234";
+    // 暗号パスワード（要求仕様通り「2015」に変更）
+    const SECRET_PASSWORD = "2015";
 
     // Firebase 設定
     const firebaseConfig = {
@@ -955,6 +1134,7 @@
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
+    const usersRef = ref(db, 'users');
 
     // パスワード画面要素
     const lockScreen = document.getElementById('lock-screen');
@@ -964,8 +1144,10 @@
     const appContainer = document.getElementById('app-container');
 
     let currentUsername = "";
+    let isAdmin = false;
     let cachedMessages = {};
     let cachedStampHistory = {};
+    let cachedUsers = {};
 
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
@@ -973,7 +1155,9 @@
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const fileInput = document.getElementById('file-input');
-    const usernameInput = document.getElementById('usernameInput');
+    const statusBadge = document.getElementById('statusBadge');
+    const adminPanel = document.getElementById('adminPanel');
+    const userList = document.getElementById('userList');
 
     // モーダル要素
     const modalOpenBtn = document.getElementById('modal-open-btn');
@@ -1029,11 +1213,11 @@
         lockScreen.style.display = 'none';
         appContainer.style.display = 'flex';
         
-        // 保存済みのユーザー名があれば自動セッション開始
+        // 保存済みのセッションチェック
         const savedUser = localStorage.getItem('airchat_username');
         if (savedUser) {
-            usernameInput.value = savedUser;
-            startSession();
+            currentUsername = savedUser;
+            checkAndStartSession(savedUser);
         }
     }
 
@@ -1046,27 +1230,122 @@
         if (e.key === 'Enter') checkPassword();
     });
 
-    window.startSession = function() {
-        const username = usernameInput.value.trim();
-        if (!username) {
-            showToast('表示名を入力してください');
+    // 認証タブ切替
+    window.switchAuthTab = function(type) {
+        document.getElementById('tabLogin').classList.toggle('active', type === 'login');
+        document.getElementById('tabRegister').classList.toggle('active', type === 'register');
+        document.getElementById('loginForm').style.display = type === 'login' ? 'flex' : 'none';
+        document.getElementById('registerForm').style.display = type === 'register' ? 'flex' : 'none';
+    };
+
+    // ユーザー登録処理
+    window.registerUser = async function() {
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+
+        if (!username || !password) {
+            showToast('ユーザー名とパスワードを入力してください');
             return;
         }
 
-        currentUsername = username;
-        localStorage.setItem('airchat_username', currentUsername);
+        const userSnapshot = await get(child(ref(db), `users/${username}`));
+        if (userSnapshot.exists()) {
+            showToast('このユーザー名は既に使用されています');
+            return;
+        }
 
+        await set(ref(db, `users/${username}`), {
+            password: password,
+            createdAt: Date.now()
+        });
+
+        showToast('登録が完了しました');
+        currentUsername = username;
+        localStorage.setItem('airchat_username', username);
+        startChatSession();
+    };
+
+    // ログイン処理
+    window.loginUser = async function() {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+
+        if (!username || !password) {
+            showToast('ユーザー名とパスワードを入力してください');
+            return;
+        }
+
+        // マスターアカウント特別チェック (master / 0813)
+        if (username === 'master' && password === '0813') {
+            isAdmin = true;
+            currentUsername = username;
+            localStorage.setItem('airchat_username', username);
+            startChatSession();
+            return;
+        }
+
+        const userSnapshot = await get(child(ref(db), `users/${username}`));
+        if (!userSnapshot.exists()) {
+            showToast('ユーザーが存在しないか間違っています');
+            return;
+        }
+
+        const userData = userSnapshot.val();
+        if (userData.password !== password) {
+            showToast('パスワードが違います');
+            return;
+        }
+
+        isAdmin = false;
+        currentUsername = username;
+        localStorage.setItem('airchat_username', username);
+        startChatSession();
+    };
+
+    async function checkAndStartSession(username) {
+        if (username === 'master') {
+            isAdmin = true;
+            startChatSession();
+            return;
+        }
+        const userSnapshot = await get(child(ref(db), `users/${username}`));
+        if (userSnapshot.exists()) {
+            isAdmin = false;
+            startChatSession();
+        } else {
+            localStorage.removeItem('airchat_username');
+        }
+    }
+
+    function startChatSession() {
         joinView.classList.remove('active');
         chatView.classList.add('active');
         changeUserBtn.style.display = 'block';
 
-        initFirebaseRealtime();
-    };
+        if (isAdmin) {
+            statusBadge.textContent = "管理者モード";
+            statusBadge.classList.add('admin');
+            adminPanel.classList.add('active');
+            appContainer.classList.add('admin-layout');
+        } else {
+            statusBadge.textContent = "グループチャット";
+            statusBadge.classList.remove('admin');
+            adminPanel.classList.remove('active');
+            appContainer.classList.remove('admin-layout');
+        }
 
-    window.changeUser = function() {
+        initFirebaseRealtime();
+    }
+
+    window.logoutUser = function() {
+        localStorage.removeItem('airchat_username');
+        currentUsername = "";
+        isAdmin = false;
         joinView.classList.add('active');
         chatView.classList.remove('active');
         changeUserBtn.style.display = 'none';
+        adminPanel.classList.remove('active');
+        appContainer.classList.remove('admin-layout');
     };
 
     // Firebase 連動 & 7日自動削除
@@ -1084,6 +1363,14 @@
                 renderStampHistory();
             }
         });
+
+        // 管理者用ユーザーリストリアルタイム取得
+        if (isAdmin) {
+            onValue(usersRef, (snapshot) => {
+                cachedUsers = snapshot.val() || {};
+                renderAdminUserList();
+            });
+        }
     }
 
     function cleanOldMessages(data) {
@@ -1095,6 +1382,54 @@
             }
         });
     }
+
+    // 管理者画面：ユーザー一覧表示と編集・削除
+    function renderAdminUserList() {
+        userList.innerHTML = '';
+        const keys = Object.keys(cachedUsers);
+
+        if (keys.length === 0) {
+            userList.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">登録ユーザーがいません</div>';
+            return;
+        }
+
+        keys.forEach((uname) => {
+            const user = cachedUsers[uname];
+            const card = document.createElement('div');
+            card.className = 'user-card';
+
+            card.innerHTML = `
+                <div class="user-card-header">
+                    <span>👤 ${escapeHTML(uname)}</span>
+                </div>
+                <div class="user-card-actions">
+                    <input type="text" id="pass_input_${escapeHTML(uname)}" value="${escapeHTML(user.password || '')}">
+                    <button class="btn-small btn-edit" onclick="adminUpdatePassword('${escapeHTML(uname)}')">変更</button>
+                    <button class="btn-small btn-del" onclick="adminDeleteUser('${escapeHTML(uname)}')">削除</button>
+                </div>
+            `;
+            userList.appendChild(card);
+        });
+    }
+
+    window.adminUpdatePassword = function(uname) {
+        const inputElem = document.getElementById(`pass_input_${uname}`);
+        const newPass = inputElem.value.trim();
+        if (!newPass) {
+            showToast('パスワードを入力してください');
+            return;
+        }
+
+        update(ref(db, `users/${uname}`), { password: newPass });
+        showToast(`${uname} のパスワードを変更しました`);
+    };
+
+    window.adminDeleteUser = function(uname) {
+        if (confirm(`ユーザー "${uname}" を削除しますか？`)) {
+            remove(ref(db, `users/${uname}`));
+            showToast(`${uname} を削除しました`);
+        }
+    };
 
     // メッセージ描画
     function renderMessages() {
@@ -1169,7 +1504,7 @@
                 metaInfo.appendChild(downloadBtn);
             }
 
-            if (isMe) {
+            if (isMe || isAdmin) {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'meta-btn';
                 deleteBtn.textContent = '削除';
