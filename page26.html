@@ -259,6 +259,12 @@
       color: #e0e0e0;
       border-bottom-left-radius: 2px;
     }
+    /* 手描きスタンプ用の吹き出し調整 */
+    .bubble.stamp-bubble {
+      background-color: transparent !important;
+      padding: 4px;
+    }
+
     .meta-info {
       display: flex;
       align-items: center;
@@ -295,6 +301,22 @@
       margin-bottom: 6px;
       display: block;
       object-fit: cover;
+    }
+    .chat-stamp {
+      max-width: 180px;
+      max-height: 180px;
+      display: block;
+      cursor: pointer;
+      user-select: none;
+      -webkit-touch-callout: default;
+    }
+    .chat-link {
+      color: #80deea;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .message.received .chat-link {
+      color: #00bcd4;
     }
     .file-attachment {
       display: flex;
@@ -527,6 +549,115 @@
     .secondary-btn:hover {
       background-color: #3a3a3a;
     }
+
+    /* 手描きスタンプ関連スタイル */
+    .stamp-nav-btn {
+      background-color: #00bcd4;
+      color: #121212;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-bottom: 8px;
+      align-self: flex-start;
+    }
+    .canvas-wrapper {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
+      border: 2px dashed #444;
+      border-radius: 12px;
+      background-color: #1a1a1a;
+      /* 透過確認用の市松模様背景 */
+      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    .stamp-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      touch-action: none;
+    }
+    #layer1 { z-index: 1; } /* 最下層 (透過レイヤー) */
+    #layer2 { z-index: 2; } /* 中層 */
+    #layer3 { z-index: 3; } /* 最上層 (ペン描画用) */
+
+    .stamp-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .color-picker-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tool-btn {
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .tool-btn.active {
+      border-color: #00bcd4;
+      color: #00bcd4;
+      background-color: #333;
+    }
+
+    /* スタンプ履歴グリッド */
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .history-item {
+      position: relative;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 4px;
+      background-color: #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .history-img {
+      width: 100%;
+      height: 70px;
+      object-fit: contain;
+      cursor: pointer;
+    }
+    .history-del-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background-color: #ff5252;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -592,6 +723,7 @@
         <button id="modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body">
+        <button id="go-to-stamp-btn" class="stamp-nav-btn">🎨 手描きスタンプを作成</button>
         <div>
           <div class="section-title">ワンタップ絵文字</div>
           <div class="palette-grid" id="emoji-palette"></div>
@@ -609,6 +741,64 @@
         <button id="modal-clear-btn" class="secondary-btn">クリア</button>
         <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
         <button id="modal-submit-btn" class="send-btn-style">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手描きスタンプ作成モーダル -->
+  <div id="stamp-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">手描きスタンプ作成</div>
+        <button id="stamp-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button id="back-to-comment-btn" class="tool-btn">⬅ コメントへ戻る</button>
+          <button id="go-to-history-btn" class="stamp-nav-btn" style="margin-bottom:0;">🕒 作成履歴</button>
+        </div>
+
+        <!-- 3層のキャンバス -->
+        <div class="canvas-wrapper">
+          <canvas id="layer1" class="stamp-canvas" width="280" height="280"></canvas>
+          <canvas id="layer2" class="stamp-canvas" width="280" height="280"></canvas>
+          <canvas id="layer3" class="stamp-canvas" width="280" height="280"></canvas>
+        </div>
+
+        <div class="stamp-tools">
+          <div class="color-picker-wrapper">
+            <span style="font-size:0.8rem; color:#aaa;">色:</span>
+            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:30px; height:30px; cursor:pointer;">
+          </div>
+          <div class="color-picker-wrapper">
+            <span style="font-size:0.8rem; color:#aaa;">太さ:</span>
+            <input type="range" id="stamp-size" min="2" max="20" value="5" style="width:70px;">
+          </div>
+          <button id="tool-pen" class="tool-btn active">ペン</button>
+          <button id="tool-eraser" class="tool-btn">消しゴム</button>
+          <button id="tool-undo" class="tool-btn">1つ戻す</button>
+          <button id="tool-clear" class="tool-btn">全消去</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
+        <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタンプ履歴モーダル -->
+  <div id="history-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">スタンプ作成履歴</div>
+        <button id="history-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="history-grid" class="history-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="back-to-stamp-draw-btn" class="secondary-btn">描画に戻る</button>
       </div>
     </div>
   </div>
@@ -669,7 +859,39 @@
     const emojiPalette = document.getElementById('emoji-palette');
     const kaimojiPalette = document.getElementById('kaimoji-palette');
 
+    // 手描きスタンプモーダル関連DOM要素
+    const stampModalOverlay = document.getElementById('stamp-modal-overlay');
+    const goToStampBtn = document.getElementById('go-to-stamp-btn');
+    const stampModalCloseX = document.getElementById('stamp-modal-close-x');
+    const stampCancelBtn = document.getElementById('stamp-cancel-btn');
+    const backToCommentBtn = document.getElementById('back-to-comment-btn');
+    const goToHistoryBtn = document.getElementById('go-to-history-btn');
+    const stampSubmitBtn = document.getElementById('stamp-submit-btn');
+
+    // 履歴モーダル関連DOM要素
+    const historyModalOverlay = document.getElementById('history-modal-overlay');
+    const historyModalCloseX = document.getElementById('history-modal-close-x');
+    const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
+    const historyGrid = document.getElementById('history-grid');
+
+    // キャンバス関連要素
+    const layer1 = document.getElementById('layer1'); // 透過最下層
+    const layer2 = document.getElementById('layer2'); // 中層
+    const layer3 = document.getElementById('layer3'); // 最上層 (アクティブ描画)
+    const ctx2 = layer2.getContext('2d');
+    const ctx3 = layer3.getContext('2d');
+
+    const stampColorInput = document.getElementById('stamp-color');
+    const stampSizeInput = document.getElementById('stamp-size');
+    const toolPen = document.getElementById('tool-pen');
+    const toolEraser = document.getElementById('tool-eraser');
+    const toolUndo = document.getElementById('tool-undo');
+    const toolClear = document.getElementById('tool-clear');
+
     let cachedMessages = {};
+    let isDrawing = false;
+    let currentTool = 'pen'; // 'pen' or 'eraser'
+    let historyStack = [];
 
     // 絵文字・顔文字リスト
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
@@ -727,7 +949,7 @@
       modalTextInput.focus();
     });
 
-    // モーダルの「決定」ボタンを押したときの処理（送信＋クローズ）
+    // モーダルの「決定」ボタンを押したときの処理
     modalSubmitBtn.addEventListener('click', () => {
       const text = modalTextInput.value.trim();
       if (text) {
@@ -743,6 +965,214 @@
       }
       closeModal();
     });
+
+    /* --- 手描きスタンプ モーダル＆描画処理 --- */
+    goToStampBtn.addEventListener('click', () => {
+      closeModal();
+      stampModalOverlay.classList.add('active');
+      saveState();
+    });
+
+    backToCommentBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.remove('active');
+      commentModalOverlay.classList.add('active');
+    });
+
+    stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+    stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+
+    // ツール切り替え
+    toolPen.addEventListener('click', () => {
+      currentTool = 'pen';
+      toolPen.classList.add('active');
+      toolEraser.classList.remove('active');
+    });
+    toolEraser.addEventListener('click', () => {
+      currentTool = 'eraser';
+      toolEraser.classList.add('active');
+      toolPen.classList.remove('active');
+    });
+
+    function saveState() {
+      if (historyStack.length >= 10) historyStack.shift();
+      historyStack.push(ctx3.getImageData(0, 0, layer3.width, layer3.height));
+    }
+
+    toolUndo.addEventListener('click', () => {
+      if (historyStack.length > 0) {
+        const previousState = historyStack.pop();
+        ctx3.putImageData(previousState, 0, 0);
+      }
+    });
+
+    toolClear.addEventListener('click', () => {
+      saveState();
+      ctx3.clearRect(0, 0, layer3.width, layer3.height);
+    });
+
+    // キャンバス描画イベント
+    function getCanvasCoords(e) {
+      const rect = layer3.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (layer3.width / rect.width),
+        y: (clientY - rect.top) * (layer3.height / rect.height)
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawing = true;
+      saveState();
+      const pos = getCanvasCoords(e);
+      ctx3.beginPath();
+      ctx3.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e);
+
+      ctx3.lineWidth = stampSizeInput.value;
+      ctx3.lineCap = 'round';
+      ctx3.lineJoin = 'round';
+
+      if (currentTool === 'pen') {
+        ctx3.globalCompositeOperation = 'source-over';
+        ctx3.strokeStyle = stampColorInput.value;
+      } else {
+        ctx3.globalCompositeOperation = 'destination-out';
+      }
+
+      ctx3.lineTo(pos.x, pos.y);
+      ctx3.stroke();
+    }
+
+    function stopDrawing() {
+      if (isDrawing) {
+        ctx3.closePath();
+        isDrawing = false;
+      }
+    }
+
+    layer3.addEventListener('mousedown', startDrawing);
+    layer3.addEventListener('mousemove', draw);
+    layer3.addEventListener('mouseup', stopDrawing);
+    layer3.addEventListener('mouseleave', stopDrawing);
+
+    layer3.addEventListener('touchstart', startDrawing, { passive: false });
+    layer3.addEventListener('touchmove', draw, { passive: false });
+    layer3.addEventListener('touchend', stopDrawing);
+
+    // 完成・スタンプ送信処理
+    stampSubmitBtn.addEventListener('click', () => {
+      // 透過データ統合用キャンバス
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = 280;
+      exportCanvas.height = 280;
+      const expCtx = exportCanvas.getContext('2d');
+
+      expCtx.drawImage(layer2, 0, 0);
+      expCtx.drawImage(layer3, 0, 0);
+
+      const stampDataUrl = exportCanvas.toDataURL('image/png');
+
+      // 送信
+      const sender = userSelect.value;
+      push(messagesRef, {
+        sender: sender,
+        text: '',
+        fileData: stampDataUrl,
+        fileName: `stamp_${Date.now()}.png`,
+        isStamp: true,
+        timestamp: Date.now()
+      });
+
+      // ローカルストレージ（履歴）に保存
+      saveStampToHistory(stampDataUrl);
+
+      // 初期化 & モーダルクローズ
+      ctx3.clearRect(0, 0, layer3.width, layer3.height);
+      historyStack = [];
+      stampModalOverlay.classList.remove('active');
+    });
+
+    /* --- スタンプ履歴処理 --- */
+    function getStampHistory() {
+      return JSON.parse(localStorage.getItem('family_chat_stamp_history') || '[]');
+    }
+
+    function saveStampToHistory(dataUrl) {
+      let history = getStampHistory();
+      history.unshift(dataUrl);
+      if (history.length > 20) history = history.slice(0, 20); // 最大20件保存
+      localStorage.setItem('family_chat_stamp_history', JSON.stringify(history));
+    }
+
+    function renderStampHistory() {
+      historyGrid.innerHTML = '';
+      const history = getStampHistory();
+
+      if (history.length === 0) {
+        historyGrid.innerHTML = '<div style="color:#aaa; font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
+        return;
+      }
+
+      history.forEach((dataUrl, index) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.className = 'history-img';
+        img.title = 'タップして送信';
+        img.addEventListener('click', () => {
+          const sender = userSelect.value;
+          push(messagesRef, {
+            sender: sender,
+            text: '',
+            fileData: dataUrl,
+            fileName: `stamp_${Date.now()}.png`,
+            isStamp: true,
+            timestamp: Date.now()
+          });
+          historyModalOverlay.classList.remove('active');
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'history-del-btn';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteStampHistory(index);
+        });
+
+        item.appendChild(img);
+        item.appendChild(delBtn);
+        historyGrid.appendChild(item);
+      });
+    }
+
+    function deleteStampHistory(index) {
+      let history = getStampHistory();
+      history.splice(index, 1);
+      localStorage.setItem('family_chat_stamp_history', JSON.stringify(history));
+      renderStampHistory();
+    }
+
+    goToHistoryBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.remove('active');
+      renderStampHistory();
+      historyModalOverlay.classList.add('active');
+    });
+
+    backToStampDrawBtn.addEventListener('click', () => {
+      historyModalOverlay.classList.remove('active');
+      stampModalOverlay.classList.add('active');
+    });
+
+    historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 
     // ハンバーガーメニューの開閉機能
     function toggleSidebar() {
@@ -805,7 +1235,6 @@
       const file = e.target.files[0];
       if (!file) return;
 
-      // 10MB制限
       if (file.size > 10 * 1024 * 1024) {
         alert('ファイルサイズは10MB以下にしてください。');
         fileInput.value = '';
@@ -841,6 +1270,38 @@
       }
     }
 
+    // テキスト内のURL判定とHTMLリンク化処理
+    function renderFormattedText(container, text) {
+      // httpで始まり.htmlで終わる英数字URLにマッチする正規表現
+      const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
+      
+      let lastIndex = 0;
+      let match;
+
+      while ((match = urlRegex.exec(text)) !== null) {
+        // マッチする前のテキストを追加
+        if (match.index > lastIndex) {
+          container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+        }
+
+        // リンク要素の作成
+        const link = document.createElement('a');
+        link.href = match[0];
+        link.textContent = match[0];
+        link.className = 'chat-link';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        container.appendChild(link);
+
+        lastIndex = urlRegex.lastIndex;
+      }
+
+      // 残りのテキストを追加
+      if (lastIndex < text.length) {
+        container.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
+    }
+
     // 画面への描画
     function renderMessages() {
       chatBox.innerHTML = '';
@@ -858,35 +1319,58 @@
         senderName.textContent = msg.sender;
 
         const bubble = document.createElement('div');
-        bubble.className = 'bubble';
+        bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
 
-        // 画像・ファイルが存在する場合の表示処理
+        // スタンプ・画像・ファイルが存在する場合の表示処理
         if (msg.fileData) {
-          if (msg.isImage) {
+          if (msg.isStamp) {
+            const stampImg = document.createElement('img');
+            stampImg.src = msg.fileData;
+            stampImg.className = 'chat-stamp';
+            stampImg.alt = '手描きスタンプ';
+            stampImg.title = '長押しでダウンロード保存';
+            
+            // 長押し/クリックでダウンロード保存できるようにする
+            stampImg.addEventListener('click', () => {
+              const a = document.createElement('a');
+              a.href = msg.fileData;
+              a.download = msg.fileName || 'stamp.png';
+              a.click();
+            });
+            
+            bubble.appendChild(stampImg);
+          } else if (msg.isImage) {
             const img = document.createElement('img');
             img.src = msg.fileData;
             img.className = 'chat-image';
             img.alt = msg.fileName || '画像';
             bubble.appendChild(img);
+
+            const dlLink = document.createElement('a');
+            dlLink.href = msg.fileData;
+            dlLink.download = msg.fileName || 'download';
+            dlLink.className = 'download-link';
+            dlLink.textContent = '⬇ ダウンロード';
+            bubble.appendChild(dlLink);
           } else {
             const fileAttachment = document.createElement('div');
             fileAttachment.className = 'file-attachment';
             fileAttachment.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
             bubble.appendChild(fileAttachment);
-          }
 
-          const dlLink = document.createElement('a');
-          dlLink.href = msg.fileData;
-          dlLink.download = msg.fileName || 'download';
-          dlLink.className = 'download-link';
-          dlLink.textContent = '⬇ ダウンロード';
-          bubble.appendChild(dlLink);
+            const dlLink = document.createElement('a');
+            dlLink.href = msg.fileData;
+            dlLink.download = msg.fileName || 'download';
+            dlLink.className = 'download-link';
+            dlLink.textContent = '⬇ ダウンロード';
+            bubble.appendChild(dlLink);
+          }
         }
 
-        // テキストが存在する場合
+        // テキストが存在する場合（URL自動リンク化適用）
         if (msg.text) {
           const textNode = document.createElement('div');
-          textNode.textContent = msg.text;
+          renderFormattedText(textNode, msg.text);
           bubble.appendChild(textNode);
         }
 
@@ -963,7 +1447,7 @@
 
         if (e.key === 'Enter') {
           if (e.shiftKey) {
-            return; // Shift+Enterは改行
+            return;
           } else {
             e.preventDefault();
             sendMessage();
