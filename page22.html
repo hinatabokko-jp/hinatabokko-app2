@@ -1153,8 +1153,6 @@
       measurementId: "G-JRLH7QTSM5"
     };
 
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
@@ -1377,7 +1375,7 @@
         onValue(messagesRef, (snapshot) => {
             const data = snapshot.val() || {};
             cachedMessages = data;
-            cleanOldMessages(data);
+            // 7日間の自動削除処理を削除しました
             renderMessages();
         });
 
@@ -1418,16 +1416,6 @@
                 <span>${escapeHTML(uname)}</span>
             `;
             onlineMemberList.appendChild(item);
-        });
-    }
-
-    function cleanOldMessages(data) {
-        const now = Date.now();
-        Object.keys(data).forEach((key) => {
-            const msg = data[key];
-            if (msg.timestamp && (now - msg.timestamp > SEVEN_DAYS_MS)) {
-                remove(ref(db, `messages/${key}`));
-            }
         });
     }
 
