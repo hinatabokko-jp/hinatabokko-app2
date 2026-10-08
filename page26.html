@@ -42,7 +42,7 @@
       font-size: 1.2rem;
       color: #00bcd4;
     }
-    #pass-input {
+    #id-input, #pass-input {
       background-color: #2a2a2a;
       border: 1px solid #444;
       border-radius: 8px;
@@ -51,7 +51,7 @@
       font-size: 1rem;
       text-align: center;
       outline: none;
-      width: 200px;
+      width: 220px;
     }
     #pass-btn {
       background-color: #00bcd4;
@@ -62,6 +62,15 @@
       font-weight: bold;
       font-size: 0.95rem;
       cursor: pointer;
+    }
+    .invite-link-btn {
+      background: none;
+      border: none;
+      color: #00bcd4;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 8px;
     }
     #pass-error {
       color: #ff5252;
@@ -539,6 +548,42 @@
       background-color: #3a3a3a;
     }
 
+    /* 管理画面・招待モーダル用スタイル */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .admin-table th, .admin-table td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: left;
+    }
+    .admin-table th {
+      background-color: #252525;
+      color: #00bcd4;
+    }
+    .admin-input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 4px 6px;
+      border-radius: 4px;
+      width: 100px;
+    }
+    .admin-btn {
+      background: #00796b;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .admin-btn.del {
+      background: #8c2a2a;
+    }
+
     /* 手描きスタンプ関連スタイル */
     .stamp-nav-btn {
       background-color: #00bcd4;
@@ -553,15 +598,12 @@
       align-items: center;
       gap: 4px;
     }
-
-    /* エディタ主要レイアウト（キャンバス + Photoshop風レイヤーパネル） */
     .editor-layout {
       display: flex;
       gap: 12px;
       justify-content: center;
       align-items: flex-start;
     }
-
     .canvas-wrapper {
       position: relative;
       width: 250px;
@@ -582,10 +624,7 @@
       height: 100%;
       border-radius: 10px;
       touch-action: none;
-      /* アクティブレイヤーに応じて動的にpointer-eventsを切り替えます */
     }
-
-    /* Photoshop風 視覚的レイヤーパネル（ドラッグ入れ替え対応） */
     .ps-layers-panel {
       display: flex;
       flex-direction: column;
@@ -607,18 +646,9 @@
       cursor: grab;
       transition: background-color 0.2s;
     }
-    .ps-layer-item:active {
-      cursor: grabbing;
-    }
-    .ps-layer-item:hover {
-      background-color: #333;
-    }
     .ps-layer-item.active {
       border-color: #00bcd4;
       background-color: #2a383b;
-    }
-    .ps-layer-item.dragging {
-      opacity: 0.4;
     }
     .ps-layer-title {
       font-size: 0.7rem;
@@ -635,12 +665,9 @@
       border: 1px solid #444;
       border-radius: 4px;
       background-color: #111;
-      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
-      background-size: 10px 10px;
       object-fit: contain;
       pointer-events: none;
     }
-
     .stamp-tools {
       display: flex;
       flex-wrap: wrap;
@@ -677,8 +704,6 @@
       font-size: 0.8rem;
       outline: none;
     }
-
-    /* スタンプ履歴グリッド & アイテムカード */
     .history-header-bar {
       display: flex;
       justify-content: space-between;
@@ -711,8 +736,6 @@
       justify-content: center;
       background-color: #1a1a1a;
       border-radius: 6px;
-      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
-      background-size: 10px 10px;
     }
     .history-img {
       max-width: 100%;
@@ -738,20 +761,8 @@
       justify-content: center;
       gap: 4px;
     }
-    .history-action-btn:hover {
-      background-color: #444;
-      color: #fff;
-    }
-    .history-action-btn.send {
-      background-color: #00796b;
-      border-color: #008ba3;
-      color: #fff;
-    }
-    .history-action-btn.del {
-      background-color: #8c2a2a;
-      border-color: #a83232;
-      color: #fff;
-    }
+    .history-action-btn.send { background-color: #00796b; border-color: #008ba3; color: #fff; }
+    .history-action-btn.del { background-color: #8c2a2a; border-color: #a83232; color: #fff; }
   </style>
 </head>
 <body>
@@ -768,16 +779,18 @@
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21.html">AirChat 1on1</a></li>
       <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
-      <li><a href="#" class="sidebar-link current">おかあさん</a></li>
+      <li><a href="#" class="sidebar-link current">family chat</a></li>
     </ul>
   </aside>
 
   <!-- ロック画面 -->
   <div id="lock-screen">
-    <h2>パスワードを入力してください</h2>
+    <h2>ログイン認証</h2>
+    <input type="text" id="id-input" placeholder="ログインID" autocomplete="off">
     <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
-    <button id="pass-btn" class="send-btn-style">解除</button>
-    <div id="pass-error">パスワードが違います</div>
+    <button id="pass-btn" class="send-btn-style">ログイン</button>
+    <div id="pass-error">IDまたはパスワードが違います</div>
+    <button id="invite-open-btn" class="invite-link-btn">👥 ほかの人を招待する</button>
   </div>
 
   <!-- アプリ本体 -->
@@ -792,10 +805,7 @@
       </div>
       <div class="user-select-container">
         <span class="user-select-label">私は:</span>
-        <select id="user-select">
-          <option value="おかあさん">おかあさん</option>
-          <option value="むすめ">むすめ</option>
-        </select>
+        <select id="user-select"></select>
       </div>
     </header>
 
@@ -809,6 +819,73 @@
       <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
       <button id="send-btn" class="send-btn-style">送信</button>
     </footer>
+  </div>
+
+  <!-- 管理画面モーダル -->
+  <div id="admin-modal-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title">管理者画面（ユーザー管理）</div>
+        <button id="admin-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="section-title">登録ユーザー一覧</div>
+          <div>
+            <label style="font-size: 0.8rem; color: #aaa; margin-right: 6px;">新規登録許可:</label>
+            <input type="checkbox" id="reg-toggle" style="cursor: pointer;">
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>パスワード</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="admin-user-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top: 12px; background: #252525; padding: 10px; border-radius: 8px;">
+          <div class="section-title">新規ユーザー追加</div>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <input type="text" id="new-uid" placeholder="ID" class="admin-input" style="flex:1;">
+            <input type="text" id="new-upass" placeholder="パスワード" class="admin-input" style="flex:1;">
+            <button id="add-user-btn" class="admin-btn">追加</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <button id="admin-close-btn" class="secondary-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 招待用QRコードモーダル -->
+  <div id="invite-modal-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 400px; text-align: center;">
+      <div class="modal-header">
+        <div class="modal-title">アプリへ招待</div>
+        <button id="invite-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: center;">
+        <p style="font-size: 0.85rem; color: #aaa;">以下のQRコードを読み取るか、URLを共有してください。</p>
+        <div id="qrcode-container" style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0;">
+          <!-- QRコード生成APIを利用 -->
+          <img id="qr-img" src="" alt="QRコード" style="width: 180px; height: 180px; display: block;">
+        </div>
+        <div style="display: flex; gap: 6px; width: 100%; margin-top: 8px;">
+          <input type="text" id="invite-url-input" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html" readonly class="admin-input" style="flex: 1; text-align: left; font-size: 0.8rem;">
+          <button id="copy-url-btn" class="admin-btn" style="white-space: nowrap;">URLコピー</button>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button id="invite-close-btn" class="secondary-btn">閉じる</button>
+      </div>
+    </div>
   </div>
 
   <!-- コメント作成モーダル -->
@@ -855,35 +932,30 @@
           <button id="back-to-comment-btn" class="tool-btn">⬅ コメントへ戻る</button>
           <button id="go-to-history-btn" class="stamp-nav-btn">🕒 履歴</button>
         </div>
-
-        <!-- キャンバス＋Photoshop風視覚的レイヤーパネル -->
         <div class="editor-layout">
           <div class="canvas-wrapper">
             <canvas id="layer-bottom" class="stamp-canvas" width="250" height="250"></canvas>
             <canvas id="layer-top" class="stamp-canvas" width="250" height="250"></canvas>
           </div>
-
-          <!-- Photoshop風 レイヤーパネル（ドラッグで入れ替え可能） -->
           <div class="ps-layers-panel" id="layers-panel-container">
-            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2" title="レイヤー2 (ドラッグで上下入替)">
+            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2">
               <div class="ps-layer-title">Layer 2</div>
               <img id="ps-preview-2" class="ps-layer-preview" alt="Layer 2">
             </div>
-            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1" title="レイヤー1 (ドラッグで上下入替)">
+            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1">
               <div class="ps-layer-title">Layer 1</div>
               <img id="ps-preview-1" class="ps-layer-preview" alt="Layer 1">
             </div>
           </div>
         </div>
-
         <div class="stamp-tools">
           <div class="tool-group">
             <span style="font-size:0.8rem; color:#aaa;">色:</span>
-            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;" title="色選択">
+            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
           </div>
           <div class="tool-group">
             <span style="font-size:0.8rem; color:#aaa;">透明度:</span>
-            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;" title="透明度">
+            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
           </div>
           <div class="tool-group">
             <span style="font-size:0.8rem; color:#aaa;">太さ:</span>
@@ -928,9 +1000,7 @@
       <div class="modal-body">
         <div class="history-header-bar">
           <span style="font-size: 0.8rem; color: #aaa;">登録済みスタンプ一覧</span>
-          <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">
-            📁 PNGを追加
-          </label>
+          <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">📁 PNGを追加</label>
           <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
         </div>
         <div id="history-grid" class="history-grid"></div>
@@ -945,10 +1015,10 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const SECRET_PASSWORD = "1234";
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const INVITE_URL = "https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
@@ -965,13 +1035,183 @@
     const db = getDatabase(app);
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
+    const usersRef = ref(db, 'users');
+    const settingsRef = ref(db, 'settings');
+
+    // 初期マスターデータの登録用確認（初回起動時などの自動セットアップ用）
+    async function initMasterData() {
+      const snap = await get(usersRef);
+      if (!snap.exists()) {
+        set(ref(db, 'users/master'), { password: '0813' });
+        set(ref(db, 'users/おかあさん'), { password: '1234' });
+        set(ref(db, 'users/むすめ'), { password: '1234' });
+      }
+      const setSnap = await get(settingsRef);
+      if (!setSnap.exists()) {
+        set(ref(db, 'settings'), { allowRegistration: true });
+      }
+    }
+    initMasterData();
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
+    const idInput = document.getElementById('id-input');
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
+    
+    // 招待用モーダル
+    const inviteOpenBtn = document.getElementById('invite-open-btn');
+    const inviteModalOverlay = document.getElementById('invite-modal-overlay');
+    const inviteModalCloseX = document.getElementById('invite-modal-close-x');
+    const inviteCloseBtn = document.getElementById('invite-close-btn');
+    const qrImg = document.getElementById('qr-img');
+    const inviteUrlInput = document.getElementById('invite-url-input');
+    const copyUrlBtn = document.getElementById('copy-url-btn');
 
+    // 管理画面用モーダル
+    const adminModalOverlay = document.getElementById('admin-modal-overlay');
+    const adminModalCloseX = document.getElementById('admin-modal-close-x');
+    const adminCloseBtn = document.getElementById('admin-close-btn');
+    const adminUserTbody = document.getElementById('admin-user-tbody');
+    const regToggle = document.getElementById('reg-toggle');
+    const newUidInput = document.getElementById('new-uid');
+    const newUpassInput = document.getElementById('new-upass');
+    const addUserBtn = document.getElementById('add-user-btn');
+
+    inviteOpenBtn.addEventListener('click', () => {
+      inviteUrlInput.value = INVITE_URL;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(INVITE_URL)}`;
+      inviteModalOverlay.classList.add('active');
+    });
+    inviteModalCloseX.addEventListener('click', () => inviteModalOverlay.classList.remove('active'));
+    inviteCloseBtn.addEventListener('click', () => inviteModalOverlay.classList.remove('active'));
+
+    copyUrlBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(inviteUrlInput.value).then(() => {
+        alert('URLをコピーしました！');
+      });
+    });
+
+    adminModalCloseX.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
+    adminCloseBtn.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
+
+    async function checkLogin() {
+      const inputId = idInput.value.trim();
+      const inputPass = passInput.value;
+
+      if (inputId === 'master' && inputPass === '0813') {
+        localStorage.setItem('family_chat_auth', 'true');
+        localStorage.setItem('family_chat_user', 'master');
+        openAdminModal();
+        return;
+      }
+
+      const userSnap = await get(ref(db, `users/${inputId}`));
+      if (userSnap.exists() && userSnap.val().password === inputPass) {
+        localStorage.setItem('family_chat_auth', 'true');
+        localStorage.setItem('family_chat_user', inputId);
+        unlockApp(inputId);
+      } else {
+        passError.style.display = 'block';
+      }
+    }
+
+    async function openAdminModal() {
+      lockScreen.style.display = 'none';
+      // 設定値の取得
+      const setSnap = await get(settingsRef);
+      if (setSnap.exists()) {
+        regToggle.checked = setSnap.val().allowRegistration !== false;
+      }
+      renderAdminUserTable();
+      adminModalOverlay.classList.add('active');
+    }
+
+    regToggle.addEventListener('change', () => {
+      update(settingsRef, { allowRegistration: regToggle.checked });
+    });
+
+    async function renderAdminUserTable() {
+      const snap = await get(usersRef);
+      const users = snap.val() || {};
+      adminUserTbody.innerHTML = '';
+      Object.keys(users).forEach(uid => {
+        if (uid === 'master') return; // masterは編集除外
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${uid}</td>
+          <td><input type="text" value="${users[uid].password}" class="admin-input pass-edit" data-uid="${uid}"></td>
+          <td>
+            <button class="admin-btn update-pass" data-uid="${uid}">更新</button>
+            <button class="admin-btn del del-user" data-uid="${uid}">削除</button>
+          </td>
+        `;
+        adminUserTbody.appendChild(tr);
+      });
+
+      // イベント紐付け
+      document.querySelectorAll('.update-pass').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const uid = e.target.getAttribute('data-uid');
+          const newPass = document.querySelector(`.pass-edit[data-uid="${uid}"]`).value;
+          update(ref(db, `users/${uid}`), { password: newPass });
+          alert(`${uid} のパスワードを更新しました。`);
+        });
+      });
+
+      document.querySelectorAll('.del-user').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const uid = e.target.getAttribute('data-uid');
+          if (confirm(`${uid} を削除しますか？`)) {
+            remove(ref(db, `users/${uid}`));
+            renderAdminUserTable();
+          }
+        });
+      });
+    }
+
+    addUserBtn.addEventListener('click', async () => {
+      const setSnap = await get(settingsRef);
+      const allowReg = setSnap.exists() ? setSnap.val().allowRegistration : true;
+      if (!allowReg) {
+        alert('現在、新しいユーザーの新規登録は停止されています。');
+        return;
+      }
+      const uid = newUidInput.value.trim();
+      const upass = newUpassInput.value;
+      if (!uid || !upass) {
+        alert('IDとパスワードを入力してください。');
+        return;
+      }
+      await set(ref(db, `users/${uid}`), { password: upass });
+      newUidInput.value = '';
+      newUpassInput.value = '';
+      renderAdminUserTable();
+      alert('ユーザーを追加しました。');
+    });
+
+    function unlockApp(loginUser) {
+      lockScreen.style.display = 'none';
+      appContent.style.display = 'flex';
+      initChat(loginUser);
+    }
+
+    if (localStorage.getItem('family_chat_auth') === 'true') {
+      const savedUser = localStorage.getItem('family_chat_user');
+      if (savedUser === 'master') {
+        openAdminModal();
+      } else if (savedUser) {
+        unlockApp(savedUser);
+      }
+    }
+
+    passBtn.addEventListener('click', checkLogin);
+    passInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkLogin();
+    });
+
+    // 既存のチャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
@@ -1047,12 +1287,6 @@
     }
 
     function updateLayerDOMOrder() {
-      canvasA.style.zIndex = layerOrder.indexOf(1) + 1;
-      canvasB.style.zIndex = layerOrder.indexOf(2) + 1;
-
-      // 下にあるレイヤーのタッチ・マウスイベントが上に遮られないよう、
-      // 選択されているアクティブレイヤーの z-index を一時的に一番手前に引き上げるか、
-      // あるいは pointer-events を動的に制御して下にイベントを通すようにする
       if (activeLayerId === 1) {
         canvasA.style.zIndex = 10;
         canvasB.style.zIndex = 5;
@@ -1080,9 +1314,8 @@
     layerItem2.addEventListener('click', () => setActiveLayer(2));
 
     let draggedLayerId = null;
-
     [layerItem1, layerItem2].forEach(item => {
-      item.addEventListener('dragstart', (e) => {
+      item.addEventListener('dragstart', () => {
         draggedLayerId = parseInt(item.getAttribute('data-layer'));
         item.classList.add('dragging');
       });
@@ -1090,9 +1323,7 @@
         item.classList.remove('dragging');
         draggedLayerId = null;
       });
-      item.addEventListener('dragover', (e) => {
-        e.preventDefault();
-      });
+      item.addEventListener('dragover', (e) => e.preventDefault());
       item.addEventListener('drop', (e) => {
         e.preventDefault();
         const targetLayerId = parseInt(item.getAttribute('data-layer'));
@@ -1119,7 +1350,7 @@
     function insertAtCursor(field, text) {
       const startPos = field.selectionStart;
       const endPos = field.selectionEnd;
-      field.value = field.value.substring(0, startPos) + text + field.value.substring(endPos, field.value.length);
+      field.value = field.value.substring(0, startPos) + text + field.value.substring(endPos);
       field.focus();
       field.setSelectionRange(startPos + text.length, startPos + text.length);
     }
@@ -1142,34 +1373,20 @@
       kaimojiPalette.appendChild(btn);
     });
 
-    function openModal() {
+    modalOpenBtn.addEventListener('click', () => {
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
       setTimeout(() => modalTextInput.focus(), 50);
-    }
-
-    function closeModal() {
-      commentModalOverlay.classList.remove('active');
-    }
-
-    modalOpenBtn.addEventListener('click', openModal);
+    });
+    const closeModal = () => commentModalOverlay.classList.remove('active');
     modalCloseX.addEventListener('click', closeModal);
     modalCloseBtn.addEventListener('click', closeModal);
-
-    modalClearBtn.addEventListener('click', () => {
-      modalTextInput.value = '';
-      modalTextInput.focus();
-    });
+    modalClearBtn.addEventListener('click', () => { modalTextInput.value = ''; modalTextInput.focus(); });
 
     modalSubmitBtn.addEventListener('click', () => {
       const text = modalTextInput.value.trim();
       if (text) {
-        const sender = userSelect.value;
-        push(messagesRef, {
-          sender: sender,
-          text: text,
-          timestamp: Date.now()
-        });
+        push(messagesRef, { sender: userSelect.value, text: text, timestamp: Date.now() });
         modalTextInput.value = '';
         messageInput.value = '';
         messageInput.style.height = '40px';
@@ -1183,7 +1400,6 @@
       updateLayerPreviews();
       updateLayerDOMOrder();
     });
-
     goToStampBtn.addEventListener('click', () => {
       closeModal();
       stampModalOverlay.classList.add('active');
@@ -1191,12 +1407,10 @@
       updateLayerPreviews();
       updateLayerDOMOrder();
     });
-
     backToCommentBtn.addEventListener('click', () => {
       stampModalOverlay.classList.remove('active');
       commentModalOverlay.classList.add('active');
     });
-
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
@@ -1206,25 +1420,16 @@
       toolFill.classList.remove('active');
       toolEraser.classList.remove('active');
     });
-
-    toolFill.addEventListener('click', () => {
-      currentTool = 'fill';
-      toolEraser.classList.remove('active');
-    });
-
-    toolEraser.addEventListener('click', () => {
-      currentTool = 'eraser';
-      toolFill.classList.remove('active');
-    });
+    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); });
+    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); });
 
     function saveState() {
       if (historyStack.length >= 10) historyStack.shift();
-      const layerData = {
+      historyStack.push({
         l1: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
         l2: ctxB.getImageData(0, 0, canvasB.width, canvasB.height),
         order: [...layerOrder]
-      };
-      historyStack.push(layerData);
+      });
     }
 
     toolUndo.addEventListener('click', () => {
@@ -1255,206 +1460,51 @@
       };
     }
 
-    function floodFill(startX, startY, fillColorHex, opacity) {
-      const { canvas, ctx } = getActiveLayer();
-      const width = canvas.width;
-      const height = canvas.height;
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-
-      const r = parseInt(fillColorHex.slice(1, 3), 16);
-      const g = parseInt(fillColorHex.slice(3, 5), 16);
-      const b = parseInt(fillColorHex.slice(5, 7), 16);
-      const a = Math.round(opacity * 255);
-
-      const startPos = (startY * width + startX) * 4;
-      const startR = data[startPos];
-      const startG = data[startPos + 1];
-      const startB = data[startPos + 2];
-      const startA = data[startPos + 3];
-
-      if (startR === r && startG === g && startB === b && startA === a) return;
-
-      function matchStartColor(pos) {
-        return data[pos] === startR &&
-               data[pos + 1] === startG &&
-               data[pos + 2] === startB &&
-               data[pos + 3] === startA;
-      }
-
-      function colorPixel(pos) {
-        data[pos] = r;
-        data[pos + 1] = g;
-        data[pos + 2] = b;
-        data[pos + 3] = a;
-      }
-
-      const pixelStack = [[startX, startY]];
-
-      while (pixelStack.length) {
-        const newPos = pixelStack.pop();
-        const x = newPos[0];
-        let y = newPos[1];
-        let pixelPos = (y * width + x) * 4;
-
-        while (y >= 0 && matchStartColor(pixelPos)) {
-          y--;
-          pixelPos -= width * 4;
-        }
-        pixelPos += width * 4;
-        y++;
-
-        let reachLeft = false;
-        let reachRight = false;
-
-        while (y < height && matchStartColor(pixelPos)) {
-          colorPixel(pixelPos);
-
-          if (x > 0) {
-            if (matchStartColor(pixelPos - 4)) {
-              if (!reachLeft) {
-                pixelStack.push([x - 1, y]);
-                reachLeft = true;
-              }
-            } else if (reachLeft) {
-              reachLeft = false;
-            }
-          }
-
-          if (x < width - 1) {
-            if (matchStartColor(pixelPos + 4)) {
-              if (!reachRight) {
-                pixelStack.push([x + 1, y]);
-                reachRight = true;
-              }
-            } else if (reachRight) {
-              reachRight = false;
-            }
-          }
-
-          y++;
-          pixelPos += width * 4;
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-      updateLayerPreviews();
-    }
-
     [canvasA, canvasB].forEach(targetCanvas => {
       let isTargetDrawing = false;
-
       function startDraw(e) {
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
-
         const pos = getCanvasCoords(e, targetCanvas);
         saveState();
-
-        if (currentTool === 'fill') {
-          floodFill(pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
-          return;
-        }
-
+        if (currentTool === 'fill') return;
         isTargetDrawing = true;
-        const ctx = activeObj.ctx;
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
+        activeObj.ctx.beginPath();
+        activeObj.ctx.moveTo(pos.x, pos.y);
       }
-
       function moveDraw(e) {
         if (!isTargetDrawing || currentTool === 'fill') return;
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
-
         e.preventDefault();
         const pos = getCanvasCoords(e, targetCanvas);
         const ctx = activeObj.ctx;
         const baseSize = parseFloat(stampSizeInput.value);
-        const colorHex = stampColorInput.value;
-        const opacity = parseFloat(stampOpacityInput.value);
-
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.globalAlpha = opacity;
-
+        ctx.globalAlpha = parseFloat(stampOpacityInput.value);
         if (currentTool === 'eraser') {
           ctx.globalCompositeOperation = 'destination-out';
           ctx.lineWidth = baseSize * 1.5;
-          ctx.shadowBlur = 0;
         } else {
           ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = colorHex;
-
-          switch (currentBrushType) {
-            case 'calligraphy-brush':
-              ctx.lineWidth = baseSize * 1.2;
-              ctx.shadowBlur = 2;
-              ctx.shadowColor = colorHex;
-              break;
-            case 'calligraphy-pen':
-              ctx.lineWidth = Math.max(1, baseSize * 0.5);
-              ctx.shadowBlur = 0;
-              break;
-            case 'airbrush':
-              ctx.lineWidth = baseSize * 2;
-              ctx.shadowBlur = baseSize * 0.8;
-              ctx.shadowColor = colorHex;
-              ctx.globalAlpha = opacity * 0.4;
-              break;
-            case 'oil':
-              ctx.lineWidth = baseSize * 1.5;
-              ctx.shadowBlur = 1;
-              ctx.shadowColor = colorHex;
-              break;
-            case 'crayon':
-              ctx.lineWidth = baseSize;
-              ctx.shadowBlur = 3;
-              ctx.shadowColor = colorHex;
-              ctx.globalAlpha = opacity * 0.8;
-              break;
-            case 'marker':
-              ctx.lineWidth = baseSize * 1.8;
-              ctx.shadowBlur = 0;
-              ctx.globalAlpha = opacity * 0.7;
-              break;
-            case 'pencil':
-              ctx.lineWidth = Math.max(1, baseSize * 0.4);
-              ctx.shadowBlur = 0;
-              break;
-            case 'watercolor':
-              ctx.lineWidth = baseSize * 2;
-              ctx.shadowBlur = baseSize;
-              ctx.shadowColor = colorHex;
-              ctx.globalAlpha = opacity * 0.3;
-              break;
-            default:
-              ctx.lineWidth = baseSize;
-              ctx.shadowBlur = 0;
-              break;
-          }
+          ctx.strokeStyle = stampColorInput.value;
+          ctx.lineWidth = baseSize;
         }
-
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
       }
-
       function endDraw() {
         if (isTargetDrawing) {
-          const activeObj = getActiveLayer();
-          const ctx = activeObj.ctx;
-          ctx.closePath();
-          ctx.shadowBlur = 0;
-          ctx.globalAlpha = 1.0;
+          getActiveLayer().ctx.closePath();
           isTargetDrawing = false;
           updateLayerPreviews();
         }
       }
-
       targetCanvas.addEventListener('mousedown', startDraw);
       targetCanvas.addEventListener('mousemove', moveDraw);
       targetCanvas.addEventListener('mouseup', endDraw);
       targetCanvas.addEventListener('mouseleave', endDraw);
-
       targetCanvas.addEventListener('touchstart', startDraw, { passive: false });
       targetCanvas.addEventListener('touchmove', moveDraw, { passive: false });
       targetCanvas.addEventListener('touchend', endDraw);
@@ -1462,29 +1512,12 @@
 
     stampSubmitBtn.addEventListener('click', () => {
       const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = 250;
-      exportCanvas.height = 250;
+      exportCanvas.width = 250; exportCanvas.height = 250;
       const expCtx = exportCanvas.getContext('2d');
-
-      layerOrder.forEach(id => {
-        const { canvas } = getLayerObj(id);
-        expCtx.drawImage(canvas, 0, 0);
-      });
-
+      layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
       const stampDataUrl = exportCanvas.toDataURL('image/png');
-      const sender = userSelect.value;
-
-      push(messagesRef, {
-        sender: sender,
-        text: '',
-        fileData: stampDataUrl,
-        fileName: `stamp_${Date.now()}.png`,
-        isStamp: true,
-        timestamp: Date.now()
-      });
-
-      saveStampToFirebaseHistory(stampDataUrl);
-
+      push(messagesRef, { sender: userSelect.value, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: stampDataUrl, creator: userSelect.value, timestamp: Date.now() });
       ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
       ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
       historyStack = [];
@@ -1492,27 +1525,12 @@
       stampModalOverlay.classList.remove('active');
     });
 
-    function saveStampToFirebaseHistory(dataUrl) {
-      push(stampHistoryRef, {
-        dataUrl: dataUrl,
-        creator: userSelect.value,
-        timestamp: Date.now()
-      });
-    }
-
     stampUploadInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください。');
-        stampUploadInput.value = '';
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onload = function(event) {
-        saveStampToFirebaseHistory(event.target.result);
+      reader.onload = (event) => {
+        push(stampHistoryRef, { dataUrl: event.target.result, creator: userSelect.value, timestamp: Date.now() });
         stampUploadInput.value = '';
       };
       reader.readAsDataURL(file);
@@ -1520,142 +1538,49 @@
 
     onValue(stampHistoryRef, (snapshot) => {
       cachedStampHistory = snapshot.val() || {};
-      if (historyModalOverlay.classList.contains('active')) {
-        renderStampHistory();
-      }
+      if (historyModalOverlay.classList.contains('active')) renderStampHistory();
     });
 
     function renderStampHistory() {
       historyGrid.innerHTML = '';
       const keys = Object.keys(cachedStampHistory);
-
       if (keys.length === 0) {
         historyGrid.innerHTML = '<div style="color:#aaa; font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
         return;
       }
-
-      keys.reverse().forEach((key) => {
+      keys.reverse().forEach(key => {
         const item = cachedStampHistory[key];
         const card = document.createElement('div');
         card.className = 'history-card';
-
-        const imgWrapper = document.createElement('div');
-        imgWrapper.className = 'history-img-wrapper';
-
-        const img = document.createElement('img');
-        img.src = item.dataUrl;
-        img.className = 'history-img';
-        imgWrapper.appendChild(img);
-
-        const actions = document.createElement('div');
-        actions.className = 'history-actions';
-
-        const sendBtn = document.createElement('button');
-        sendBtn.className = 'history-action-btn send';
-        sendBtn.innerHTML = '💬 スタンプ送信';
-        sendBtn.addEventListener('click', () => {
-          const sender = userSelect.value;
-          push(messagesRef, {
-            sender: sender,
-            text: '',
-            fileData: item.dataUrl,
-            fileName: `stamp_${Date.now()}.png`,
-            isStamp: true,
-            timestamp: Date.now()
-          });
+        card.innerHTML = `
+          <div class="history-img-wrapper"><img src="${item.dataUrl}" class="history-img"></div>
+          <div class="history-actions">
+            <button class="history-action-btn send" data-key="${key}">💬 送信</button>
+            <button class="history-action-btn del" data-key="${key}">🗑 削除</button>
+          </div>
+        `;
+        card.querySelector('.send').addEventListener('click', () => {
+          push(messagesRef, { sender: userSelect.value, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
           historyModalOverlay.classList.remove('active');
         });
-
-        const downloadBtn = document.createElement('button');
-        downloadBtn.className = 'history-action-btn';
-        downloadBtn.innerHTML = '⬇ ダウンロード';
-        downloadBtn.addEventListener('click', () => {
-          const a = document.createElement('a');
-          a.href = item.dataUrl;
-          a.download = `stamp_${Date.now()}.png`;
-          a.click();
+        card.querySelector('.del').addEventListener('click', () => {
+          if (confirm('削除しますか？')) remove(ref(db, `stamp_history/${key}`));
         });
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'history-action-btn del';
-        delBtn.innerHTML = '🗑 削除';
-        delBtn.addEventListener('click', () => {
-          if (confirm('共有スタンプ履歴からこのスタンプを削除しますか？')) {
-            remove(ref(db, `stamp_history/${key}`));
-          }
-        });
-
-        actions.appendChild(sendBtn);
-        actions.appendChild(downloadBtn);
-        actions.appendChild(delBtn);
-
-        card.appendChild(imgWrapper);
-        card.appendChild(actions);
         historyGrid.appendChild(card);
       });
     }
 
-    goToHistoryBtn.addEventListener('click', () => {
-      stampModalOverlay.classList.remove('active');
-      renderStampHistory();
-      historyModalOverlay.classList.add('active');
-    });
-
-    backToStampDrawBtn.addEventListener('click', () => {
-      historyModalOverlay.classList.remove('active');
-      stampModalOverlay.classList.add('active');
-    });
-
+    goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
+    backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
     historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 
-    function toggleSidebar() {
-      sidebar.classList.toggle('open');
-      overlay.classList.toggle('active');
-    }
-
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('active');
-    }
-
-    hamburgerBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', closeSidebar);
-
-    function checkPassword() {
-      if (passInput.value === SECRET_PASSWORD) {
-        localStorage.setItem('family_chat_auth', 'true');
-        unlockApp();
-      } else {
-        passError.style.display = 'block';
-      }
-    }
-
-    function unlockApp() {
-      lockScreen.style.display = 'none';
-      appContent.style.display = 'flex';
-      initChat();
-    }
-
-    if (localStorage.getItem('family_chat_auth') === 'true') {
-      unlockApp();
-    }
-
-    passBtn.addEventListener('click', checkPassword);
-    passInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkPassword();
-    });
+    hamburgerBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
 
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
-
-      const sender = userSelect.value;
-      push(messagesRef, {
-        sender: sender,
-        text: text,
-        timestamp: Date.now()
-      });
-
+      push(messagesRef, { sender: userSelect.value, text: text, timestamp: Date.now() });
       messageInput.value = '';
       messageInput.style.height = '40px';
     }
@@ -1663,78 +1588,40 @@
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください。');
-        fileInput.value = '';
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onload = function(event) {
-        const fileData = event.target.result;
-        const sender = userSelect.value;
-        const isImage = file.type.startsWith('image/');
-
-        push(messagesRef, {
-          sender: sender,
-          text: '',
-          fileData: fileData,
-          fileName: file.name,
-          fileType: file.type,
-          isImage: isImage,
-          timestamp: Date.now()
-        });
-
+      reader.onload = (event) => {
+        push(messagesRef, { sender: userSelect.value, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
         fileInput.value = '';
       };
       reader.readAsDataURL(file);
     });
 
     function deleteMessage(key) {
-      if (confirm('このメッセージを削除しますか？')) {
-        const targetRef = ref(db, `messages/${key}`);
-        remove(targetRef);
-      }
+      if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
     }
 
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
-      let lastIndex = 0;
-      let match;
-
+      let lastIndex = 0, match;
       while ((match = urlRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-          container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
-        }
-
+        if (match.index > lastIndex) container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
         const link = document.createElement('a');
-        link.href = match[0];
-        link.textContent = match[0];
-        link.className = 'chat-link';
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        link.href = match[0]; link.textContent = match[0]; link.className = 'chat-link'; link.target = '_blank';
         container.appendChild(link);
-
         lastIndex = urlRegex.lastIndex;
       }
-
-      if (lastIndex < text.length) {
-        container.appendChild(document.createTextNode(text.substring(lastIndex)));
-      }
+      if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
     }
 
     function renderMessages() {
       chatBox.innerHTML = '';
       const currentUser = userSelect.value;
-
-      Object.keys(cachedMessages).forEach((key) => {
+      Object.keys(cachedMessages).forEach(key => {
         const msg = cachedMessages[key];
         const isSent = msg.sender === currentUser;
-
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-
+        
         const senderName = document.createElement('div');
         senderName.className = 'sender-name';
         senderName.textContent = msg.sender;
@@ -1744,77 +1631,69 @@
 
         if (msg.fileData) {
           if (msg.isStamp) {
-            const stampImg = document.createElement('img');
-            stampImg.src = msg.fileData;
-            stampImg.className = 'chat-stamp';
-            stampImg.alt = '手描きスタンプ';
-            bubble.appendChild(stampImg);
+            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-stamp';
+            bubble.appendChild(img);
           } else if (msg.isImage) {
-            const img = document.createElement('img');
-            img.src = msg.fileData;
-            img.className = 'chat-image';
-            img.alt = msg.fileName || '画像';
+            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-image';
             bubble.appendChild(img);
           } else {
-            const fileAttachment = document.createElement('div');
-            fileAttachment.className = 'file-attachment';
-            fileAttachment.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
-            bubble.appendChild(fileAttachment);
+            const fa = document.createElement('div'); fa.className = 'file-attachment';
+            fa.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
+            bubble.appendChild(fa);
           }
         }
-
         if (msg.text) {
-          const textNode = document.createElement('div');
-          renderFormattedText(textNode, msg.text);
-          bubble.appendChild(textNode);
+          const tn = document.createElement('div');
+          renderFormattedText(tn, msg.text);
+          bubble.appendChild(tn);
         }
 
         const metaInfo = document.createElement('div');
         metaInfo.className = 'meta-info';
-
         const timestamp = document.createElement('span');
         timestamp.className = 'timestamp';
-        const date = new Date(msg.timestamp);
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        timestamp.textContent = `${hours}:${minutes}`;
-
+        const d = new Date(msg.timestamp);
+        timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
         if (msg.fileData) {
-          const downloadBtn = document.createElement('button');
-          downloadBtn.className = 'delete-btn';
-          downloadBtn.textContent = 'ダウンロード';
-          downloadBtn.addEventListener('click', () => {
-            const a = document.createElement('a');
-            a.href = msg.fileData;
-            a.download = msg.fileName || `download_${Date.now()}.${msg.isStamp ? 'png' : 'bin'}`;
-            a.click();
+          const dlBtn = document.createElement('button');
+          dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
+          dlBtn.addEventListener('click', () => {
+            const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName || 'download'; a.click();
           });
-          metaInfo.appendChild(downloadBtn);
+          metaInfo.appendChild(dlBtn);
         }
-
         if (isSent) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'delete-btn';
-          deleteBtn.textContent = '削除';
-          deleteBtn.addEventListener('click', () => deleteMessage(key));
-          metaInfo.appendChild(deleteBtn);
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
+          delBtn.addEventListener('click', () => deleteMessage(key));
+          metaInfo.appendChild(delBtn);
         }
 
         msgDiv.appendChild(senderName);
         msgDiv.appendChild(bubble);
         msgDiv.appendChild(metaInfo);
-
         chatBox.appendChild(msgDiv);
       });
-
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function initChat() {
-      const savedUser = localStorage.getItem('family_chat_user');
-      if (savedUser) userSelect.value = savedUser;
+    async function initChat(loginUser) {
+      // ユーザーセレクトボックスの構築
+      const userSnap = await get(usersRef);
+      const users = userSnap.val() || {};
+      userSelect.innerHTML = '';
+      Object.keys(users).forEach(uid => {
+        const opt = document.createElement('option');
+        opt.value = uid;
+        opt.textContent = uid;
+        userSelect.appendChild(opt);
+      });
+
+      if (users[loginUser]) {
+        userSelect.value = loginUser;
+      }
 
       userSelect.addEventListener('change', () => {
         localStorage.setItem('family_chat_user', userSelect.value);
@@ -1822,34 +1701,17 @@
       });
 
       onValue(messagesRef, (snapshot) => {
-        const data = snapshot.val() || {};
-        cachedMessages = data;
-        cleanOldMessages(data);
+        cachedMessages = snapshot.val() || {};
         renderMessages();
       });
 
-      function cleanOldMessages(data) {
-        const now = Date.now();
-        Object.keys(data).forEach((key) => {
-          const msg = data[key];
-          if (msg.timestamp && (now - msg.timestamp > SEVEN_DAYS_MS)) {
-            remove(ref(db, `messages/${key}`));
-          }
-        });
-      }
-
       sendBtn.addEventListener('click', sendMessage);
-
       messageInput.addEventListener('keydown', (e) => {
-        if (e.isComposing || e.keyCode === 229) return;
-        if (e.key === 'Enter') {
-          if (!e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-          }
+        if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
         }
       });
-
       messageInput.addEventListener('input', () => {
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
