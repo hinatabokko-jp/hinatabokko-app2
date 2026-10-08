@@ -47,33 +47,39 @@
                     <i data-lucide="lock" class="w-7 h-7"></i>
                 </div>
                 <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">日程調整・投票</h1>
-                <p class="text-slate-400 text-xs sm:text-sm mt-1.5">投票ボードを表示するには、合言葉を入力してください。</p>
+                <p class="text-slate-400 text-xs sm:text-sm mt-1.5">投票ボードを表示するには、2つの合言葉を入力してください。</p>
             </div>
 
             <form id="passcodeForm" class="space-y-4">
                 <div>
-                    <label for="passcodeInput" class="block text-xs font-semibold text-slate-300 mb-1.5">合言葉 <span class="text-rose-500">*</span></label>
+                    <label for="passcode1Input" class="block text-xs font-semibold text-slate-300 mb-1.5">合言葉 1 <span class="text-rose-500">*</span></label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                             <i data-lucide="key-round" class="w-4 h-4"></i>
                         </span>
-                        <input type="password" id="passcodeInput" required placeholder="合言葉を入力してください" class="w-full bg-slate-900 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 text-sm outline-none transition-all">
+                        <input type="password" id="passcode1Input" required class="w-full bg-slate-900 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl pl-10 pr-4 py-3 text-slate-100 text-sm outline-none transition-all">
                     </div>
                 </div>
-                <div id="passcodeError" class="text-rose-400 text-xs hidden flex items-center gap-1">
+
+                <div>
+                    <label for="passcode2Input" class="block text-xs font-semibold text-slate-300 mb-1.5">合言葉 2 <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i data-lucide="key-round" class="w-4 h-4"></i>
+                        </span>
+                        <input type="password" id="passcode2Input" required class="w-full bg-slate-900 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl pl-10 pr-4 py-3 text-slate-100 text-sm outline-none transition-all">
+                    </div>
+                </div>
+
+                <div id="passcodeError" class="text-rose-400 text-xs hidden items-center gap-1">
                     <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> 合言葉が正しくありません。
                 </div>
-                <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all text-sm flex items-center justify-center gap-2">
+
+                <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all text-sm flex items-center justify-center gap-2">
                     <span>入室して投票する</span>
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </form>
-
-            <div class="mt-6 pt-4 border-t border-dark-border/60 text-center">
-                <p class="text-[11px] text-slate-500">
-                    ※ 初期合言葉: <code class="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">shukketsu123</code>
-                </p>
-            </div>
         </div>
     </div>
 
@@ -193,7 +199,7 @@
                     回答者ごとの詳細
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="individualListContainer">
-                    <!-- JS側で動的生成 -->
+                    <!-- JS側で動く -->
                 </div>
             </div>
 
@@ -206,7 +212,7 @@
     <!-- Firebase Script Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, push, set, update, remove, onValue, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // =============================================================
         // 【候補日時の設定】★ここを変更・追加することで日時を変えられます★
@@ -219,22 +225,21 @@
             "10月18日(日) 14:00〜"
         ];
 
-        // Firebase Configuration (提供された設定情報を使用)[cite: 2]
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAP4KPPgbc8W6rYJhwfRna6xtmWql5ZDvQ",
-            authDomain: "nittei-chousei-98260.firebaseapp.com",
-            databaseURL: "https://nittei-chousei-98260-default-rtdb.firebaseio.com",
-            projectId: "nittei-chousei-98260",
-            storageBucket: "nittei-chousei-98260.firebasestorage.app",
-            messagingSenderId: "889598003053",
-            appId: "1:889598003053:web:bbcaa32253ffc25512fc64",
-            measurementId: "G-TFR1YMRGY7"
+            apiKey: "AIzaSyDoQJUGnoCLdCw6CI9OVBshefrjedp1kuE",
+            authDomain: "attendancecheck-98146.firebaseapp.com",
+            databaseURL: "https://attendancecheck-98146-default-rtdb.firebaseio.com",
+            projectId: "attendancecheck-98146",
+            storageBucket: "attendancecheck-98146.firebasestorage.app",
+            messagingSenderId: "764590686398",
+            appId: "1:764590686398:web:f837b1a220778d679f5eef",
+            measurementId: "G-VNB89EB2DQ"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const CORRECT_PASSCODE = "shukketsu123";
         let voteData = [];
 
         function showToast(message, type = 'info') {
@@ -261,16 +266,50 @@
             unlockApp();
         }
 
-        // 合言葉認証
-        document.getElementById('passcodeForm').addEventListener('submit', (e) => {
+        // 合言葉認証（Firebase Realtime Database上の `settings/passcodes` と照合）
+        document.getElementById('passcodeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const inputVal = document.getElementById('passcodeInput').value.trim();
-            if (inputVal === CORRECT_PASSCODE) {
-                sessionStorage.setItem('shukketsu_auth', 'true');
-                unlockApp();
-                showToast("認証成功！日程調整ボードへようこそ", "success");
-            } else {
-                document.getElementById('passcodeError').classList.remove('hidden');
+            const val1 = document.getElementById('passcode1Input').value.trim();
+            const val2 = document.getElementById('passcode2Input').value.trim();
+            const errorEl = document.getElementById('passcodeError');
+            const submitBtn = document.getElementById('authSubmitBtn');
+
+            errorEl.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span> 認証中...`;
+
+            try {
+                // Firebaseから合言葉データを取得（存在しない場合は初期設定として2015, 2016を自動登録）
+                const passcodesRef = ref(db, 'settings/passcodes');
+                const snapshot = await get(passcodesRef);
+
+                let correct1 = "2015";
+                let correct2 = "2016";
+
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.p1) correct1 = String(data.p1);
+                    if (data.p2) correct2 = String(data.p2);
+                } else {
+                    // 初回起動時などにFirebaseへ合言葉を保存しておく
+                    await set(passcodesRef, { p1: "2015", p2: "2016" });
+                }
+
+                if (val1 === correct1 && val2 === correct2) {
+                    sessionStorage.setItem('shukketsu_auth', 'true');
+                    unlockApp();
+                    showToast("認証成功！日程調整ボードへようこそ", "success");
+                } else {
+                    errorEl.classList.remove('hidden');
+                    errorEl.classList.add('flex');
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
+                showToast("認証処理でエラーが発生しました", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>入室して投票する</span><i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+                lucide.createIcons();
             }
         });
 
@@ -284,7 +323,8 @@
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
             sessionStorage.removeItem('shukketsu_auth');
-            document.getElementById('passcodeInput').value = '';
+            document.getElementById('passcode1Input').value = '';
+            document.getElementById('passcode2Input').value = '';
             document.getElementById('app').classList.add('hidden');
             document.getElementById('authLockScreen').classList.remove('hidden');
         });
@@ -319,7 +359,7 @@
             `).join('');
         }
 
-        // リアルタイムデータ受信 (schedule_votes ノードを使用)
+        // リアルタイムデータ受信
         function subscribeRealtimeData() {
             const votesRef = ref(db, 'schedule_votes');
             onValue(votesRef, (snapshot) => {
@@ -497,6 +537,7 @@
         };
 
         function resetForm() {
+            document.getElementById('editMemberId').value = id => {};
             document.getElementById('editMemberId').value = '';
             document.getElementById('memberName').value = '';
             document.getElementById('memberComment').value = '';
@@ -517,7 +558,7 @@
         // CSV出力
         document.getElementById('exportCsvBtn').addEventListener('click', () => {
             if (voteData.length === 0) {
-                showToast("出力するデータがグラムありません", "error"); // 修正
+                showToast("出力するデータがありません", "error");
                 return;
             }
 
