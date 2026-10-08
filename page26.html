@@ -814,6 +814,10 @@
     <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
     <button id="pass-btn" class="send-btn-style">ログイン</button>
     <div id="pass-error">IDまたはパスワードが違います</div>
+    
+    <!-- ログイン不要で管理画面にいけるボタンを追加 -->
+    <button id="direct-admin-btn" class="secondary-btn" style="margin-top: 10px; background-color: #252525; border-color: #00bcd4; color: #00bcd4;">⚙️ 管理画面へ直接行く</button>
+    
     <button id="invite-open-btn" class="invite-link-btn">👥 ほかの人を招待する</button>
   </div>
 
@@ -1084,6 +1088,7 @@
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const authScreenTitle = document.getElementById('auth-screen-title');
+    const directAdminBtn = document.getElementById('direct-admin-btn');
 
     let isRegisterMode = false;
 
@@ -1139,8 +1144,14 @@
       });
     });
 
-    adminModalCloseX.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
-    adminCloseBtn.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
+    adminModalCloseX.addEventListener('click', () => {
+      adminModalOverlay.classList.remove('active');
+      lockScreen.style.display = 'flex';
+    });
+    adminCloseBtn.addEventListener('click', () => {
+      adminModalOverlay.classList.remove('active');
+      lockScreen.style.display = 'flex';
+    });
     adminLogoutBtn.addEventListener('click', () => {
       localStorage.removeItem('family_chat_auth');
       localStorage.removeItem('family_chat_user');
@@ -1149,6 +1160,11 @@
       appContent.style.display = 'none';
       idInput.value = '';
       passInput.value = '';
+    });
+
+    // ログイン不要で管理画面を開くボタンの処理
+    directAdminBtn.addEventListener('click', () => {
+      openAdminModal();
     });
 
     async function handleAuth() {
