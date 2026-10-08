@@ -106,6 +106,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <button id="openCandidatesModalBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-dark-border hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-600/50 transition-all">
+                        <i data-lucide="settings" class="w-4 h-4 text-amber-400"></i>
+                        <span class="hidden sm:inline">候補日時の変更</span>
+                    </button>
                     <button id="exportCsvBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm bg-dark-border hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-600/50 transition-all">
                         <i data-lucide="download" class="w-4 h-4"></i>
                         <span class="hidden sm:inline">CSV出力</span>
@@ -206,6 +210,45 @@
         </main>
     </div>
 
+    <!-- 候補日時変更用モーダル -->
+    <div id="candidatesModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-dark-card border border-dark-border rounded-2xl w-full max-w-lg p-6 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between pb-4 border-b border-dark-border mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+                        <i data-lucide="calendar-range" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white">投票の候補日時を編集</h3>
+                </div>
+                <button id="closeCandidatesModalBtn" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-400 mb-4">
+                ボードに表示する候補日時を追加・編集・削除できます。変更内容は全ユーザーにリアルタイムで同期されます。
+            </p>
+
+            <div id="modalCandidatesList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[50vh]">
+                <!-- 動的に入力フィールドが生成される -->
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-dark-border flex items-center justify-between">
+                <button type="button" id="addCandidateInputBtn" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-4 h-4 text-amber-400"></i>
+                    候補日時を追加
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="cancelCandidatesModalBtn" class="px-4 py-2 text-xs text-slate-400 hover:text-white transition-colors font-medium">キャンセル</button>
+                    <button type="button" id="saveCandidatesModalBtn" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        保存する
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -214,16 +257,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, push, set, update, remove, onValue, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        // =============================================================
-        // 【候補日時の設定】★ここを変更・追加することで日時を変えられます★
-        // =============================================================
-        const DATE_CANDIDATES = [
+        // デフォルトの候補日時初期値
+        const DEFAULT_DATE_CANDIDATES = [
             "10月15日(木) 19:00〜",
             "10月16日(金) 19:00〜",
             "10月17日(土) 14:00〜",
             "10月17日(土) 18:00〜",
             "10月18日(日) 14:00〜"
         ];
+
+        let dateCandidates = [...DEFAULT_DATE_CANDIDATES];
+        let voteData = [];
 
         // Firebase Configuration
         const firebaseConfig = {
@@ -239,8 +283,6 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-
-        let voteData = [];
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -266,7 +308,7 @@
             unlockApp();
         }
 
-        // 合言葉認証（Firebase Realtime Database上の `settings/passcodes` と照合）
+        // 合言葉認証
         document.getElementById('passcodeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const val1 = document.getElementById('passcode1Input').value.trim();
@@ -279,7 +321,6 @@
             submitBtn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span> 認証中...`;
 
             try {
-                // Firebaseから合言葉データを取得（存在しない場合は初期設定として2015, 2016を自動登録）
                 const passcodesRef = ref(db, 'settings/passcodes');
                 const snapshot = await get(passcodesRef);
 
@@ -291,7 +332,6 @@
                     if (data.p1) correct1 = String(data.p1);
                     if (data.p2) correct2 = String(data.p2);
                 } else {
-                    // 初回起動時などにFirebaseへ合言葉を保存しておく
                     await set(passcodesRef, { p1: "2015", p2: "2016" });
                 }
 
@@ -316,7 +356,7 @@
         function unlockApp() {
             document.getElementById('authLockScreen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            renderFormCandidates();
+            subscribeCandidatesData();
             subscribeRealtimeData();
             lucide.createIcons();
         }
@@ -329,10 +369,30 @@
             document.getElementById('authLockScreen').classList.remove('hidden');
         });
 
+        // 候補日時のリアルタイム同期
+        function subscribeCandidatesData() {
+            const candidatesRef = ref(db, 'settings/dateCandidates');
+            onValue(candidatesRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    dateCandidates = data;
+                } else {
+                    // 初回またはデータがない場合はデフォルトをセット
+                    set(candidatesRef, DEFAULT_DATE_CANDIDATES);
+                    dateCandidates = [...DEFAULT_DATE_CANDIDATES];
+                }
+                renderFormCandidates();
+                renderMatrixTable();
+                renderIndividualList();
+            }, (error) => {
+                console.error("Candidates Read Error:", error);
+            });
+        }
+
         // フォーム内の候補日時リスト生成
         function renderFormCandidates() {
             const container = document.getElementById('dateCandidatesFormContainer');
-            container.innerHTML = DATE_CANDIDATES.map((date, idx) => `
+            container.innerHTML = dateCandidates.map((date, idx) => `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-dark-border gap-2">
                     <span class="text-sm font-semibold text-slate-200">${escapeHtml(date)}</span>
                     <div class="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
@@ -359,7 +419,7 @@
             `).join('');
         }
 
-        // リアルタイムデータ受信
+        // 投票データのリアルタイム同期
         function subscribeRealtimeData() {
             const votesRef = ref(db, 'schedule_votes');
             onValue(votesRef, (snapshot) => {
@@ -384,7 +444,12 @@
             document.querySelector('#totalRespondents span').textContent = voteData.length;
             const tbody = document.getElementById('matrixTableBody');
 
-            tbody.innerHTML = DATE_CANDIDATES.map((date) => {
+            if (dateCandidates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500 text-sm">候補日時が登録されていません。「候補日時の変更」から追加してください。</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = dateCandidates.map((date) => {
                 let countOk = 0;
                 let countMaybe = 0;
                 let countNg = 0;
@@ -429,10 +494,10 @@
             container.innerHTML = voteData.map(item => {
                 const updatedTime = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                 
-                const votesSummary = DATE_CANDIDATES.map(date => {
+                const votesSummary = dateCandidates.map(date => {
                     const status = (item.votes && item.votes[date]) || '-';
-                    let badgeClass = status === '〇' ? 'text-emerald-400 font-bold' : status === '△' ? 'text-amber-400 font-bold' : 'text-rose-400 font-bold';
-                    return `<div class="flex justify-between text-xs py-1 border-b border-slate-800/40"><span class="text-slate-400 truncate">${escapeHtml(date)}</span><span class="${badgeClass}">${status}</span></div>`;
+                    let badgeClass = status === '〇' ? 'text-emerald-400 font-bold' : status === '△' ? 'text-amber-400 font-bold' : status === '×' ? 'text-rose-400 font-bold' : 'text-slate-500';
+                    return `<div class="flex justify-between text-xs py-1 border-b border-slate-800/40"><span class="text-slate-400 truncate pr-2">${escapeHtml(date)}</span><span class="${badgeClass}">${status}</span></div>`;
                 }).join('');
 
                 return `
@@ -479,7 +544,7 @@
             if (!name) return;
 
             const votes = {};
-            DATE_CANDIDATES.forEach((date, idx) => {
+            dateCandidates.forEach((date, idx) => {
                 const checkedRadio = document.querySelector(`input[name="candidate_${idx}"]:checked`);
                 votes[date] = checkedRadio ? checkedRadio.value : '〇';
             });
@@ -511,7 +576,7 @@
             document.getElementById('memberComment').value = target.comment || '';
             document.getElementById('formTitle').textContent = "回答を変更する";
 
-            DATE_CANDIDATES.forEach((date, idx) => {
+            dateCandidates.forEach((date, idx) => {
                 const val = (target.votes && target.votes[date]) || '〇';
                 const radio = document.querySelector(`input[name="candidate_${idx}"][value="${val}"]`);
                 if (radio) radio.checked = true;
@@ -537,13 +602,12 @@
         };
 
         function resetForm() {
-            document.getElementById('editMemberId').value = id => {};
             document.getElementById('editMemberId').value = '';
             document.getElementById('memberName').value = '';
             document.getElementById('memberComment').value = '';
             document.getElementById('formTitle').textContent = "あなたの都合を入力する";
 
-            DATE_CANDIDATES.forEach((_, idx) => {
+            dateCandidates.forEach((_, idx) => {
                 const defaultRadio = document.querySelector(`input[name="candidate_${idx}"][value="〇"]`);
                 if (defaultRadio) defaultRadio.checked = true;
             });
@@ -555,6 +619,83 @@
 
         document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
 
+        // --- 候補日時変更モーダル関連の処理 ---
+        const candidatesModal = document.getElementById('candidatesModal');
+        const modalCandidatesList = document.getElementById('modalCandidatesList');
+
+        document.getElementById('openCandidatesModalBtn').addEventListener('click', () => {
+            renderModalCandidatesInputs();
+            candidatesModal.classList.remove('hidden');
+        });
+
+        function closeCandidatesModal() {
+            candidatesModal.classList.add('hidden');
+        }
+
+        document.getElementById('closeCandidatesModalBtn').addEventListener('click', closeCandidatesModal);
+        document.getElementById('cancelCandidatesModalBtn').addEventListener('click', closeCandidatesModal);
+        candidatesModal.addEventListener('click', (e) => {
+            if (e.target === candidatesModal) closeCandidatesModal();
+        });
+
+        function renderModalCandidatesInputs(listToRender = dateCandidates) {
+            modalCandidatesList.innerHTML = listToRender.map((date, idx) => `
+                <div class="flex items-center gap-2 candidate-row">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs font-bold">
+                            ${idx + 1}
+                        </span>
+                        <input type="text" value="${escapeHtml(date)}" placeholder="例: 10月20日(火) 19:00〜" class="candidate-input w-full bg-slate-900 border border-dark-border focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl pl-8 pr-3 py-2 text-slate-100 text-sm outline-none transition-all">
+                    </div>
+                    <button type="button" onclick="window.removeCandidateRow(this)" class="p-2 bg-slate-900 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 rounded-xl border border-dark-border transition-colors" title="削除">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        document.getElementById('addCandidateInputBtn').addEventListener('click', () => {
+            const currentInputs = Array.from(document.querySelectorAll('.candidate-input')).map(input => input.value);
+            currentInputs.push("");
+            renderModalCandidatesInputs(currentInputs);
+        });
+
+        window.removeCandidateRow = function(btn) {
+            const row = btn.closest('.candidate-row');
+            const rows = document.querySelectorAll('.candidate-row');
+            if (rows.length <= 1) {
+                showToast("候補日時は最低1つ必要です", "error");
+                return;
+            }
+            row.remove();
+            // 番号の振り直し等の必要があればここに記載
+        };
+
+        document.getElementById('saveCandidatesModalBtn').addEventListener('click', async () => {
+            const inputs = document.querySelectorAll('.candidate-input');
+            const newCandidates = [];
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val) newCandidates.push(val);
+            });
+
+            if (newCandidates.length === 0) {
+                showToast("有効な候補日時を少なくとも1つ入力してください", "error");
+                return;
+            }
+
+            try {
+                const candidatesRef = ref(db, 'settings/dateCandidates');
+                await set(candidatesRef, newCandidates);
+                showToast("候補日時を更新しました！", "success");
+                closeCandidatesModal();
+            } catch (err) {
+                console.error("Candidates Save Error:", err);
+                showToast("候補日時の保存に失敗しました", "error");
+            }
+        });
+
         // CSV出力
         document.getElementById('exportCsvBtn').addEventListener('click', () => {
             if (voteData.length === 0) {
@@ -562,12 +703,12 @@
                 return;
             }
 
-            let csvContent = "\uFEFFお名前," + DATE_CANDIDATES.map(d => `"${d}"`).join(',') + ",コメント,更新日時\n";
+            let csvContent = "\uFEFFお名前," + dateCandidates.map(d => `"${d}"`).join(',') + ",コメント,更新日時\n";
             voteData.forEach(item => {
                 const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString('ja-JP') : '';
                 const row = [
                     `"${(item.name || '').replace(/"/g, '""')}"`,
-                    ...DATE_CANDIDATES.map(d => `"${((item.votes && item.votes[d]) || '').replace(/"/g, '""')}"`),
+                    ...dateCandidates.map(d => `"${((item.votes && item.votes[d]) || '').replace(/"/g, '""')}"`),
                     `"${(item.comment || '').replace(/"/g, '""')}"`,
                     `"${timeStr}"`
                 ].join(',');
