@@ -83,15 +83,6 @@
       font-size: 0.95rem;
       cursor: pointer;
     }
-    .invite-link-btn {
-      background: none;
-      border: none;
-      color: var(--primary-color);
-      font-size: 0.9rem;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-top: 8px;
-    }
     #pass-error {
       color: #ff5252;
       font-size: 0.85rem;
@@ -812,7 +803,6 @@
       <input type="password" id="pass-input" placeholder="あいことば" autocomplete="off">
       <button id="pass-btn" class="send-btn-style">入室する</button>
       <div id="pass-error">あいことばが違います</div>
-      <button id="invite-open-btn" class="invite-link-btn">👥 ほかの人を招待する</button>
     </div>
 
     <!-- アプリ本体 -->
@@ -853,29 +843,6 @@
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 招待用QRコードモーダル -->
-  <div id="invite-modal-overlay" class="modal-overlay">
-    <div class="modal-container" style="max-width: 400px; text-align: center;">
-      <div class="modal-header">
-        <div class="modal-title">アプリへ招待</div>
-        <button id="invite-modal-close-x" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body" style="align-items: center;">
-        <p style="font-size: 0.85rem; color: var(--text-muted);">以下のQRコードを読み取るか、URLを共有してください。</p>
-        <div id="qrcode-container" style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0;">
-          <img id="qr-img" src="" alt="QRコード" style="width: 180px; height: 180px; display: block;">
-        </div>
-        <div style="display: flex; gap: 6px; width: 100%; margin-top: 8px;">
-          <input type="text" id="invite-url-input" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html" readonly style="flex: 1; text-align: left; font-size: 0.8rem; background:#2a2a2a; border:1px solid #444; color:#fff; padding:4px 6px; border-radius:4px;">
-          <button id="copy-url-btn" style="white-space: nowrap; background:#00796b; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">URLコピー</button>
-        </div>
-      </div>
-      <div class="modal-footer" style="justify-content: center;">
-        <button id="invite-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
   </div>
@@ -1009,8 +976,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const INVITE_URL = "https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html";
-
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
       authDomain: "family-chat-3e0d6.firebaseapp.com",
@@ -1028,7 +993,6 @@
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
 
-    // 初回起動時にFirebaseにパスコード「1234」を設定
     async function initPasscode() {
       const snap = await get(passcodeRef);
       if (!snap.exists()) {
@@ -1042,33 +1006,13 @@
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
-    
-    // 招待用モーダル
-    const inviteOpenBtn = document.getElementById('invite-open-btn');
-    const inviteModalOverlay = document.getElementById('invite-modal-overlay');
-    const inviteModalCloseX = document.getElementById('invite-modal-close-x');
-    const inviteCloseBtn = document.getElementById('invite-close-btn');
-    const qrImg = document.getElementById('qr-img');
-    const inviteUrlInput = document.getElementById('invite-url-input');
-    const copyUrlBtn = document.getElementById('copy-url-btn');
 
-    inviteOpenBtn.addEventListener('click', () => {
-      inviteUrlInput.value = INVITE_URL;
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(INVITE_URL)}`;
-      inviteModalOverlay.classList.add('active');
-    });
-    inviteModalCloseX.addEventListener('click', () => inviteModalOverlay.classList.remove('active'));
-    inviteCloseBtn.addEventListener('click', () => inviteModalOverlay.classList.remove('active'));
-
-    copyUrlBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(inviteUrlInput.value).then(() => {
-        alert('URLをコピーしました！');
-      });
-    });
+    // ページを離れたら認証が外れるよう、起動時は常にロック画面を表示する仕様に変更
+    sessionStorage.removeItem('family_chat_unlocked');
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
-      localStorage.removeItem('family_chat_unlocked');
+      sessionStorage.removeItem('family_chat_unlocked');
       lockScreen.style.display = 'flex';
       appContent.style.display = 'none';
       passInput.value = '';
@@ -1086,7 +1030,7 @@
       const correctPass = snap.exists() ? snap.val() : '1234';
 
       if (inputPass === correctPass) {
-        localStorage.setItem('family_chat_unlocked', 'true');
+        sessionStorage.setItem('family_chat_unlocked', 'true');
         unlockApp();
       } else {
         passError.textContent = 'あいことばが違います';
@@ -1100,7 +1044,7 @@
       initChat();
     }
 
-    if (localStorage.getItem('family_chat_unlocked') === 'true') {
+    if (sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
 
