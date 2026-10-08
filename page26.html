@@ -22,7 +22,7 @@
       overflow: hidden;
     }
 
-    /* パスワードロック画面 */
+    /* パスワードロック・ログイン画面 */
     #lock-screen {
       position: fixed;
       top: 0;
@@ -41,6 +41,26 @@
     #lock-screen h2 {
       font-size: 1.2rem;
       color: #00bcd4;
+    }
+    .auth-tab-container {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .auth-tab-btn {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .auth-tab-btn.active {
+      background: #00bcd4;
+      color: #121212;
+      border-color: #00bcd4;
+      font-weight: bold;
     }
     #id-input, #pass-input {
       background-color: #2a2a2a;
@@ -783,9 +803,13 @@
     </ul>
   </aside>
 
-  <!-- ロック画面 -->
+  <!-- ログイン・新規登録ロック画面 -->
   <div id="lock-screen">
-    <h2>ログイン認証</h2>
+    <h2 id="auth-screen-title">ログイン認証</h2>
+    <div class="auth-tab-container">
+      <button id="tab-login" class="auth-tab-btn active">ログイン</button>
+      <button id="tab-register" class="auth-tab-btn">新規登録</button>
+    </div>
     <input type="text" id="id-input" placeholder="ログインID" autocomplete="off">
     <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
     <button id="pass-btn" class="send-btn-style">ログイン</button>
@@ -858,7 +882,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <div></div>
+        <button id="admin-logout-btn" class="secondary-btn" style="background-color: #8c2a2a; border-color: #a83232;">ログアウト</button>
         <button id="admin-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
@@ -874,7 +898,6 @@
       <div class="modal-body" style="align-items: center;">
         <p style="font-size: 0.85rem; color: #aaa;">以下のQRコードを読み取るか、URLを共有してください。</p>
         <div id="qrcode-container" style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0;">
-          <!-- QRコード生成APIを利用 -->
           <img id="qr-img" src="" alt="QRコード" style="width: 180px; height: 180px; display: block;">
         </div>
         <div style="display: flex; gap: 6px; width: 100%; margin-top: 8px;">
@@ -1017,7 +1040,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const INVITE_URL = "https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html";
 
     const firebaseConfig = {
@@ -1038,7 +1060,6 @@
     const usersRef = ref(db, 'users');
     const settingsRef = ref(db, 'settings');
 
-    // 初期マスターデータの登録用確認（初回起動時などの自動セットアップ用）
     async function initMasterData() {
       const snap = await get(usersRef);
       if (!snap.exists()) {
@@ -1060,6 +1081,30 @@
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
     
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const authScreenTitle = document.getElementById('auth-screen-title');
+
+    let isRegisterMode = false;
+
+    tabLogin.addEventListener('click', () => {
+      isRegisterMode = false;
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      authScreenTitle.textContent = 'ログイン認証';
+      passBtn.textContent = 'ログイン';
+      passError.style.display = 'none';
+    });
+
+    tabRegister.addEventListener('click', () => {
+      isRegisterMode = true;
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      authScreenTitle.textContent = '新規ユーザー登録';
+      passBtn.textContent = '登録する';
+      passError.style.display = 'none';
+    });
+    
     // 招待用モーダル
     const inviteOpenBtn = document.getElementById('invite-open-btn');
     const inviteModalOverlay = document.getElementById('invite-modal-overlay');
@@ -1073,6 +1118,7 @@
     const adminModalOverlay = document.getElementById('admin-modal-overlay');
     const adminModalCloseX = document.getElementById('admin-modal-close-x');
     const adminCloseBtn = document.getElementById('admin-close-btn');
+    const adminLogoutBtn = document.getElementById('admin-logout-btn');
     const adminUserTbody = document.getElementById('admin-user-tbody');
     const regToggle = document.getElementById('reg-toggle');
     const newUidInput = document.getElementById('new-uid');
@@ -1095,31 +1141,73 @@
 
     adminModalCloseX.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
     adminCloseBtn.addEventListener('click', () => adminModalOverlay.classList.remove('active'));
+    adminLogoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('family_chat_auth');
+      localStorage.removeItem('family_chat_user');
+      adminModalOverlay.classList.remove('active');
+      lockScreen.style.display = 'flex';
+      appContent.style.display = 'none';
+      idInput.value = '';
+      passInput.value = '';
+    });
 
-    async function checkLogin() {
+    async function handleAuth() {
       const inputId = idInput.value.trim();
       const inputPass = passInput.value;
 
-      if (inputId === 'master' && inputPass === '0813') {
-        localStorage.setItem('family_chat_auth', 'true');
-        localStorage.setItem('family_chat_user', 'master');
-        openAdminModal();
+      if (!inputId || !inputPass) {
+        passError.textContent = 'IDとパスワードを入力してください';
+        passError.style.display = 'block';
         return;
       }
 
-      const userSnap = await get(ref(db, `users/${inputId}`));
-      if (userSnap.exists() && userSnap.val().password === inputPass) {
+      if (isRegisterMode) {
+        // 新規登録処理
+        const setSnap = await get(settingsRef);
+        const allowReg = setSnap.exists() ? setSnap.val().allowRegistration : true;
+        if (!allowReg) {
+          passError.textContent = '現在、新しいユーザーの新規登録は停止されています。';
+          passError.style.display = 'block';
+          return;
+        }
+        if (inputId === 'master') {
+          passError.textContent = 'このIDは登録できません。';
+          passError.style.display = 'block';
+          return;
+        }
+        const userSnap = await get(ref(db, `users/${inputId}`));
+        if (userSnap.exists()) {
+          passError.textContent = 'すでに存在するIDです。';
+          passError.style.display = 'block';
+          return;
+        }
+        await set(ref(db, `users/${inputId}`), { password: inputPass });
         localStorage.setItem('family_chat_auth', 'true');
         localStorage.setItem('family_chat_user', inputId);
         unlockApp(inputId);
       } else {
-        passError.style.display = 'block';
+        // ログイン処理
+        if (inputId === 'master' && inputPass === '0813') {
+          localStorage.setItem('family_chat_auth', 'true');
+          localStorage.setItem('family_chat_user', 'master');
+          openAdminModal();
+          return;
+        }
+
+        const userSnap = await get(ref(db, `users/${inputId}`));
+        if (userSnap.exists() && userSnap.val().password === inputPass) {
+          localStorage.setItem('family_chat_auth', 'true');
+          localStorage.setItem('family_chat_user', inputId);
+          unlockApp(inputId);
+        } else {
+          passError.textContent = 'IDまたはパスワードが違います';
+          passError.style.display = 'block';
+        }
       }
     }
 
     async function openAdminModal() {
       lockScreen.style.display = 'none';
-      // 設定値の取得
       const setSnap = await get(settingsRef);
       if (setSnap.exists()) {
         regToggle.checked = setSnap.val().allowRegistration !== false;
@@ -1140,26 +1228,47 @@
         if (uid === 'master') return; // masterは編集除外
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${uid}</td>
+          <td><input type="text" value="${uid}" class="admin-input uid-edit" data-old-uid="${uid}"></td>
           <td><input type="text" value="${users[uid].password}" class="admin-input pass-edit" data-uid="${uid}"></td>
           <td>
-            <button class="admin-btn update-pass" data-uid="${uid}">更新</button>
+            <button class="admin-btn update-user" data-uid="${uid}">更新</button>
             <button class="admin-btn del del-user" data-uid="${uid}">削除</button>
           </td>
         `;
         adminUserTbody.appendChild(tr);
       });
 
-      // イベント紐付け
-      document.querySelectorAll('.update-pass').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const uid = e.target.getAttribute('data-uid');
-          const newPass = document.querySelector(`.pass-edit[data-uid="${uid}"]`).value;
-          update(ref(db, `users/${uid}`), { password: newPass });
-          alert(`${uid} のパスワードを更新しました。`);
+      // ユーザー名・パスワード更新処理
+      document.querySelectorAll('.update-user').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const oldUid = e.target.getAttribute('data-uid');
+          const newUidInputEl = document.querySelector(`.uid-edit[data-old-uid="${oldUid}"]`);
+          const newUid = newUidInputEl.value.trim();
+          const newPass = document.querySelector(`.pass-edit[data-uid="${oldUid}"]`).value;
+
+          if (!newUid) {
+            alert('ユーザー名を入力してください。');
+            return;
+          }
+
+          if (newUid !== oldUid) {
+            const checkSnap = await get(ref(db, `users/${newUid}`));
+            if (checkSnap.exists()) {
+              alert('すでに存在するユーザー名です。');
+              return;
+            }
+            // 新規キーでデータ保存して旧キーを削除
+            await set(ref(db, `users/${newUid}`), { password: newPass });
+            await remove(ref(db, `users/${oldUid}`));
+          } else {
+            await update(ref(db, `users/${oldUid}`), { password: newPass });
+          }
+          alert('ユーザー情報を更新しました。');
+          renderAdminUserTable();
         });
       });
 
+      // ユーザー削除処理
       document.querySelectorAll('.del-user').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const uid = e.target.getAttribute('data-uid');
@@ -1184,6 +1293,11 @@
         alert('IDとパスワードを入力してください。');
         return;
       }
+      const checkSnap = await get(ref(db, `users/${uid}`));
+      if (checkSnap.exists()) {
+        alert('すでに存在するIDです。');
+        return;
+      }
       await set(ref(db, `users/${uid}`), { password: upass });
       newUidInput.value = '';
       newUpassInput.value = '';
@@ -1193,6 +1307,7 @@
 
     function unlockApp(loginUser) {
       lockScreen.style.display = 'none';
+      adminModalOverlay.classList.remove('active');
       appContent.style.display = 'flex';
       initChat(loginUser);
     }
@@ -1206,9 +1321,9 @@
       }
     }
 
-    passBtn.addEventListener('click', checkLogin);
+    passBtn.addEventListener('click', handleAuth);
     passInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkLogin();
+      if (e.key === 'Enter') handleAuth();
     });
 
     // 既存のチャット・スタンプ関連変数・ロジック
@@ -1272,7 +1387,6 @@
 
     let cachedMessages = {};
     let cachedStampHistory = {};
-    let isDrawing = false;
     let currentTool = 'pen';
     let currentBrushType = 'pen';
     let historyStack = [];
@@ -1680,7 +1794,6 @@
     }
 
     async function initChat(loginUser) {
-      // ユーザーセレクトボックスの構築
       const userSnap = await get(usersRef);
       const users = userSnap.val() || {};
       userSelect.innerHTML = '';
