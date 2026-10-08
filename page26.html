@@ -145,7 +145,7 @@
       overflow: hidden;
     }
 
-    /* 管理パネル（AirChat Group風） */
+    /* 管理パネル */
     .admin-panel {
       width: 380px;
       background-color: #181818;
@@ -972,7 +972,7 @@
           </footer>
         </div>
 
-        <!-- 管理パネル (AirChat Group風レイアウト) -->
+        <!-- 管理パネル -->
         <div id="adminPanel" class="admin-panel">
           <div class="admin-title">ユーザー管理画面 (Master)</div>
           <div style="font-size:0.8rem; color:var(--text-muted);">登録されているユーザーのパスワード変更やアカウント削除が行えます。</div>
@@ -1156,11 +1156,18 @@
     async function initMasterData() {
       const snap = await get(usersRef);
       if (!snap.exists()) {
-        set(ref(db, 'users/おかあさん'), { password: '1234' });
-        set(ref(db, 'users/むすめ'), { password: '1234' });
+        await set(ref(db, 'users/おかあさん'), { password: '1234' });
+        await set(ref(db, 'users/むすめ'), { password: '1234' });
+      } else {
+        const val = snap.val();
+        if (!val['おかあさん']) {
+          await set(ref(db, 'users/おかあさん'), { password: '1234' });
+        }
+        if (!val['むすめ']) {
+          await set(ref(db, 'users/むすめ'), { password: '1234' });
+        }
       }
     }
-    initMasterData();
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
@@ -1310,21 +1317,26 @@
       initChat(loginUser);
     }
 
-    if (localStorage.getItem('family_chat_auth') === 'true') {
-      const savedUser = localStorage.getItem('family_chat_user');
-      if (savedUser === 'master') {
-        unlockApp('master', true);
-      } else if (savedUser) {
-        unlockApp(savedUser, false);
-      }
-    }
-
     passBtn.addEventListener('click', handleAuth);
     passInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 管理パネル関連処理 (AirChat Group風)
+    // 初期化と自動ログインチェック
+    async function initApp() {
+      await initMasterData();
+      if (localStorage.getItem('family_chat_auth') === 'true') {
+        const savedUser = localStorage.getItem('family_chat_user');
+        if (savedUser === 'master') {
+          unlockApp('master', true);
+        } else if (savedUser) {
+          unlockApp(savedUser, false);
+        }
+      }
+    }
+    initApp();
+
+    // 管理パネル関連処理
     function renderAdminUserList() {
       userList.innerHTML = '';
       const keys = Object.keys(cachedUsers);
@@ -1368,7 +1380,7 @@
       }
     };
 
-    // 既存のチャット・スタンプ関連変数・ロジック
+    // チャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
