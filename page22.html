@@ -90,7 +90,6 @@
         .header-actions {
             display: flex;
             gap: 8px;
-            align-items: center;
         }
 
         .btn-action {
@@ -177,6 +176,24 @@
 
         input[type="text"]:focus, input[type="password"]:focus {
             border-color: var(--primary-color);
+        }
+
+        .remember-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            cursor: pointer;
+            user-select: none;
+            margin-top: 4px;
+        }
+
+        .remember-container input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
         }
 
         .btn-secondary {
@@ -907,8 +924,6 @@
             <span id="statusBadge" class="status-badge">グループチャット</span>
         </div>
         <div class="header-actions">
-            <!-- 日程調整ボタンを追加 -->
-            <button id="scheduleBtn" class="btn-action" style="display:none;" onclick="openModal('scheduleModal')">📅 日程調整</button>
             <button id="membersBtn" class="btn-action" style="display:none;" onclick="openModal('membersModal')">👥 メンバー</button>
             <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="logoutUser()">ログアウト</button>
         </div>
@@ -933,6 +948,10 @@
                     <label for="loginPassword">パスワード</label>
                     <input type="password" id="loginPassword" placeholder="パスワードを入力">
                 </div>
+                <label class="remember-container">
+                    <input type="checkbox" id="rememberMeCheckbox">
+                    次回から自動でログインする
+                </label>
                 <button class="btn-primary" onclick="loginUser()">ログインしてチャットに入る</button>
             </div>
 
@@ -945,6 +964,10 @@
                     <label for="regPassword">パスワード</label>
                     <input type="password" id="regPassword" placeholder="パスワードを設定">
                 </div>
+                <label class="remember-container">
+                    <input type="checkbox" id="rememberMeCheckboxReg">
+                    次回から自動でログインする
+                </label>
                 <button class="btn-primary" onclick="registerUser()">アカウント作成して参加</button>
             </div>
 
@@ -998,23 +1021,6 @@
             </div>
             <div class="modal-footer" style="justify-content: flex-end;">
                 <button class="btn-secondary" onclick="closeModal('inviteModal')">閉じる</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 日程調整モーダルを追加 -->
-    <div id="scheduleModal" class="modal" onclick="closeModal('scheduleModal')">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-title">日程調整</div>
-                <button class="modal-close-btn" onclick="closeModal('scheduleModal')">✕</button>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 0; text-align: center; font-size: 0.95rem; line-height: 1.6;">
-                <div>日程調整のサイトに移行します</div>
-                <div style="font-weight: bold; color: var(--primary-hover);">合言葉は 2015 2016 です</div>
-            </div>
-            <div class="modal-footer" style="justify-content: center;">
-                <button class="btn-primary" style="padding: 10px 24px; margin-top: 0; width: 120px;" onclick="location.href='https://hinatabokko-jp.github.io/hinatabokko-app2/page27.html'">ＯＫ</button>
             </div>
         </div>
     </div>
@@ -1193,7 +1199,6 @@
     const chatView = document.getElementById('chatView');
     const changeUserBtn = document.getElementById('changeUserBtn');
     const membersBtn = document.getElementById('membersBtn');
-    const scheduleBtn = document.getElementById('scheduleBtn');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
     const fileInput = document.getElementById('file-input');
@@ -1246,7 +1251,11 @@
     let currentBrushType = 'pen';
     let historyStack = [];
 
-    const savedUser = localStorage.getItem('airchat_username');
+    // 自動ログインの判定（localStorage または sessionStorage をチェック）
+    const savedUserLocal = localStorage.getItem('airchat_username');
+    const savedUserSession = sessionStorage.getItem('airchat_username');
+    const savedUser = savedUserLocal || savedUserSession;
+
     if (savedUser) {
         currentUsername = savedUser;
         checkAndStartSession(savedUser);
@@ -1271,6 +1280,7 @@
     window.registerUser = async function() {
         const username = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value.trim();
+        const rememberMe = document.getElementById('rememberMeCheckboxReg').checked;
 
         if (!username || !password) {
             showToast('ユーザー名とパスワードを入力してください');
@@ -1290,13 +1300,14 @@
 
         showToast('登録が完了しました');
         currentUsername = username;
-        localStorage.setItem('airchat_username', username);
+        saveUserSession(username, rememberMe);
         startChatSession();
     };
 
     window.loginUser = async function() {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
+        const rememberMe = document.getElementById('rememberMeCheckbox').checked;
 
         if (!username || !password) {
             showToast('ユーザー名とパスワードを入力してください');
@@ -1306,7 +1317,7 @@
         if (username === 'master' && password === '0813') {
             isAdmin = true;
             currentUsername = username;
-            localStorage.setItem('airchat_username', username);
+            saveUserSession(username, rememberMe);
             startChatSession();
             return;
         }
@@ -1325,9 +1336,19 @@
 
         isAdmin = false;
         currentUsername = username;
-        localStorage.setItem('airchat_username', username);
+        saveUserSession(username, rememberMe);
         startChatSession();
     };
+
+    function saveUserSession(username, remember) {
+        if (remember) {
+            localStorage.setItem('airchat_username', username);
+            sessionStorage.removeItem('airchat_username');
+        } else {
+            sessionStorage.setItem('airchat_username', username);
+            localStorage.removeItem('airchat_username');
+        }
+    }
 
     async function checkAndStartSession(username) {
         if (username === 'master') {
@@ -1341,6 +1362,7 @@
             startChatSession();
         } else {
             localStorage.removeItem('airchat_username');
+            sessionStorage.removeItem('airchat_username');
         }
     }
 
@@ -1349,7 +1371,6 @@
         chatView.classList.add('active');
         changeUserBtn.style.display = 'block';
         membersBtn.style.display = 'block';
-        scheduleBtn.style.display = 'block';
 
         if (isAdmin) {
             statusBadge.textContent = "管理者モード";
@@ -1372,13 +1393,13 @@
             remove(ref(db, `presence/${currentUsername}`));
         }
         localStorage.removeItem('airchat_username');
+        sessionStorage.removeItem('airchat_username');
         currentUsername = "";
         isAdmin = false;
         joinView.classList.add('active');
         chatView.classList.remove('active');
         changeUserBtn.style.display = 'none';
         membersBtn.style.display = 'none';
-        scheduleBtn.style.display = 'none';
         adminPanel.classList.remove('active');
         appContainer.classList.remove('admin-layout');
     };
