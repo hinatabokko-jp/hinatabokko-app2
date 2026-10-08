@@ -73,6 +73,21 @@
       outline: none;
       width: 220px;
     }
+    .remember-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      cursor: pointer;
+      user-select: none;
+    }
+    .remember-container input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
     #pass-btn {
       background-color: var(--primary-color);
       color: #121212;
@@ -801,6 +816,10 @@
     <div id="lock-screen">
       <h2>あいことばを入力してください</h2>
       <input type="password" id="pass-input" placeholder="あいことば" autocomplete="off">
+      <label class="remember-container">
+        <input type="checkbox" id="remember-me-checkbox">
+        次回から自動でログインする
+      </label>
       <button id="pass-btn" class="send-btn-style">入室する</button>
       <div id="pass-error">あいことばが違います</div>
     </div>
@@ -815,7 +834,7 @@
               family chat
               <span id="statusBadge" class="status-badge">ファミリー</span>
             </div>
-           
+          </div>
         </div>
         <div class="header-right-actions">
           <div class="user-select-container" id="userSelectContainer">
@@ -973,7 +992,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
@@ -992,26 +1011,17 @@
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
 
-    async function initPasscode() {
-      const snap = await get(passcodeRef);
-      if (!snap.exists()) {
-        await set(passcodeRef, '1234');
-      }
-    }
-    initPasscode();
-
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
-
-    // ページを離れたら認証が外れるよう、起動時は常にロック画面を表示する仕様に変更
-    sessionStorage.removeItem('family_chat_unlocked');
+    const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
       sessionStorage.removeItem('family_chat_unlocked');
+      localStorage.removeItem('family_chat_unlocked');
       lockScreen.style.display = 'flex';
       appContent.style.display = 'none';
       passInput.value = '';
@@ -1025,14 +1035,23 @@
         return;
       }
 
-      const snap = await get(passcodeRef);
-      const correctPass = snap.exists() ? snap.val() : '1234';
+      try {
+        const snap = await get(passcodeRef);
+        const correctPass = snap.exists() ? snap.val() : '1234';
 
-      if (inputPass === correctPass) {
-        sessionStorage.setItem('family_chat_unlocked', 'true');
-        unlockApp();
-      } else {
-        passError.textContent = 'あいことばが違います';
+        if (inputPass === correctPass) {
+          if (rememberMeCheckbox.checked) {
+            localStorage.setItem('family_chat_unlocked', 'true');
+          } else {
+            sessionStorage.setItem('family_chat_unlocked', 'true');
+          }
+          unlockApp();
+        } else {
+          passError.textContent = 'あいことばが違います';
+          passError.style.display = 'block';
+        }
+      } catch (e) {
+        passError.textContent = '認証に失敗しました';
         passError.style.display = 'block';
       }
     }
@@ -1043,7 +1062,8 @@
       initChat();
     }
 
-    if (sessionStorage.getItem('family_chat_unlocked') === 'true') {
+    // 自動ログイン判定（localStorage または sessionStorage をチェック）
+    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
 
