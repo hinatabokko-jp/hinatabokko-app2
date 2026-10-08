@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>family chat</title>
   <style>
+    :root {
+      --bg-color: #121212;
+      --surface-color: #1e1e1e;
+      --primary-color: #00bcd4;
+      --primary-hover: #008ba3;
+      --danger-color: #cf6679;
+      --text-color: #e0e0e0;
+      --text-muted: #aaa;
+      --border-color: #2d2d2d;
+      --chat-bg: #121212;
+      --my-msg-bg: #00796b;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -12,14 +25,25 @@
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #121212;
-      color: #e0e0e0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       height: 100vh;
       height: 100dvh;
       position: relative;
       overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      transition: max-width 0.3s ease;
+    }
+    .app-container.admin-layout {
+      max-width: 100%;
     }
 
     /* パスワードロック・ログイン画面 */
@@ -29,7 +53,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: #121212;
+      background-color: var(--bg-color);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -40,7 +64,7 @@
     }
     #lock-screen h2 {
       font-size: 1.2rem;
-      color: #00bcd4;
+      color: var(--primary-color);
     }
     .auth-tab-container {
       display: flex;
@@ -50,16 +74,16 @@
     .auth-tab-btn {
       background: #2a2a2a;
       border: 1px solid #444;
-      color: #aaa;
+      color: var(--text-muted);
       padding: 6px 16px;
       border-radius: 6px;
       font-size: 0.85rem;
       cursor: pointer;
     }
     .auth-tab-btn.active {
-      background: #00bcd4;
+      background: var(--primary-color);
       color: #121212;
-      border-color: #00bcd4;
+      border-color: var(--primary-color);
       font-weight: bold;
     }
     #id-input, #pass-input {
@@ -74,7 +98,7 @@
       width: 220px;
     }
     #pass-btn {
-      background-color: #00bcd4;
+      background-color: var(--primary-color);
       color: #121212;
       border: none;
       border-radius: 8px;
@@ -86,7 +110,7 @@
     .invite-link-btn {
       background: none;
       border: none;
-      color: #00bcd4;
+      color: var(--primary-color);
       font-size: 0.9rem;
       cursor: pointer;
       text-decoration: underline;
@@ -98,7 +122,7 @@
       display: none;
     }
 
-    /* メインコンテンツ */
+    /* メインコンテンツ・チャットエリア */
     #app-content {
       display: none;
       flex-direction: column;
@@ -106,15 +130,116 @@
       width: 100%;
     }
 
+    .chat-main-area {
+      display: flex;
+      flex: 1;
+      height: calc(100% - 61px);
+      overflow: hidden;
+    }
+
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* 管理パネル（AirChat Group風） */
+    .admin-panel {
+      width: 380px;
+      background-color: #181818;
+      border-left: 1px solid var(--border-color);
+      display: none;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .admin-panel.active {
+      display: flex;
+    }
+    @media (max-width: 768px) {
+      .chat-main-area {
+        flex-direction: column;
+      }
+      .admin-panel {
+        width: 100%;
+        height: 40%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+      }
+    }
+
+    .admin-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .user-card {
+      background-color: #252525;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .user-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    .user-card-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .user-card-actions input {
+      padding: 6px;
+      font-size: 0.8rem;
+      width: 110px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+    }
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-edit {
+      background-color: #00796b;
+      color: #fff;
+    }
+    .btn-del {
+      background-color: #8c2a2a;
+      color: #fff;
+    }
+
     /* ヘッダー */
     header {
-      background-color: #1e1e1e;
+      background-color: var(--surface-color);
       padding: 10px 16px;
-      border-bottom: 1px solid #2d2d2d;
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
+      z-index: 10;
     }
     .header-left {
       display: flex;
@@ -128,14 +253,33 @@
     .header-title {
       font-size: 1.1rem;
       font-weight: bold;
-      color: #00bcd4;
+      color: var(--primary-color);
       line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background-color: #1b5e20;
+      color: #81c784;
+    }
+    .status-badge.admin {
+      background-color: #b71c1c;
+      color: #ff8a80;
     }
     .header-subtitle {
       font-size: 0.65rem;
-      color: #aaa;
+      color: var(--text-muted);
       margin-top: 2px;
       line-height: 1.2;
+    }
+    .header-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .user-select-container {
       display: flex;
@@ -145,7 +289,7 @@
     }
     .user-select-label {
       font-size: 0.8rem;
-      color: #aaa;
+      color: var(--text-muted);
     }
     select {
       background-color: #2a2a2a;
@@ -156,12 +300,24 @@
       font-size: 0.85rem;
       outline: none;
     }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .btn-logout:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
 
     /* ハンバーガーボタン & サイドバーUI */
     .hamburger-btn {
       background: none;
       border: none;
-      color: #00bcd4;
+      color: var(--primary-color);
       font-size: 1.5rem;
       cursor: pointer;
       padding: 4px;
@@ -195,7 +351,7 @@
       left: -260px;
       width: 260px;
       height: 100%;
-      background-color: #1e1e1e;
+      background-color: var(--surface-color);
       z-index: 1001;
       transition: transform 0.3s ease;
       display: flex;
@@ -210,7 +366,7 @@
       background-color: #252525;
       border-bottom: 1px solid #333;
       font-weight: bold;
-      color: #00bcd4;
+      color: var(--primary-color);
       font-size: 1rem;
     }
     .sidebar-menu {
@@ -222,7 +378,7 @@
     .sidebar-menu li a {
       display: block;
       padding: 12px 20px;
-      color: #e0e0e0;
+      color: var(--text-color);
       text-decoration: none;
       font-size: 0.95rem;
       border-left: 4px solid transparent;
@@ -234,8 +390,8 @@
     }
     .sidebar-menu li a.sidebar-link.current {
       background-color: #2a2a2a;
-      color: #00bcd4;
-      border-left-color: #00bcd4;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
       font-weight: bold;
     }
 
@@ -279,13 +435,13 @@
       white-space: pre-wrap;
     }
     .message.sent .bubble {
-      background-color: #00796b;
+      background-color: var(--my-msg-bg);
       color: #ffffff;
       border-bottom-right-radius: 2px;
     }
     .message.received .bubble {
       background-color: #2a2a2a;
-      color: #e0e0e0;
+      color: var(--text-color);
       border-bottom-left-radius: 2px;
     }
     .bubble.stamp-bubble {
@@ -310,7 +466,7 @@
     .delete-btn {
       background: none;
       border: none;
-      color: #aaa;
+      color: var(--text-muted);
       font-size: 0.7rem;
       cursor: pointer;
       padding: 0;
@@ -319,6 +475,7 @@
     }
     .delete-btn:hover {
       opacity: 1;
+      color: #fff;
     }
 
     /* メディア・ファイル関連スタイル */
@@ -343,7 +500,7 @@
       word-break: break-all;
     }
     .message.received .chat-link {
-      color: #00bcd4;
+      color: var(--primary-color);
     }
     .file-attachment {
       display: flex;
@@ -364,9 +521,9 @@
 
     /* 入力エリア */
     footer {
-      background-color: #1e1e1e;
+      background-color: var(--surface-color);
       padding: 12px 16px;
-      border-top: 1px solid #2d2d2d;
+      border-top: 1px solid var(--border-color);
       display: flex;
       align-items: flex-end;
       gap: 8px;
@@ -387,10 +544,10 @@
       line-height: 1.4;
     }
     textarea:focus {
-      border-color: #00bcd4;
+      border-color: var(--primary-color);
     }
     button.send-btn-style {
-      background-color: #00bcd4;
+      background-color: var(--primary-color);
       color: #121212;
       border: none;
       border-radius: 20px;
@@ -403,11 +560,11 @@
       flex-shrink: 0;
     }
     button.send-btn-style:active {
-      background-color: #008ba3;
+      background-color: var(--primary-hover);
     }
     button.icon-btn-style, label.icon-btn-style {
       background-color: #2a2a2a;
-      color: #00bcd4;
+      color: var(--primary-color);
       border: 1px solid #444;
       border-radius: 20px;
       width: 40px;
@@ -422,7 +579,7 @@
     }
     button.icon-btn-style:active, label.icon-btn-style:active {
       background-color: #3a3a3a;
-      border-color: #00bcd4;
+      border-color: var(--primary-color);
     }
 
     /* モーダル表示スタイル */
@@ -447,7 +604,7 @@
       visibility: visible;
     }
     .modal-container {
-      background-color: #1e1e1e;
+      background-color: var(--surface-color);
       border: 1px solid #333;
       border-radius: 12px;
       width: 100%;
@@ -469,12 +626,12 @@
     .modal-title {
       font-size: 1.05rem;
       font-weight: bold;
-      color: #00bcd4;
+      color: var(--primary-color);
     }
     .modal-close-btn {
       background: none;
       border: none;
-      color: #aaa;
+      color: var(--text-muted);
       font-size: 1.3rem;
       cursor: pointer;
       padding: 0 4px;
@@ -493,7 +650,7 @@
     .section-title {
       font-size: 0.85rem;
       font-weight: bold;
-      color: #e0e0e0;
+      color: var(--text-color);
       margin-bottom: 4px;
     }
     .palette-grid {
@@ -508,7 +665,7 @@
       height: 38px;
       padding: 0 10px;
       font-size: 1.1rem;
-      color: #e0e0e0;
+      color: var(--text-color);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -518,9 +675,6 @@
     .palette-btn:hover {
       background-color: #3a3a3a;
       transform: scale(1.03);
-    }
-    .palette-btn:active {
-      transform: scale(0.97);
     }
     .kaimoji-btn {
       font-size: 0.85rem;
@@ -540,12 +694,12 @@
       font-family: inherit;
     }
     .modal-textarea:focus {
-      border-color: #00bcd4;
+      border-color: var(--primary-color);
     }
     .modal-footer {
       padding: 12px 16px;
-      border-top: 1px solid #2d2d2d;
-      background-color: #1e1e1e;
+      border-top: 1px solid var(--border-color);
+      background-color: var(--surface-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -557,7 +711,7 @@
     }
     .secondary-btn {
       background-color: #2a2a2a;
-      color: #e0e0e0;
+      color: var(--text-color);
       border: 1px solid #444;
       border-radius: 8px;
       padding: 8px 14px;
@@ -568,45 +722,9 @@
       background-color: #3a3a3a;
     }
 
-    /* 管理画面・招待モーダル用スタイル */
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-    .admin-table th, .admin-table td {
-      border: 1px solid #333;
-      padding: 8px;
-      text-align: left;
-    }
-    .admin-table th {
-      background-color: #252525;
-      color: #00bcd4;
-    }
-    .admin-input {
-      background: #2a2a2a;
-      border: 1px solid #444;
-      color: #fff;
-      padding: 4px 6px;
-      border-radius: 4px;
-      width: 100px;
-    }
-    .admin-btn {
-      background: #00796b;
-      color: #fff;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    .admin-btn.del {
-      background: #8c2a2a;
-    }
-
     /* 手描きスタンプ関連スタイル */
     .stamp-nav-btn {
-      background-color: #00bcd4;
+      background-color: var(--primary-color);
       color: #121212;
       border: none;
       border-radius: 8px;
@@ -667,17 +785,17 @@
       transition: background-color 0.2s;
     }
     .ps-layer-item.active {
-      border-color: #00bcd4;
+      border-color: var(--primary-color);
       background-color: #2a383b;
     }
     .ps-layer-title {
       font-size: 0.7rem;
-      color: #aaa;
+      color: var(--text-muted);
       margin-bottom: 4px;
       font-weight: bold;
     }
     .ps-layer-item.active .ps-layer-title {
-      color: #00bcd4;
+      color: var(--primary-color);
     }
     .ps-layer-preview {
       width: 60px;
@@ -711,8 +829,8 @@
       cursor: pointer;
     }
     .tool-btn.active {
-      border-color: #00bcd4;
-      color: #00bcd4;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
       background-color: #333;
     }
     select.tool-select {
@@ -770,7 +888,7 @@
     }
     .history-action-btn {
       background-color: #333;
-      color: #e0e0e0;
+      color: var(--text-color);
       border: 1px solid #444;
       border-radius: 4px;
       padding: 4px 6px;
@@ -787,107 +905,79 @@
 </head>
 <body>
 
-  <!-- サイドバー＆オーバーレイ -->
-  <div id="overlay" class="overlay"></div>
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">メニュー</div>
-    <ul class="sidebar-menu">
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3">理科トレーニング</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5">社会科トレーニング</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21.html">AirChat 1on1</a></li>
-      <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
-      <li><a href="#" class="sidebar-link current">family chat</a></li>
-    </ul>
-  </aside>
+  <div class="app-container" id="app-container">
+    <!-- サイドバー＆オーバーレイ -->
+    <div id="overlay" class="overlay"></div>
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">メニュー</div>
+      <ul class="sidebar-menu">
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3">理科トレーニング</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5">社会科トレーニング</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21.html">AirChat 1on1</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
+        <li><a href="#" class="sidebar-link current">family chat</a></li>
+      </ul>
+    </aside>
 
-  <!-- ログイン・新規登録ロック画面 -->
-  <div id="lock-screen">
-    <h2 id="auth-screen-title">ログイン認証</h2>
-    <div class="auth-tab-container">
-      <button id="tab-login" class="auth-tab-btn active">ログイン</button>
-      <button id="tab-register" class="auth-tab-btn">新規登録</button>
+    <!-- ログイン・新規登録ロック画面 -->
+    <div id="lock-screen">
+      <h2 id="auth-screen-title">ログイン認証</h2>
+      <div class="auth-tab-container">
+        <button id="tab-login" class="auth-tab-btn active">ログイン</button>
+        <button id="tab-register" class="auth-tab-btn">新規登録</button>
+      </div>
+      <input type="text" id="id-input" placeholder="ログインID" autocomplete="off">
+      <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
+      <button id="pass-btn" class="send-btn-style">ログイン</button>
+      <div id="pass-error">IDまたはパスワードが違います</div>
+      <button id="invite-open-btn" class="invite-link-btn">👥 ほかの人を招待する</button>
     </div>
-    <input type="text" id="id-input" placeholder="ログインID" autocomplete="off">
-    <input type="password" id="pass-input" placeholder="パスワード" autocomplete="off">
-    <button id="pass-btn" class="send-btn-style">ログイン</button>
-    <div id="pass-error">IDまたはパスワードが違います</div>
-    
-    <!-- ログイン不要で管理画面にいけるボタンを追加 -->
-    <button id="direct-admin-btn" class="secondary-btn" style="margin-top: 10px; background-color: #252525; border-color: #00bcd4; color: #00bcd4;">⚙️ 管理画面へ直接行く</button>
-    
-    <button id="invite-open-btn" class="invite-link-btn">👥 ほかの人を招待する</button>
-  </div>
 
-  <!-- アプリ本体 -->
-  <div id="app-content">
-    <header>
-      <div class="header-left">
-        <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
-        <div class="header-title-container">
-          <div class="header-title">family chat</div>
-          <div class="header-subtitle">完全に暗号化されているわけではないので、あくまで 連絡用として使いましょう。</div>
-        </div>
-      </div>
-      <div class="user-select-container">
-        <span class="user-select-label">私は:</span>
-        <select id="user-select"></select>
-      </div>
-    </header>
-
-    <main id="chat-box"></main>
-
-    <footer>
-      <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
-      <input type="file" id="file-input" style="display: none;">
-      <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
-      <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
-      <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
-      <button id="send-btn" class="send-btn-style">送信</button>
-    </footer>
-  </div>
-
-  <!-- 管理画面モーダル -->
-  <div id="admin-modal-overlay" class="modal-overlay">
-    <div class="modal-container" style="max-width: 650px;">
-      <div class="modal-header">
-        <div class="modal-title">管理者画面（ユーザー管理）</div>
-        <button id="admin-modal-close-x" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div class="section-title">登録ユーザー一覧</div>
-          <div>
-            <label style="font-size: 0.8rem; color: #aaa; margin-right: 6px;">新規登録許可:</label>
-            <input type="checkbox" id="reg-toggle" style="cursor: pointer;">
+    <!-- アプリ本体 -->
+    <div id="app-content">
+      <header>
+        <div class="header-left">
+          <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
+          <div class="header-title-container">
+            <div class="header-title">
+              family chat
+              <span id="statusBadge" class="status-badge">ファミリー</span>
+            </div>
+            <div class="header-subtitle">完全に暗号化されているわけではないので、あくまで 連絡用として使いましょう。</div>
           </div>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>パスワード</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="admin-user-tbody"></tbody>
-          </table>
-        </div>
-        <div style="margin-top: 12px; background: #252525; padding: 10px; border-radius: 8px;">
-          <div class="section-title">新規ユーザー追加</div>
-          <div style="display: flex; gap: 8px; margin-top: 6px;">
-            <input type="text" id="new-uid" placeholder="ID" class="admin-input" style="flex:1;">
-            <input type="text" id="new-upass" placeholder="パスワード" class="admin-input" style="flex:1;">
-            <button id="add-user-btn" class="admin-btn">追加</button>
+        <div class="header-right-actions">
+          <div class="user-select-container" id="userSelectContainer">
+            <span class="user-select-label">私は:</span>
+            <select id="user-select"></select>
           </div>
+          <button id="changeUserBtn" class="btn-logout" style="display:none;">ログアウト</button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="admin-logout-btn" class="secondary-btn" style="background-color: #8c2a2a; border-color: #a83232;">ログアウト</button>
-        <button id="admin-close-btn" class="secondary-btn">閉じる</button>
+      </header>
+
+      <div class="chat-main-area">
+        <div class="chat-panel">
+          <main id="chat-box"></main>
+
+          <footer>
+            <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
+            <input type="file" id="file-input" style="display: none;">
+            <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
+            <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
+            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
+            <button id="send-btn" class="send-btn-style">送信</button>
+          </footer>
+        </div>
+
+        <!-- 管理パネル (AirChat Group風レイアウト) -->
+        <div id="adminPanel" class="admin-panel">
+          <div class="admin-title">ユーザー管理画面 (Master)</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">登録されているユーザーのパスワード変更やアカウント削除が行えます。</div>
+          <div id="userList" class="user-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -900,13 +990,13 @@
         <button id="invite-modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body" style="align-items: center;">
-        <p style="font-size: 0.85rem; color: #aaa;">以下のQRコードを読み取るか、URLを共有してください。</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">以下のQRコードを読み取るか、URLを共有してください。</p>
         <div id="qrcode-container" style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin: 10px 0;">
           <img id="qr-img" src="" alt="QRコード" style="width: 180px; height: 180px; display: block;">
         </div>
         <div style="display: flex; gap: 6px; width: 100%; margin-top: 8px;">
-          <input type="text" id="invite-url-input" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html" readonly class="admin-input" style="flex: 1; text-align: left; font-size: 0.8rem;">
-          <button id="copy-url-btn" class="admin-btn" style="white-space: nowrap;">URLコピー</button>
+          <input type="text" id="invite-url-input" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html" readonly class="admin-input" style="flex: 1; text-align: left; font-size: 0.8rem; background:#2a2a2a; border:1px solid #444; color:#fff; padding:4px 6px; border-radius:4px;">
+          <button id="copy-url-btn" class="admin-btn" style="white-space: nowrap; background:#00796b; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">URLコピー</button>
         </div>
       </div>
       <div class="modal-footer" style="justify-content: center;">
@@ -977,15 +1067,15 @@
         </div>
         <div class="stamp-tools">
           <div class="tool-group">
-            <span style="font-size:0.8rem; color:#aaa;">色:</span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
             <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
           </div>
           <div class="tool-group">
-            <span style="font-size:0.8rem; color:#aaa;">透明度:</span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
             <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
           </div>
           <div class="tool-group">
-            <span style="font-size:0.8rem; color:#aaa;">太さ:</span>
+            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
             <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
           </div>
           <div class="tool-group">
@@ -1026,7 +1116,7 @@
       </div>
       <div class="modal-body">
         <div class="history-header-bar">
-          <span style="font-size: 0.8rem; color: #aaa;">登録済みスタンプ一覧</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">登録済みスタンプ一覧</span>
           <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">📁 PNGを追加</label>
           <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
         </div>
@@ -1062,24 +1152,19 @@
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
     const usersRef = ref(db, 'users');
-    const settingsRef = ref(db, 'settings');
 
     async function initMasterData() {
       const snap = await get(usersRef);
       if (!snap.exists()) {
-        set(ref(db, 'users/master'), { password: '0813' });
         set(ref(db, 'users/おかあさん'), { password: '1234' });
         set(ref(db, 'users/むすめ'), { password: '1234' });
-      }
-      const setSnap = await get(settingsRef);
-      if (!setSnap.exists()) {
-        set(ref(db, 'settings'), { allowRegistration: true });
       }
     }
     initMasterData();
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
+    const appContainer = document.getElementById('app-container');
     const idInput = document.getElementById('id-input');
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
@@ -1088,9 +1173,17 @@
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const authScreenTitle = document.getElementById('auth-screen-title');
-    const directAdminBtn = document.getElementById('direct-admin-btn');
+
+    const statusBadge = document.getElementById('statusBadge');
+    const adminPanel = document.getElementById('adminPanel');
+    const userList = document.getElementById('userList');
+    const changeUserBtn = document.getElementById('changeUserBtn');
+    const userSelectContainer = document.getElementById('userSelectContainer');
 
     let isRegisterMode = false;
+    let isAdmin = false;
+    let currentUsername = "";
+    let cachedUsers = {};
 
     tabLogin.addEventListener('click', () => {
       isRegisterMode = false;
@@ -1119,17 +1212,6 @@
     const inviteUrlInput = document.getElementById('invite-url-input');
     const copyUrlBtn = document.getElementById('copy-url-btn');
 
-    // 管理画面用モーダル
-    const adminModalOverlay = document.getElementById('admin-modal-overlay');
-    const adminModalCloseX = document.getElementById('admin-modal-close-x');
-    const adminCloseBtn = document.getElementById('admin-close-btn');
-    const adminLogoutBtn = document.getElementById('admin-logout-btn');
-    const adminUserTbody = document.getElementById('admin-user-tbody');
-    const regToggle = document.getElementById('reg-toggle');
-    const newUidInput = document.getElementById('new-uid');
-    const newUpassInput = document.getElementById('new-upass');
-    const addUserBtn = document.getElementById('add-user-btn');
-
     inviteOpenBtn.addEventListener('click', () => {
       inviteUrlInput.value = INVITE_URL;
       qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(INVITE_URL)}`;
@@ -1144,27 +1226,17 @@
       });
     });
 
-    adminModalCloseX.addEventListener('click', () => {
-      adminModalOverlay.classList.remove('active');
-      lockScreen.style.display = 'flex';
-    });
-    adminCloseBtn.addEventListener('click', () => {
-      adminModalOverlay.classList.remove('active');
-      lockScreen.style.display = 'flex';
-    });
-    adminLogoutBtn.addEventListener('click', () => {
+    changeUserBtn.addEventListener('click', () => {
       localStorage.removeItem('family_chat_auth');
       localStorage.removeItem('family_chat_user');
-      adminModalOverlay.classList.remove('active');
+      currentUsername = "";
+      isAdmin = false;
       lockScreen.style.display = 'flex';
       appContent.style.display = 'none';
+      adminPanel.classList.remove('active');
+      appContainer.classList.remove('admin-layout');
       idInput.value = '';
       passInput.value = '';
-    });
-
-    // ログイン不要で管理画面を開くボタンの処理
-    directAdminBtn.addEventListener('click', () => {
-      openAdminModal();
     });
 
     async function handleAuth() {
@@ -1178,14 +1250,6 @@
       }
 
       if (isRegisterMode) {
-        // 新規登録処理
-        const setSnap = await get(settingsRef);
-        const allowReg = setSnap.exists() ? setSnap.val().allowRegistration : true;
-        if (!allowReg) {
-          passError.textContent = '現在、新しいユーザーの新規登録は停止されています。';
-          passError.style.display = 'block';
-          return;
-        }
         if (inputId === 'master') {
           passError.textContent = 'このIDは登録できません。';
           passError.style.display = 'block';
@@ -1200,13 +1264,13 @@
         await set(ref(db, `users/${inputId}`), { password: inputPass });
         localStorage.setItem('family_chat_auth', 'true');
         localStorage.setItem('family_chat_user', inputId);
-        unlockApp(inputId);
+        unlockApp(inputId, false);
       } else {
-        // ログイン処理
+        // 管理者ログイン判定 (master / 0813)
         if (inputId === 'master' && inputPass === '0813') {
           localStorage.setItem('family_chat_auth', 'true');
           localStorage.setItem('family_chat_user', 'master');
-          openAdminModal();
+          unlockApp('master', true);
           return;
         }
 
@@ -1214,7 +1278,7 @@
         if (userSnap.exists() && userSnap.val().password === inputPass) {
           localStorage.setItem('family_chat_auth', 'true');
           localStorage.setItem('family_chat_user', inputId);
-          unlockApp(inputId);
+          unlockApp(inputId, false);
         } else {
           passError.textContent = 'IDまたはパスワードが違います';
           passError.style.display = 'block';
@@ -1222,118 +1286,36 @@
       }
     }
 
-    async function openAdminModal() {
+    function unlockApp(loginUser, adminFlag) {
+      currentUsername = loginUser;
+      isAdmin = adminFlag;
       lockScreen.style.display = 'none';
-      const setSnap = await get(settingsRef);
-      if (setSnap.exists()) {
-        regToggle.checked = setSnap.val().allowRegistration !== false;
-      }
-      renderAdminUserTable();
-      adminModalOverlay.classList.add('active');
-    }
-
-    regToggle.addEventListener('change', () => {
-      update(settingsRef, { allowRegistration: regToggle.checked });
-    });
-
-    async function renderAdminUserTable() {
-      const snap = await get(usersRef);
-      const users = snap.val() || {};
-      adminUserTbody.innerHTML = '';
-      Object.keys(users).forEach(uid => {
-        if (uid === 'master') return; // masterは編集除外
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><input type="text" value="${uid}" class="admin-input uid-edit" data-old-uid="${uid}"></td>
-          <td><input type="text" value="${users[uid].password}" class="admin-input pass-edit" data-uid="${uid}"></td>
-          <td>
-            <button class="admin-btn update-user" data-uid="${uid}">更新</button>
-            <button class="admin-btn del del-user" data-uid="${uid}">削除</button>
-          </td>
-        `;
-        adminUserTbody.appendChild(tr);
-      });
-
-      // ユーザー名・パスワード更新処理
-      document.querySelectorAll('.update-user').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const oldUid = e.target.getAttribute('data-uid');
-          const newUidInputEl = document.querySelector(`.uid-edit[data-old-uid="${oldUid}"]`);
-          const newUid = newUidInputEl.value.trim();
-          const newPass = document.querySelector(`.pass-edit[data-uid="${oldUid}"]`).value;
-
-          if (!newUid) {
-            alert('ユーザー名を入力してください。');
-            return;
-          }
-
-          if (newUid !== oldUid) {
-            const checkSnap = await get(ref(db, `users/${newUid}`));
-            if (checkSnap.exists()) {
-              alert('すでに存在するユーザー名です。');
-              return;
-            }
-            // 新規キーでデータ保存して旧キーを削除
-            await set(ref(db, `users/${newUid}`), { password: newPass });
-            await remove(ref(db, `users/${oldUid}`));
-          } else {
-            await update(ref(db, `users/${oldUid}`), { password: newPass });
-          }
-          alert('ユーザー情報を更新しました。');
-          renderAdminUserTable();
-        });
-      });
-
-      // ユーザー削除処理
-      document.querySelectorAll('.del-user').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const uid = e.target.getAttribute('data-uid');
-          if (confirm(`${uid} を削除しますか？`)) {
-            remove(ref(db, `users/${uid}`));
-            renderAdminUserTable();
-          }
-        });
-      });
-    }
-
-    addUserBtn.addEventListener('click', async () => {
-      const setSnap = await get(settingsRef);
-      const allowReg = setSnap.exists() ? setSnap.val().allowRegistration : true;
-      if (!allowReg) {
-        alert('現在、新しいユーザーの新規登録は停止されています。');
-        return;
-      }
-      const uid = newUidInput.value.trim();
-      const upass = newUpassInput.value;
-      if (!uid || !upass) {
-        alert('IDとパスワードを入力してください。');
-        return;
-      }
-      const checkSnap = await get(ref(db, `users/${uid}`));
-      if (checkSnap.exists()) {
-        alert('すでに存在するIDです。');
-        return;
-      }
-      await set(ref(db, `users/${uid}`), { password: upass });
-      newUidInput.value = '';
-      newUpassInput.value = '';
-      renderAdminUserTable();
-      alert('ユーザーを追加しました。');
-    });
-
-    function unlockApp(loginUser) {
-      lockScreen.style.display = 'none';
-      adminModalOverlay.classList.remove('active');
       appContent.style.display = 'flex';
+      changeUserBtn.style.display = 'block';
+
+      if (isAdmin) {
+        statusBadge.textContent = "管理者モード";
+        statusBadge.classList.add('admin');
+        adminPanel.classList.add('active');
+        appContainer.classList.add('admin-layout');
+        userSelectContainer.style.display = 'none';
+      } else {
+        statusBadge.textContent = "ファミリー";
+        statusBadge.classList.remove('admin');
+        adminPanel.classList.remove('active');
+        appContainer.classList.remove('admin-layout');
+        userSelectContainer.style.display = 'flex';
+      }
+
       initChat(loginUser);
     }
 
     if (localStorage.getItem('family_chat_auth') === 'true') {
       const savedUser = localStorage.getItem('family_chat_user');
       if (savedUser === 'master') {
-        openAdminModal();
+        unlockApp('master', true);
       } else if (savedUser) {
-        unlockApp(savedUser);
+        unlockApp(savedUser, false);
       }
     }
 
@@ -1341,6 +1323,50 @@
     passInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAuth();
     });
+
+    // 管理パネル関連処理 (AirChat Group風)
+    function renderAdminUserList() {
+      userList.innerHTML = '';
+      const keys = Object.keys(cachedUsers);
+      if (keys.length === 0) {
+        userList.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">登録ユーザーがいません</div>';
+        return;
+      }
+      keys.forEach(uname => {
+        const user = cachedUsers[uname];
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.innerHTML = `
+          <div class="user-card-header">
+            <span>👤 ${escapeHTML(uname)}</span>
+          </div>
+          <div class="user-card-actions">
+            <input type="text" id="pass_input_${escapeHTML(uname)}" value="${escapeHTML(user.password || '')}">
+            <button class="btn-small btn-edit" onclick="adminUpdatePassword('${escapeHTML(uname)}')">変更</button>
+            <button class="btn-small btn-del" onclick="adminDeleteUser('${escapeHTML(uname)}')">削除</button>
+          </div>
+        `;
+        userList.appendChild(card);
+      });
+    }
+
+    window.adminUpdatePassword = function(uname) {
+      const inputElem = document.getElementById(`pass_input_${uname}`);
+      const newPass = inputElem.value.trim();
+      if (!newPass) {
+        alert('パスワードを入力してください');
+        return;
+      }
+      update(ref(db, `users/${uname}`), { password: newPass });
+      alert(`${uname} のパスワードを変更しました`);
+    };
+
+    window.adminDeleteUser = function(uname) {
+      if (confirm(`ユーザー "${uname}" を削除しますか？`)) {
+        remove(ref(db, `users/${uname}`));
+        alert(`${uname} を削除しました`);
+      }
+    };
 
     // 既存のチャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
@@ -1515,8 +1541,9 @@
 
     modalSubmitBtn.addEventListener('click', () => {
       const text = modalTextInput.value.trim();
+      const senderName = isAdmin ? '管理者(master)' : userSelect.value;
       if (text) {
-        push(messagesRef, { sender: userSelect.value, text: text, timestamp: Date.now() });
+        push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
         modalTextInput.value = '';
         messageInput.value = '';
         messageInput.style.height = '40px';
@@ -1646,8 +1673,9 @@
       const expCtx = exportCanvas.getContext('2d');
       layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
       const stampDataUrl = exportCanvas.toDataURL('image/png');
-      push(messagesRef, { sender: userSelect.value, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
-      push(stampHistoryRef, { dataUrl: stampDataUrl, creator: userSelect.value, timestamp: Date.now() });
+      const senderName = isAdmin ? '管理者(master)' : userSelect.value;
+      push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
       ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
       ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
       historyStack = [];
@@ -1660,7 +1688,8 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (event) => {
-        push(stampHistoryRef, { dataUrl: event.target.result, creator: userSelect.value, timestamp: Date.now() });
+        const senderName = isAdmin ? '管理者(master)' : userSelect.value;
+        push(stampHistoryRef, { dataUrl: event.target.result, creator: senderName, timestamp: Date.now() });
         stampUploadInput.value = '';
       };
       reader.readAsDataURL(file);
@@ -1675,7 +1704,7 @@
       historyGrid.innerHTML = '';
       const keys = Object.keys(cachedStampHistory);
       if (keys.length === 0) {
-        historyGrid.innerHTML = '<div style="color:#aaa; font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
+        historyGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
         return;
       }
       keys.reverse().forEach(key => {
@@ -1690,7 +1719,8 @@
           </div>
         `;
         card.querySelector('.send').addEventListener('click', () => {
-          push(messagesRef, { sender: userSelect.value, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+          const senderName = isAdmin ? '管理者(master)' : userSelect.value;
+          push(messagesRef, { sender: senderName, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
           historyModalOverlay.classList.remove('active');
         });
         card.querySelector('.del').addEventListener('click', () => {
@@ -1710,7 +1740,8 @@
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
-      push(messagesRef, { sender: userSelect.value, text: text, timestamp: Date.now() });
+      const senderName = isAdmin ? '管理者(master)' : userSelect.value;
+      push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
       messageInput.value = '';
       messageInput.style.height = '40px';
     }
@@ -1720,7 +1751,8 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (event) => {
-        push(messagesRef, { sender: userSelect.value, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
+        const senderName = isAdmin ? '管理者(master)' : userSelect.value;
+        push(messagesRef, { sender: senderName, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
         fileInput.value = '';
       };
       reader.readAsDataURL(file);
@@ -1745,10 +1777,11 @@
 
     function renderMessages() {
       chatBox.innerHTML = '';
-      const currentUser = userSelect.value;
+      const activeUser = isAdmin ? '管理者(master)' : userSelect.value;
+
       Object.keys(cachedMessages).forEach(key => {
         const msg = cachedMessages[key];
-        const isSent = msg.sender === currentUser;
+        const isSent = msg.sender === activeUser;
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         
@@ -1794,7 +1827,7 @@
           });
           metaInfo.appendChild(dlBtn);
         }
-        if (isSent) {
+        if (isSent || isAdmin) {
           const delBtn = document.createElement('button');
           delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
           delBtn.addEventListener('click', () => deleteMessage(key));
@@ -1812,21 +1845,34 @@
     async function initChat(loginUser) {
       const userSnap = await get(usersRef);
       const users = userSnap.val() || {};
-      userSelect.innerHTML = '';
-      Object.keys(users).forEach(uid => {
-        const opt = document.createElement('option');
-        opt.value = uid;
-        opt.textContent = uid;
-        userSelect.appendChild(opt);
-      });
+      cachedUsers = users;
 
-      if (users[loginUser]) {
-        userSelect.value = loginUser;
+      if (isAdmin) {
+        renderAdminUserList();
+      } else {
+        userSelect.innerHTML = '';
+        Object.keys(users).forEach(uid => {
+          const opt = document.createElement('option');
+          opt.value = uid;
+          opt.textContent = uid;
+          userSelect.appendChild(opt);
+        });
+
+        if (users[loginUser]) {
+          userSelect.value = loginUser;
+        }
+
+        userSelect.addEventListener('change', () => {
+          localStorage.setItem('family_chat_user', userSelect.value);
+          renderMessages();
+        });
       }
 
-      userSelect.addEventListener('change', () => {
-        localStorage.setItem('family_chat_user', userSelect.value);
-        renderMessages();
+      onValue(usersRef, (snapshot) => {
+        cachedUsers = snapshot.val() || {};
+        if (isAdmin) {
+          renderAdminUserList();
+        }
       });
 
       onValue(messagesRef, (snapshot) => {
@@ -1845,6 +1891,19 @@
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
       });
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
     }
   </script>
 </body>
