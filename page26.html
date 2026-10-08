@@ -1059,12 +1059,7 @@
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
-      initChat();
-    }
-
-    // 自動ログイン判定（localStorage または sessionStorage をチェック）
-    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
-      unlockApp();
+      renderMessages();
     }
 
     passBtn.addEventListener('click', handleAuth);
@@ -1550,6 +1545,7 @@
         renderMessages();
       });
 
+      // Firebaseメッセージ監視（リアルタイム更新＆過去ログ取得）
       onValue(messagesRef, (snapshot) => {
         cachedMessages = snapshot.val() || {};
         renderMessages();
@@ -1566,6 +1562,14 @@
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
       });
+    }
+
+    // アプリ起動時の全体初期化
+    initChat();
+
+    // 自動ログイン判定（localStorage または sessionStorage をチェック）
+    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
+      unlockApp();
     }
   </script>
 </body>
