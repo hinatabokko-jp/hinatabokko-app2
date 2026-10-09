@@ -360,13 +360,15 @@
             color: var(--text-color);
         }
 
+        /* iOS/iPadでの画像・スタンプ自動回転対策 */
         .chat-image {
             max-width: 100%;
             max-height: 250px;
             border-radius: 8px;
             margin-bottom: 4px;
             display: block;
-            object-fit: cover;
+            object-fit: contain;
+            image-orientation: none;
         }
 
         .chat-stamp {
@@ -375,6 +377,8 @@
             display: block;
             user-select: none;
             pointer-events: none;
+            object-fit: contain;
+            image-orientation: none;
         }
 
         .chat-link {
@@ -853,6 +857,7 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            image-orientation: none;
         }
 
         .history-actions {
@@ -1649,6 +1654,24 @@
         messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
     });
 
+    /* 画像のEXIF回転情報を除去して正位置でDataURL化する補助関数 (iOS縦向き固定対策) */
+    function processImageOrientation(file, callback) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                callback(canvas.toDataURL(file.type || 'image/png'));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1659,24 +1682,36 @@
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const fileData = event.target.result;
-            const isImage = file.type.startsWith('image/');
-
-            push(messagesRef, {
-                sender: currentUsername,
-                text: '',
-                fileData: fileData,
-                fileName: file.name,
-                fileType: file.type,
-                isImage: isImage,
-                timestamp: Date.now()
+        const isImage = file.type.startsWith('image/');
+        if (isImage) {
+            processImageOrientation(file, (processedDataUrl) => {
+                push(messagesRef, {
+                    sender: currentUsername,
+                    text: '',
+                    fileData: processedDataUrl,
+                    fileName: file.name,
+                    fileType: file.type,
+                    isImage: true,
+                    timestamp: Date.now()
+                });
+                fileInput.value = '';
             });
-
-            fileInput.value = '';
-        };
-        reader.readAsDataURL(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                push(messagesRef, {
+                    sender: currentUsername,
+                    text: '',
+                    fileData: event.target.result,
+                    fileName: file.name,
+                    fileType: file.type,
+                    isImage: false,
+                    timestamp: Date.now()
+                });
+                fileInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
     });
 
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
@@ -1834,11 +1869,13 @@
     toolFill.onclick = () => {
         currentTool = 'fill';
         toolEraser.classList.remove('active');
+        toolFill.classList.add('active');
     };
 
     toolEraser.onclick = () => {
         currentTool = 'eraser';
         toolFill.classList.remove('active');
+        toolEraser.classList.add('active');
     };
 
     function saveState() {
@@ -1963,6 +2000,8 @@
         updateLayerPreviews();
     }
 
+    let lastPoint = null;
+
     [canvasA, canvasB].forEach(targetCanvas => {
         let isTargetDrawing = false;
 
@@ -1979,9 +2018,11 @@
             }
 
             isTargetDrawing = true;
+            lastPoint = pos;
             const ctx = activeObj.ctx;
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
+
+            // 最初の点の描画
+            drawSegment(ctx, pos, pos);
         }
 
         function moveDraw(e) {
@@ -1992,83 +2033,208 @@
             e.preventDefault();
             const pos = getCanvasCoords(e, targetCanvas);
             const ctx = activeObj.ctx;
+
+            drawSegment(ctx, lastPoint, pos);
+            lastPoint = pos;
+        }
+
+        /* ブラシの種類別に異なる質感・パス描画処理を行う実体関数 */
+        function drawSegment(ctx, p1, p2) {
             const baseSize = parseFloat(stampSizeInput.value);
             const colorHex = stampColorInput.value;
             const opacity = parseFloat(stampOpacityInput.value);
 
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.globalAlpha = opacity;
+            ctx.save();
 
             if (currentTool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.lineWidth = baseSize * 1.5;
-                ctx.shadowBlur = 0;
-            } else {
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.strokeStyle = colorHex;
-
-                switch (currentBrushType) {
-                    case 'calligraphy-brush':
-                        ctx.lineWidth = baseSize * 1.2;
-                        ctx.shadowBlur = 2;
-                        ctx.shadowColor = colorHex;
-                        break;
-                    case 'calligraphy-pen':
-                        ctx.lineWidth = Math.max(1, baseSize * 0.5);
-                        ctx.shadowBlur = 0;
-                        break;
-                    case 'airbrush':
-                        ctx.lineWidth = baseSize * 2;
-                        ctx.shadowBlur = baseSize * 0.8;
-                        ctx.shadowColor = colorHex;
-                        ctx.globalAlpha = opacity * 0.4;
-                        break;
-                    case 'oil':
-                        ctx.lineWidth = baseSize * 1.5;
-                        ctx.shadowBlur = 1;
-                        ctx.shadowColor = colorHex;
-                        break;
-                    case 'crayon':
-                        ctx.lineWidth = baseSize;
-                        ctx.shadowBlur = 3;
-                        ctx.shadowColor = colorHex;
-                        ctx.globalAlpha = opacity * 0.8;
-                        break;
-                    case 'marker':
-                        ctx.lineWidth = baseSize * 1.8;
-                        ctx.shadowBlur = 0;
-                        ctx.globalAlpha = opacity * 0.7;
-                        break;
-                    case 'pencil':
-                        ctx.lineWidth = Math.max(1, baseSize * 0.4);
-                        ctx.shadowBlur = 0;
-                        break;
-                    case 'watercolor':
-                        ctx.lineWidth = baseSize * 2;
-                        ctx.shadowBlur = baseSize;
-                        ctx.shadowColor = colorHex;
-                        ctx.globalAlpha = opacity * 0.3;
-                        break;
-                    default:
-                        ctx.lineWidth = baseSize;
-                        ctx.shadowBlur = 0;
-                        break;
-                }
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.globalAlpha = 1.0;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                ctx.restore();
+                return;
             }
 
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = colorHex;
+            ctx.fillStyle = colorHex;
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.hypot(dx, dy);
+
+            switch (currentBrushType) {
+                case 'calligraphy-brush': {
+                    ctx.globalAlpha = opacity;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    // 速度に応じて太さを可変
+                    const speed = Math.min(dist, 20);
+                    ctx.lineWidth = Math.max(1, baseSize * (1.3 - speed / 30));
+                    ctx.shadowBlur = 2;
+                    ctx.shadowColor = colorHex;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                    break;
+                }
+                case 'calligraphy-pen': {
+                    ctx.globalAlpha = opacity;
+                    ctx.lineCap = 'square';
+                    // カリグラフィペン特有のアングル（斜めライン）
+                    const steps = Math.max(1, Math.floor(dist));
+                    const angleSize = baseSize * 1.2;
+                    for (let i = 0; i <= steps; i++) {
+                        const t = steps === 0 ? 0 : i / steps;
+                        const cx = p1.x + dx * t;
+                        const cy = p1.y + dy * t;
+                        ctx.beginPath();
+                        ctx.moveTo(cx - angleSize / 2, cy - angleSize / 4);
+                        ctx.lineTo(cx + angleSize / 2, cy + angleSize / 4);
+                        ctx.stroke();
+                    }
+                    break;
+                }
+                case 'airbrush': {
+                    // ドット散布によるエアブラシ質感
+                    const density = Math.floor(baseSize * 4);
+                    const radius = baseSize * 2;
+                    const steps = Math.max(1, Math.floor(dist / 2));
+                    ctx.globalAlpha = opacity * 0.15;
+
+                    for (let i = 0; i <= steps; i++) {
+                        const t = steps === 0 ? 0 : i / steps;
+                        const cx = p1.x + dx * t;
+                        const cy = p1.y + dy * t;
+
+                        for (let j = 0; j < density; j++) {
+                            const r = Math.random() * radius;
+                            const theta = Math.random() * Math.PI * 2;
+                            const rx = cx + r * Math.cos(theta);
+                            const ry = cy + r * Math.sin(theta);
+                            ctx.fillRect(rx, ry, 1.2, 1.2);
+                        }
+                    }
+                    break;
+                }
+                case 'oil': {
+                    // 重ね塗り感のある油彩ブラシ
+                    ctx.globalAlpha = opacity * 0.7;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.lineWidth = baseSize * 1.4;
+                    ctx.shadowBlur = 1;
+                    ctx.shadowColor = colorHex;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+
+                    // テクスチャの副ストローク
+                    ctx.lineWidth = baseSize * 0.5;
+                    ctx.globalAlpha = opacity * 0.4;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x + 1.5, p1.y + 1.5);
+                    ctx.lineTo(p2.x + 1.5, p2.y + 1.5);
+                    ctx.stroke();
+                    break;
+                }
+                case 'crayon': {
+                    // かすれ感・粒子感のあるクレヨン
+                    const steps = Math.max(1, Math.floor(dist / 2));
+                    const radius = baseSize;
+                    ctx.globalAlpha = opacity * 0.4;
+
+                    for (let i = 0; i <= steps; i++) {
+                        const t = steps === 0 ? 0 : i / steps;
+                        const cx = p1.x + dx * t;
+                        const cy = p1.y + dy * t;
+
+                        for (let j = 0; j < baseSize * 3; j++) {
+                            const offsetX = (Math.random() - 0.5) * radius * 1.5;
+                            const offsetY = (Math.random() - 0.5) * radius * 1.5;
+                            ctx.fillRect(cx + offsetX, cy + offsetY, 1.5, 1.5);
+                        }
+                    }
+                    break;
+                }
+                case 'marker': {
+                    // 半透明のマーカー（蛍光ペン風）
+                    ctx.globalAlpha = opacity * 0.45;
+                    ctx.lineCap = 'square';
+                    ctx.lineJoin = 'miter';
+                    ctx.lineWidth = baseSize * 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                    break;
+                }
+                case 'pencil': {
+                    // 細く薄い鉛筆ラインと微小ノイズ
+                    ctx.globalAlpha = opacity * 0.8;
+                    ctx.lineWidth = Math.max(0.8, baseSize * 0.35);
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+
+                    // 微細粒子
+                    const steps = Math.max(1, Math.floor(dist));
+                    ctx.globalAlpha = opacity * 0.3;
+                    for (let i = 0; i <= steps; i++) {
+                        const t = steps === 0 ? 0 : i / steps;
+                        const cx = p1.x + dx * t + (Math.random() - 0.5) * baseSize * 0.5;
+                        const cy = p1.y + dy * t + (Math.random() - 0.5) * baseSize * 0.5;
+                        ctx.fillRect(cx, cy, 1, 1);
+                    }
+                    break;
+                }
+                case 'watercolor': {
+                    // にじみ・広がりのある水彩ブラシ
+                    ctx.globalAlpha = opacity * 0.15;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.shadowBlur = baseSize * 0.8;
+                    ctx.shadowColor = colorHex;
+
+                    for (let r = baseSize * 1.8; r >= baseSize * 0.6; r -= baseSize * 0.4) {
+                        ctx.lineWidth = r;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                    break;
+                }
+                default: {
+                    // 通常のペン
+                    ctx.globalAlpha = opacity;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.lineWidth = baseSize;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                    break;
+                }
+            }
+            ctx.restore();
         }
 
         function endDraw() {
             if (isTargetDrawing) {
-                const activeObj = getActiveLayer();
-                const ctx = activeObj.ctx;
-                ctx.closePath();
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1.0;
                 isTargetDrawing = false;
+                lastPoint = null;
                 updateLayerPreviews();
             }
         }
@@ -2132,12 +2298,10 @@
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            saveStampToFirebaseHistory(event.target.result);
+        processImageOrientation(file, (processedDataUrl) => {
+            saveStampToFirebaseHistory(processedDataUrl);
             stampUploadInput.value = '';
-        };
-        reader.readAsDataURL(file);
+        });
     });
 
     function renderStampHistory() {
