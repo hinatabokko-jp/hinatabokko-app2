@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>family chat</title>
+  <title>family chat 2</title>
   <style>
     :root {
       --bg-color: #121212;
       --surface-color: #1e1e1e;
-      --primary-color: #00bcd4;
-      --primary-hover: #008ba3;
+      --primary-color: #10b981; /* 鮮やかなエメラルドグリーン */
+      --primary-hover: #059669;
       --danger-color: #cf6679;
       --text-color: #e0e0e0;
       --text-muted: #aaa;
       --border-color: #2d2d2d;
       --chat-bg: #121212;
-      --my-msg-bg: #00796b;
+      --my-msg-bg: #065f46; /* 深みのあるグリーン */
     }
 
     * {
@@ -160,8 +160,9 @@
       font-size: 0.65rem;
       padding: 2px 8px;
       border-radius: 12px;
-      background-color: #1b5e20;
-      color: #81c784;
+      background-color: #064e3b;
+      color: #a7f3d0;
+      border: 1px solid #047857;
     }
     .header-subtitle {
       font-size: 0.65rem;
@@ -204,85 +205,6 @@
     }
     .btn-logout:hover {
       background-color: rgba(255,255,255,0.1);
-    }
-
-    /* ハンバーガーボタン & サイドバーUI */
-    .hamburger-btn {
-      background: none;
-      border: none;
-      color: var(--primary-color);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-    }
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-    .overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: -260px;
-      width: 260px;
-      height: 100%;
-      background-color: var(--surface-color);
-      z-index: 1001;
-      transition: transform 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-    }
-    .sidebar.open {
-      transform: translateX(260px);
-    }
-    .sidebar-header {
-      padding: 16px;
-      background-color: #252525;
-      border-bottom: 1px solid #333;
-      font-weight: bold;
-      color: var(--primary-color);
-      font-size: 1rem;
-    }
-    .sidebar-menu {
-      list-style: none;
-      padding: 10px 0;
-      margin: 0;
-      overflow-y: auto;
-    }
-    .sidebar-menu li a {
-      display: block;
-      padding: 12px 20px;
-      color: var(--text-color);
-      text-decoration: none;
-      font-size: 0.95rem;
-      border-left: 4px solid transparent;
-      transition: background 0.2s;
-    }
-    .sidebar-menu li a:hover,
-    .sidebar-menu li a:active {
-      background-color: #2a2a2a;
-    }
-    .sidebar-menu li a.sidebar-link.current {
-      background-color: #2a2a2a;
-      color: var(--primary-color);
-      border-left-color: var(--primary-color);
-      font-weight: bold;
     }
 
     /* チャット表示エリア */
@@ -385,7 +307,7 @@
       pointer-events: none;
     }
     .chat-link {
-      color: #80deea;
+      color: #6ee7b7;
       text-decoration: underline;
       word-break: break-all;
     }
@@ -676,7 +598,7 @@
     }
     .ps-layer-item.active {
       border-color: var(--primary-color);
-      background-color: #2a383b;
+      background-color: #064e3b;
     }
     .ps-layer-title {
       font-size: 0.7rem;
@@ -789,29 +711,13 @@
       justify-content: center;
       gap: 4px;
     }
-    .history-action-btn.send { background-color: #00796b; border-color: #008ba3; color: #fff; }
+    .history-action-btn.send { background-color: #065f46; border-color: #059669; color: #fff; }
     .history-action-btn.del { background-color: #8c2a2a; border-color: #a83232; color: #fff; }
   </style>
 </head>
 <body>
 
   <div class="app-container" id="app-container">
-    <!-- サイドバー＆オーバーレイ -->
-    <div id="overlay" class="overlay"></div>
-    <aside id="sidebar" class="sidebar">
-      <div class="sidebar-header">メニュー</div>
-      <ul class="sidebar-menu">
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page3">理科トレーニング</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page5">社会科トレーニング</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page4">百人一首</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page21.html">AirChat 1on1</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
-        <li><a href="#" class="sidebar-link current">family chat</a></li>
-      </ul>
-    </aside>
-
     <!-- あいことばロック画面 -->
     <div id="lock-screen">
       <h2>あいことばを入力してください</h2>
@@ -828,10 +734,9 @@
     <div id="app-content">
       <header>
         <div class="header-left">
-          <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
           <div class="header-title-container">
             <div class="header-title">
-              family chat
+              family chat 2
               <span id="statusBadge" class="status-badge">ファミリー</span>
             </div>
           </div>
@@ -995,7 +900,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 指示に基づいて最新のFirebase設定を反映
+    // Firebase設定
     const firebaseConfig = {
       apiKey: "AIzaSyCfHE4gy8EFE3TxHQkw4jtiuMD9D3BrX6M",
       authDomain: "family-chat-2-bca6e.firebaseapp.com",
@@ -1075,10 +980,6 @@
     const sendBtn = document.getElementById('send-btn');
     const userSelect = document.getElementById('user-select');
     const fileInput = document.getElementById('file-input');
-
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
@@ -1434,9 +1335,6 @@
     goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
     backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
     historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
-
-    hamburgerBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
-    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
 
     function sendMessage() {
       const text = messageInput.value.trim();
