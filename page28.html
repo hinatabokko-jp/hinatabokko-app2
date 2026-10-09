@@ -297,7 +297,7 @@
       border-radius: 8px;
       margin-bottom: 6px;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
     }
     .chat-stamp {
       max-width: 180px;
@@ -305,6 +305,7 @@
       display: block;
       user-select: none;
       pointer-events: none;
+      object-fit: contain;
     }
     .chat-link {
       color: #6ee7b7;
@@ -974,6 +975,26 @@
       if (e.key === 'Enter') handleAuth();
     });
 
+    // 画像のEXIF回転補正用関数（iOS端末の向き誤判定を防止）
+    function normalizeImageFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // チャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
@@ -1034,6 +1055,7 @@
     let currentTool = 'pen';
     let currentBrushType = 'pen';
     let historyStack = [];
+    let lastPoint = null;
 
     function getLayerObj(id) {
       if (id === 1) return { canvas: canvasA, ctx: ctxA };
@@ -1179,8 +1201,16 @@
       toolFill.classList.remove('active');
       toolEraser.classList.remove('active');
     });
-    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); });
-    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); });
+    toolFill.addEventListener('click', () => { 
+      currentTool = 'fill'; 
+      toolFill.classList.add('active');
+      toolEraser.classList.remove('active'); 
+    });
+    toolEraser.addEventListener('click', () => { 
+      currentTool = 'eraser'; 
+      toolEraser.classList.add('active');
+      toolFill.classList.remove('active'); 
+    });
 
     function saveState() {
       if (historyStack.length >= 10) historyStack.shift();
@@ -1219,18 +1249,143 @@
       };
     }
 
+    // 各種ペン（ブラタイプ）に応じた描画機能の実装
+    function drawBrushStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(stampSizeInput.value);
+      const color = stampColorInput.value;
+      const opacity = parseFloat(stampOpacityInput.value);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+
+      if (currentBrushType === 'airbrush') {
+        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const steps = Math.max(1, Math.floor(dist / 2));
+        ctx.fillStyle = color;
+        for (let i = 0; i < steps; i++) {
+          const rx = p1.x + (p2.x - p1.x) * (i / steps);
+          const ry = p1.y + (p2.y - p1.y) * (i / steps);
+          const numParticles = Math.floor(baseSize * 1.5);
+          for (let j = 0; j < numParticles; j++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * baseSize;
+            ctx.globalAlpha = opacity * 0.12;
+            ctx.fillRect(rx + Math.cos(angle) * radius, ry + Math.sin(angle) * radius, 1.5, 1.5);
+          }
+        }
+      } else if (currentBrushType === 'crayon') {
+        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+        const steps = Math.max(1, Math.floor(dist));
+        ctx.fillStyle = color;
+        for (let i = 0; i < steps; i++) {
+          const rx = p1.x + (p2.x - p1.x) * (i / steps);
+          const ry = p1.y + (p2.y - p1.y) * (i / steps);
+          for (let j = 0; j < Math.floor(baseSize * 2); j++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * (baseSize / 2);
+            ctx.globalAlpha = opacity * 0.35;
+            ctx.fillRect(rx + Math.cos(angle) * radius, ry + Math.sin(angle) * radius, 1.5, 1.5);
+          }
+        }
+      } else if (currentBrushType === 'watercolor') {
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = opacity * 0.15;
+        ctx.lineWidth = baseSize * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      } else if (currentBrushType === 'calligraphy-brush' || currentBrushType === 'calligraphy-pen') {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = opacity;
+        const isBrush = currentBrushType === 'calligraphy-brush';
+        const angleOffset = isBrush ? Math.PI / 4 : -Math.PI / 4;
+        const w = baseSize * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(p1.x - Math.cos(angleOffset) * w, p1.y - Math.sin(angleOffset) * w);
+        ctx.lineTo(p1.x + Math.cos(angleOffset) * w, p1.y + Math.sin(angleOffset) * w);
+        ctx.lineTo(p2.x + Math.cos(angleOffset) * w, p2.y + Math.sin(angleOffset) * w);
+        ctx.lineTo(p2.x - Math.cos(angleOffset) * w, p2.y - Math.sin(angleOffset) * w);
+        ctx.closePath();
+        ctx.fill();
+      } else if (currentBrushType === 'marker') {
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'square';
+        ctx.lineJoin = 'miter';
+        ctx.globalAlpha = opacity * 0.6;
+        ctx.lineWidth = baseSize * 1.2;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      } else if (currentBrushType === 'pencil') {
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = opacity * 0.7;
+        ctx.lineWidth = Math.max(1, baseSize * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      } else if (currentBrushType === 'oil') {
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = opacity * 0.9;
+        ctx.lineWidth = baseSize;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      } else {
+        // 通常ペン
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = opacity;
+        ctx.lineWidth = baseSize;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     [canvasA, canvasB].forEach(targetCanvas => {
       let isTargetDrawing = false;
+
       function startDraw(e) {
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         const pos = getCanvasCoords(e, targetCanvas);
         saveState();
-        if (currentTool === 'fill') return;
+        if (currentTool === 'fill') {
+          // 塗りつぶし（簡易版）
+          activeObj.ctx.save();
+          activeObj.ctx.fillStyle = stampColorInput.value;
+          activeObj.ctx.globalAlpha = parseFloat(stampOpacityInput.value);
+          activeObj.ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+          activeObj.ctx.restore();
+          updateLayerPreviews();
+          return;
+        }
         isTargetDrawing = true;
-        activeObj.ctx.beginPath();
-        activeObj.ctx.moveTo(pos.x, pos.y);
+        lastPoint = pos;
+
+        if (currentTool === 'eraser') {
+          const ctx = activeObj.ctx;
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+        } else {
+          drawBrushStroke(activeObj.ctx, pos, pos);
+        }
       }
+
       function moveDraw(e) {
         if (!isTargetDrawing || currentTool === 'fill') return;
         const activeObj = getActiveLayer();
@@ -1238,28 +1393,32 @@
         e.preventDefault();
         const pos = getCanvasCoords(e, targetCanvas);
         const ctx = activeObj.ctx;
-        const baseSize = parseFloat(stampSizeInput.value);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = parseFloat(stampOpacityInput.value);
+
         if (currentTool === 'eraser') {
+          const baseSize = parseFloat(stampSizeInput.value);
+          ctx.save();
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
           ctx.globalCompositeOperation = 'destination-out';
           ctx.lineWidth = baseSize * 1.5;
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
+          ctx.restore();
         } else {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = stampColorInput.value;
-          ctx.lineWidth = baseSize;
+          drawBrushStroke(ctx, lastPoint, pos);
         }
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
+        lastPoint = pos;
       }
+
       function endDraw() {
         if (isTargetDrawing) {
           getActiveLayer().ctx.closePath();
           isTargetDrawing = false;
+          lastPoint = null;
           updateLayerPreviews();
         }
       }
+
       targetCanvas.addEventListener('mousedown', startDraw);
       targetCanvas.addEventListener('mousemove', moveDraw);
       targetCanvas.addEventListener('mouseup', endDraw);
@@ -1285,16 +1444,13 @@
       stampModalOverlay.classList.remove('active');
     });
 
-    stampUploadInput.addEventListener('change', (e) => {
+    stampUploadInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const senderName = userSelect.value;
-        push(stampHistoryRef, { dataUrl: event.target.result, creator: senderName, timestamp: Date.now() });
-        stampUploadInput.value = '';
-      };
-      reader.readAsDataURL(file);
+      const dataUrl = await normalizeImageFile(file);
+      const senderName = userSelect.value;
+      push(stampHistoryRef, { dataUrl: dataUrl, creator: senderName, timestamp: Date.now() });
+      stampUploadInput.value = '';
     });
 
     onValue(stampHistoryRef, (snapshot) => {
@@ -1345,16 +1501,34 @@
       messageInput.style.height = '40px';
     }
 
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const senderName = userSelect.value;
-        push(messagesRef, { sender: senderName, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
-        fileInput.value = '';
-      };
-      reader.readAsDataURL(file);
+
+      const isImage = file.type.startsWith('image/');
+      let fileData = '';
+
+      if (isImage) {
+        fileData = await normalizeImageFile(file);
+      } else {
+        fileData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (evt) => resolve(evt.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const senderName = userSelect.value;
+      push(messagesRef, { 
+        sender: senderName, 
+        text: '', 
+        fileData: fileData, 
+        fileName: file.name, 
+        fileType: file.type, 
+        isImage: isImage, 
+        timestamp: Date.now() 
+      });
+      fileInput.value = '';
     });
 
     function deleteMessage(key) {
