@@ -368,14 +368,15 @@
       color: #fff;
     }
 
-    /* メディア・ファイル関連スタイル */
+    /* メディア・ファイル関連スタイル (iOS縦向き表示の補正) */
     .chat-image {
       max-width: 100%;
       max-height: 250px;
       border-radius: 8px;
       margin-bottom: 6px;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
+      image-orientation: none;
     }
     .chat-stamp {
       max-width: 180px;
@@ -383,6 +384,8 @@
       display: block;
       user-select: none;
       pointer-events: none;
+      object-fit: contain;
+      image-orientation: none;
     }
     .chat-link {
       color: #80deea;
@@ -1131,6 +1134,7 @@
     let currentTool = 'pen';
     let currentBrushType = 'pen';
     let historyStack = [];
+    let lastPoint = null;
 
     function getLayerObj(id) {
       if (id === 1) return { canvas: canvasA, ctx: ctxA };
@@ -1276,8 +1280,8 @@
       toolFill.classList.remove('active');
       toolEraser.classList.remove('active');
     });
-    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); });
-    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); });
+    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); toolFill.classList.add('active'); });
+    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); toolEraser.classList.add('active'); });
 
     function saveState() {
       if (historyStack.length >= 10) historyStack.shift();
@@ -1306,6 +1310,58 @@
       updateLayerPreviews();
     });
 
+    function hexToRgb(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function floodFill(canvas, startX, startY, fillColorHex, opacity) {
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const targetPos = (startY * width + startX) * 4;
+      const targetR = data[targetPos];
+      const targetG = data[targetPos + 1];
+      const targetB = data[targetPos + 2];
+      const targetA = data[targetPos + 3];
+
+      const fillRgb = hexToRgb(fillColorHex);
+      const fillA = Math.round(opacity * 255);
+
+      if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
+
+      const queue = [[startX, startY]];
+      const visited = new Uint8Array(width * height);
+
+      while (queue.length > 0) {
+        const [x, y] = queue.pop();
+        const pos = (y * width + x) * 4;
+        const idx = y * width + x;
+
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+
+        if (Math.abs(data[pos] - targetR) < 30 &&
+            Math.abs(data[pos + 1] - targetG) < 30 &&
+            Math.abs(data[pos + 2] - targetB) < 30 &&
+            Math.abs(data[pos + 3] - targetA) < 30) {
+          data[pos] = fillRgb.r;
+          data[pos + 1] = fillRgb.g;
+          data[pos + 2] = fillRgb.b;
+          data[pos + 3] = fillA;
+
+          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
     function getCanvasCoords(e, canvasEl) {
       const rect = canvasEl.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1316,47 +1372,203 @@
       };
     }
 
+    function drawStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(stampSizeInput.value);
+      const opacity = parseFloat(stampOpacityInput.value);
+      const color = stampColorInput.value;
+
+      ctx.save();
+      if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = baseSize * 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
+      switch (currentBrushType) {
+        case 'calligraphy-brush':
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+
+        case 'calligraphy-pen':
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          const stepsCallig = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= stepsCallig; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
+            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
+            ctx.beginPath();
+            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'airbrush':
+          ctx.globalAlpha = opacity * 0.15;
+          ctx.fillStyle = color;
+          const airSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= airSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
+            const numParticles = Math.floor(baseSize * 2);
+            for (let p = 0; p < numParticles; p++) {
+              const r = Math.random() * baseSize * 1.2;
+              const a = Math.random() * Math.PI * 2;
+              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
+            }
+          }
+          break;
+
+        case 'oil':
+          ctx.globalAlpha = opacity * 0.7;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'butt';
+          ctx.lineWidth = baseSize;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          // 油彩特有の刷毛筋効果
+          ctx.globalAlpha = opacity * 0.3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p1.x + 2, p1.y + 2);
+          ctx.lineTo(p2.x + 2, p2.y + 2);
+          ctx.stroke();
+          break;
+
+        case 'crayon':
+          ctx.globalAlpha = opacity * 0.6;
+          ctx.fillStyle = color;
+          const craySteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= craySteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
+            for (let j = 0; j < baseSize * 1.5; j++) {
+              const rx = (Math.random() - 0.5) * baseSize;
+              const ry = (Math.random() - 0.5) * baseSize;
+              if (Math.hypot(rx, ry) <= baseSize / 2) {
+                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
+              }
+            }
+          }
+          break;
+
+        case 'marker':
+          ctx.globalAlpha = opacity * 0.4;
+          ctx.fillStyle = color;
+          const markSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= markSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'pencil':
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.fillStyle = color;
+          const pSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= pSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
+            for (let j = 0; j < baseSize; j++) {
+              const rx = (Math.random() - 0.5) * (baseSize / 2);
+              const ry = (Math.random() - 0.5) * (baseSize / 2);
+              ctx.fillRect(curX + rx, curY + ry, 1, 1);
+            }
+          }
+          break;
+
+        case 'watercolor':
+          ctx.globalAlpha = opacity * 0.12;
+          ctx.fillStyle = color;
+          const wcSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= wcSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'pen':
+        default:
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = baseSize;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+      }
+      ctx.restore();
+    }
+
     [canvasA, canvasB].forEach(targetCanvas => {
       let isTargetDrawing = false;
+
       function startDraw(e) {
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         const pos = getCanvasCoords(e, targetCanvas);
         saveState();
-        if (currentTool === 'fill') return;
+
+        if (currentTool === 'fill') {
+          floodFill(targetCanvas, pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
+          updateLayerPreviews();
+          return;
+        }
+
         isTargetDrawing = true;
-        activeObj.ctx.beginPath();
-        activeObj.ctx.moveTo(pos.x, pos.y);
+        lastPoint = pos;
+        drawStroke(activeObj.ctx, pos, pos);
       }
+
       function moveDraw(e) {
         if (!isTargetDrawing || currentTool === 'fill') return;
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         e.preventDefault();
         const pos = getCanvasCoords(e, targetCanvas);
-        const ctx = activeObj.ctx;
-        const baseSize = parseFloat(stampSizeInput.value);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = parseFloat(stampOpacityInput.value);
-        if (currentTool === 'eraser') {
-          ctx.globalCompositeOperation = 'destination-out';
-          ctx.lineWidth = baseSize * 1.5;
-        } else {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = stampColorInput.value;
-          ctx.lineWidth = baseSize;
-        }
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
+        drawStroke(activeObj.ctx, lastPoint, pos);
+        lastPoint = pos;
       }
+
       function endDraw() {
         if (isTargetDrawing) {
-          getActiveLayer().ctx.closePath();
           isTargetDrawing = false;
+          lastPoint = null;
           updateLayerPreviews();
         }
       }
+
       targetCanvas.addEventListener('mousedown', startDraw);
       targetCanvas.addEventListener('mousemove', moveDraw);
       targetCanvas.addEventListener('mouseup', endDraw);
