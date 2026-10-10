@@ -169,7 +169,7 @@
             </div>
         </header>
 
-        <!-- Main Content Area (フレームを撤廃し、柔軟に拡張可能なレイアウトへ変更) -->
+        <!-- Main Content Area (フレームレスのフラットレイアウト) -->
         <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col space-y-8">
             
             <!-- Free Text Area -->
@@ -192,9 +192,9 @@
                 </div>
 
                 <!-- Checklist Input Form -->
-                <form id="checklist-form" class="flex items-center gap-2">
+                <form id="checklist-form" class="flex items-center gap-2" onsubmit="event.preventDefault(); addChecklistItem();">
                     <input type="text" id="newChecklistItemInput" placeholder="新しいチェック項目を入力して追加..." class="flex-1 bg-[#1e1e1e] text-xs sm:text-sm text-zinc-200 placeholder-zinc-600 px-4 py-3 rounded-xl border border-[#333] outline-none focus:border-[#00bcd4] transition-colors shadow-sm">
-                    <button type="submit" id="add-item-btn" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0 cursor-pointer">
+                    <button type="button" id="add-item-btn" onclick="addChecklistItem()" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0 cursor-pointer">
                         <i class="fa-solid fa-plus"></i>
                         <span>追加</span>
                     </button>
@@ -327,7 +327,6 @@
         });
 
         function initFirebaseListener() {
-            // Firebaseから最新データをリアルタイム取得し、蓄積データを確実に画面に反映させる
             onValue(memoRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -349,7 +348,15 @@
                 isInitialLoad = false;
             });
 
-            setupEventListeners();
+            document.getElementById('noteBody').addEventListener('input', triggerAutoSave);
+            
+            // Enterキーでの追加対応
+            document.getElementById('newChecklistItemInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.isComposing) {
+                    e.preventDefault();
+                    window.addChecklistItem();
+                }
+            });
         }
 
         window.triggerAutoSave = function() {
@@ -375,16 +382,7 @@
             });
         }
 
-        function setupEventListeners() {
-            document.getElementById('noteBody').addEventListener('input', triggerAutoSave);
-
-            const form = document.getElementById('checklist-form');
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                window.addChecklistItem();
-            });
-        }
-
+        // グローバルスコープに登録して確実にどこからでも呼び出せるようにする
         window.addChecklistItem = function() {
             const input = document.getElementById('newChecklistItemInput');
             const val = input.value.trim();
@@ -393,9 +391,10 @@
                 return;
             }
 
-            if(!Array.isArray(memoData.checklist)) memoData.checklist = [];
-            
-            // 新規項目を追加
+            if(!Array.isArray(memoData.checklist)) {
+                memoData.checklist = [];
+            }
+
             memoData.checklist.push({
                 text: val,
                 completed: false
@@ -403,26 +402,29 @@
 
             input.value = '';
             renderChecklist();
-            saveMemoToFirebase(); // Firebaseに即時保存
+            saveMemoToFirebase();
             showNotification('項目を追加しました');
-        }
+        };
 
         window.toggleChecklistItem = function(index) {
-            if(memoData.checklist[index]) {
+            if(memoData.checklist && memoData.checklist[index]) {
                 memoData.checklist[index].completed = !memoData.checklist[index].completed;
                 renderChecklist();
                 saveMemoToFirebase();
             }
-        }
+        };
 
         window.deleteChecklistItem = function(index) {
-            memoData.checklist.splice(index, 1);
-            renderChecklist();
-            saveMemoToFirebase();
-            showNotification('項目を削除しました');
-        }
+            if(memoData.checklist) {
+                memoData.checklist.splice(index, 1);
+                renderChecklist();
+                saveMemoToFirebase();
+                showNotification('項目を削除しました');
+            }
+        };
 
         window.moveItem = function(index, direction) {
+            if(!memoData.checklist) return;
             const newIndex = index + direction;
             if (newIndex < 0 || newIndex >= memoData.checklist.length) return;
             const temp = memoData.checklist[index];
@@ -430,7 +432,7 @@
             memoData.checklist[newIndex] = temp;
             renderChecklist();
             saveMemoToFirebase();
-        }
+        };
 
         function renderChecklist() {
             const container = document.getElementById('checklistContainer');
@@ -440,15 +442,15 @@
             if (!Array.isArray(memoData.checklist)) memoData.checklist = [];
             const total = memoData.checklist.length;
             const completedCount = memoData.checklist.filter(i => i.completed).length;
-            progress.textContent = `${completedCount} / ${total} 完了`;
+            if(progress) progress.textContent = `${completedCount} / ${total} 完了`;
 
             if(total === 0) {
                 container.innerHTML = '';
-                emptyNotice.classList.remove('hidden');
+                if(emptyNotice) emptyNotice.classList.remove('hidden');
                 return;
             }
 
-            emptyNotice.classList.add('hidden');
+            if(emptyNotice) emptyNotice.classList.add('hidden');
             let html = '';
 
             memoData.checklist.forEach((item, idx) => {
@@ -482,20 +484,20 @@
         window.onDragStart = function(e, index) {
             draggedIndex = index;
             e.dataTransfer.effectAllowed = 'move';
-        }
+        };
         window.onDragOver = function(e) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-        }
+        };
         window.onDrop = function(e, targetIndex) {
             e.preventDefault();
-            if (draggedIndex === null || draggedIndex === targetIndex) return;
+            if (draggedIndex === null || draggedIndex === targetIndex || !memoData.checklist) return;
             const item = memoData.checklist.splice(draggedIndex, 1)[0];
             memoData.checklist.splice(targetIndex, 0, item);
             draggedIndex = null;
             renderChecklist();
             saveMemoToFirebase();
-        }
+        };
 
         window.clearAllData = function() {
             if(confirm('メモおよびすべてのチェック項目をリセットしてもよろしいですか？')) {
@@ -508,7 +510,7 @@
                 saveMemoToFirebase();
                 showNotification('メモをリセットしました');
             }
-        }
+        };
 
         function escapeHtml(str) {
             if(!str) return '';
@@ -519,6 +521,7 @@
             const msgBox = document.getElementById('messageBox');
             const msgText = document.getElementById('messageText');
             const msgIcon = document.getElementById('messageIcon');
+            if(!msgBox || !msgText || !msgIcon) return;
 
             msgText.textContent = text;
             if(type === 'success') {
