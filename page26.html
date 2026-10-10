@@ -615,7 +615,7 @@
       background-color: #3a3a3a;
     }
 
-    /* 手描き・アニメーションスタンプ関連スタイル */
+    /* 手描きスタンプ関連スタイル */
     .stamp-nav-btn {
       background-color: var(--primary-color);
       color: #121212;
@@ -665,8 +665,6 @@
       border: 1px solid #333;
       border-radius: 8px;
       padding: 8px;
-      max-height: 250px;
-      overflow-y: auto;
     }
     .ps-layer-item {
       display: flex;
@@ -676,7 +674,7 @@
       background-color: #262626;
       border: 2px solid transparent;
       border-radius: 6px;
-      cursor: pointer;
+      cursor: grab;
       transition: background-color 0.2s;
     }
     .ps-layer-item.active {
@@ -862,7 +860,6 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
-            <button id="footer-animation-open-btn" class="icon-btn-style" title="アニメーション作成">🎬</button>
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
             <button id="send-btn" class="send-btn-style">送信</button>
@@ -969,73 +966,6 @@
         <div class="modal-footer-right">
           <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
           <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- アニメーション作成モーダル -->
-  <div id="animation-modal-overlay" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title">アニメーション作成</div>
-        <button id="animation-modal-close-x" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <div class="tool-group">
-            <label class="remember-container" style="font-size:0.85rem;">
-              <input type="checkbox" id="onion-skin-toggle" checked> 前コマを薄く表示
-            </label>
-          </div>
-          <button id="anim-add-frame-btn" class="stamp-nav-btn">＋ コマを追加</button>
-        </div>
-        <div class="editor-layout">
-          <div class="canvas-wrapper">
-            <canvas id="anim-bg-canvas" class="stamp-canvas" width="250" height="250" style="pointer-events:none; opacity:0.25; z-index:1;"></canvas>
-            <canvas id="anim-main-canvas" class="stamp-canvas" width="250" height="250" style="z-index:2;"></canvas>
-          </div>
-          <div class="ps-layers-panel" id="anim-frames-panel" style="width: 110px;">
-            <!-- コマサムネイルが動的に入ります -->
-          </div>
-        </div>
-        <div class="stamp-tools">
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
-            <input type="color" id="anim-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
-            <input type="range" id="anim-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
-            <input type="range" id="anim-size" min="2" max="30" value="5" style="width:55px;">
-          </div>
-          <div class="tool-group">
-            <select id="anim-brush-select" class="tool-select">
-              <option value="pen">ブラシ (通常)</option>
-              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
-              <option value="calligraphy-pen">カリグラフィ ペン</option>
-              <option value="airbrush">エアブラシ</option>
-              <option value="oil">油彩ブラシ</option>
-              <option value="crayon">クレヨン</option>
-              <option value="marker">マーカー</option>
-              <option value="pencil">鉛筆</option>
-              <option value="watercolor">水彩ブラシ</option>
-            </select>
-          </div>
-          <button id="anim-tool-fill" class="tool-btn">ペンキ</button>
-          <button id="anim-tool-eraser" class="tool-btn">消しゴム</button>
-          <button id="anim-tool-undo" class="tool-btn">1つ戻す</button>
-          <button id="anim-tool-clear" class="tool-btn">全消去</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="anim-preview-play-btn" class="secondary-btn">▶ プレビュー再生</button>
-        <div class="modal-footer-right">
-          <button id="anim-cancel-btn" class="secondary-btn">キャンセル</button>
-          <button id="anim-submit-btn" class="send-btn-style">完成して送信</button>
         </div>
       </div>
     </div>
@@ -1155,7 +1085,6 @@
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
-    const footerAnimationOpenBtn = document.getElementById('footer-animation-open-btn');
     const footerStampHistoryBtn = document.getElementById('footer-stamp-history-btn');
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const modalCloseX = document.getElementById('modal-close-x');
@@ -1173,243 +1102,6 @@
     const backToCommentBtn = document.getElementById('back-to-comment-btn');
     const goToHistoryBtn = document.getElementById('go-to-history-btn');
     const stampSubmitBtn = document.getElementById('stamp-submit-btn');
-
-    // アニメーションスタンプ用変数・要素
-    const animationModalOverlay = document.getElementById('animation-modal-overlay');
-    const animationModalCloseX = document.getElementById('animation-modal-close-x');
-    const animCancelBtn = document.getElementById('anim-cancel-btn');
-    const animSubmitBtn = document.getElementById('anim-submit-btn');
-    const animAddFrameBtn = document.getElementById('anim-add-frame-btn');
-    const animPreviewPlayBtn = document.getElementById('anim-preview-play-btn');
-    const onionSkinToggle = document.getElementById('onion-skin-toggle');
-    const animFramesPanel = document.getElementById('anim-frames-panel');
-
-    const animMainCanvas = document.getElementById('anim-main-canvas');
-    const animBgCanvas = document.getElementById('anim-bg-canvas');
-    const animCtx = animMainCanvas.getContext('2d', { willReadFrequently: true });
-    const animBgCtx = animBgCanvas.getContext('2d', { willReadFrequently: true });
-
-    const animColorInput = document.getElementById('anim-color');
-    const animOpacityInput = document.getElementById('anim-opacity');
-    const animSizeInput = document.getElementById('anim-size');
-    const animBrushSelect = document.getElementById('anim-brush-select');
-    const animToolFill = document.getElementById('anim-tool-fill');
-    const animToolEraser = document.getElementById('anim-tool-eraser');
-    const animToolUndo = document.getElementById('anim-tool-undo');
-    const animToolClear = document.getElementById('anim-tool-clear');
-
-    let animFrames = []; // 各コマのImageData配列
-    let currentFrameIndex = 0;
-    let animCurrentTool = 'pen';
-    let animCurrentBrushType = 'pen';
-    let animHistoryStack = [];
-    let animLastPoint = null;
-
-    function initAnimationFrames() {
-      animFrames = [];
-      const canvas = document.createElement('canvas');
-      canvas.width = 250; canvas.height = 250;
-      const ctx = canvas.getContext('2d');
-      animFrames.push(ctx.getImageData(0, 0, 250, 250));
-      currentFrameIndex = 0;
-      renderAnimFramesPanel();
-      loadCurrentFrameToCanvas();
-    }
-
-    function renderAnimFramesPanel() {
-      animFramesPanel.innerHTML = '';
-      animFrames.forEach((frameData, idx) => {
-        const item = document.createElement('div');
-        item.className = `ps-layer-item ${idx === currentFrameIndex ? 'active' : ''}`;
-        
-        const title = document.createElement('div');
-        title.className = 'ps-layer-title';
-        title.textContent = `コマ ${idx + 1}`;
-        
-        const thumbCanvas = document.createElement('canvas');
-        thumbCanvas.width = 60; thumbCanvas.height = 60;
-        thumbCanvas.className = 'ps-layer-preview';
-        const tCtx = thumbCanvas.getContext('2d');
-        
-        const tmpC = document.createElement('canvas');
-        tmpC.width = 250; tmpC.height = 250;
-        tmpC.getContext('2d').putImageData(frameData, 0, 0);
-        tCtx.drawImage(tmpC, 0, 0, 60, 60);
-
-        item.appendChild(title);
-        item.appendChild(thumbCanvas);
-
-        item.addEventListener('click', () => {
-          saveCurrentFrameFromCanvas();
-          currentFrameIndex = idx;
-          loadCurrentFrameToCanvas();
-          renderAnimFramesPanel();
-        });
-        animFramesPanel.appendChild(item);
-      });
-    }
-
-    function saveCurrentFrameFromCanvas() {
-      animFrames[currentFrameIndex] = animCtx.getImageData(0, 0, 250, 250);
-    }
-
-    function loadCurrentFrameToCanvas() {
-      animCtx.clearRect(0, 0, 250, 250);
-      animCtx.putImageData(animFrames[currentFrameIndex], 0, 0);
-      updateOnionSkin();
-    }
-
-    function updateOnionSkin() {
-      animBgCtx.clearRect(0, 0, 250, 250);
-      if (onionSkinToggle.checked && currentFrameIndex > 0) {
-        const prevC = document.createElement('canvas');
-        prevC.width = 250; prevC.height = 250;
-        prevC.getContext('2d').putImageData(animFrames[currentFrameIndex - 1], 0, 0);
-        animBgCtx.drawImage(prevC, 0, 0);
-        animBgCanvas.style.display = 'block';
-      } else {
-        animBgCanvas.style.display = 'none';
-      }
-    }
-
-    onionSkinToggle.addEventListener('change', updateOnionSkin);
-
-    animAddFrameBtn.addEventListener('click', () => {
-      saveCurrentFrameFromCanvas();
-      const canvas = document.createElement('canvas');
-      canvas.width = 250; canvas.height = 250;
-      const ctx = canvas.getContext('2d');
-      animFrames.push(ctx.getImageData(0, 0, 250, 250));
-      currentFrameIndex = animFrames.length - 1;
-      renderAnimFramesPanel();
-      loadCurrentFrameToCanvas();
-      animHistoryStack = [];
-    });
-
-    footerAnimationOpenBtn.addEventListener('click', () => {
-      animationModalOverlay.classList.add('active');
-      initAnimationFrames();
-    });
-
-    animationModalCloseX.addEventListener('click', () => animationModalOverlay.classList.remove('active'));
-    animCancelBtn.addEventListener('click', () => animationModalOverlay.classList.remove('active'));
-
-    animBrushSelect.addEventListener('change', () => {
-      animCurrentTool = 'pen';
-      animCurrentBrushType = animBrushSelect.value;
-      animToolFill.classList.remove('active');
-      animToolEraser.classList.remove('active');
-    });
-    animToolFill.addEventListener('click', () => { animCurrentTool = 'fill'; animToolEraser.classList.remove('active'); animToolFill.classList.add('active'); });
-    animToolEraser.addEventListener('click', () => { animCurrentTool = 'eraser'; animToolFill.classList.remove('active'); animToolEraser.classList.add('active'); });
-
-    function saveAnimState() {
-      if (animHistoryStack.length >= 10) animHistoryStack.shift();
-      animHistoryStack.push(animCtx.getImageData(0, 0, 250, 250));
-    }
-
-    animToolUndo.addEventListener('click', () => {
-      if (animHistoryStack.length > 0) {
-        const prevState = animHistoryStack.pop();
-        animCtx.putImageData(prevState, 0, 0);
-        saveCurrentFrameFromCanvas();
-        renderAnimFramesPanel();
-      }
-    });
-
-    animToolClear.addEventListener('click', () => {
-      saveAnimState();
-      animCtx.clearRect(0, 0, 250, 250);
-      saveCurrentFrameFromCanvas();
-      renderAnimFramesPanel();
-    });
-
-    // 描画・プレビュー処理
-    animPreviewPlayBtn.addEventListener('click', () => {
-      saveCurrentFrameFromCanvas();
-      let playIdx = 0;
-      let count = 0;
-      const interval = setInterval(() => {
-        animCtx.clearRect(0, 0, 250, 250);
-        animCtx.putImageData(animFrames[playIdx], 0, 0);
-        playIdx++;
-        if (playIdx >= animFrames.length) {
-          playIdx = 0;
-          count++;
-          if (count >= 3) {
-            clearInterval(interval);
-            setTimeout(() => {
-              loadCurrentFrameToCanvas();
-            }, 300);
-          }
-        }
-      }, 200);
-    });
-
-    // マウス・タッチ描画イベント (アニメーション用)
-    let isAnimDrawing = false;
-    function startAnimDraw(e) {
-      const pos = getCanvasCoords(e, animMainCanvas);
-      saveAnimState();
-
-      if (animCurrentTool === 'fill') {
-        floodFill(animMainCanvas, pos.x, pos.y, animColorInput.value, parseFloat(animOpacityInput.value));
-        saveCurrentFrameFromCanvas();
-        renderAnimFramesPanel();
-        return;
-      }
-
-      isAnimDrawing = true;
-      animLastPoint = pos;
-      drawCustomStroke(animCtx, pos, pos, animCurrentTool, animCurrentBrushType, animSizeInput, animOpacityInput, animColorInput);
-    }
-
-    function moveAnimDraw(e) {
-      if (!isAnimDrawing || animCurrentTool === 'fill') return;
-      e.preventDefault();
-      const pos = getCanvasCoords(e, animMainCanvas);
-      drawCustomStroke(animCtx, animLastPoint, pos, animCurrentTool, animCurrentBrushType, animSizeInput, animOpacityInput, animColorInput);
-      animLastPoint = pos;
-    }
-
-    function endAnimDraw() {
-      if (isAnimDrawing) {
-        isAnimDrawing = false;
-        animLastPoint = null;
-        saveCurrentFrameFromCanvas();
-        renderAnimFramesPanel();
-      }
-    }
-
-    animMainCanvas.addEventListener('mousedown', startAnimDraw);
-    animMainCanvas.addEventListener('mousemove', moveAnimDraw);
-    animMainCanvas.addEventListener('mouseup', endAnimDraw);
-    animMainCanvas.addEventListener('mouseleave', endAnimDraw);
-    animMainCanvas.addEventListener('touchstart', startAnimDraw, { passive: false });
-    animMainCanvas.addEventListener('touchmove', moveAnimDraw, { passive: false });
-    animMainCanvas.addEventListener('touchend', endAnimDraw);
-
-    animSubmitBtn.addEventListener('click', () => {
-      saveCurrentFrameFromCanvas();
-      // アニメーションデータをJSONにして保存
-      const framesDataUrl = animFrames.map(fd => {
-        const c = document.createElement('canvas');
-        c.width = 250; c.height = 250;
-        c.getContext('2d').putImageData(fd, 0, 0);
-        return c.toDataURL('image/png');
-      });
-
-      const senderName = userSelect.value;
-      push(messagesRef, {
-        sender: senderName,
-        text: '',
-        isAnimationStamp: true,
-        animationFrames: framesDataUrl,
-        fileName: `anim_stamp_${Date.now()}.png`,
-        timestamp: Date.now()
-      });
-      animationModalOverlay.classList.remove('active');
-    });
 
     const layerItem1 = document.getElementById('layer-item-1');
     const layerItem2 = document.getElementById('layer-item-2');
@@ -1572,6 +1264,7 @@
       updateLayerDOMOrder();
     });
 
+    // フッターのスタンプ履歴ボタン直接表示ロジック
     footerStampHistoryBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
@@ -1689,13 +1382,13 @@
       };
     }
 
-    function drawCustomStroke(ctx, p1, p2, tool, brushType, sizeInput, opacityInput, colorInput) {
-      const baseSize = parseFloat(sizeInput.value);
-      const opacity = parseFloat(opacityInput.value);
-      const color = colorInput.value;
+    function drawStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(stampSizeInput.value);
+      const opacity = parseFloat(stampOpacityInput.value);
+      const color = stampColorInput.value;
 
       ctx.save();
-      if (tool === 'eraser') {
+      if (currentTool === 'eraser') {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.globalAlpha = opacity;
         ctx.strokeStyle = '#000';
@@ -1712,8 +1405,9 @@
 
       ctx.globalCompositeOperation = 'source-over';
       const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
-      switch (brushType) {
+      switch (currentBrushType) {
         case 'calligraphy-brush':
           ctx.globalAlpha = opacity;
           ctx.strokeStyle = color;
@@ -1724,6 +1418,7 @@
           ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
           break;
+
         case 'calligraphy-pen':
           ctx.globalAlpha = opacity;
           ctx.fillStyle = color;
@@ -1736,6 +1431,7 @@
             ctx.fill();
           }
           break;
+
         case 'airbrush':
           ctx.globalAlpha = opacity * 0.15;
           ctx.fillStyle = color;
@@ -1751,6 +1447,7 @@
             }
           }
           break;
+
         case 'oil':
           ctx.globalAlpha = opacity * 0.7;
           ctx.strokeStyle = color;
@@ -1760,7 +1457,15 @@
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
+          ctx.globalAlpha = opacity * 0.3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p1.x + 2, p1.y + 2);
+          ctx.lineTo(p2.x + 2, p2.y + 2);
+          ctx.stroke();
           break;
+
         case 'crayon':
           ctx.globalAlpha = opacity * 0.6;
           ctx.fillStyle = color;
@@ -1777,6 +1482,7 @@
             }
           }
           break;
+
         case 'marker':
           ctx.globalAlpha = opacity * 0.4;
           ctx.fillStyle = color;
@@ -1789,6 +1495,7 @@
             ctx.fill();
           }
           break;
+
         case 'pencil':
           ctx.globalAlpha = opacity * 0.8;
           ctx.fillStyle = color;
@@ -1803,6 +1510,7 @@
             }
           }
           break;
+
         case 'watercolor':
           ctx.globalAlpha = opacity * 0.12;
           ctx.fillStyle = color;
@@ -1815,6 +1523,7 @@
             ctx.fill();
           }
           break;
+
         case 'pen':
         default:
           ctx.globalAlpha = opacity;
@@ -1848,7 +1557,7 @@
 
         isTargetDrawing = true;
         lastPoint = pos;
-        drawCustomStroke(activeObj.ctx, pos, pos, currentTool, currentBrushType, stampSizeInput, stampOpacityInput, stampColorInput);
+        drawStroke(activeObj.ctx, pos, pos);
       }
 
       function moveDraw(e) {
@@ -1857,7 +1566,7 @@
         if (targetCanvas !== activeObj.canvas) return;
         e.preventDefault();
         const pos = getCanvasCoords(e, targetCanvas);
-        drawCustomStroke(activeObj.ctx, lastPoint, pos, currentTool, currentBrushType, stampSizeInput, stampOpacityInput, stampColorInput);
+        drawStroke(activeObj.ctx, lastPoint, pos);
         lastPoint = pos;
       }
 
@@ -1986,33 +1695,11 @@
       if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
     }
 
+    // チャット画面を一番下までスクロールさせる関数
     function scrollToBottom() {
       requestAnimationFrame(() => {
         chatBox.scrollTop = chatBox.scrollHeight;
       });
-    }
-
-    // アニメーションスタンプ再生用ヘルパー関数
-    function playAnimationStamp(imgElement, frames) {
-      if (!frames || frames.length === 0) return;
-      let currentPlayIndex = 0;
-      let loops = 0;
-      imgElement.src = frames[0];
-      
-      const timer = setInterval(() => {
-        currentPlayIndex++;
-        if (currentPlayIndex >= frames.length) {
-          currentPlayIndex = 0;
-          loops++;
-          if (loops >= 3) {
-            clearInterval(timer);
-            // 3回再生したら最後のコマでストップ
-            imgElement.src = frames[frames.length - 1];
-            return;
-          }
-        }
-        imgElement.src = frames[currentPlayIndex];
-      }, 200);
     }
 
     function renderMessages() {
@@ -2030,18 +1717,9 @@
         senderName.textContent = msg.sender;
 
         const bubble = document.createElement('div');
-        bubble.className = `bubble ${msg.isStamp || msg.isAnimationStamp ? 'stamp-bubble' : ''}`;
+        bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
 
-        if (msg.isAnimationStamp && msg.animationFrames) {
-          const img = document.createElement('img');
-          img.className = 'chat-stamp';
-          // 初回描画時は最後のコマを表示（ストップ状態を維持）
-          img.src = msg.animationFrames[msg.animationFrames.length - 1];
-          bubble.appendChild(img);
-
-          // 自動で3回再生
-          playAnimationStamp(img, msg.animationFrames);
-        } else if (msg.fileData) {
+        if (msg.fileData) {
           if (msg.isStamp) {
             const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-stamp';
             bubble.appendChild(img);
@@ -2068,25 +1746,11 @@
         timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
-        if (msg.isAnimationStamp && msg.animationFrames) {
-          const playBtn = document.createElement('button');
-          playBtn.className = 'delete-btn';
-          playBtn.textContent = '再生';
-          const imgEl = bubble.querySelector('img');
-          playBtn.addEventListener('click', () => {
-            playAnimationStamp(imgEl, msg.animationFrames);
-          });
-          metaInfo.appendChild(playBtn);
-        }
-
-        if (msg.fileData || msg.animationFrames) {
+        if (msg.fileData) {
           const dlBtn = document.createElement('button');
           dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
           dlBtn.addEventListener('click', () => {
-            const a = document.createElement('a'); 
-            a.href = msg.isAnimationStamp ? msg.animationFrames[msg.animationFrames.length - 1] : msg.fileData; 
-            a.download = msg.fileName || 'download'; 
-            a.click();
+            const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName || 'download'; a.click();
           });
           metaInfo.appendChild(dlBtn);
         }
@@ -2117,7 +1781,6 @@
       });
 
       sendBtn.addEventListener('click', sendMessage);
-      messageInput.スタイ・キーボードイベント = ...
       messageInput.addEventListener('keydown', (e) => {
         if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -2130,8 +1793,10 @@
       });
     }
 
+    // アプリ起動時の全体初期化
     initChat();
 
+    // 自動ログイン判定（localStorage または sessionStorage をチェック）
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
