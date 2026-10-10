@@ -42,7 +42,7 @@
             background: #333;
             border-radius: 4px;
         }
-        /* ハンバーガー・サイドバー用スタイル */
+        /* FamilyChatと同じハンバーガー・サイドバー用スタイル[cite: 1, 2] */
         .overlay {
             position: fixed;
             top: 0;
@@ -123,13 +123,14 @@
 
     <!-- アプリ本体 -->
     <div id="app-content" class="hidden flex-col min-h-screen">
-        <!-- サイドバー＆オーバーレイ -->
+        <!-- サイドバー＆オーバーレイ（FamilyChatと同一のメニュー構成）[cite: 1, 2] -->
         <div id="overlay" class="overlay"></div>
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">メニュー</div>
             <ul class="sidebar-menu">
                 <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
                 <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
+                <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
                 <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html">FamilyChat おかあさん</a></li>
                 <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page28.html">FamilyChat おとうさん</a></li>
                 <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page29.html">pngをスタンプ化</a></li>
@@ -207,7 +208,7 @@
                                 <label class="cursor-pointer"><input type="radio" name="itemColor" value="yellow" class="accent-[#00bcd4]"><span class="ml-1 text-xs text-[#ffeb3b]">黄</span></label>
                             </div>
 
-                            <button type="button" onclick="addChecklistItem()" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0">
+                            <button type="button" id="add-item-btn" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0 cursor-pointer">
                                 <i class="fa-solid fa-plus"></i>
                                 <span>追加</span>
                             </button>
@@ -329,7 +330,7 @@
             passInput.value = '';
         });
 
-        // ハンバーガーメニュー開閉
+        // ハンバーガーメニュー開閉（FamilyChatと同一の挙動）[cite: 1, 2]
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
@@ -394,6 +395,13 @@
                 if(e.key === 'Enter') {
                     window.addChecklistItem();
                 }
+            });
+
+            // 「＋追加」ボタンの確実なイベント登録
+            const addItemBtn = document.getElementById('add-item-btn');
+            addItemBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.addChecklistItem();
             });
         }
 
