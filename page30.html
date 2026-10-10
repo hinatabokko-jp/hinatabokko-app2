@@ -42,7 +42,7 @@
             background: #333;
             border-radius: 4px;
         }
-        /* FamilyChatと完全に同一のハンバーガー・サイドバー用スタイル[cite: 1, 2, 3] */
+        /* FamilyChatと同一のハンバーガー・サイドバー用スタイル[cite: 1, 2, 3] */
         .overlay {
             position: fixed;
             top: 0;
@@ -169,51 +169,46 @@
             </div>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col">
+        <!-- Main Content Area (フレームを撤廃し、柔軟に拡張可能なレイアウトへ変更) -->
+        <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col space-y-8">
             
-            <!-- Main Note Container -->
-            <div class="w-full bg-[#1e1e1e] border border-[#333] rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col space-y-6">
-                
-                <!-- Free Text Area -->
-                <div class="flex flex-col space-y-2">
-                    <label for="noteBody" class="text-xs font-medium text-zinc-400 flex items-center space-x-1.5">
-                        <i class="fa-solid fa-align-left text-[#00bcd4]"></i>
-                        <span>フリーメモ</span>
+            <!-- Free Text Area -->
+            <div class="flex flex-col space-y-2">
+                <label for="noteBody" class="text-xs font-medium text-zinc-400 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-align-left text-[#00bcd4]"></i>
+                    <span>フリーメモ</span>
+                </label>
+                <textarea id="noteBody" placeholder="自由にメモを書き込んでください（自動保存されます）..." rows="8" class="w-full bg-[#1e1e1e] p-4 text-zinc-200 placeholder-zinc-600 rounded-2xl border border-[#333] text-sm leading-relaxed resize-none outline-none focus:border-[#00bcd4] transition-colors shadow-lg"></textarea>
+            </div>
+
+            <!-- Checklist Section -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-medium text-zinc-400 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-square-check text-[#00bcd4]"></i>
+                        <span>チェックリスト</span>
                     </label>
-                    <textarea id="noteBody" placeholder="自由にメモを書き込んでください（自動保存されます）..." rows="8" class="w-full bg-[#252525] p-4 text-zinc-200 placeholder-zinc-600 rounded-2xl border border-[#333] text-sm leading-relaxed resize-none outline-none focus:border-[#00bcd4] transition-colors"></textarea>
+                    <span id="checklistProgress" class="text-xs text-zinc-500">0 / 0 完了</span>
                 </div>
 
-                <!-- Checklist Section -->
-                <div class="flex flex-col space-y-3 pt-2">
-                    <div class="flex items-center justify-between">
-                        <label class="text-xs font-medium text-zinc-400 flex items-center space-x-1.5">
-                            <i class="fa-solid fa-square-check text-[#00bcd4]"></i>
-                            <span>チェックリスト</span>
-                        </label>
-                        <span id="checklistProgress" class="text-xs text-zinc-500">0 / 0 完了</span>
-                    </div>
+                <!-- Checklist Input Form -->
+                <form id="checklist-form" class="flex items-center gap-2">
+                    <input type="text" id="newChecklistItemInput" placeholder="新しいチェック項目を入力して追加..." class="flex-1 bg-[#1e1e1e] text-xs sm:text-sm text-zinc-200 placeholder-zinc-600 px-4 py-3 rounded-xl border border-[#333] outline-none focus:border-[#00bcd4] transition-colors shadow-sm">
+                    <button type="submit" id="add-item-btn" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0 cursor-pointer">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>追加</span>
+                    </button>
+                </form>
 
-                    <!-- Checklist Input Form -->
-                    <form id="checklist-form" class="flex items-center gap-2">
-                        <input type="text" id="newChecklistItemInput" placeholder="新しいチェック項目を入力して追加..." class="flex-1 bg-[#252525] text-xs sm:text-sm text-zinc-200 placeholder-zinc-600 px-4 py-3 rounded-xl border border-[#333] outline-none focus:border-[#00bcd4] transition-colors">
-                        <button type="submit" id="add-item-btn" class="px-5 py-3 bg-[#00bcd4] hover:bg-[#008ba3] text-zinc-950 font-bold text-xs sm:text-sm rounded-xl transition shadow flex items-center space-x-1.5 shrink-0 cursor-pointer">
-                            <i class="fa-solid fa-plus"></i>
-                            <span>追加</span>
-                        </button>
-                    </form>
-
-                    <!-- Checklist Items Container -->
-                    <div id="checklistContainer" class="flex flex-col space-y-2.5 mt-2">
-                        <!-- Dynamic checklist items injected here -->
-                    </div>
-
-                    <!-- Empty Checklist Notice -->
-                    <div id="emptyChecklist" class="hidden text-center py-6 text-zinc-600 text-xs">
-                        チェック項目はまだありません。上のフォームから追加してください。
-                    </div>
+                <!-- Checklist Items Container -->
+                <div id="checklistContainer" class="flex flex-col space-y-2.5">
+                    <!-- Dynamic checklist items injected here -->
                 </div>
 
+                <!-- Empty Checklist Notice -->
+                <div id="emptyChecklist" class="hidden text-center py-6 text-zinc-600 text-xs">
+                    チェック項目はまだありません。上のフォームから追加してください。
+                </div>
             </div>
 
         </main>
@@ -261,7 +256,7 @@
         const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
         const changeUserBtn = document.getElementById('changeUserBtn');
 
-        // サイドバー要素をグローバルに取得（認証状態に関わらず常時動作）
+        // サイドバー要素
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
@@ -332,10 +327,14 @@
         });
 
         function initFirebaseListener() {
+            // Firebaseから最新データをリアルタイム取得し、蓄積データを確実に画面に反映させる
             onValue(memoRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     memoData = data;
+                    if (!Array.isArray(memoData.checklist)) {
+                        memoData.checklist = [];
+                    }
                 } else {
                     memoData = {
                         body: '',
@@ -362,11 +361,11 @@
 
             if(saveTimeout) clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
-                saveMemoToFirebase(true);
+                saveMemoToFirebase();
             }, 400);
         }
 
-        function saveMemoToFirebase(showNotice = true) {
+        function saveMemoToFirebase() {
             set(memoRef, memoData).then(() => {
                 const status = document.getElementById('saveStatus');
                 status.innerHTML = '<i class="fa-solid fa-cloud text-[#00bcd4]"></i><span>自動保存済み</span>';
@@ -394,7 +393,9 @@
                 return;
             }
 
-            if(!memoData.checklist) memoData.checklist = [];
+            if(!Array.isArray(memoData.checklist)) memoData.checklist = [];
+            
+            // 新規項目を追加
             memoData.checklist.push({
                 text: val,
                 completed: false
@@ -402,7 +403,7 @@
 
             input.value = '';
             renderChecklist();
-            saveMemoToFirebase(false);
+            saveMemoToFirebase(); // Firebaseに即時保存
             showNotification('項目を追加しました');
         }
 
@@ -410,14 +411,14 @@
             if(memoData.checklist[index]) {
                 memoData.checklist[index].completed = !memoData.checklist[index].completed;
                 renderChecklist();
-                saveMemoToFirebase(false);
+                saveMemoToFirebase();
             }
         }
 
         window.deleteChecklistItem = function(index) {
             memoData.checklist.splice(index, 1);
             renderChecklist();
-            saveMemoToFirebase(false);
+            saveMemoToFirebase();
             showNotification('項目を削除しました');
         }
 
@@ -428,7 +429,7 @@
             memoData.checklist[index] = memoData.checklist[newIndex];
             memoData.checklist[newIndex] = temp;
             renderChecklist();
-            saveMemoToFirebase(false);
+            saveMemoToFirebase();
         }
 
         function renderChecklist() {
@@ -436,7 +437,7 @@
             const emptyNotice = document.getElementById('emptyChecklist');
             const progress = document.getElementById('checklistProgress');
 
-            if (!memoData.checklist) memoData.checklist = [];
+            if (!Array.isArray(memoData.checklist)) memoData.checklist = [];
             const total = memoData.checklist.length;
             const completedCount = memoData.checklist.filter(i => i.completed).length;
             progress.textContent = `${completedCount} / ${total} 完了`;
@@ -452,10 +453,10 @@
 
             memoData.checklist.forEach((item, idx) => {
                 html += `
-                    <div class="group flex items-center justify-between bg-[#252525] px-4 py-3 rounded-xl border border-[#333] hover:border-[#444] transition cursor-grab active:cursor-grabbing" draggable="true" ondragstart="onDragStart(event, ${idx})" ondragover="onDragOver(event)" ondrop="onDrop(event, ${idx})">
+                    <div class="group flex items-center justify-between bg-[#1e1e1e] px-4 py-3.5 rounded-xl border border-[#333] hover:border-[#444] transition cursor-grab active:cursor-grabbing shadow-sm" draggable="true" ondragstart="onDragStart(event, ${idx})" ondragover="onDragOver(event)" ondrop="onDrop(event, ${idx})">
                         <div class="flex items-center space-x-3 flex-1 pr-3 min-w-0">
                             <i class="fa-solid fa-grip-vertical text-zinc-600 hover:text-zinc-400 text-xs cursor-grab shrink-0"></i>
-                            <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleChecklistItem(${idx})" class="w-4 h-4 accent-[#00bcd4] rounded bg-[#1e1e1e] border-[#555] cursor-pointer shrink-0">
+                            <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleChecklistItem(${idx})" class="w-4 h-4 accent-[#00bcd4] rounded bg-[#121212] border-[#555] cursor-pointer shrink-0">
                             <span class="text-xs sm:text-sm transition-all text-zinc-200 break-words min-w-0 ${item.completed ? 'line-through opacity-50' : ''}">${escapeHtml(item.text)}</span>
                         </div>
                         <div class="flex items-center space-x-1 shrink-0">
@@ -493,7 +494,7 @@
             memoData.checklist.splice(targetIndex, 0, item);
             draggedIndex = null;
             renderChecklist();
-            saveMemoToFirebase(false);
+            saveMemoToFirebase();
         }
 
         window.clearAllData = function() {
@@ -504,7 +505,7 @@
                 };
                 document.getElementById('noteBody').value = '';
                 renderChecklist();
-                saveMemoToFirebase(false);
+                saveMemoToFirebase();
                 showNotification('メモをリセットしました');
             }
         }
