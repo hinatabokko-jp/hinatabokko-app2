@@ -368,7 +368,7 @@
       color: #fff;
     }
 
-    /* メディア・ファイル関連スタイル (iOS縦向き表示の補正) */
+    /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
       max-height: 250px;
@@ -1021,6 +1021,11 @@
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 
+    // 自動ログインチェック
+    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
+      unlockApp();
+    }
+
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
       sessionStorage.removeItem('family_chat_unlocked');
@@ -1040,9 +1045,13 @@
 
       try {
         const snap = await get(passcodeRef);
-        const correctPass = snap.exists() ? snap.val() : '1234';
+        let correctPass = '1234';
+        if (snap.exists()) {
+          const val = snap.val();
+          correctPass = typeof val === 'object' && val !== null ? (val.passcode || val.password || Object.values(val)[0]) : String(val);
+        }
 
-        if (inputPass === correctPass) {
+        if (inputPass === String(correctPass)) {
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
@@ -1054,6 +1063,7 @@
           passError.style.display = 'block';
         }
       } catch (e) {
+        console.error(e);
         passError.textContent = '認証に失敗しました';
         passError.style.display = 'block';
       }
@@ -1062,12 +1072,24 @@
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
+      passError.style.display = 'none';
       renderMessages();
+      loadStampHistory();
     }
 
     passBtn.addEventListener('click', handleAuth);
     passInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAuth();
+    });
+
+    // ハンバーガーメニュー
+    hamburgerBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
     });
 
     // チャット・スタンプ関連変数・ロジック
@@ -1076,10 +1098,6 @@
     const sendBtn = document.getElementById('send-btn');
     const userSelect = document.getElementById('user-select');
     const fileInput = document.getElementById('file-input');
-
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
@@ -1132,7 +1150,6 @@
     let cachedMessages = {};
     let cachedStampHistory = {};
     let currentTool = 'pen';
-    let currentBrushType = 'pen';
     let historyStack = [];
     let lastPoint = null;
 
@@ -1267,3 +1284,361 @@
       updateLayerPreviews();
       updateLayerDOMOrder();
     });
+
+    stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+    stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+    backToCommentBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.remove('active');
+      commentModalOverlay.classList.add('active');
+    });
+
+    // スタンプ履歴モーダル関連
+    goToHistoryBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.remove('active');
+      historyModalOverlay.classList.add('active');
+      renderStampHistory();
+    });
+    historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
+    backToStampDrawBtn.addEventListener('click', () => {
+      historyModalOverlay.classList.remove('active');
+      stampModalOverlay.classList.add('active');
+    });
+
+    // スタンプ履歴の読み込み
+    function loadStampHistory() {
+      onValue(stampHistoryRef, (snapshot) => {
+        cachedStampHistory = snapshot.val() || {};
+        renderStampHistory();
+      });
+    }
+
+    function renderStampHistory() {
+      historyGrid.innerHTML = '';
+      const keys = Object.keys(cachedStampHistory);
+      if (keys.length === 0) {
+        historyGrid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:20px;">保存されたスタンプはありません</div>';
+        return;
+      }
+
+      keys.forEach(key => {
+        const item = cachedStampHistory[key];
+        const card = document.createElement('div');
+        card.className = 'history-card';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'history-img-wrapper';
+
+        const img = document.createElement('img');
+        img.className = 'history-img';
+        img.src = item.url || item;
+        wrapper.appendChild(img);
+
+        const actions = document.createElement('div');
+        actions.className = 'history-actions';
+
+        const sendBtnItem = document.createElement('button');
+        sendBtnItem.className = 'history-action-btn send';
+        sendBtnItem.textContent = '送信する';
+        sendBtnItem.addEventListener('click', () => {
+          push(messagesRef, {
+            sender: userSelect.value,
+            stampUrl: item.url || item,
+            timestamp: Date.now()
+          });
+          historyModalOverlay.classList.remove('active');
+        });
+
+        const delBtnItem = document.createElement('button');
+        delBtnItem.className = 'history-action-btn del';
+        delBtnItem.textContent = '削除';
+        delBtnItem.addEventListener('click', () => {
+          if (confirm('このスタンプを削除しますか？')) {
+            remove(ref(db, `stamp_history/${key}`));
+          }
+        });
+
+        actions.appendChild(sendBtnItem);
+        actions.appendChild(delBtnItem);
+
+        card.appendChild(wrapper);
+        card.appendChild(actions);
+        historyGrid.appendChild(card);
+      });
+    }
+
+    // PNG画像の追加アップロード
+    stampUploadInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        push(stampHistoryRef, {
+          url: event.target.result,
+          timestamp: Date.now()
+        });
+      };
+      reader.readAsDataURL(file);
+      stampUploadInput.value = '';
+    });
+
+    // 描画機能
+    function saveState() {
+      historyStack.push({
+        a: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
+        b: ctxB.getImageData(0, 0, canvasB.width, canvasB.height)
+      });
+      if (historyStack.length > 20) historyStack.shift();
+    }
+
+    toolUndo.addEventListener('click', () => {
+      if (historyStack.length > 0) {
+        const state = historyStack.pop();
+        ctxA.putImageData(state.a, 0, 0);
+        ctxB.putImageData(state.b, 0, 0);
+        updateLayerPreviews();
+      }
+    });
+
+    toolClear.addEventListener('click', () => {
+      if (confirm('キャンバスをすべて消去しますか？')) {
+        saveState();
+        ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
+        ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
+        updateLayerPreviews();
+      }
+    });
+
+    toolEraser.addEventListener('click', () => {
+      currentTool = 'eraser';
+      toolEraser.classList.add('active');
+      toolFill.classList.remove('active');
+    });
+
+    toolFill.addEventListener('click', () => {
+      saveState();
+      const { ctx } = getActiveLayer();
+      ctx.fillStyle = stampColorInput.value;
+      ctx.fillRect(0, 0, canvasA.width, canvasA.height);
+      updateLayerPreviews();
+    });
+
+    // 描画イベント
+    function getCanvasPos(e, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    let isDrawing = false;
+    [canvasA, canvasB].forEach(canvas => {
+      const startDraw = (e) => {
+        isDrawing = true;
+        saveState();
+        lastPoint = getCanvasPos(e, canvas);
+      };
+
+      const draw = (e) => {
+        if (!isDrawing) return;
+        const currentPoint = getCanvasPos(e, canvas);
+        const { ctx } = getActiveLayer();
+
+        ctx.save();
+        ctx.strokeStyle = stampColorInput.value;
+        ctx.lineWidth = parseInt(stampSizeInput.value);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = parseFloat(stampOpacityInput.value);
+
+        if (currentTool === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out';
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+        ctx.stroke();
+        ctx.restore();
+
+        lastPoint = currentPoint;
+        updateLayerPreviews();
+      };
+
+      const endDraw = () => {
+        isDrawing = false;
+        lastPoint = null;
+      };
+
+      canvas.addEventListener('mousedown', startDraw);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', endDraw);
+      canvas.addEventListener('mouseleave', endDraw);
+
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+      canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+      canvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(); });
+    });
+
+    // スタンプ完成・送信
+    stampSubmitBtn.addEventListener('click', () => {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvasA.width;
+      tempCanvas.height = canvasA.height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // レイヤー順に合成
+      layerOrder.forEach(id => {
+        const c = getLayerObj(id).canvas;
+        tempCtx.drawImage(c, 0, 0);
+      });
+
+      const dataUrl = tempCanvas.toDataURL('image/png');
+      
+      // Firebase履歴とチャットへ保存
+      push(stampHistoryRef, { url: dataUrl, timestamp: Date.now() });
+      push(messagesRef, { sender: userSelect.value, stampUrl: dataUrl, timestamp: Date.now() });
+
+      stampModalOverlay.classList.remove('active');
+    });
+
+    // メッセージ送信処理
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      const senderName = userSelect.value;
+      if (text) {
+        push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+        messageInput.value = '';
+        messageInput.style.height = '40px';
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    messageInput.addEventListener('input', () => {
+      messageInput.style.height = '40px';
+      messageInput.style.height = (messageInput.scrollHeight) + 'px';
+    });
+
+    // ファイル添付（画像・ファイル）
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const fileData = event.target.result;
+        const senderName = userSelect.value;
+        if (file.type.startsWith('image/')) {
+          push(messagesRef, { sender: senderName, imageUrl: fileData, timestamp: Date.now() });
+        } else {
+          push(messagesRef, { sender: senderName, fileName: file.name, fileUrl: fileData, timestamp: Date.now() });
+        }
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = '';
+    });
+
+    // チャットメッセージ描画
+    function renderMessages() {
+      onValue(messagesRef, (snapshot) => {
+        cachedMessages = snapshot.val() || {};
+        chatBox.innerHTML = '';
+        const keys = Object.keys(cachedMessages);
+
+        keys.forEach(key => {
+          const msg = cachedMessages[key];
+          const isSent = msg.sender === userSelect.value;
+
+          const msgDiv = document.createElement('div');
+          msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+
+          const senderDiv = document.createElement('div');
+          senderDiv.className = 'sender-name';
+          senderDiv.textContent = msg.sender;
+          msgDiv.appendChild(senderDiv);
+
+          const bubbleDiv = document.createElement('div');
+          bubbleDiv.className = 'bubble';
+
+          if (msg.stampUrl) {
+            bubbleDiv.classList.add('stamp-bubble');
+            const img = document.createElement('img');
+            img.className = 'chat-stamp';
+            img.src = msg.stampUrl;
+            bubbleDiv.appendChild(img);
+          } else if (msg.imageUrl) {
+            const img = document.createElement('img');
+            img.className = 'chat-image';
+            img.src = msg.imageUrl;
+            bubbleDiv.appendChild(img);
+          } else if (msg.fileUrl) {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file-attachment';
+            fileDiv.innerHTML = `📎 <a href="${msg.fileUrl}" download="${msg.fileName || 'file'}" class="file-name chat-link">${msg.fileName || '添付ファイル'}</a>`;
+            bubbleDiv.appendChild(fileDiv);
+          } else {
+            // テキスト内のURL自動リンク化
+            const text = msg.text || '';
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            if (urlRegex.test(text)) {
+              const parts = text.split(urlRegex);
+              parts.forEach(part => {
+                if (urlRegex.test(part)) {
+                  const a = document.createElement('a');
+                  a.href = part;
+                  a.target = '_blank';
+                  a.className = 'chat-link';
+                  a.textContent = part;
+                  bubbleDiv.appendChild(a);
+                } else {
+                  bubbleDiv.appendChild(document.createTextNode(part));
+                }
+              });
+            } else {
+              bubbleDiv.textContent = text;
+            }
+          }
+
+          msgDiv.appendChild(bubbleDiv);
+
+          const metaDiv = document.createElement('div');
+          metaDiv.className = 'meta-info';
+
+          const timeSpan = document.createElement('span');
+          timeSpan.className = 'timestamp';
+          if (msg.timestamp) {
+            const date = new Date(msg.timestamp);
+            timeSpan.textContent = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          }
+          metaDiv.appendChild(timeSpan);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-btn';
+          delBtn.textContent = '削除';
+          delBtn.addEventListener('click', () => {
+            if (confirm('このメッセージを削除しますか？')) {
+              remove(ref(db, `messages/${key}`));
+            }
+          });
+          metaDiv.appendChild(delBtn);
+
+          msgDiv.appendChild(metaDiv);
+          chatBox.appendChild(msgDiv);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+  </script>
+</body>
+</html>
