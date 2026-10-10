@@ -305,7 +305,7 @@
       font-size: 0.65rem;
       color: #666;
     }
-    .delete-btn {
+    .delete-btn, .edit-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -315,9 +315,55 @@
       text-decoration: underline;
       opacity: 0.8;
     }
-    .delete-btn:hover {
+    .delete-btn:hover, .edit-btn:hover {
       opacity: 1;
       color: #fff;
+    }
+
+    /* 編集フォーム用スタイル */
+    .edit-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      min-width: 220px;
+    }
+    .edit-textarea {
+      background-color: #2a2a2a;
+      border: 1px solid var(--primary-color);
+      border-radius: 8px;
+      padding: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.4;
+      min-height: 60px;
+    }
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .edit-save-btn {
+      background-color: var(--primary-color);
+      color: #121212;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .edit-cancel-btn {
+      background-color: #333;
+      color: var(--text-color);
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
     }
 
     /* メディア・ファイル関連スタイル */
@@ -940,7 +986,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
@@ -1610,6 +1656,11 @@
       if (confirm('削除しますか？')) remove(ref(db, `memos/${key}`));
     }
 
+    function updateMessage(key, newText) {
+      if (!newText.trim()) return;
+      update(ref(db, `memos/${key}`), { text: newText.trim() });
+    }
+
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
       let lastIndex = 0, match;
@@ -1667,6 +1718,48 @@
         timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
+        // テキストメッセージの場合のみ編集ボタンを表示
+        if (msg.text && !msg.fileData) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-btn'; editBtn.textContent = '編集';
+          editBtn.addEventListener('click', () => {
+            // インライン編集モードへの切り替え
+            bubble.innerHTML = '';
+            const editContainer = document.createElement('div');
+            editContainer.className = 'edit-container';
+            const editTextArea = document.createElement('textarea');
+            editTextArea.className = 'edit-textarea';
+            editTextArea.value = msg.text;
+            editContainer.appendChild(editTextArea);
+
+            const editActions = document.createElement('div');
+            editActions.className = 'edit-actions';
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'edit-save-btn'; saveBtn.textContent = '保存';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'edit-cancel-btn'; cancelBtn.textContent = 'キャンセル';
+
+            editActions.appendChild(cancelBtn);
+            editActions.appendChild(saveBtn);
+            editContainer.appendChild(editActions);
+            bubble.appendChild(editContainer);
+            editTextArea.focus();
+
+            saveBtn.addEventListener('click', () => {
+              updateMessage(key, editTextArea.value);
+            });
+            cancelBtn.addEventListener('click', () => {
+              renderMessages();
+            });
+            editTextArea.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                updateMessage(key, editTextArea.value);
+              }
+            });
+          });
+          metaInfo.appendChild(editBtn);
+        }
+
         if (msg.fileData) {
           const dlBtn = document.createElement('button');
           dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
@@ -1690,7 +1783,6 @@
       scrollToBottom();
     }
 
-    // renderFormattedTestの定義漏れを防ぐためのフォールバック
     function renderFormattedTest(container, text) {
       renderFormattedText(container, text);
     }
