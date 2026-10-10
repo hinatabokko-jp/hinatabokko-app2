@@ -763,6 +763,7 @@
             <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
+            <button id="footer-stamp-history-open-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
             <button id="send-btn" class="send-btn-style">送信</button>
@@ -968,6 +969,7 @@
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
       renderMessages();
+      scrollToBottom();
     }
 
     passBtn.addEventListener('click', handleAuth);
@@ -1004,6 +1006,7 @@
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
+    const footerStampHistoryOpenBtn = document.getElementById('footer-stamp-history-open-btn');
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const modalCloseX = document.getElementById('modal-close-x');
     const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -1181,6 +1184,13 @@
       updateLayerPreviews();
       updateLayerDOMOrder();
     });
+
+    // フッターの「スタンプ履歴」ボタン押下時の処理
+    footerStampHistoryOpenBtn.addEventListener('click', () => {
+      renderStampHistory();
+      historyModalOverlay.classList.add('active');
+    });
+
     goToStampBtn.addEventListener('click', () => {
       closeModal();
       stampModalOverlay.classList.add('active');
@@ -1249,7 +1259,7 @@
       };
     }
 
-    // 各種ペン（ブラタイプ）に応じた描画機能の実装
+    // 各種ペン（ブラシタイプ）に応じた描画機能の実装
     function drawBrushStroke(ctx, p1, p2) {
       const baseSize = parseFloat(stampSizeInput.value);
       const color = stampColorInput.value;
@@ -1548,6 +1558,13 @@
       if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
     }
 
+    // チャット画面の一番下（最新メッセージ）へスクロールさせる関数
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+
     function renderMessages() {
       chatBox.innerHTML = '';
       const activeUser = userSelect.value;
@@ -1611,7 +1628,8 @@
         msgDiv.appendChild(metaInfo);
         chatBox.appendChild(msgDiv);
       });
-      chatBox.scrollTop = chatBox.scrollHeight;
+
+      scrollToBottom();
     }
 
     function initChat() {
