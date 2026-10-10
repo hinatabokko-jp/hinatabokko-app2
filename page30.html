@@ -1,0 +1,2307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>family chat</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --surface-color: #1e1e1e;
+      --primary-color: #00bcd4;
+      --primary-hover: #008ba3;
+      --danger-color: #cf6679;
+      --text-color: #e0e0e0;
+      --text-muted: #aaa;
+      --border-color: #2d2d2d;
+      --chat-bg: #121212;
+      --my-msg-bg: #00796b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* あいことばロック画面 */
+    #lock-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      gap: 16px;
+      padding: 20px;
+    }
+    #lock-screen h2 {
+      font-size: 1.2rem;
+      color: var(--primary-color);
+    }
+    #pass-input {
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+      width: 220px;
+    }
+    .remember-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--text-color);
+      cursor: pointer;
+      user-select: none;
+    }
+    .remember-container input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+    #pass-btn {
+      background-color: var(--primary-color);
+      color: #121212;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    #pass-error {
+      color: #ff5252;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* アプリ本体 */
+    #app-content {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    .chat-main-area {
+      display: flex;
+      flex: 1;
+      height: calc(100% - 61px);
+      overflow: hidden;
+    }
+
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* ヘッダー */
+    header {
+      background-color: var(--surface-color);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-title-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background-color: #1b5e20;
+      color: #81c784;
+    }
+    .header-subtitle {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.2;
+    }
+    .header-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-select-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .user-select-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    select {
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .btn-logout:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    /* ハンバーガーボタン & サイドバーUI */
+    .hamburger-btn {
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -260px;
+      width: 260px;
+      height: 100%;
+      background-color: var(--surface-color);
+      z-index: 1001;
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    .sidebar.open {
+      transform: translateX(260px);
+    }
+    .sidebar-header {
+      padding: 16px;
+      background-color: #252525;
+      border-bottom: 1px solid #333;
+      font-weight: bold;
+      color: var(--primary-color);
+      font-size: 1rem;
+    }
+    .sidebar-menu {
+      list-style: none;
+      padding: 10px 0;
+      margin: 0;
+      overflow-y: auto;
+    }
+    .sidebar-menu li a {
+      display: block;
+      padding: 12px 20px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      border-left: 4px solid transparent;
+      transition: background 0.2s;
+    }
+    .sidebar-menu li a:hover,
+    .sidebar-menu li a:active {
+      background-color: #2a2a2a;
+    }
+    .sidebar-menu li a.sidebar-link.current {
+      background-color: #2a2a2a;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    /* チャット表示エリア */
+    #chat-box {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* メッセージバルーン */
+    .message {
+      max-width: 75%;
+      display: flex;
+      flex-direction: column;
+    }
+    .message.sent {
+      align-self: flex-end;
+    }
+    .message.received {
+      align-self: flex-start;
+    }
+    .sender-name {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 3px;
+      padding: 0 4px;
+    }
+    .message.sent .sender-name {
+      text-align: right;
+    }
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .message.sent .bubble {
+      background-color: var(--my-msg-bg);
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .message.received .bubble {
+      background-color: #2a2a2a;
+      color: var(--text-color);
+      border-bottom-left-radius: 2px;
+    }
+    .bubble.stamp-bubble {
+      background-color: transparent !important;
+      padding: 4px;
+    }
+
+    .meta-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+      padding: 0 4px;
+      flex-wrap: wrap;
+    }
+    .message.sent .meta-info {
+      justify-content: flex-end;
+    }
+    .timestamp {
+      font-size: 0.65rem;
+      color: #666;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+    .delete-btn:hover {
+      opacity: 1;
+      color: #fff;
+    }
+
+    /* メディア・ファイル関連スタイル */
+    .chat-image {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      display: block;
+      object-fit: contain;
+      image-orientation: none;
+    }
+    .chat-stamp {
+      max-width: 180px;
+      max-height: 180px;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+      object-fit: contain;
+      image-orientation: none;
+    }
+    .chat-link {
+      color: #80deea;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .message.received .chat-link {
+      color: var(--primary-color);
+    }
+    .file-attachment {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+    }
+    .file-name {
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 160px;
+    }
+
+    /* 入力エリア */
+    footer {
+      background-color: var(--surface-color);
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    textarea {
+      flex: 1;
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 18px;
+      padding: 8px 14px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      resize: none;
+      height: 40px;
+      max-height: 120px;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    textarea:focus {
+      border-color: var(--primary-color);
+    }
+    button.send-btn-style {
+      background-color: var(--primary-color);
+      color: #121212;
+      border: none;
+      border-radius: 20px;
+      padding: 0 18px;
+      height: 40px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      flex-shrink: 0;
+    }
+    button.send-btn-style:active {
+      background-color: var(--primary-hover);
+    }
+    button.icon-btn-style, label.icon-btn-style {
+      background-color: #2a2a2a;
+      color: var(--primary-color);
+      border: 1px solid #444;
+      border-radius: 20px;
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    button.icon-btn-style:active, label.icon-btn-style:active {
+      background-color: #3a3a3a;
+      border-color: var(--primary-color);
+    }
+
+    /* モーダル表示スタイル */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-container {
+      background-color: var(--surface-color);
+      border: 1px solid #333;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 14px 16px;
+      background-color: #252525;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .modal-close-btn:hover {
+      color: #fff;
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--text-color);
+      margin-bottom: 4px;
+    }
+    .palette-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .palette-btn {
+      background-color: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      height: 38px;
+      padding: 0 10px;
+      font-size: 1.1rem;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+    .palette-btn:hover {
+      background-color: #3a3a3a;
+      transform: scale(1.03);
+    }
+    .kaimoji-btn {
+      font-size: 0.85rem;
+    }
+    .modal-textarea {
+      width: 100%;
+      height: 120px;
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      resize: vertical;
+      outline: none;
+      line-height: 1.4;
+      font-family: inherit;
+    }
+    .modal-textarea:focus {
+      border-color: var(--primary-color);
+    }
+    .modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      background-color: var(--surface-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-footer-right {
+      display: flex;
+      gap: 8px;
+    }
+    .secondary-btn {
+      background-color: #2a2a2a;
+      color: var(--text-color);
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .secondary-btn:hover {
+      background-color: #3a3a3a;
+    }
+
+    /* 手描きスタンプ関連スタイル */
+    .stamp-nav-btn {
+      background-color: var(--primary-color);
+      color: #121212;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .editor-layout {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .canvas-wrapper {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      border: 2px dashed #444;
+      border-radius: 12px;
+      background-color: #1a1a1a;
+      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      flex-shrink: 0;
+    }
+    .stamp-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      touch-action: none;
+    }
+    .ps-layers-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100px;
+      background-color: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .ps-layer-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px;
+      background-color: #262626;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: grab;
+      transition: background-color 0.2s;
+    }
+    .ps-layer-item.active {
+      border-color: var(--primary-color);
+      background-color: #2a383b;
+    }
+    .ps-layer-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .ps-layer-item.active .ps-layer-title {
+      color: var(--primary-color);
+    }
+    .ps-layer-preview {
+      width: 60px;
+      height: 60px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background-color: #111;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .stamp-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tool-btn {
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .tool-btn.active {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      background-color: #333;
+    }
+    select.tool-select {
+      background-color: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+    .history-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      max-height: 350px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .history-card {
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 8px;
+      background-color: #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .history-img-wrapper {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #1a1a1a;
+      border-radius: 6px;
+    }
+    .history-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .history-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    .history-action-btn {
+      background-color: #333;
+      color: var(--text-color);
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .history-action-btn.send { background-color: #00796b; border-color: #008ba3; color: #fff; }
+    .history-action-btn.del { background-color: #8c2a2a; border-color: #a83232; color: #fff; }
+
+    /* アニメーション作成モーダル関連スタイル */
+    .anim-frames-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 110px;
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .anim-frame-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px;
+      background-color: #262626;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .anim-frame-item.active {
+      border-color: var(--primary-color);
+      background-color: #2a383b;
+    }
+    .anim-frame-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      font-weight: bold;
+    }
+    .anim-frame-item.active .anim-frame-title {
+      color: var(--primary-color);
+    }
+    .anim-frame-preview {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background-color: #111;
+      object-fit: contain;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container" id="app-container">
+    <!-- サイドバー＆オーバーレイ -->
+    <div id="overlay" class="overlay"></div>
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">メニュー</div>
+      <ul class="sidebar-menu">
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
+        <li><a href="#" class="sidebar-link current">FamilyChat おかあさん</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page28.html">FamilyChat おとうさん</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page29.html">pngをスタンプ化</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page4.html">UI用語</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page23.html">QRcode</a></li>
+      </ul>
+    </aside>
+
+    <!-- あいことばロック画面 -->
+    <div id="lock-screen">
+      <h2>あいことばを入力してください</h2>
+      <input type="password" id="pass-input" placeholder="あいことば" autocomplete="off">
+      <label class="remember-container">
+        <input type="checkbox" id="remember-me-checkbox">
+        次回から自動でログインする
+      </label>
+      <button id="pass-btn" class="send-btn-style">入室する</button>
+      <div id="pass-error">あいことばが違います</div>
+    </div>
+
+    <!-- アプリ本体 -->
+    <div id="app-content">
+      <header>
+        <div class="header-left">
+          <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
+          <div class="header-title-container">
+            <div class="header-title">
+              family chat
+              <span id="statusBadge" class="status-badge">ファミリー</span>
+            </div>
+          </div>
+        </div>
+        <div class="header-right-actions">
+          <div class="user-select-container" id="userSelectContainer">
+            <span class="user-select-label">私は:</span>
+            <select id="user-select">
+              <option value="おかあさん">おかあさん</option>
+              <option value="むすめ">むすめ</option>
+            </select>
+          </div>
+          <button id="changeUserBtn" class="btn-logout">ロックに戻る</button>
+        </div>
+      </header>
+
+      <div class="chat-main-area">
+        <div class="chat-panel">
+          <main id="chat-box"></main>
+
+          <footer>
+            <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
+            <input type="file" id="file-input" style="display: none;">
+            <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
+            <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
+            <button id="footer-anim-open-btn" class="icon-btn-style" title="アニメーション作成">🎬</button>
+            <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
+            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
+            <button id="send-btn" class="send-btn-style">送信</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- コメント作成モーダル -->
+  <div id="comment-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">改行・絵文字コメント作成</div>
+        <button id="modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="section-title">ワンタップ絵文字</div>
+          <div class="palette-grid" id="emoji-palette"></div>
+        </div>
+        <div>
+          <div class="section-title">顔文字</div>
+          <div class="palette-grid" id="kaimoji-palette"></div>
+        </div>
+        <div>
+          <div class="section-title">コメント編集</div>
+          <textarea id="modal-text-input" class="modal-textarea" placeholder="ここにメッセージを入力... (Enterで改行)"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="go-to-stamp-btn" class="stamp-nav-btn">🎨 手描きスタンプ</button>
+        <div class="modal-footer-right">
+          <button id="modal-clear-btn" class="secondary-btn">クリア</button>
+          <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
+          <button id="modal-submit-btn" class="send-btn-style">送信</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手描きスタンプ作成モーダル -->
+  <div id="stamp-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">手描きスタンプ作成</div>
+        <button id="stamp-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button id="back-to-comment-btn" class="tool-btn">⬅ コメントへ戻る</button>
+          <button id="go-to-history-btn" class="stamp-nav-btn">🕒 履歴</button>
+        </div>
+        <div class="editor-layout">
+          <div class="canvas-wrapper">
+            <canvas id="layer-bottom" class="stamp-canvas" width="250" height="250"></canvas>
+            <canvas id="layer-top" class="stamp-canvas" width="250" height="250"></canvas>
+          </div>
+          <div class="ps-layers-panel" id="layers-panel-container">
+            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2">
+              <div class="ps-layer-title">Layer 2</div>
+              <img id="ps-preview-2" class="ps-layer-preview" alt="Layer 2">
+            </div>
+            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1">
+              <div class="ps-layer-title">Layer 1</div>
+              <img id="ps-preview-1" class="ps-layer-preview" alt="Layer 1">
+            </div>
+          </div>
+        </div>
+        <div class="stamp-tools">
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
+            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
+            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
+            <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
+          </div>
+          <div class="tool-group">
+            <select id="brush-select" class="tool-select">
+              <option value="pen">ブラシ (通常)</option>
+              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
+              <option value="calligraphy-pen">カリグラフィ ペン</option>
+              <option value="airbrush">エアブラシ</option>
+              <option value="oil">油彩ブラシ</option>
+              <option value="crayon">クレヨン</option>
+              <option value="marker">マーカー</option>
+              <option value="pencil">鉛筆</option>
+              <option value="watercolor">水彩ブラシ</option>
+            </select>
+          </div>
+          <button id="tool-fill" class="tool-btn">ペンキ</button>
+          <button id="tool-eraser" class="tool-btn">消しゴム</button>
+          <button id="tool-undo" class="tool-btn">1つ戻す</button>
+          <button id="tool-clear" class="tool-btn">全消去</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <div class="modal-footer-right">
+          <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
+          <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アニメーション作成モーダル -->
+  <div id="anim-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">アニメーションスタンプ作成</div>
+        <button id="anim-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="anim-add-frame-btn" class="tool-btn active">＋ コマ追加</button>
+            <button id="anim-delete-frame-btn" class="tool-btn">このコマ削除</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label class="remember-container" style="font-size: 0.8rem;">
+              <input type="checkbox" id="anim-onion-toggle" checked>
+              オニオンスキン表示
+            </label>
+            <button id="anim-preview-btn" class="tool-btn">▶ プレビュー再生</button>
+          </div>
+        </div>
+        <div class="editor-layout">
+          <div class="canvas-wrapper">
+            <canvas id="anim-onion-canvas" class="stamp-canvas" width="250" height="250" style="pointer-events: none; opacity: 0.35; z-index: 2;"></canvas>
+            <canvas id="anim-main-canvas" class="stamp-canvas" width="250" height="250" style="z-index: 5;"></canvas>
+          </div>
+          <div class="anim-frames-panel" id="anim-frames-container"></div>
+        </div>
+        <div class="stamp-tools">
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
+            <input type="color" id="anim-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
+            <input type="range" id="anim-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
+            <input type="range" id="anim-size" min="2" max="30" value="5" style="width:55px;">
+          </div>
+          <div class="tool-group">
+            <select id="anim-brush-select" class="tool-select">
+              <option value="pen">ブラシ (通常)</option>
+              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
+              <option value="calligraphy-pen">カリグラフィ ペン</option>
+              <option value="airbrush">エアブラシ</option>
+              <option value="oil">油彩ブラシ</option>
+              <option value="crayon">クレヨン</option>
+              <option value="marker">マーカー</option>
+              <option value="pencil">鉛筆</option>
+              <option value="watercolor">水彩ブラシ</option>
+            </select>
+          </div>
+          <button id="anim-tool-eraser" class="tool-btn">消しゴム</button>
+          <button id="anim-tool-clear" class="tool-btn">このコマ消去</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <div class="modal-footer-right">
+          <button id="anim-cancel-btn" class="secondary-btn">キャンセル</button>
+          <button id="anim-submit-btn" class="send-btn-style">完成して送信</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタンプ履歴モーダル -->
+  <div id="history-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">スタンプ作成履歴 (共有)</div>
+        <button id="history-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="history-header-bar">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">登録済みスタンプ一覧</span>
+          <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">📁 PNGを追加</label>
+          <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
+        </div>
+        <div id="history-grid" class="history-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <button id="back-to-stamp-draw-btn" class="secondary-btn">描画に戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
+      authDomain: "family-chat-3e0d6.firebaseapp.com",
+      databaseURL: "https://family-chat-3e0d6-default-rtdb.firebaseio.com/",
+      projectId: "family-chat-3e0d6",
+      storageBucket: "family-chat-3e0d6.firebasestorage.app",
+      messagingSenderId: "929536387295",
+      appId: "1:929536387295:web:84d62b03ef370f19f7a16a",
+      measurementId: "G-CT2HGLK75T"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, 'messages');
+    const stampHistoryRef = ref(db, 'stamp_history');
+    const passcodeRef = ref(db, 'settings/passcode');
+
+    const lockScreen = document.getElementById('lock-screen');
+    const appContent = document.getElementById('app-content');
+    const passInput = document.getElementById('pass-input');
+    const passBtn = document.getElementById('pass-btn');
+    const passError = document.getElementById('pass-error');
+    const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
+
+    const changeUserBtn = document.getElementById('changeUserBtn');
+    changeUserBtn.addEventListener('click', () => {
+      sessionStorage.removeItem('family_chat_unlocked');
+      localStorage.removeItem('family_chat_unlocked');
+      lockScreen.style.display = 'flex';
+      appContent.style.display = 'none';
+      passInput.value = '';
+    });
+
+    async function handleAuth() {
+      const inputPass = passInput.value;
+      if (!inputPass) {
+        passError.textContent = 'あいことばを入力してください';
+        passError.style.display = 'block';
+        return;
+      }
+
+      try {
+        const snap = await get(passcodeRef);
+        const correctPass = snap.exists() ? snap.val() : '1234';
+
+        if (inputPass === correctPass) {
+          if (rememberMeCheckbox.checked) {
+            localStorage.setItem('family_chat_unlocked', 'true');
+          } else {
+            sessionStorage.setItem('family_chat_unlocked', 'true');
+          }
+          unlockApp();
+        } else {
+          passError.textContent = 'あいことばが違います';
+          passError.style.display = 'block';
+        }
+      } catch (e) {
+        passError.textContent = '認証に失敗しました';
+        passError.style.display = 'block';
+      }
+    }
+
+    function unlockApp() {
+      lockScreen.style.display = 'none';
+      appContent.style.display = 'flex';
+      renderMessages();
+      scrollToBottom();
+    }
+
+    passBtn.addEventListener('click', handleAuth);
+    passInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAuth();
+    });
+
+    // チャット・スタンプ関連変数・ロジック
+    const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const userSelect = document.getElementById('user-select');
+    const fileInput = document.getElementById('file-input');
+
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    const modalOpenBtn = document.getElementById('modal-open-btn');
+    const footerAnimOpenBtn = document.getElementById('footer-anim-open-btn');
+    const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
+    const footerStampHistoryBtn = document.getElementById('footer-stamp-history-btn');
+    const commentModalOverlay = document.getElementById('comment-modal-overlay');
+    const modalCloseX = document.getElementById('modal-close-x');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalSubmitBtn = document.getElementById('modal-submit-btn');
+    const modalClearBtn = document.getElementById('modal-clear-btn');
+    const modalTextInput = document.getElementById('modal-text-input');
+    const emojiPalette = document.getElementById('emoji-palette');
+    const kaimojiPalette = document.getElementById('kaimoji-palette');
+
+    const stampModalOverlay = document.getElementById('stamp-modal-overlay');
+    const goToStampBtn = document.getElementById('go-to-stamp-btn');
+    const stampModalCloseX = document.getElementById('stamp-modal-close-x');
+    const stampCancelBtn = document.getElementById('stamp-cancel-btn');
+    const backToCommentBtn = document.getElementById('back-to-comment-btn');
+    const goToHistoryBtn = document.getElementById('go-to-history-btn');
+    const stampSubmitBtn = document.getElementById('stamp-submit-btn');
+
+    // アニメーション作成モーダル関連要素
+    const animModalOverlay = document.getElementById('anim-modal-overlay');
+    const animModalCloseX = document.getElementById('anim-modal-close-x');
+    const animCancelBtn = document.getElementById('anim-cancel-btn');
+    const animSubmitBtn = document.getElementById('anim-submit-btn');
+    const animAddFrameBtn = document.getElementById('anim-add-frame-btn');
+    const animDeleteFrameBtn = document.getElementById('anim-delete-frame-btn');
+    const animPreviewBtn = document.getElementById('anim-preview-btn');
+    const animOnionToggle = document.getElementById('anim-onion-toggle');
+    const animFramesContainer = document.getElementById('anim-frames-container');
+    const animMainCanvas = document.getElementById('anim-main-canvas');
+    const animOnionCanvas = document.getElementById('anim-onion-canvas');
+    const animCtx = animMainCanvas.getContext('2d', { willReadFrequently: true });
+    const animOnionCtx = animOnionCanvas.getContext('2d', { willReadFrequently: true });
+
+    const animColorInput = document.getElementById('anim-color');
+    const animOpacityInput = document.getElementById('anim-opacity');
+    const animSizeInput = document.getElementById('anim-size');
+    const animBrushSelect = document.getElementById('anim-brush-select');
+    const animToolEraser = document.getElementById('anim-tool-eraser');
+    const animToolClear = document.getElementById('anim-tool-clear');
+
+    let animFrames = [];
+    let currentAnimFrameIndex = 0;
+    let animCurrentTool = 'pen';
+    let animCurrentBrushType = 'pen';
+    let animLastPoint = null;
+    let animIsDrawing = false;
+    let animIsPreviewing = false;
+
+    function initAnimFrames() {
+      const c = document.createElement('canvas');
+      c.width = 250; c.height = 250;
+      animFrames = [c];
+      currentAnimFrameIndex = 0;
+      renderAnimFramesList();
+      loadAnimFrameToMain();
+    }
+
+    function renderAnimFramesList() {
+      animFramesContainer.innerHTML = '';
+      animFrames.forEach((frameCanvas, idx) => {
+        const item = document.createElement('div');
+        item.className = `anim-frame-item ${idx === currentAnimFrameIndex ? 'active' : ''}`;
+        item.innerHTML = `
+          <div class="anim-frame-title">Frame ${idx + 1}</div>
+          <img class="anim-frame-preview" src="${frameCanvas.toDataURL()}">
+        `;
+        item.addEventListener('click', () => {
+          saveCurrentAnimCanvas();
+          currentAnimFrameIndex = idx;
+          renderAnimFramesList();
+          loadAnimFrameToMain();
+        });
+        animFramesContainer.appendChild(item);
+      });
+    }
+
+    function saveCurrentAnimCanvas() {
+      const tempC = animFrames[currentAnimFrameIndex];
+      const tempCtx = tempC.getContext('2d');
+      tempCtx.clearRect(0, 0, 250, 250);
+      tempCtx.drawImage(animMainCanvas, 0, 0);
+    }
+
+    function loadAnimFrameToMain() {
+      animCtx.clearRect(0, 0, 250, 250);
+      animCtx.drawImage(animFrames[currentAnimFrameIndex], 0, 0);
+      updateOnionSkin();
+    }
+
+    function updateOnionSkin() {
+      animOnionCtx.clearRect(0, 0, 250, 250);
+      if (animOnionToggle.checked && currentAnimFrameIndex > 0) {
+        animOnionCtx.drawImage(animFrames[currentAnimFrameIndex - 1], 0, 0);
+      }
+    }
+
+    footerAnimOpenBtn.addEventListener('click', () => {
+      animModalOverlay.classList.add('active');
+      initAnimFrames();
+    });
+    animModalCloseX.addEventListener('click', () => animModalOverlay.classList.remove('active'));
+    animCancelBtn.addEventListener('click', () => animModalOverlay.classList.remove('active'));
+    animOnionToggle.addEventListener('change', updateOnionSkin);
+
+    animAddFrameBtn.addEventListener('click', () => {
+      saveCurrentAnimCanvas();
+      const c = document.createElement('canvas');
+      c.width = 250; c.height = 250;
+      animFrames.push(c);
+      currentAnimFrameIndex = animFrames.length - 1;
+      renderAnimFramesList();
+      loadAnimFrameToMain();
+    });
+
+    animDeleteFrameBtn.addEventListener('click', () => {
+      if (animFrames.length <= 1) {
+        alert('最後の1コマは削除できません。「このコマ消去」をご利用ください。');
+        return;
+      }
+      animFrames.splice(currentAnimFrameIndex, 1);
+      if (currentAnimFrameIndex >= animFrames.length) {
+        currentAnimFrameIndex = animFrames.length - 1;
+      }
+      renderAnimFramesList();
+      loadAnimFrameToMain();
+    });
+
+    animBrushSelect.addEventListener('change', () => {
+      animCurrentTool = 'pen';
+      animCurrentBrushType = animBrushSelect.value;
+      animToolEraser.classList.remove('active');
+    });
+    animToolEraser.addEventListener('click', () => {
+      animCurrentTool = animCurrentTool === 'eraser' ? 'pen' : 'eraser';
+      animToolEraser.classList.toggle('active', animCurrentTool === 'eraser');
+    });
+    animToolClear.addEventListener('click', () => {
+      animCtx.clearRect(0, 0, 250, 250);
+      saveCurrentAnimCanvas();
+      renderAnimFramesList();
+      updateOnionSkin();
+    });
+
+    function drawAnimStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(animSizeInput.value);
+      const opacity = parseFloat(animOpacityInput.value);
+      const color = animColorInput.value;
+
+      ctx.save();
+      if (animCurrentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = baseSize * 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+      switch (animCurrentBrushType) {
+        case 'calligraphy-brush':
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+        case 'calligraphy-pen':
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          const stepsCallig = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= stepsCallig; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
+            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
+            ctx.beginPath();
+            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'airbrush':
+          ctx.globalAlpha = opacity * 0.15;
+          ctx.fillStyle = color;
+          const airSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= airSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
+            const numParticles = Math.floor(baseSize * 2);
+            for (let p = 0; p < numParticles; p++) {
+              const r = Math.random() * baseSize * 1.2;
+              const a = Math.random() * Math.PI * 2;
+              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
+            }
+          }
+          break;
+        case 'oil':
+          ctx.globalAlpha = opacity * 0.7;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'butt';
+          ctx.lineWidth = baseSize;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+        case 'crayon':
+          ctx.globalAlpha = opacity * 0.6;
+          ctx.fillStyle = color;
+          const craySteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= craySteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
+            for (let j = 0; j < baseSize * 1.5; j++) {
+              const rx = (Math.random() - 0.5) * baseSize;
+              const ry = (Math.random() - 0.5) * baseSize;
+              if (Math.hypot(rx, ry) <= baseSize / 2) {
+                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
+              }
+            }
+          }
+          break;
+        case 'marker':
+          ctx.globalAlpha = opacity * 0.4;
+          ctx.fillStyle = color;
+          const markSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= markSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'pencil':
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.fillStyle = color;
+          const pSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= pSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
+            for (let j = 0; j < baseSize; j++) {
+              const rx = (Math.random() - 0.5) * (baseSize / 2);
+              const ry = (Math.random() - 0.5) * (baseSize / 2);
+              ctx.fillRect(curX + rx, curY + ry, 1, 1);
+            }
+          }
+          break;
+        case 'watercolor':
+          ctx.globalAlpha = opacity * 0.12;
+          ctx.fillStyle = color;
+          const wcSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= wcSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'pen':
+        default:
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = baseSize;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+      }
+      ctx.restore();
+    }
+
+    function getCanvasCoords(e, canvasEl) {
+      const rect = canvasEl.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: Math.floor((clientX - rect.left) * (canvasEl.width / rect.width)),
+        y: Math.floor((clientY - rect.top) * (canvasEl.height / rect.height))
+      };
+    }
+
+    animMainCanvas.addEventListener('mousedown', (e) => {
+      animIsDrawing = true;
+      animLastPoint = getCanvasCoords(e, animMainCanvas);
+      drawAnimStroke(animCtx, animLastPoint, animLastPoint);
+    });
+    animMainCanvas.addEventListener('mousemove', (e) => {
+      if (!animIsDrawing) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e, animMainCanvas);
+      drawAnimStroke(animCtx, animLastPoint, pos);
+      animLastPoint = pos;
+    });
+    animMainCanvas.addEventListener('mouseup', () => {
+      if (animIsDrawing) {
+        animIsDrawing = false;
+        saveCurrentAnimCanvas();
+        renderAnimFramesList();
+      }
+    });
+    animMainCanvas.addEventListener('mouseleave', () => {
+      if (animIsDrawing) {
+        animIsDrawing = false;
+        saveCurrentAnimCanvas();
+        renderAnimFramesList();
+      }
+    });
+    animMainCanvas.addEventListener('touchstart', (e) => {
+      animIsDrawing = true;
+      animLastPoint = getCanvasCoords(e, animMainCanvas);
+      drawAnimStroke(animCtx, animLastPoint, animLastPoint);
+    }, { passive: false });
+    animMainCanvas.addEventListener('touchmove', (e) => {
+      if (!animIsDrawing) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e, animMainCanvas);
+      drawAnimStroke(animCtx, animLastPoint, pos);
+      animLastPoint = pos;
+    }, { passive: false });
+    animMainCanvas.addEventListener('touchend', () => {
+      if (animIsDrawing) {
+        animIsDrawing = false;
+        saveCurrentAnimCanvas();
+        renderAnimFramesList();
+      }
+    });
+
+    animPreviewBtn.addEventListener('click', () => {
+      if (animIsPreviewing || animFrames.length === 0) return;
+      animIsPreviewing = true;
+      saveCurrentAnimCanvas();
+      let fIdx = 0;
+      const originalIdx = currentAnimFrameIndex;
+      const timer = setInterval(() => {
+        animCtx.clearRect(0, 0, 250, 250);
+        animCtx.drawImage(animFrames[fIdx], 0, 0);
+        fIdx++;
+        if (fIdx >= animFrames.length) {
+          clearInterval(timer);
+          animIsPreviewing = false;
+          currentAnimFrameIndex = originalIdx;
+          loadAnimFrameToMain();
+        }
+      }, 200);
+    });
+
+    animSubmitBtn.addEventListener('click', () => {
+      saveCurrentAnimCanvas();
+      const framesData = animFrames.map(c => c.toDataURL('image/png'));
+      const senderName = userSelect.value;
+      const stampPayload = {
+        isAnimation: true,
+        frames: framesData,
+        timestamp: Date.now()
+      };
+      const stampDataUrl = JSON.stringify(stampPayload);
+
+      push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `anim_stamp_${Date.now()}.json`, isStamp: true, isAnimStamp: true, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: stampDataUrl, isAnimation: true, previewFrame: framesData[0], creator: senderName, timestamp: Date.now() });
+      animModalOverlay.classList.remove('active');
+    });
+
+    layerItem1.addEventListener('click', () => setActiveLayer(1));
+    layerItem2.addEventListener('click', () => setActiveLayer(2));
+
+    const layerItem1 = document.getElementById('layer-item-1');
+    const layerItem2 = document.getElementById('layer-item-2');
+    const psPreview1 = document.getElementById('ps-preview-1');
+    const psPreview2 = document.getElementById('ps-preview-2');
+    const layersPanelContainer = document.getElementById('layers-panel-container');
+
+    const historyModalOverlay = document.getElementById('history-modal-overlay');
+    const historyModalCloseX = document.getElementById('history-modal-close-x');
+    const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
+    const historyGrid = document.getElementById('history-grid');
+    const stampUploadInput = document.getElementById('stamp-upload-input');
+
+    const canvasA = document.getElementById('layer-bottom');
+    const canvasB = document.getElementById('layer-top');
+    const ctxA = canvasA.getContext('2d', { willReadFrequently: true });
+    const ctxB = canvasB.getContext('2d', { willReadFrequently: true });
+
+    let activeLayerId = 2;
+    let layerOrder = [1, 2];
+
+    const stampColorInput = document.getElementById('stamp-color');
+    const stampOpacityInput = document.getElementById('stamp-opacity');
+    const stampSizeInput = document.getElementById('stamp-size');
+    const brushSelect = document.getElementById('brush-select');
+    const toolFill = document.getElementById('tool-fill');
+    const toolEraser = document.getElementById('tool-eraser');
+    const toolUndo = document.getElementById('tool-undo');
+    const toolClear = document.getElementById('tool-clear');
+
+    let cachedMessages = {};
+    let cachedStampHistory = {};
+    let currentTool = 'pen';
+    let currentBrushType = 'pen';
+    let historyStack = [];
+    let lastPoint = null;
+
+    function getLayerObj(id) {
+      if (id === 1) return { canvas: canvasA, ctx: ctxA };
+      return { canvas: canvasB, ctx: ctxB };
+    }
+
+    function getActiveLayer() {
+      return getLayerObj(activeLayerId);
+    }
+
+    function updateLayerDOMOrder() {
+      if (activeLayerId === 1) {
+        canvasA.style.zIndex = 10;
+        canvasB.style.zIndex = 5;
+      } else {
+        canvasA.style.zIndex = 5;
+        canvasB.style.zIndex = 10;
+      }
+
+      layersPanelContainer.innerHTML = '';
+      [...layerOrder].reverse().forEach(id => {
+        if (id === 1) layersPanelContainer.appendChild(layerItem1);
+        if (id === 2) layersPanelContainer.appendChild(layerItem2);
+      });
+
+      layerItem1.classList.toggle('active', activeLayerId === 1);
+      layerItem2.classList.toggle('active', activeLayerId === 2);
+    }
+
+    function setActiveLayer(id) {
+      activeLayerId = id;
+      updateLayerDOMOrder();
+    }
+
+    let draggedLayerId = null;
+    [layerItem1, layerItem2].forEach(item => {
+      item.addEventListener('dragstart', () => {
+        draggedLayerId = parseInt(item.getAttribute('data-layer'));
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        draggedLayerId = null;
+      });
+      item.addEventListener('dragover', (e) => e.preventDefault());
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const targetLayerId = parseInt(item.getAttribute('data-layer'));
+        if (draggedLayerId && draggedLayerId !== targetLayerId) {
+          const indexA = layerOrder.indexOf(draggedLayerId);
+          const indexB = layerOrder.indexOf(targetLayerId);
+          if (indexA !== -1 && indexB !== -1) {
+            layerOrder[indexA] = targetLayerId;
+            layerOrder[indexB] = draggedLayerId;
+            updateLayerDOMOrder();
+          }
+        }
+      });
+    });
+
+    function updateLayerPreviews() {
+      psPreview1.src = canvasA.toDataURL();
+      psPreview2.src = canvasB.toDataURL();
+    }
+
+    const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
+    const kaimojis = ['( ﾟДﾟ)', '( *´艸｀)', '( ;∀;)', '(^^)ﾉｼ'];
+
+    function insertAtCursor(field, text) {
+      const startPos = field.selectionStart;
+      const endPos = field.selectionEnd;
+      field.value = field.value.substring(0, startPos) + text + field.value.substring(endPos);
+      field.focus();
+      field.setSelectionRange(startPos + text.length, startPos + text.length);
+    }
+
+    emojis.forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn';
+      btn.textContent = emoji;
+      btn.type = 'button';
+      btn.addEventListener('click', () => insertAtCursor(modalTextInput, emoji));
+      emojiPalette.appendChild(btn);
+    });
+
+    kaimojis.forEach(kaimoji => {
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn kaimoji-btn';
+      btn.textContent = kaimoji;
+      btn.type = 'button';
+      btn.addEventListener('click', () => insertAtCursor(modalTextInput, kaimoji));
+      kaimojiPalette.appendChild(btn);
+    });
+
+    modalOpenBtn.addEventListener('click', () => {
+      modalTextInput.value = messageInput.value;
+      commentModalOverlay.classList.add('active');
+      setTimeout(() => modalTextInput.focus(), 50);
+    });
+    const closeModal = () => commentModalOverlay.classList.remove('active');
+    modalCloseX.addEventListener('click', closeModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+    modalClearBtn.addEventListener('click', () => { modalTextInput.value = ''; modalTextInput.focus(); });
+
+    modalSubmitBtn.addEventListener('click', () => {
+      const text = modalTextInput.value.trim();
+      const senderName = userSelect.value;
+      if (text) {
+        push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+        modalTextInput.value = '';
+        messageInput.value = '';
+        messageInput.style.height = '40px';
+      }
+      closeModal();
+    });
+
+    footerStampOpenBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.add('active');
+      saveState();
+      updateLayerPreviews();
+      updateLayerDOMOrder();
+    });
+
+    footerStampHistoryBtn.addEventListener('click', () => {
+      renderStampHistory();
+      historyModalOverlay.classList.add('active');
+    });
+
+    goToStampBtn.addEventListener('click', () => {
+      closeModal();
+      stampModalOverlay.classList.add('active');
+      saveState();
+      updateLayerPreviews();
+      updateLayerDOMOrder();
+    });
+    backToCommentBtn.addEventListener('click', () => {
+      stampModalOverlay.classList.remove('active');
+      commentModalOverlay.classList.add('active');
+    });
+    stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+    stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+
+    brushSelect.addEventListener('change', () => {
+      currentTool = 'pen';
+      currentBrushType = brushSelect.value;
+      toolFill.classList.remove('active');
+      toolEraser.classList.remove('active');
+    });
+    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); toolFill.classList.add('active'); });
+    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); toolEraser.classList.add('active'); });
+
+    function saveState() {
+      if (historyStack.length >= 10) historyStack.shift();
+      historyStack.push({
+        l1: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
+        l2: ctxB.getImageData(0, 0, canvasB.width, canvasB.height),
+        order: [...layerOrder]
+      });
+    }
+
+    toolUndo.addEventListener('click', () => {
+      if (historyStack.length > 0) {
+        const prevState = historyStack.pop();
+        ctxA.putImageData(prevState.l1, 0, 0);
+        ctxB.putImageData(prevState.l2, 0, 0);
+        layerOrder = [...prevState.order];
+        updateLayerDOMOrder();
+        updateLayerPreviews();
+      }
+    });
+
+    toolClear.addEventListener('click', () => {
+      saveState();
+      const { ctx, canvas } = getActiveLayer();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      updateLayerPreviews();
+    });
+
+    function hexToRgb(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function floodFill(canvas, startX, startY, fillColorHex, opacity) {
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const targetPos = (startY * width + startX) * 4;
+      const targetR = data[targetPos];
+      const targetG = data[targetPos + 1];
+      const targetB = data[targetPos + 2];
+      const targetA = data[targetPos + 3];
+
+      const fillRgb = hexToRgb(fillColorHex);
+      const fillA = Math.round(opacity * 255);
+
+      if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
+
+      const queue = [[startX, startY]];
+      const visited = new Uint8Array(width * height);
+
+      while (queue.length > 0) {
+        const [x, y] = queue.pop();
+        const pos = (y * width + x) * 4;
+        const idx = y * width + x;
+
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+
+        if (Math.abs(data[pos] - targetR) < 30 &&
+            Math.abs(data[pos + 1] - targetG) < 30 &&
+            Math.abs(data[pos + 2] - targetB) < 30 &&
+            Math.abs(data[pos + 3] - targetA) < 30) {
+          data[pos] = fillRgb.r;
+          data[pos + 1] = fillRgb.g;
+          data[pos + 2] = fillRgb.b;
+          data[pos + 3] = fillA;
+
+          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function drawStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(stampSizeInput.value);
+      const opacity = parseFloat(stampOpacityInput.value);
+      const color = stampColorInput.value;
+
+      ctx.save();
+      if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = baseSize * 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+      switch (currentBrushType) {
+        case 'calligraphy-brush':
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+        case 'calligraphy-pen':
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          const stepsCallig = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= stepsCallig; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
+            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
+            ctx.beginPath();
+            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'airbrush':
+          ctx.globalAlpha = opacity * 0.15;
+          ctx.fillStyle = color;
+          const airSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= airSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
+            const numParticles = Math.floor(baseSize * 2);
+            for (let p = 0; p < numParticles; p++) {
+              const r = Math.random() * baseSize * 1.2;
+              const a = Math.random() * Math.PI * 2;
+              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
+            }
+          }
+          break;
+        case 'oil':
+          ctx.globalAlpha = opacity * 0.7;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'butt';
+          ctx.lineWidth = baseSize;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+        case 'crayon':
+          ctx.globalAlpha = opacity * 0.6;
+          ctx.fillStyle = color;
+          const craySteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= craySteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
+            for (let j = 0; j < baseSize * 1.5; j++) {
+              const rx = (Math.random() - 0.5) * baseSize;
+              const ry = (Math.random() - 0.5) * baseSize;
+              if (Math.hypot(rx, ry) <= baseSize / 2) {
+                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
+              }
+            }
+          }
+          break;
+        case 'marker':
+          ctx.globalAlpha = opacity * 0.4;
+          ctx.fillStyle = color;
+          const markSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= markSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'pencil':
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.fillStyle = color;
+          const pSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= pSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
+            for (let j = 0; j < baseSize; j++) {
+              const rx = (Math.random() - 0.5) * (baseSize / 2);
+              const ry = (Math.random() - 0.5) * (baseSize / 2);
+              ctx.fillRect(curX + rx, curY + ry, 1, 1);
+            }
+          }
+          break;
+        case 'watercolor':
+          ctx.globalAlpha = opacity * 0.12;
+          ctx.fillStyle = color;
+          const wcSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= wcSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        case 'pen':
+        default:
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = baseSize;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+      }
+      ctx.restore();
+    }
+
+    [canvasA, canvasB].forEach(targetCanvas => {
+      let isTargetDrawing = false;
+
+      function startDraw(e) {
+        const activeObj = getActiveLayer();
+        if (targetCanvas !== activeObj.canvas) return;
+        const pos = getCanvasCoords(e, targetCanvas);
+        saveState();
+
+        if (currentTool === 'fill') {
+          floodFill(targetCanvas, pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
+          updateLayerPreviews();
+          return;
+        }
+
+        isTargetDrawing = true;
+        lastPoint = pos;
+        drawStroke(activeObj.ctx, pos, pos);
+      }
+
+      function moveDraw(e) {
+        if (!isTargetDrawing || currentTool === 'fill') return;
+        const activeObj = getActiveLayer();
+        if (targetCanvas !== activeObj.canvas) return;
+        e.preventDefault();
+        const pos = getCanvasCoords(e, targetCanvas);
+        drawStroke(activeObj.ctx, lastPoint, pos);
+        lastPoint = pos;
+      }
+
+      function endDraw() {
+        if (isTargetDrawing) {
+          isTargetDrawing = false;
+          lastPoint = null;
+          updateLayerPreviews();
+        }
+      }
+
+      targetCanvas.addEventListener('mousedown', startDraw);
+      targetCanvas.addEventListener('mousemove', moveDraw);
+      targetCanvas.addEventListener('mouseup', endDraw);
+      targetCanvas.addEventListener('mouseleave', endDraw);
+      targetCanvas.addEventListener('touchstart', startDraw, { passive: false });
+      targetCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+      targetCanvas.addEventListener('touchend', endDraw);
+    });
+
+    stampSubmitBtn.addEventListener('click', () => {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = 250; exportCanvas.height = 250;
+      const expCtx = exportCanvas.getContext('2d');
+      layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
+      const stampDataUrl = exportCanvas.toDataURL('image/png');
+      const senderName = userSelect.value;
+      push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
+      ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
+      ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
+      historyStack = [];
+      updateLayerPreviews();
+      stampModalOverlay.classList.remove('active');
+    });
+
+    stampUploadInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const senderName = userSelect.value;
+        push(stampHistoryRef, { dataUrl: event.target.result, creator: senderName, timestamp: Date.now() });
+        stampUploadInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    onValue(stampHistoryRef, (snapshot) => {
+      cachedStampHistory = snapshot.val() || {};
+      if (historyModalOverlay.classList.contains('active')) renderStampHistory();
+    });
+
+    function renderStampHistory() {
+      historyGrid.innerHTML = '';
+      const keys = Object.keys(cachedStampHistory);
+      if (keys.length === 0) {
+        historyGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
+        return;
+      }
+      keys.reverse().forEach(key => {
+        const item = cachedStampHistory[key];
+        const displayImg = item.isAnimation ? (item.previewFrame || (item.frames ? item.frames[0] : '')) : item.dataUrl;
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+          <div class="history-img-wrapper"><img src="${displayImg}" class="history-img"></div>
+          <div class="history-actions">
+            <button class="history-action-btn send" data-key="${key}">💬 送信</button>
+            <button class="history-action-btn del" data-key="${key}">🗑 削除</button>
+          </div>
+        `;
+        card.querySelector('.send').addEventListener('click', () => {
+          const senderName = userSelect.value;
+          const fileDataVal = item.isAnimation ? item.dataUrl : item.dataUrl;
+          const isAnim = !!item.isAnimation;
+          push(messagesRef, { sender: senderName, text: '', fileData: fileDataVal, fileName: `stamp_${Date.now()}.${isAnim ? 'json' : 'png'}`, isStamp: true, isAnimStamp: isAnim, timestamp: Date.now() });
+          historyModalOverlay.classList.remove('active');
+        });
+        card.querySelector('.del').addEventListener('click', () => {
+          if (confirm('削除しますか？')) remove(ref(db, `stamp_history/${key}`));
+        });
+        historyGrid.appendChild(card);
+      });
+    }
+
+    goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
+    backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
+    historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
+
+    hamburgerBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const senderName = userSelect.value;
+      push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+      messageInput.value = '';
+      messageInput.style.height = '40px';
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const senderName = userSelect.value;
+        push(messagesRef, { sender: senderName, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
+        fileInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function deleteMessage(key) {
+      if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
+    }
+
+    function renderFormattedText(container, text) {
+      const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
+      let lastIndex = 0, match;
+      while ((match = urlRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+        const link = document.createElement('a');
+        link.href = match[0]; link.textContent = match[0]; link.className = 'chat-link'; link.target = '_blank';
+        container.appendChild(link);
+        lastIndex = urlRegex.lastIndex;
+      }
+      if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+
+    // アニメーションスタンプ再生ヘルパー (3回再生し、最後のコマで停止)
+    function playAnimationOnImage(imgElement, frames) {
+      if (!frames || frames.length === 0) return;
+      let currentLoop = 0;
+      let frameIdx = 0;
+      let timer = null;
+
+      function step() {
+        imgElement.src = frames[frameIdx];
+        frameIdx++;
+        if (frameIdx >= frames.length) {
+          frameIdx = 0;
+          currentLoop++;
+          if (currentLoop >= 3) {
+            // 3回完了：最後のコマを表示して終了
+            imgElement.src = frames[frames.length - 1];
+            if (timer) clearInterval(timer);
+            return;
+          }
+        }
+      }
+      imgElement.src = frames[0];
+      timer = setInterval(step, 200);
+      return timer;
+    }
+
+    function renderMessages() {
+      chatBox.innerHTML = '';
+      const activeUser = userSelect.value;
+
+      Object.keys(cachedMessages).forEach(key => {
+        const msg = cachedMessages[key];
+        const isSent = msg.sender === activeUser;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        
+        const senderName = document.createElement('div');
+        senderName.className = 'sender-name';
+        senderName.textContent = msg.sender;
+
+        const bubble = document.createElement('div');
+        bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
+
+        let animFramesArr = null;
+        if (msg.fileData) {
+          if (msg.isStamp) {
+            const img = document.createElement('img');
+            img.className = 'chat-stamp';
+            if (msg.isAnimStamp) {
+              try {
+                const parsed = JSON.parse(msg.fileData);
+                if (parsed.frames && parsed.frames.length > 0) {
+                  animFramesArr = parsed.frames;
+                  playAnimationOnImage(img, animFramesArr);
+                }
+              } catch (e) {
+                img.src = msg.fileData;
+              }
+            } else {
+              img.src = msg.fileData;
+            }
+            bubble.appendChild(img);
+          } else if (msg.isImage) {
+            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-image';
+            bubble.appendChild(img);
+          } else {
+            const fa = document.createElement('div'); fa.className = 'file-attachment';
+            fa.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
+            bubble.appendChild(fa);
+          }
+        }
+        if (msg.text) {
+          const tn = document.createElement('div');
+          renderFormattedText(tn, msg.text);
+          bubble.appendChild(tn);
+        }
+
+        const metaInfo = document.createElement('div');
+        metaInfo.className = 'meta-info';
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp';
+        const d = new Date(msg.timestamp);
+        timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        metaInfo.appendChild(timestamp);
+
+        // アニメーションスタンプの場合の再生ボタン追加
+        if (msg.isAnimStamp && animFramesArr) {
+          const playBtn = document.createElement('button');
+          playBtn.className = 'delete-btn';
+          playBtn.textContent = '再生';
+          playBtn.style.fontWeight = 'bold';
+          playBtn.addEventListener('click', () => {
+            const imgEl = bubble.querySelector('.chat-stamp');
+            if (imgEl) playAnimationOnImage(imgEl, animFramesArr);
+          });
+          metaInfo.appendChild(playBtn);
+        }
+
+        if (msg.fileData) {
+          const dlBtn = document.createElement('button');
+          dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
+          dlBtn.addEventListener('click', () => {
+            const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName || 'download'; a.click();
+          });
+          metaInfo.appendChild(dlBtn);
+        }
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
+        delBtn.addEventListener('click', () => deleteMessage(key));
+        metaInfo.appendChild(delBtn);
+
+        msgDiv.appendChild(senderName);
+        msgDiv.appendChild(bubble);
+        msgDiv.appendChild(metaInfo);
+        chatBox.appendChild(msgDiv);
+      });
+      
+      scrollToBottom();
+    }
+
+    function initChat() {
+      userSelect.addEventListener('change', () => {
+        renderMessages();
+      });
+
+      onValue(messagesRef, (snapshot) => {
+        cachedMessages = snapshot.val() || {};
+        renderMessages();
+      });
+
+      sendBtn.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keydown', (e) => {
+        if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      messageInput.addEventListener('input', () => {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+      });
+    }
+
+    initChat();
+
+    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
+      unlockApp();
+    }
+  </script>
+</body>
+</html>
