@@ -990,6 +990,7 @@
                     <label for="file-input" class="icon-btn-style" title="ファイルを添付">📎</label>
                     <input type="file" id="file-input" style="display: none;">
                     <textarea id="messageInput" class="chat-textarea" placeholder="メッセージを入力..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                    <button id="footer-stamp-history-btn" class="icon-btn-style" title="手描きスタンプ履歴">🕒</button>
                     <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
                     <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
                     <button class="btn-primary" style="padding: 0 16px; margin-top:0; height: 40px; border-radius: 20px; flex-shrink: 0;" onclick="sendMessage()">送信</button>
@@ -1214,6 +1215,7 @@
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
+    const footerStampHistoryBtn = document.getElementById('footer-stamp-history-btn');
     const modalTextInput = document.getElementById('modalTextInput');
     const emojiPalette = document.getElementById('emojiPalette');
     const kaimojiPalette = document.getElementById('kaimojiPalette');
@@ -1514,6 +1516,12 @@
         }
     };
 
+    function scrollToBottom() {
+        requestAnimationFrame(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    }
+
     function renderMessages() {
         chatMessages.innerHTML = '';
 
@@ -1538,12 +1546,14 @@
                     stampImg.src = msg.fileData;
                     stampImg.className = 'chat-stamp';
                     stampImg.alt = '手描きスタンプ';
+                    stampImg.onload = scrollToBottom;
                     bubble.appendChild(stampImg);
                 } else if (msg.isImage) {
                     const img = document.createElement('img');
                     img.src = msg.fileData;
                     img.className = 'chat-image';
                     img.alt = msg.fileName || '画像';
+                    img.onload = scrollToBottom;
                     bubble.appendChild(img);
                 } else {
                     const fileAttachment = document.createElement('div');
@@ -1601,7 +1611,7 @@
             chatMessages.appendChild(container);
         });
 
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     }
 
     function renderFormattedText(container, text) {
@@ -1838,6 +1848,11 @@
         psPreview1.src = canvasA.toDataURL();
         psPreview2.src = canvasB.toDataURL();
     }
+
+    footerStampHistoryBtn.onclick = () => {
+        renderStampHistory();
+        openModal('historyModal');
+    };
 
     footerStampOpenBtn.onclick = () => {
         openModal('stampModal');
