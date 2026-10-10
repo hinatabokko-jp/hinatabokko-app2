@@ -42,6 +42,7 @@
             background: #333;
             border-radius: 4px;
         }
+        /* FamilyChatと同一のハンバーガー・サイドバー用スタイル[cite: 1, 2, 3] */
         .overlay {
             position: fixed;
             top: 0;
@@ -100,9 +101,6 @@
         .sidebar-menu li a:hover {
             background-color: #2a2a2a;
         }
-        .dragging {
-            opacity: 0.4;
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-[#121212] text-[#e0e0e0] select-none">
@@ -119,7 +117,7 @@
         <div id="pass-error" class="text-[#ff5252] text-xs hidden">あいことばが違います</div>
     </div>
 
-    <!-- サイドバー＆オーバーレイ -->
+    <!-- サイドバー＆オーバーレイ（アプリ全体で常時配置）[cite: 1, 2, 3] -->
     <div id="overlay" class="overlay"></div>
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">メニュー</div>
@@ -139,6 +137,7 @@
 
     <!-- アプリ本体 -->
     <div id="app-content" class="hidden flex-col min-h-screen">
+        <!-- Header / Navbar -->
         <header class="sticky top-0 z-40 bg-[#1e1e1e]/90 backdrop-blur border-b border-[#333] px-6 py-3.5 flex items-center justify-between shadow-md">
             <div class="flex items-center space-x-3">
                 <button id="hamburger-btn" class="text-[#00bcd4] text-xl p-1 cursor-pointer hover:opacity-80 transition" aria-label="メニューを開く">
@@ -166,7 +165,9 @@
             </div>
         </header>
 
+        <!-- Main Content Area -->
         <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col space-y-8">
+            
             <!-- Free Text Area -->
             <div class="flex flex-col space-y-2">
                 <label for="noteBody" class="text-xs font-medium text-zinc-400 flex items-center space-x-1.5">
@@ -196,17 +197,20 @@
                 </div>
 
                 <!-- Checklist Items Container -->
-                <div id="checklistContainer" class="flex flex-col space-y-2.5"></div>
+                <div id="checklistContainer" class="flex flex-col space-y-2.5">
+                    <!-- Dynamic checklist items injected here -->
+                </div>
 
                 <!-- Empty Checklist Notice -->
                 <div id="emptyChecklist" class="hidden text-center py-6 text-zinc-600 text-xs">
                     チェック項目はまだありません。上のフォームから追加してください。
                 </div>
             </div>
+
         </main>
     </div>
 
-    <!-- Notification Message Box -->
+    <!-- Custom Dialog / Notification Message Box -->
     <div id="messageBox" class="fixed bottom-6 right-6 z-50 bg-[#222] border border-[#444] text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
         <i id="messageIcon" class="fa-solid fa-circle-check text-[#00bcd4] text-base"></i>
         <span id="messageText">通知メッセージ</span>
@@ -220,6 +224,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
             authDomain: "memo-32979.firebaseapp.com",
+            databaseURL: "https://memo-32979-default-rtdb.firebaseio.com",
             projectId: "memo-32979",
             storageBucket: "memo-32979.firebasestorage.app",
             messagingSenderId: "798457900857",
@@ -239,6 +244,7 @@
         let saveTimeout = null;
         let isInitialLoad = true;
 
+        // あいことば認証関連
         const lockScreen = document.getElementById('lock-screen');
         const appContent = document.getElementById('app-content');
         const passInput = document.getElementById('pass-input');
@@ -247,6 +253,7 @@
         const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
         const changeUserBtn = document.getElementById('changeUserBtn');
 
+        // サイドバー要素
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
@@ -340,7 +347,7 @@
 
             document.getElementById('noteBody').addEventListener('input', triggerAutoSave);
             
-            // イベントリスナーの適切な登録
+            // 項目追加イベントの登録
             const addItemBtn = document.getElementById('addItemBtn');
             const newChecklistItemInput = document.getElementById('newChecklistItemInput');
 
@@ -420,17 +427,6 @@
             }
         };
 
-        window.moveItem = function(index, direction) {
-            if(!memoData.checklist) return;
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= memoData.checklist.length) return;
-            const temp = memoData.checklist[index];
-            memoData.checklist[index] = memoData.checklist[newIndex];
-            memoData.checklist[newIndex] = temp;
-            renderChecklist();
-            saveMemoToFirebase();
-        };
-
         function renderChecklist() {
             const container = document.getElementById('checklistContainer');
             const emptyNotice = document.getElementById('emptyChecklist');
@@ -452,20 +448,13 @@
 
             memoData.checklist.forEach((item, idx) => {
                 html += `
-                    <div class="group flex items-center justify-between bg-[#1e1e1e] px-4 py-3.5 rounded-xl border border-[#333] hover:border-[#444] transition cursor-grab active:cursor-grabbing shadow-sm" draggable="true" ondragstart="onDragStart(event, ${idx})" ondragover="onDragOver(event)" ondrop="onDrop(event, ${idx})">
+                    <div class="group flex items-center justify-between bg-[#1e1e1e] px-4 py-3.5 rounded-xl border border-[#333] hover:border-[#444] transition shadow-sm">
                         <div class="flex items-center space-x-3 flex-1 pr-3 min-w-0">
-                            <i class="fa-solid fa-grip-vertical text-zinc-600 hover:text-zinc-400 text-xs cursor-grab shrink-0"></i>
                             <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="window.toggleChecklistItem(${idx})" class="w-4 h-4 accent-[#00bcd4] rounded bg-[#121212] border-[#555] cursor-pointer shrink-0">
                             <span class="text-xs sm:text-sm transition-all text-zinc-200 break-words min-w-0 ${item.completed ? 'line-through opacity-50' : ''}">${escapeHtml(item.text)}</span>
                         </div>
                         <div class="flex items-center space-x-1 shrink-0">
-                            <button type="button" onclick="window.moveItem(${idx}, -1)" title="上へ" class="text-zinc-500 hover:text-zinc-200 p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                                <i class="fa-solid fa-arrow-up text-xs"></i>
-                            </button>
-                            <button type="button" onclick="window.moveItem(${idx}, 1)" title="下へ" class="text-zinc-500 hover:text-zinc-200 p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                                <i class="fa-solid fa-arrow-down text-xs"></i>
-                            </button>
-                            <button type="button" onclick="window.deleteChecklistItem(${idx})" title="削除" class="text-zinc-500 hover:text-red-400 p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                            <button type="button" onclick="window.deleteChecklistItem(${idx})" title="削除" class="text-zinc-500 hover:text-red-400 p-1.5 rounded-lg transition cursor-pointer">
                                 <i class="fa-solid fa-xmark text-sm"></i>
                             </button>
                         </div>
@@ -475,25 +464,6 @@
 
             container.innerHTML = html;
         }
-
-        let draggedIndex = null;
-        window.onDragStart = function(e, index) {
-            draggedIndex = index;
-            e.dataTransfer.effectAllowed = 'move';
-        };
-        window.onDragOver = function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        };
-        window.onDrop = function(e, targetIndex) {
-            e.preventDefault();
-            if (draggedIndex === null || draggedIndex === targetIndex || !memoData.checklist) return;
-            const item = memoData.checklist.splice(draggedIndex, 1)[0];
-            memoData.checklist.splice(targetIndex, 0, item);
-            draggedIndex = null;
-            renderChecklist();
-            saveMemoToFirebase();
-        };
 
         window.clearAllData = function() {
             if(confirm('メモおよびすべてのチェック項目をリセットしてもよろしいですか？')) {
