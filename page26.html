@@ -368,7 +368,7 @@
       color: #fff;
     }
 
-    /* メディア・ファイル関連スタイル (iOS縦向き表示の補正) */
+    /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
       max-height: 250px;
@@ -615,7 +615,7 @@
       background-color: #3a3a3a;
     }
 
-    /* 手描きスタンプ関連スタイル */
+    /* 手描き・アニメーションスタンプ関連スタイル */
     .stamp-nav-btn {
       background-color: var(--primary-color);
       color: #121212;
@@ -665,6 +665,8 @@
       border: 1px solid #333;
       border-radius: 8px;
       padding: 8px;
+      max-height: 250px;
+      overflow-y: auto;
     }
     .ps-layer-item {
       display: flex;
@@ -674,7 +676,7 @@
       background-color: #262626;
       border: 2px solid transparent;
       border-radius: 6px;
-      cursor: grab;
+      cursor: pointer;
       transition: background-color 0.2s;
     }
     .ps-layer-item.active {
@@ -860,6 +862,7 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
+            <button id="footer-anime-open-btn" class="icon-btn-style" title="アニメーション作成">🎬</button>
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
             <button id="send-btn" class="send-btn-style">送信</button>
@@ -966,6 +969,72 @@
         <div class="modal-footer-right">
           <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
           <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- アニメーション作成モーダル -->
+  <div id="anime-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">アニメーション作成</div>
+        <button id="anime-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button id="anime-back-to-history-btn" class="stamp-nav-btn">🕒 履歴</button>
+          <div class="tool-group">
+            <label class="remember-container" style="font-size:0.8rem;">
+              <input type="checkbox" id="anime-onion-toggle" checked>
+              オニオン肌表示 (前のコマを薄く表示)
+            </label>
+          </div>
+        </div>
+        <div class="editor-layout">
+          <div class="canvas-wrapper">
+            <canvas id="anime-onion-canvas" class="stamp-canvas" style="z-index: 1; opacity: 0.25; pointer-events: none;"></canvas>
+            <canvas id="anime-main-canvas" class="stamp-canvas" style="z-index: 5;"></canvas>
+          </div>
+          <div class="ps-layers-panel" id="anime-frames-panel">
+            <!-- 動的フレームリスト -->
+          </div>
+        </div>
+        <div class="stamp-tools">
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
+            <input type="color" id="anime-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
+          </div>
+          <div class="tool-group">
+            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
+            <input type="range" id="anime-size" min="2" max="30" value="5" style="width:55px;">
+          </div>
+          <div class="tool-group">
+            <select id="anime-brush-select" class="tool-select">
+              <option value="pen">ブラシ (通常)</option>
+              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
+              <option value="calligraphy-pen">カリグラフィ ペン</option>
+              <option value="airbrush">エアブラシ</option>
+              <option value="oil">油彩ブラシ</option>
+              <option value="crayon">クレヨン</option>
+              <option value="marker">マーカー</option>
+              <option value="pencil">鉛筆</option>
+              <option value="watercolor">水彩ブラシ</option>
+            </select>
+          </div>
+          <button id="anime-tool-fill" class="tool-btn">ペンキ</button>
+          <button id="anime-tool-eraser" class="tool-btn">消しゴム</button>
+          <button id="anime-tool-undo" class="tool-btn">1つ戻す</button>
+          <button id="anime-tool-clear" class="tool-btn">全消去</button>
+          <button id="anime-add-frame-btn" class="tool-btn active">➕ コマ追加</button>
+          <button id="anime-play-preview-btn" class="tool-btn">▶ プレビュー</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <div class="modal-footer-right">
+          <button id="anime-cancel-btn" class="secondary-btn">キャンセル</button>
+          <button id="anime-submit-btn" class="send-btn-style">完成して送信</button>
         </div>
       </div>
     </div>
@@ -1086,6 +1155,8 @@
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
     const footerStampHistoryBtn = document.getElementById('footer-stamp-history-btn');
+    const footerAnimeOpenBtn = document.getElementById('footer-anime-open-btn');
+
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const modalCloseX = document.getElementById('modal-close-x');
     const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -1108,6 +1179,35 @@
     const psPreview1 = document.getElementById('ps-preview-1');
     const psPreview2 = document.getElementById('ps-preview-2');
     const layersPanelContainer = document.getElementById('layers-panel-container');
+
+    // アニメーション作成モーダル関連要素
+    const animeModalOverlay = document.getElementById('anime-modal-overlay');
+    const animeModalCloseX = document.getElementById('anime-modal-close-x');
+    const animeCancelBtn = document.getElementById('anime-cancel-btn');
+    const animeSubmitBtn = document.getElementById('anime-submit-btn');
+    const animeMainCanvas = document.getElementById('anime-main-canvas');
+    const animeOnionCanvas = document.getElementById('anime-onion-canvas');
+    const animeCtx = animeMainCanvas.getContext('2d', { willReadFrequently: true });
+    const animeOnionCtx = animeOnionCanvas.getContext('2d', { willReadFrequently: true });
+    const animeFramesPanel = document.getElementById('anime-frames-panel');
+    const animeColorInput = document.getElementById('anime-color');
+    const animeSizeInput = document.getElementById('anime-size');
+    const animeBrushSelect = document.getElementById('anime-brush-select');
+    const animeToolFill = document.getElementById('anime-tool-fill');
+    const animeToolEraser = document.getElementById('anime-tool-eraser');
+    const animeToolUndo = document.getElementById('anime-tool-undo');
+    const animeToolClear = document.getElementById('anime-tool-clear');
+    const animeAddFrameBtn = document.getElementById('anime-add-frame-btn');
+    const animePlayPreviewBtn = document.getElementById('anime-play-preview-btn');
+    const animeOnionToggle = document.getElementById('anime-onion-toggle');
+    const animeBackToHistoryBtn = document.getElementById('anime-back-to-history-btn');
+
+    let animeFrames = []; // ImageDataの配列
+    let currentAnimeFrameIndex = 0;
+    let animeHistoryStack = [];
+    let currentAnimeTool = 'pen';
+    let currentAnimeBrushType = 'pen';
+    let animeLastPoint = null;
 
     const historyModalOverlay = document.getElementById('history-modal-overlay');
     const historyModalCloseX = document.getElementById('history-modal-close-x');
@@ -1264,10 +1364,15 @@
       updateLayerDOMOrder();
     });
 
-    // フッターのスタンプ履歴ボタン直接表示ロジック
     footerStampHistoryBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
+    });
+
+    // アニメーション作成ボタンの処理
+    footerAnimeOpenBtn.addEventListener('click', () => {
+      animeModalOverlay.classList.add('active');
+      initAnimeEditor();
     });
 
     goToStampBtn.addEventListener('click', () => {
@@ -1283,6 +1388,284 @@
     });
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
+
+    // アニメーションエディタロジック
+    function initAnimeEditor() {
+      animeFrames = [animeCtx.createImageData(250, 250)];
+      currentAnimeFrameIndex = 0;
+      animeHistoryStack = [];
+      animeCtx.clearRect(0, 0, 250, 250);
+      updateAnimeFramesUI();
+      updateOnionSkin();
+    }
+
+    function updateAnimeFramesUI() {
+      animeFramesPanel.innerHTML = '';
+      animeFrames.forEach((frame, idx) => {
+        const item = document.createElement('div');
+        item.className = `ps-layer-item ${idx === currentAnimeFrameIndex ? 'active' : ''}`;
+        
+        const tempC = document.createElement('canvas');
+        tempC.width = 250; tempC.height = 250;
+        tempC.getContext('2d').putImageData(frame, 0, 0);
+
+        item.innerHTML = `
+          <div class="ps-layer-title">Frame ${idx + 1}</div>
+          <img src="${tempC.toDataURL()}" class="ps-layer-preview">
+        `;
+        item.addEventListener('click', () => {
+          animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+          currentAnimeFrameIndex = idx;
+          animeCtx.putImageData(animeFrames[currentAnimeFrameIndex], 0, 0);
+          updateAnimeFramesUI();
+          updateOnionSkin();
+        });
+        animeFramesPanel.appendChild(item);
+      });
+    }
+
+    function updateOnionSkin() {
+      animeOnionCtx.clearRect(0, 0, 250, 250);
+      if (animeOnionToggle.checked && currentAnimeFrameIndex > 0) {
+        animeOnionCtx.putImageData(animeFrames[currentAnimeFrameIndex - 1], 0, 0);
+      }
+    }
+
+    animeAddFrameBtn.addEventListener('click', () => {
+      animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+      animeFrames.push(animeCtx.createImageData(250, 250));
+      currentAnimeFrameIndex = animeFrames.length - 1;
+      animeHistoryStack = [];
+      animeCtx.clearRect(0, 0, 250, 250);
+      updateAnimeFramesUI();
+      updateOnionSkin();
+    });
+
+    animeOnionToggle.addEventListener('change', updateOnionSkin);
+
+    animePlayPreviewBtn.addEventListener('click', () => {
+      animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+      let fIdx = 0;
+      const interval = setInterval(() => {
+        animeCtx.putImageData(animeFrames[fIdx], 0, 0);
+        fIdx = (fIdx + 1) % animeFrames.length;
+      }, 200);
+      setTimeout(() => {
+        clearInterval(interval);
+        animeCtx.putImageData(animeFrames[currentAnimeFrameIndex], 0, 0);
+      }, animeFrames.length * 200 * 3);
+    });
+
+    // アニメーション用ツール設定
+    animeBrushSelect.addEventListener('change', () => {
+      currentAnimeTool = 'pen';
+      currentAnimeBrushType = animeBrushSelect.value;
+      animeToolFill.classList.remove('active');
+      animeToolEraser.classList.remove('active');
+    });
+    animeToolFill.addEventListener('click', () => { currentAnimeTool = 'fill'; animeToolEraser.classList.remove('active'); animeToolFill.classList.add('active'); });
+    animeToolEraser.addEventListener('click', () => { currentAnimeTool = 'eraser'; animeToolFill.classList.remove('active'); animeToolEraser.classList.add('active'); });
+
+    function saveAnimeState() {
+      if (animeHistoryStack.length >= 10) animeHistoryStack.shift();
+      animeHistoryStack.push(animeCtx.getImageData(0, 0, 250, 250));
+    }
+
+    animeToolUndo.addEventListener('click', () => {
+      if (animeHistoryStack.length > 0) {
+        const prevImg = animeHistoryStack.pop();
+        animeCtx.putImageData(prevImg, 0, 0);
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+      }
+    });
+
+    animeToolClear.addEventListener('click', () => {
+      saveAnimeState();
+      animeCtx.clearRect(0, 0, 250, 250);
+      animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+      updateAnimeFramesUI();
+      updateOnionSkin();
+    });
+
+    function drawAnimeStroke(ctx, p1, p2) {
+      const baseSize = parseFloat(animeSizeInput.value);
+      const color = animeColorInput.value;
+
+      ctx.save();
+      if (currentAnimeTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = baseSize * 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      ctx.globalCompositeOperation = 'source-over';
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
+      switch (currentAnimeBrushType) {
+        case 'calligraphy-brush':
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+        case 'pen':
+        default:
+          ctx.strokeStyle = color;
+          ctx.lineWidth = baseSize;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+      }
+      ctx.restore();
+    }
+
+    // アニメーション描画イベント
+    let isAnimeDrawing = false;
+
+    animeMainCanvas.addEventListener('mousedown', (e) => {
+      const rect = animeMainCanvas.getBoundingClientRect();
+      animeLastPoint = {
+        x: Math.floor((e.clientX - rect.left) * (animeMainCanvas.width / rect.width)),
+        y: Math.floor((e.clientY - rect.top) * (animeMainCanvas.height / rect.height))
+      };
+      saveAnimeState();
+
+      if (currentAnimeTool === 'fill') {
+        floodFill(animeMainCanvas, animeLastPoint.x, animeLastPoint.y, animeColorInput.value, 1.0);
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+        return;
+      }
+
+      isAnimeDrawing = true;
+      drawAnimeStroke(animeCtx, animeLastPoint, animeLastPoint);
+    });
+
+    animeMainCanvas.addEventListener('mousemove', (e) => {
+      if (!isAnimeDrawing || currentAnimeTool === 'fill') return;
+      e.preventDefault();
+      const rect = animeMainCanvas.getBoundingClientRect();
+      const pos = {
+        x: Math.floor((e.clientX - rect.left) * (animeMainCanvas.width / rect.width)),
+        y: Math.floor((e.clientY - rect.top) * (animeMainCanvas.height / rect.height))
+      };
+      drawAnimeStroke(animeCtx, animeLastPoint, pos);
+      animeLastPoint = pos;
+    });
+
+    animeMainCanvas.addEventListener('mouseup', () => {
+      if (isAnimeDrawing) {
+        isAnimeDrawing = false;
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+      }
+    });
+
+    animeMainCanvas.addEventListener('mouseleave', () => {
+      if (isAnimeDrawing) {
+        isAnimeDrawing = false;
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+      }
+    });
+
+    // タッチ対応（アニメーション）
+    animeMainCanvas.addEventListener('touchstart', (e) => {
+      const rect = animeMainCanvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      animeLastPoint = {
+        x: Math.floor((touch.clientX - rect.left) * (animeMainCanvas.width / rect.width)),
+        y: Math.floor((touch.clientY - rect.top) * (animeMainCanvas.height / rect.height))
+      };
+      saveAnimeState();
+
+      if (currentAnimeTool === 'fill') {
+        floodFill(animeMainCanvas, animeLastPoint.x, animeLastPoint.y, animeColorInput.value, 1.0);
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+        return;
+      }
+
+      isAnimeDrawing = true;
+      drawAnimeStroke(animeCtx, animeLastPoint, animeLastPoint);
+    }, { passive: false });
+
+    animeMainCanvas.addEventListener('touchmove', (e) => {
+      if (!isAnimeDrawing || currentAnimeTool === 'fill') return;
+      e.preventDefault();
+      const rect = animeMainCanvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const pos = {
+        x: Math.floor((touch.clientX - rect.left) * (animeMainCanvas.width / rect.width)),
+        y: Math.floor((touch.clientY - rect.top) * (animeMainCanvas.height / rect.height))
+      };
+      drawAnimeStroke(animeCtx, animeLastPoint, pos);
+      animeLastPoint = pos;
+    }, { passive: false });
+
+    animeMainCanvas.addEventListener('touchend', () => {
+      if (isAnimeDrawing) {
+        isAnimeDrawing = false;
+        animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+        updateAnimeFramesUI();
+        updateOnionSkin();
+      }
+    });
+
+    animeSubmitBtn.addEventListener('click', () => {
+      animeFrames[currentAnimeFrameIndex] = animeCtx.getImageData(0, 0, 250, 250);
+      
+      const frameDataUrls = animeFrames.map(frame => {
+        const c = document.createElement('canvas');
+        c.width = 250; c.height = 250;
+        c.getContext('2d').putImageData(frame, 0, 0);
+        return c.toDataURL('image/png');
+      });
+
+      const senderName = userSelect.value;
+      const payload = {
+        sender: senderName,
+        text: '',
+        fileData: frameDataUrls[0],
+        frames: frameDataUrls,
+        fileName: `anime_${Date.now()}.png`,
+        isAnimeStamp: true,
+        timestamp: Date.now()
+      };
+
+      push(messagesRef, payload);
+      push(stampHistoryRef, { dataUrl: frameDataUrls[0], frames: frameDataUrls, isAnime: true, creator: senderName, timestamp: Date.now() });
+      animeModalOverlay.classList.remove('active');
+    });
+
+    animeModalCloseX.addEventListener('click', () => animeModalOverlay.classList.remove('active'));
+    animeCancelBtn.addEventListener('click', () => animeModalOverlay.classList.remove('active'));
+    animeBackToHistoryBtn.addEventListener('click', () => {
+      animeModalOverlay.classList.remove('active');
+      renderStampHistory();
+      historyModalOverlay.classList.add('active');
+    });
 
     brushSelect.addEventListener('change', () => {
       currentTool = 'pen';
@@ -1405,7 +1788,6 @@
 
       ctx.globalCompositeOperation = 'source-over';
       const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
       switch (currentBrushType) {
         case 'calligraphy-brush':
@@ -1418,112 +1800,6 @@
           ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
           break;
-
-        case 'calligraphy-pen':
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = color;
-          const stepsCallig = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= stepsCallig; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
-            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
-            ctx.beginPath();
-            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
-        case 'airbrush':
-          ctx.globalAlpha = opacity * 0.15;
-          ctx.fillStyle = color;
-          const airSteps = Math.max(1, Math.floor(dist / 2));
-          for (let i = 0; i <= airSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
-            const numParticles = Math.floor(baseSize * 2);
-            for (let p = 0; p < numParticles; p++) {
-              const r = Math.random() * baseSize * 1.2;
-              const a = Math.random() * Math.PI * 2;
-              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
-            }
-          }
-          break;
-
-        case 'oil':
-          ctx.globalAlpha = opacity * 0.7;
-          ctx.strokeStyle = color;
-          ctx.lineCap = 'butt';
-          ctx.lineWidth = baseSize;
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-          ctx.globalAlpha = opacity * 0.3;
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(p1.x + 2, p1.y + 2);
-          ctx.lineTo(p2.x + 2, p2.y + 2);
-          ctx.stroke();
-          break;
-
-        case 'crayon':
-          ctx.globalAlpha = opacity * 0.6;
-          ctx.fillStyle = color;
-          const craySteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= craySteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
-            for (let j = 0; j < baseSize * 1.5; j++) {
-              const rx = (Math.random() - 0.5) * baseSize;
-              const ry = (Math.random() - 0.5) * baseSize;
-              if (Math.hypot(rx, ry) <= baseSize / 2) {
-                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
-              }
-            }
-          }
-          break;
-
-        case 'marker':
-          ctx.globalAlpha = opacity * 0.4;
-          ctx.fillStyle = color;
-          const markSteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= markSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
-            ctx.beginPath();
-            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
-        case 'pencil':
-          ctx.globalAlpha = opacity * 0.8;
-          ctx.fillStyle = color;
-          const pSteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= pSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
-            for (let j = 0; j < baseSize; j++) {
-              const rx = (Math.random() - 0.5) * (baseSize / 2);
-              const ry = (Math.random() - 0.5) * (baseSize / 2);
-              ctx.fillRect(curX + rx, curY + ry, 1, 1);
-            }
-          }
-          break;
-
-        case 'watercolor':
-          ctx.globalAlpha = opacity * 0.12;
-          ctx.fillStyle = color;
-          const wcSteps = Math.max(1, Math.floor(dist / 2));
-          for (let i = 0; i <= wcSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
-            ctx.beginPath();
-            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
         case 'pen':
         default:
           ctx.globalAlpha = opacity;
@@ -1616,190 +1892,3 @@
     });
 
     onValue(stampHistoryRef, (snapshot) => {
-      cachedStampHistory = snapshot.val() || {};
-      if (historyModalOverlay.classList.contains('active')) renderStampHistory();
-    });
-
-    function renderStampHistory() {
-      historyGrid.innerHTML = '';
-      const keys = Object.keys(cachedStampHistory);
-      if (keys.length === 0) {
-        historyGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
-        return;
-      }
-      keys.reverse().forEach(key => {
-        const item = cachedStampHistory[key];
-        const card = document.createElement('div');
-        card.className = 'history-card';
-        card.innerHTML = `
-          <div class="history-img-wrapper"><img src="${item.dataUrl}" class="history-img"></div>
-          <div class="history-actions">
-            <button class="history-action-btn send" data-key="${key}">💬 送信</button>
-            <button class="history-action-btn del" data-key="${key}">🗑 削除</button>
-          </div>
-        `;
-        card.querySelector('.send').addEventListener('click', () => {
-          const senderName = userSelect.value;
-          push(messagesRef, { sender: senderName, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
-          historyModalOverlay.classList.remove('active');
-        });
-        card.querySelector('.del').addEventListener('click', () => {
-          if (confirm('削除しますか？')) remove(ref(db, `stamp_history/${key}`));
-        });
-        historyGrid.appendChild(card);
-      });
-    }
-
-    goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
-    backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
-    historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
-
-    hamburgerBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
-    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      const senderName = userSelect.value;
-      push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
-      messageInput.value = '';
-      messageInput.style.height = '40px';
-    }
-
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const senderName = userSelect.value;
-        push(messagesRef, { sender: senderName, text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
-        fileInput.value = '';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    function deleteMessage(key) {
-      if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
-    }
-
-    function renderFormattedText(container, text) {
-      const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
-      let lastIndex = 0, match;
-      while ((match = urlRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
-        const link = document.createElement('a');
-        link.href = match[0]; link.textContent = match[0]; link.className = 'chat-link'; link.target = '_blank';
-        container.appendChild(link);
-        lastIndex = urlRegex.lastIndex;
-      }
-      if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
-    }
-
-    // チャット画面を一番下までスクロールさせる関数
-    function scrollToBottom() {
-      requestAnimationFrame(() => {
-        chatBox.scrollTop = chatBox.scrollHeight;
-      });
-    }
-
-    function renderMessages() {
-      chatBox.innerHTML = '';
-      const activeUser = userSelect.value;
-
-      Object.keys(cachedMessages).forEach(key => {
-        const msg = cachedMessages[key];
-        const isSent = msg.sender === activeUser;
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-        
-        const senderName = document.createElement('div');
-        senderName.className = 'sender-name';
-        senderName.textContent = msg.sender;
-
-        const bubble = document.createElement('div');
-        bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
-
-        if (msg.fileData) {
-          if (msg.isStamp) {
-            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-stamp';
-            bubble.appendChild(img);
-          } else if (msg.isImage) {
-            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-image';
-            bubble.appendChild(img);
-          } else {
-            const fa = document.createElement('div'); fa.className = 'file-attachment';
-            fa.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
-            bubble.appendChild(fa);
-          }
-        }
-        if (msg.text) {
-          const tn = document.createElement('div');
-          renderFormattedText(tn, msg.text);
-          bubble.appendChild(tn);
-        }
-
-        const metaInfo = document.createElement('div');
-        metaInfo.className = 'meta-info';
-        const timestamp = document.createElement('span');
-        timestamp.className = 'timestamp';
-        const d = new Date(msg.timestamp);
-        timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        metaInfo.appendChild(timestamp);
-
-        if (msg.fileData) {
-          const dlBtn = document.createElement('button');
-          dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
-          dlBtn.addEventListener('click', () => {
-            const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName || 'download'; a.click();
-          });
-          metaInfo.appendChild(dlBtn);
-        }
-        
-        const delBtn = document.createElement('button');
-        delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
-        delBtn.addEventListener('click', () => deleteMessage(key));
-        metaInfo.appendChild(delBtn);
-
-        msgDiv.appendChild(senderName);
-        msgDiv.appendChild(bubble);
-        msgDiv.appendChild(metaInfo);
-        chatBox.appendChild(msgDiv);
-      });
-      
-      scrollToBottom();
-    }
-
-    function initChat() {
-      userSelect.addEventListener('change', () => {
-        renderMessages();
-      });
-
-      // Firebaseメッセージ監視（リアルタイム更新＆過去ログ取得）
-      onValue(messagesRef, (snapshot) => {
-        cachedMessages = snapshot.val() || {};
-        renderMessages();
-      });
-
-      sendBtn.addEventListener('click', sendMessage);
-      messageInput.addEventListener('keydown', (e) => {
-        if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-      messageInput.addEventListener('input', () => {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
-      });
-    }
-
-    // アプリ起動時の全体初期化
-    initChat();
-
-    // 自動ログイン判定（localStorage または sessionStorage をチェック）
-    if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
-      unlockApp();
-    }
-  </script>
-</body>
-</html>
