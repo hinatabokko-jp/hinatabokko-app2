@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PNG EXIF Remover & Square Converter</title>
+  <title>CleanSquare PNG & Photoshop-style Layers</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
@@ -20,20 +20,12 @@
       background-size: 16px 16px;
       background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
     }
-    .checkered-pattern-light {
-      background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
-                        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
-                        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
-      background-size: 16px 16px;
-      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
   <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-30 px-4 py-3">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,158 +34,230 @@
         </div>
         <div>
           <h1 class="font-bold text-lg leading-tight text-slate-100">CleanSquare PNG</h1>
-          <p class="text-xs text-slate-400">EXIFメタデータ削除 & 1:1正方形化ツール</p>
+          <p class="text-xs text-slate-400">EXIF削除 & スタンプ最適化エディタ</p>
         </div>
       </div>
       <div class="flex items-center space-x-2 text-xs">
         <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-          EXIF完全削除対応
+          スタンプ最適化対応
         </span>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <div class="lg:col-span-5 flex flex-col gap-5">
+    <!-- Left Sidebar: Controls & Tools -->
+    <div class="lg:col-span-4 flex flex-col gap-5">
       
       <!-- Upload Zone -->
-      <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/70 bg-slate-800/40 hover:bg-slate-800/70 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden group">
-        <input type="file" id="file-input" multiple accept="image/png,image/jpeg,image/webp" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-        <div class="p-3 bg-slate-700/50 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 text-slate-300 rounded-full mb-3 transition-colors">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/70 bg-slate-800/40 hover:bg-slate-800/70 rounded-2xl p-5 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] relative overflow-hidden group">
+        <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+        <div class="p-2.5 bg-slate-700/50 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 text-slate-300 rounded-full mb-2 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
           </svg>
         </div>
-        <p class="font-semibold text-sm text-slate-200">画像をドラッグ＆ドロップ</p>
-        <p class="text-xs text-slate-400 mt-1">またはクリックしてファイルを選択 (複数選択可)</p>
-        <p class="text-[11px] text-slate-500 mt-2">対応: PNG, JPEG, WebP (自動でクリーンなPNGに変換)</p>
+        <p class="font-semibold text-xs text-slate-200">画像をドラッグ＆ドロップ</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">またはクリックしてファイルを選択（iPhone撮影画像対応）</p>
       </div>
 
-      <!-- Conversion Mode Controls -->
-      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 space-y-4">
-        <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+      <!-- Conversion Mode -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3">
+        <h2 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
           <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
           </svg>
           1:1 (正方形) 変形モード
         </h2>
-
         <div class="grid grid-cols-2 gap-2">
-          <button type="button" data-mode="fit" class="mode-btn px-3 py-2.5 rounded-xl text-xs font-medium border bg-emerald-500/20 border-emerald-500 text-emerald-300 flex items-center justify-center gap-2 transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-            </svg>
-            余白追加 (全体保存)
+          <button type="button" data-mode="fit" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border bg-emerald-500/20 border-emerald-500 text-emerald-300 flex items-center justify-center transition-all">
+            余白追加
           </button>
-
-          <button type="button" data-mode="crop" class="mode-btn px-3 py-2.5 rounded-xl text-xs font-medium border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-600 flex items-center justify-center gap-2 transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5"/>
-            </svg>
-            クロップ (中央切り抜き)
+          <button type="button" data-mode="crop" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-600 flex items-center justify-center transition-all">
+            クロップ
           </button>
         </div>
+        <select id="resolution-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500">
+          <option value="512">512 x 512 px (スタンプ最適・推奨)</option>
+          <option value="original">元の長辺サイズを保持 (1:1)</option>
+          <option value="1080">1080 x 1080 px</option>
+        </select>
+      </div>
 
-        <!-- Background Color (Visible in 'Fit' mode) -->
-        <div id="bg-color-section" class="space-y-2 pt-2 border-t border-slate-700/50">
-          <label class="text-xs text-slate-400 block font-medium">余白の背景色:</label>
-          <div class="flex items-center gap-2">
-            <button type="button" data-bg="transparent" class="bg-option border-2 border-emerald-500 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-slate-900 text-slate-200">
-              <span class="w-3.5 h-3.5 rounded border border-slate-600 checkered-pattern inline-block"></span>
-              透明 (推奨)
-            </button>
-            <button type="button" data-bg="#ffffff" class="bg-option border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-slate-900 text-slate-300">
-              <span class="w-3.5 h-3.5 rounded border border-slate-300 bg-white inline-block"></span>
-              白
-            </button>
-            <button type="button" data-bg="#000000" class="bg-option border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-slate-900 text-slate-300">
-              <span class="w-3.5 h-3.5 rounded border border-slate-600 bg-black inline-block"></span>
-              黒
-            </button>
-            <input type="color" id="custom-color-picker" value="#1e293b" class="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-slate-700 p-0.5">
+      <!-- Drawing Tools -->
+      <div id="editor-tools-panel" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3 opacity-40 pointer-events-none transition-all">
+        <h2 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+          </svg>
+          描画ツール (選択中のレイヤーに反映)
+        </h2>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="tool-pen" class="flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all">ペン</button>
+          <button type="button" id="tool-eraser" class="flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all">消しゴム</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="color" id="pen-color" value="#ef4444" class="w-7 h-7 rounded-lg cursor-pointer bg-transparent border border-slate-700 p-0.5">
+          <div class="flex gap-1">
+            <button type="button" class="color-preset w-5 h-5 rounded-full bg-red-500 border border-slate-700" data-color="#ef4444"></button>
+            <button type="button" class="color-preset w-5 h-5 rounded-full bg-blue-500 border border-slate-700" data-color="#3b82f6"></button>
+            <button type="button" class="color-preset w-5 h-5 rounded-full bg-green-500 border border-slate-700" data-color="#22c55e"></button>
+            <button type="button" class="color-preset w-5 h-5 rounded-full bg-black border border-slate-700" data-color="#000000"></button>
+            <button type="button" class="color-preset w-5 h-5 rounded-full bg-white border border-slate-700" data-color="#ffffff"></button>
           </div>
         </div>
 
-        <!-- Output Resolution Options -->
-        <div class="space-y-2 pt-2 border-t border-slate-700/50">
-          <label class="text-xs text-slate-400 block font-medium">出力サイズ (解像度):</label>
-          <select id="resolution-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500">
-            <option value="original">元の長辺サイズを保持 (高品質)</option>
-            <option value="1080">1080 x 1080 px (SNS標準)</option>
-            <option value="2048">2048 x 2048 px (高解像度)</option>
-            <option value="512">512 x 512 px (アイコン用)</option>
-          </select>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>ブラシサイズ (最大500px):</span>
+            <span id="brush-size-val">8px</span>
+          </div>
+          <!-- 最大500pxまで変更可能に拡張 -->
+          <input type="range" id="brush-size" min="1" max="500" value="8" class="w-full accent-emerald-500">
         </div>
-      </div>
-
-      <!-- Quick Action Buttons -->
-      <div class="flex gap-2">
-        <button id="download-all-btn" disabled class="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-semibold py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-          </svg>
-          一括ダウンロード
-        </button>
-        <button id="clear-all-btn" disabled class="bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-40 text-slate-300 py-3 px-4 rounded-xl text-xs transition-all">
-          全消去
-        </button>
       </div>
 
     </div>
 
-    <div class="lg:col-span-7 flex flex-col gap-4">
+    <!-- Center: Workspace Canvas -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
       <div class="flex justify-between items-center px-1">
-        <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
-          <span>画像プレビュー & 結果</span>
-          <span id="file-count-badge" class="bg-slate-800 text-slate-400 border border-slate-700 text-[11px] px-2 py-0.5 rounded-full">0件</span>
-        </h2>
-        <span class="text-xs text-slate-500">※ 全ての画像からEXIFデータが除去されます</span>
+        <h2 class="text-sm font-semibold text-slate-300">キャンバス (1:1 正方形)</h2>
+        <span id="dimension-badge" class="text-xs text-slate-500">0 x 0 px</span>
       </div>
 
       <!-- Empty State -->
-      <div id="empty-state" class="bg-slate-800/30 border border-slate-800 rounded-2xl min-h-[380px] flex flex-col items-center justify-center p-8 text-center">
-        <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-600 mb-4">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div id="empty-state" class="bg-slate-800/30 border border-slate-800 rounded-2xl min-h-[360px] flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-slate-600 mb-3">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
         </div>
-        <p class="text-slate-400 font-medium text-sm">画像がまだ読み込まれていません</p>
-        <p class="text-xs text-slate-500 mt-1 max-w-sm">左側のエリアにファイルをドロップするか選択してください。自動でEXIFをストリップして正方形に変換します。</p>
+        <p class="text-slate-400 font-medium text-xs">画像が読み込まれていません</p>
       </div>
 
-      <!-- Image Cards Gallery -->
-      <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
-        <!-- Dynamic Cards Inserted Here -->
+      <!-- Workspace Card -->
+      <div id="workspace-card" class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col space-y-3 hidden">
+        <div class="relative w-full aspect-square rounded-xl overflow-hidden checkered-pattern border border-slate-700/50 flex items-center justify-center cursor-crosshair">
+          <canvas id="edit-canvas" class="max-w-full max-h-full object-contain touch-none"></canvas>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <p id="file-name-label" class="text-xs font-semibold text-slate-200 truncate max-w-[200px]"></p>
+          <button id="download-btn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-4 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            チャットスタンプ用PNG保存
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Photoshop-style Layer Panel -->
+    <div class="lg:col-span-3 flex flex-col gap-4">
+      <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col h-full min-h-[320px]">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-3">
+          <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            レイヤー
+          </h2>
+          <span class="text-[10px] text-slate-400">Photoshop風</span>
+        </div>
+
+        <!-- Layer List (Top to Bottom Stack) -->
+        <div id="layer-list" class="space-y-2 flex-1">
+          <!-- Layer 3: Image (Top) - Initially active -->
+          <div data-layer="3" class="layer-item flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500 text-emerald-300 cursor-pointer transition-all">
+            <div class="flex items-center space-x-2.5">
+              <button type="button" class="visibility-btn text-emerald-400 hover:text-white" title="表示/非表示">
+                <svg class="w-4 h-4 eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <div class="w-7 h-7 rounded border border-emerald-500/40 bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400 font-bold">画</div>
+              <span class="text-xs font-medium">レイヤー 3 (画像)</span>
+            </div>
+            <span class="text-[10px] text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">編集中</span>
+          </div>
+
+          <!-- Layer 2: Drawing (Middle) -->
+          <div data-layer="2" class="layer-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/80 text-slate-200 cursor-pointer hover:border-slate-600 transition-all">
+            <div class="flex items-center space-x-2.5">
+              <button type="button" class="visibility-btn text-slate-300 hover:text-white" title="表示/非表示">
+                <svg class="w-4 h-4 eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <div class="w-7 h-7 rounded border border-slate-700 bg-slate-800 flex items-center justify-center text-[10px] text-slate-400 font-bold">描</div>
+              <span class="text-xs font-medium text-slate-200">レイヤー 2 (描き込み)</span>
+            </div>
+            <span class="text-[10px] text-slate-500">中層</span>
+          </div>
+
+          <!-- Layer 1: Transparent Background (Bottom) -->
+          <div data-layer="1" class="layer-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/80 cursor-pointer hover:border-slate-600 transition-all">
+            <div class="flex items-center space-x-2.5">
+              <button type="button" class="visibility-btn text-slate-300 hover:text-white" title="表示/非表示">
+                <svg class="w-4 h-4 eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <div class="w-7 h-7 rounded border border-slate-700 checkered-pattern flex items-center justify-center"></div>
+              <span class="text-xs font-medium text-slate-200">レイヤー 1 (背景)</span>
+            </div>
+            <span class="text-[10px] text-slate-500">最下層:透過</span>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 space-y-1">
+          <p>💡 チャットアプリで読み込める軽量サイズ（512px等）で出力されます</p>
+        </div>
       </div>
     </div>
 
   </main>
 
   <footer class="border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500 mt-auto">
-    <p>すべての処理はブラウザローカル内で完結するため、画像が外部サーバーに送信されることはありません。</p>
+    <p>すべての処理はブラウザローカル内で完結します。</p>
   </footer>
 
   <script>
-    /* State Variables */
-    let currentMode = 'fit'; // 'fit' or 'crop'
-    let currentBgColor = 'transparent'; // 'transparent', '#ffffff', '#000000', custom
-    let imageList = []; // Array of processed image items
+    let currentMode = 'fit';
+    let originalImage = null;
+    let originalFileName = 'image.png';
+    let targetSize = 512;
 
-    /* DOM Elements */
+    let activeLayer = 3; 
+    let layerVisibility = { 1: true, 2: true, 3: true };
+
+    let middleCanvas = document.createElement('canvas');
+    let middleCtx = middleCanvas.getContext('2d', { willReadFrequently: true });
+    let topCanvas = document.createElement('canvas');
+    let topCtx = topCanvas.getContext('2d', { willReadFrequently: true });
+
+    let currentTool = 'pen';
+    let penColor = '#ef4444';
+    let brushSize = 8;
+    let isDrawing = false;
+
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
-    const gallery = document.getElementById('gallery');
     const emptyState = document.getElementById('empty-state');
-    const fileCountBadge = document.getElementById('file-count-badge');
-    const downloadAllBtn = document.getElementById('download-all-btn');
-    const clearAllBtn = document.getElementById('clear-all-btn');
-    const customColorPicker = document.getElementById('custom-color-picker');
+    const workspaceCard = document.getElementById('workspace-card');
+    const editorToolsPanel = document.getElementById('editor-tools-panel');
+    const editCanvas = document.getElementById('edit-canvas');
+    const editCtx = editCanvas.getContext('2d');
+    const dimensionBadge = document.getElementById('dimension-badge');
+    const fileNameLabel = document.getElementById('file-name-label');
+    const downloadBtn = document.getElementById('download-btn');
     const resolutionSelect = document.getElementById('resolution-select');
-    const bgColorSection = document.getElementById('bg-color-section');
 
-    /* Mode Selection Buttons */
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.mode-btn').forEach(b => {
@@ -202,243 +266,258 @@
         });
         btn.classList.remove('border-slate-700', 'bg-slate-800/80', 'text-slate-300');
         btn.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-300');
-
         currentMode = btn.dataset.mode;
-        
-        // Toggle Background Color options visibility based on mode
-        if (currentMode === 'fit') {
-          bgColorSection.classList.remove('opacity-40', 'pointer-events-none');
+        if (originalImage) processAndSetupLayers();
+      });
+    });
+
+    resolutionSelect.addEventListener('change', () => {
+      if (originalImage) processAndSetupLayers();
+    });
+
+    document.querySelectorAll('.layer-item').forEach(item => {
+      const layerId = parseInt(item.dataset.layer);
+      
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.visibility-btn')) return;
+        activeLayer = layerId;
+        updateLayerPanelUI();
+      });
+
+      const visBtn = item.querySelector('.visibility-btn');
+      visBtn.addEventListener('click', () => {
+        layerVisibility[layerId] = !layerVisibility[layerId];
+        const eyeIcon = visBtn.querySelector('.eye-icon');
+        if (layerVisibility[layerId]) {
+          visBtn.classList.remove('opacity-40');
+          eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
         } else {
-          bgColorSection.classList.add('opacity-40', 'pointer-events-none');
+          visBtn.classList.add('opacity-40');
+          eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.03 10.03 0 012.232-3.864m1.94-1.94A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
         }
-
-        reprocessAllImages();
+        redrawLayers();
       });
     });
 
-    /* Background Color Options */
-    document.querySelectorAll('.bg-option').forEach(btn => {
+    function updateLayerPanelUI() {
+      document.querySelectorAll('.layer-item').forEach(item => {
+        const id = parseInt(item.dataset.layer);
+        const tag = item.querySelector('span:last-child');
+        if (id === activeLayer) {
+          item.className = 'layer-item flex items-center justify-between p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500 text-emerald-300 cursor-pointer transition-all';
+          tag.className = 'text-[10px] text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded';
+          tag.textContent = '編集中';
+        } else {
+          item.className = 'layer-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/80 text-slate-200 cursor-pointer hover:border-slate-600 transition-all';
+          tag.className = 'text-[10px] text-slate-500';
+          tag.textContent = id === 3 ? '最上層' : (id === 2 ? '中層' : '最下層:透過');
+        }
+      });
+    }
+
+    const toolPen = document.getElementById('tool-pen');
+    const toolEraser = document.getElementById('tool-eraser');
+
+    toolPen.addEventListener('click', () => {
+      currentTool = 'pen';
+      toolPen.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
+      toolEraser.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
+    });
+
+    toolEraser.addEventListener('click', () => {
+      currentTool = 'eraser';
+      toolEraser.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
+      toolPen.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
+    });
+
+    const penColorPicker = document.getElementById('pen-color');
+    penColorPicker.addEventListener('input', (e) => penColor = e.target.value);
+    document.querySelectorAll('.color-preset').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.bg-option').forEach(b => {
-          b.classList.remove('border-emerald-500');
-          b.classList.add('border-slate-700');
-        });
-        btn.classList.remove('border-slate-700');
-        btn.classList.add('border-emerald-500');
-
-        currentBgColor = btn.dataset.bg;
-        reprocessAllImages();
+        penColor = btn.dataset.color;
+        penColorPicker.value = penColor;
       });
     });
 
-    customColorPicker.addEventListener('input', (e) => {
-      currentBgColor = e.target.value;
-      document.querySelectorAll('.bg-option').forEach(b => b.classList.remove('border-emerald-500'));
-      reprocessAllImages();
+    const brushSizeInput = document.getElementById('brush-size');
+    const brushSizeVal = document.getElementById('brush-size-val');
+    brushSizeInput.addEventListener('input', (e) => {
+      brushSize = e.target.value;
+      brushSizeVal.textContent = brushSize + 'px';
     });
 
-    resolutionSelect.addEventListener('change', reprocessAllImages);
-
-    /* File Input & Drag and Drop Handling */
-    dropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
-    });
-
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10'));
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
-      if (e.dataTransfer.files.length > 0) {
-        handleFiles(e.dataTransfer.files);
-      }
+      if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        handleFiles(e.target.files);
-        fileInput.value = ''; // Reset input
+        handleFile(e.target.files[0]);
+        fileInput.value = '';
       }
     });
 
-    /* File Processor */
-    async function handleFiles(files) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (!file.type.startsWith('image/')) continue;
-
-        const img = await loadImageFromFile(file);
-        const item = {
-          id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-          originalName: file.name,
-          originalWidth: img.width,
-          originalHeight: img.height,
-          imageObj: img,
-          processedDataUrl: null,
-          outputSize: 0
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) return;
+      originalFileName = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          originalImage = img;
+          processAndSetupLayers();
+          emptyState.classList.add('hidden');
+          workspaceCard.classList.remove('hidden');
+          editorToolsPanel.classList.remove('opacity-40', 'pointer-events-none');
         };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
 
-        imageList.push(item);
-        processImageItem(item);
+    function processAndSetupLayers() {
+      const img = originalImage;
+      const resVal = resolutionSelect.value;
+      
+      // スタンプアプリ等で確実に読み込めるよう、解像度セレクトの指定（デフォルト512px等）に自動縮小・調整
+      if (resVal === 'original') {
+        targetSize = Math.max(img.width, img.height);
+      } else {
+        targetSize = parseInt(resVal, 10);
       }
-      updateUI();
-    }
 
-    function loadImageFromFile(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = targetSize;
+      tempCanvas.height = targetSize;
+      const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+      tempCtx.clearRect(0, 0, targetSize, targetSize);
 
-    /* Core Canvas Drawing Logic (Exif Removal + 1:1 Reshaping) */
-    function processImageItem(item) {
-      const img = item.imageObj;
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Determine square output size
       const maxDim = Math.max(img.width, img.height);
-      let targetSize = maxDim;
-
-      const resValue = resolutionSelect.value;
-      if (resValue !== 'original') {
-        targetSize = parseInt(resValue, 10);
-      }
-
-      canvas.width = targetSize;
-      canvas.height = targetSize;
-
-      // Clear canvas (ensures clean metadata and transparent base)
-      ctx.clearRect(0, 0, targetSize, targetSize);
-
       if (currentMode === 'fit') {
-        // Mode 1: Fit inside square (Padding)
-        if (currentBgColor !== 'transparent') {
-          ctx.fillStyle = currentBgColor;
-          ctx.fillRect(0, 0, targetSize, targetSize);
-        }
-
         const scale = targetSize / maxDim;
-        const drawWidth = img.width * scale;
-        const drawHeight = img.height * scale;
-        const dx = (targetSize - drawWidth) / 2;
-        const dy = (targetSize - drawHeight) / 2;
-
-        ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
-
-      } else if (currentMode === 'crop') {
-        // Mode 2: Center Crop to square
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        const dx = (targetSize - dw) / 2;
+        const dy = (targetSize - dh) / 2;
+        tempCtx.drawImage(img, dx, dy, dw, dh);
+      } else {
         const minDim = Math.min(img.width, img.height);
         const sx = (img.width - minDim) / 2;
         const sy = (img.height - minDim) / 2;
-
-        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetSize, targetSize);
+        tempCtx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetSize, targetSize);
       }
 
-      // Convert canvas to PNG (this strips all EXIF and metadata natively)
-      item.processedDataUrl = canvas.toDataURL('image/png');
-      item.outputSize = targetSize;
+      topCanvas.width = targetSize;
+      topCanvas.height = targetSize;
+      topCtx.clearRect(0, 0, targetSize, targetSize);
+      topCtx.drawImage(tempCanvas, 0, 0);
+
+      const newMid = document.createElement('canvas');
+      newMid.width = targetSize;
+      newMid.height = targetSize;
+      middleCtx = newMid.getContext('2d', { willReadFrequently: true });
+      middleCanvas = newMid;
+
+      editCanvas.width = targetSize;
+      editCanvas.height = targetSize;
+      dimensionBadge.textContent = `${targetSize} x ${targetSize} px (1:1)`;
+      fileNameLabel.textContent = originalFileName;
+
+      redrawLayers();
     }
 
-    /* Reprocess all loaded images when settings change */
-    function reprocessAllImages() {
-      imageList.forEach(item => {
-        processImageItem(item);
-      });
-      renderGallery();
+    function redrawLayers() {
+      editCtx.clearRect(0, 0, targetSize, targetSize);
+      if (layerVisibility[2]) {
+        editCtx.drawImage(middleCanvas, 0, 0);
+      }
+      if (layerVisibility[3]) {
+        editCtx.drawImage(topCanvas, 0, 0);
+      }
     }
 
-    /* UI Rendering */
-    function updateUI() {
-      const count = imageList.length;
-      fileCountBadge.textContent = `${count}件`;
+    function getPointerPos(e) {
+      const rect = editCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (editCanvas.width / rect.width),
+        y: (clientY - rect.top) * (editCanvas.height / rect.height)
+      };
+    }
 
-      if (count > 0) {
-        emptyState.classList.add('hidden');
-        gallery.classList.remove('hidden');
-        downloadAllBtn.disabled = false;
-        clearAllBtn.disabled = false;
-        renderGallery();
+    let lastPos = { x: 0, y: 0 };
+
+    function startDrawing(e) {
+      if (activeLayer !== 2 && activeLayer !== 3) return;
+      if (!layerVisibility[activeLayer]) return;
+      isDrawing = true;
+      lastPos = getPointerPos(e);
+    }
+
+    function draw(e) {
+      if (!isDrawing || (activeLayer !== 2 && activeLayer !== 3)) return;
+      if (!layerVisibility[activeLayer]) return;
+      e.preventDefault();
+      const currentPos = getPointerPos(e);
+
+      const targetCtx = (activeLayer === 3) ? topCtx : middleCtx;
+
+      targetCtx.save();
+      targetCtx.beginPath();
+      targetCtx.moveTo(lastPos.x, lastPos.y);
+      targetCtx.lineTo(currentPos.x, currentPos.y);
+      targetCtx.lineCap = 'round';
+      targetCtx.lineJoin = 'round';
+      targetCtx.lineWidth = brushSize;
+
+      if (currentTool === 'eraser') {
+        targetCtx.globalCompositeOperation = 'destination-out';
+        targetCtx.strokeStyle = 'rgba(0, 0, 0, 1)';
       } else {
-        emptyState.classList.remove('hidden');
-        gallery.classList.add('hidden');
-        downloadAllBtn.disabled = true;
-        clearAllBtn.disabled = true;
+        targetCtx.globalCompositeOperation = 'source-over';
+        targetCtx.strokeStyle = penColor;
       }
+      targetCtx.stroke();
+      targetCtx.restore();
+
+      lastPos = currentPos;
+      redrawLayers();
     }
 
-    function renderGallery() {
-      gallery.innerHTML = '';
-
-      imageList.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 relative group';
-
-        const cleanName = item.originalName.replace(/\.[^/.]+$/, "") + "_clean_1x1.png";
-
-        card.innerHTML = `
-          <div class="relative w-full aspect-square rounded-xl overflow-hidden checkered-pattern border border-slate-700/50 flex items-center justify-center">
-            <img src="${item.processedDataUrl}" class="max-w-full max-h-full object-contain" alt="Preview">
-            <div class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur border border-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded-md">
-              ${item.outputSize} x ${item.outputSize} px
-            </div>
-            <button class="delete-btn absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" data-id="${item.id}">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="space-y-1">
-            <p class="text-xs font-semibold text-slate-200 truncate" title="${item.originalName}">${item.originalName}</p>
-            <p class="text-[11px] text-slate-400">元サイズ: ${item.originalWidth}x${item.originalHeight} px → <span class="text-emerald-400">EXIF除去済み</span></p>
-          </div>
-
-          <a href="${item.processedDataUrl}" download="${cleanName}" class="w-full bg-slate-700 hover:bg-emerald-600 text-slate-200 hover:text-white py-2 px-3 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-            </svg>
-            PNGを保存
-          </a>
-        `;
-
-        // Add Delete Event Listener
-        card.querySelector('.delete-btn').addEventListener('click', () => {
-          imageList = imageList.filter(img => img.id !== item.id);
-          updateUI();
-        });
-
-        gallery.appendChild(card);
-      });
+    function stopDrawing() {
+      isDrawing = false;
     }
 
-    /* Clear All Button */
-    clearAllBtn.addEventListener('click', () => {
-      imageList = [];
-      updateUI();
-    });
+    editCanvas.addEventListener('mousedown', startDrawing);
+    editCanvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', stopDrawing);
+    editCanvas.addEventListener('touchstart', startDrawing);
+    editCanvas.addEventListener('touchmove', draw);
+    window.addEventListener('touchend', stopDrawing);
 
-    /* Batch Download Button */
-    downloadAllBtn.addEventListener('click', () => {
-      imageList.forEach((item, i) => {
-        setTimeout(() => {
-          const a = document.createElement('a');
-          a.href = item.processedDataUrl;
-          a.download = item.originalName.replace(/\.[^/.]+$/, "") + "_clean_1x1.png";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }, i * 250); // Stagger downloads slightly
-      });
+    downloadBtn.addEventListener('click', () => {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = targetSize;
+      exportCanvas.height = targetSize;
+      const exportCtx = exportCanvas.getContext('2d');
+
+      if (layerVisibility[2]) exportCtx.drawImage(middleCanvas, 0, 0);
+      if (layerVisibility[3]) exportCtx.drawImage(topCanvas, 0, 0);
+
+      const dataUrl = exportCanvas.toDataURL('image/png');
+      const cleanName = originalFileName.replace(/\.[^/.]+$/, "") + "_stamp.png";
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = cleanName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     });
   </script>
 </body>
