@@ -1,319 +1,396 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full dark">
+<html lang="ja" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Share</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            950: '#020617',
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            600: '#475569'
+                        }
+                    }
+                }
+            }
         }
     </script>
-    <!-- FontAwesome -->
+    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
-        body { font-family: 'M PLUS Rounded 1c', sans-serif; }
-        .checkerboard-dark {
-            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
-                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
-                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            touch-action: none;
+        }
+        .checkerboard {
+            background-image: 
+                linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                linear-gradient(-45deg, transparent 75%, #1e293b 75%);
             background-size: 16px 16px;
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #0f172a;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
         }
     </style>
 </head>
-<body class="h-full bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
+<body class="bg-dark-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-    <header class="bg-slate-900 border-b border-slate-800 text-slate-100 shadow-lg px-4 py-3 flex justify-between items-center z-10 shrink-0">
+    <!-- Header -->
+    <header class="bg-dark-900 border-b border-dark-800 px-4 py-2.5 flex items-center justify-between shadow-lg shrink-0 z-10">
         <div class="flex items-center space-x-3">
-            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow font-bold text-xl flex items-center justify-center w-10 h-10">
-                <i class="fa-solid fa-palette"></i>
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-lg flex items-center justify-center w-9 h-9">
+                <i class="fa-solid fa-palette text-base"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-tight tracking-wide">Canvas Share</h1>
-                <p class="text-xs text-slate-400">ふたりでお絵描き＆レイヤー共有アプリ (ダークモード)</p>
+                <h1 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
+                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">キャンバス共有スタジオ</span>
+                </h1>
+                <p class="text-[11px] text-slate-400 hidden sm:block">二人で並んで同時にお絵描き・イラストを作成</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
-            <span id="user-badge" class="bg-slate-800 text-indigo-400 px-3 py-1 rounded-full text-xs font-semibold shadow-inner border border-indigo-500/30 hidden">未ログイン</span>
-            <button onclick="openHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
-                <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i><span>保存履歴</span>
+            <button id="help-btn" class="px-2.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-question text-indigo-400"></i>
+                <span class="hidden sm:inline">使い方</span>
             </button>
-            <button onclick="openLoginModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
-                <i class="fa-solid fa-right-to-bracket"></i><span>ログイン切替</span>
+            <button id="view-history-tab-btn" class="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20">
+                <i class="fa-solid fa-box-archive"></i>
+                <span>保存済み (<span id="stamp-count">0</span>)</span>
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col md:flex-row p-3 gap-3 overflow-hidden">
+    <!-- Main Content Layout: Side by Side Dual Canvas (Optimized height to fit screens) -->
+    <main class="flex-1 w-full px-2 sm:px-4 py-3 grid grid-cols-1 lg:grid-cols-2 gap-3 items-start max-w-[1500px] mx-auto">
         
-        <!-- User 1 Workspace -->
-        <section class="flex-1 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 flex flex-col overflow-hidden relative">
-            <div class="bg-gradient-to-r from-pink-950 to-slate-900 border-b border-pink-900/40 text-pink-200 px-4 py-2.5 flex justify-between items-center shrink-0">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-pink-500 animate-pulse"></span>
-                    <h2 class="font-bold text-sm tracking-wide">User 1 ワークスペース</h2>
+        <!-- ================= ユーザーA (左側) ================= -->
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl p-3 sm:p-4 shadow-xl flex flex-col gap-2.5 relative w-full">
+            <div class="flex items-center justify-between pb-1.5 border-b border-dark-800">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                    <h2 class="font-bold text-xs sm:text-sm text-slate-100">プレイヤー 1 (User A)</h2>
                 </div>
-                <span id="u1-status" class="text-xs bg-pink-900/60 text-pink-300 border border-pink-700/50 px-2.5 py-0.5 rounded-full font-medium">待機中</span>
-            </div>
-            <div class="flex-1 relative flex items-center justify-center bg-slate-950/70 overflow-hidden p-2">
-                <!-- Layers Container for User 1 -->
-                <div id="u1-canvas-container" class="relative shadow-2xl rounded-lg overflow-hidden checkerboard-dark cursor-crosshair border border-slate-800" style="width: 400px; height: 400px; max-width: 100%; max-height: 100%;">
-                    <!-- Dynamic Layer canvases will be inserted here -->
+                <div class="flex items-center gap-1.5">
+                    <button class="undo-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="1つ戻す">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button class="redo-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="やり直す">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button class="clear-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
-            <!-- Toolbar User 1 -->
-            <div class="bg-slate-900 border-t border-slate-800 p-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div class="flex items-center space-x-1.5">
-                    <button onclick="setActiveUser('user1'); openBrushModal()" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
+
+            <!-- Canvas Area A (Height slightly reduced to fit screen) -->
+            <div class="flex flex-col items-center w-full overflow-hidden">
+                <div class="relative w-full max-w-[500px] aspect-[4/3] checkerboard rounded-2xl shadow-inner border border-dark-800 overflow-hidden flex items-center justify-center cursor-crosshair canvas-wrapper-a" data-user="a">
+                    <!-- Dynamic Layers inserted via JS -->
+                </div>
+            </div>
+
+            <!-- Tools & Settings A -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-dark-950/60 p-2.5 rounded-2xl border border-dark-800">
+                <div class="flex items-center gap-2 justify-between">
+                    <button onclick="openBrushModalFor('a')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-brush text-indigo-400"></i><span>ブラシ設定</span>
+                    </button>
+                    <!-- Color Setting Button (Opens brush modal) -->
+                    <button onclick="openBrushModalFor('a')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
+                        <span id="color-indicator-a" class="w-3.5 h-3.5 rounded-full border border-slate-600 shadow-inner inline-block" style="background-color: #ec4899;"></span>
+                        <i class="fa-solid fa-gear text-slate-400 text-[10px]"></i>
+                    </button>
+                    <button onclick="openLayerModalFor('a')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm" title="レイヤー">
+                        <i class="fa-solid fa-layer-group text-indigo-400"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
+                    <button data-tool="brush" class="tool-btn-a p-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow"><i class="fa-solid fa-pen"><span>ペン</span></i></button>
+                    <button data-tool="bucket" class="tool-btn-a p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-fill-drip"><span>ペンキ</span></i></button>
+                    <button data-tool="eraser" class="tool-btn-a p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-eraser"><span>消ゴム</span></i></button>
+                </div>
+            </div>
+
+            <!-- Save A -->
+            <div class="flex items-center gap-2">
+                <input type="text" class="stamp-title-a flex-1 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="作品名 (例: プレイヤー1の作品)">
+                <button class="save-btn-a py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> 保存
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= ユーザーB (右側) ================= -->
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl p-3 sm:p-4 shadow-xl flex flex-col gap-2.5 relative w-full">
+            <div class="flex items-center justify-between pb-1.5 border-b border-dark-800">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
+                    <h2 class="font-bold text-xs sm:text-sm text-slate-100">プレイヤー 2 (User B)</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button class="undo-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="1つ戻す">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button class="redo-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="やり直す">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button class="clear-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Area B (Height slightly reduced to fit screen) -->
+            <div class="flex flex-col items-center w-full overflow-hidden">
+                <div class="relative w-full max-w-[500px] aspect-[4/3] checkerboard rounded-2xl shadow-inner border border-dark-800 overflow-hidden flex items-center justify-center cursor-crosshair canvas-wrapper-b" data-user="b">
+                    <!-- Dynamic Layers inserted via JS -->
+                </div>
+            </div>
+
+            <!-- Tools & Settings B -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-dark-950/60 p-2.5 rounded-2xl border border-dark-800">
+                <div class="flex items-center gap-2 justify-between">
+                    <button onclick="openBrushModalFor('b')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-brush text-pink-400"></i><span>ブラシ設定</span>
                     </button>
-                    <button onclick="setActiveUser('user1'); openLayerModal()" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-layer-group text-indigo-400"></i><span>レイヤー</span>
+                    <!-- Color Setting Button (Opens brush modal) -->
+                    <button onclick="openBrushModalFor('b')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
+                        <span id="color-indicator-b" class="w-3.5 h-3.5 rounded-full border border-slate-600 shadow-inner inline-block" style="background-color: #6366f1;"></span>
+                        <i class="fa-solid fa-gear text-slate-400 text-[10px]"></i>
                     </button>
-                    <button onclick="setTool('user1', 'eraser')" id="u1-eraser-btn" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-eraser text-slate-400"></i><span>消しゴム</span>
-                    </button>
-                    <button onclick="setTool('user1', 'bucket')" id="u1-bucket-btn" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-fill-drip text-amber-400"></i><span>バケツ</span>
+                    <button onclick="openLayerModalFor('b')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm" title="レイヤー">
+                        <i class="fa-solid fa-layer-group text-pink-400"></i>
                     </button>
                 </div>
-                <div class="flex items-center space-x-1.5">
-                    <button onclick="undoCanvas('user1')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition shadow-sm" title="ひとつ戻る"><i class="fa-solid fa-rotate-left"></i></button>
-                    <button onclick="redoCanvas('user1')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition shadow-sm" title="やりなおし"><i class="fa-solid fa-rotate-right"></i></button>
-                    <button onclick="publishCanvas('user1')" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1">
-                        <i class="fa-solid fa-paper-plane"></i><span>描き終わった</span>
-                    </button>
-                    <button onclick="saveMyArt('user1')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1">
-                        <i class="fa-solid fa-floppy-disk"></i><span>保存</span>
-                    </button>
+                <div class="grid grid-cols-3 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
+                    <button data-tool="brush" class="tool-btn-b p-1.5 rounded-lg bg-pink-600 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow"><i class="fa-solid fa-pen"><span>ペン</span></i></button>
+                    <button data-tool="bucket" class="tool-btn-b p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-fill-drip"><span>ペンキ</span></i></button>
+                    <button data-tool="eraser" class="tool-btn-b p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-eraser"><span>消ゴム</span></i></button>
                 </div>
             </div>
-        </section>
 
-        <!-- User 2 Workspace -->
-        <section class="flex-1 bg-slate-900 rounded-2xl shadow-xl border border-slate-800 flex flex-col overflow-hidden relative">
-            <div class="bg-gradient-to-r from-cyan-950 to-slate-900 border-b border-cyan-900/40 text-cyan-200 px-4 py-2.5 flex justify-between items-center shrink-0">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-cyan-500 animate-pulse"></span>
-                    <h2 class="font-bold text-sm tracking-wide">User 2 ワークスペース</h2>
-                </div>
-                <span id="u2-status" class="text-xs bg-cyan-900/60 text-cyan-300 border border-cyan-700/50 px-2.5 py-0.5 rounded-full font-medium">待機中</span>
+            <!-- Save B -->
+            <div class="flex items-center gap-2">
+                <input type="text" class="stamp-title-b flex-1 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500" placeholder="作品名 (例: プレイヤー2の作品)">
+                <button class="save-btn-b py-2 px-4 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> 保存
+                </button>
             </div>
-            <div class="flex-1 relative flex items-center justify-center bg-slate-950/70 overflow-hidden p-2">
-                <!-- Layers Container for User 2 -->
-                <div id="u2-canvas-container" class="relative shadow-2xl rounded-lg overflow-hidden checkerboard-dark cursor-crosshair border border-slate-800" style="width: 400px; height: 400px; max-width: 100%; max-height: 100%;">
-                    <!-- Dynamic Layer canvases will be inserted here -->
-                </div>
-            </div>
-            <!-- Toolbar User 2 -->
-            <div class="bg-slate-900 border-t border-slate-800 p-2.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div class="flex items-center space-x-1.5">
-                    <button onclick="setActiveUser('user2'); openBrushModal()" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-brush text-cyan-400"></i><span>ブラシ設定</span>
-                    </button>
-                    <button onclick="setActiveUser('user2'); openLayerModal()" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-layer-group text-indigo-400"></i><span>レイヤー</span>
-                    </button>
-                    <button onclick="setTool('user2', 'eraser')" id="u2-eraser-btn" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-eraser text-slate-400"></i><span>消しゴム</span>
-                    </button>
-                    <button onclick="setTool('user2', 'bucket')" id="u2-bucket-btn" class="tool-btn bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-slate-300 text-xs font-bold flex items-center space-x-1 transition shadow-sm border border-slate-700">
-                        <i class="fa-solid fa-fill-drip text-amber-400"></i><span>バケツ</span>
-                    </button>
-                </div>
-                <div class="flex items-center space-x-1.5">
-                    <button onclick="undoCanvas('user2')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition shadow-sm" title="ひとつ戻る"><i class="fa-solid fa-rotate-left"></i></button>
-                    <button onclick="redoCanvas('user2')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition shadow-sm" title="やりなおし"><i class="fa-solid fa-rotate-right"></i></button>
-                    <button onclick="publishCanvas('user2')" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1">
-                        <i class="fa-solid fa-paper-plane"></i><span>描き終わった</span>
-                    </button>
-                    <button onclick="saveMyArt('user2')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1">
-                        <i class="fa-solid fa-floppy-disk"></i><span>保存</span>
-                    </button>
-                </div>
-            </div>
-        </section>
+        </div>
 
     </main>
 
-    <!-- Brush, Shape & Color Modal -->
+    <!-- Brush & Style Modal (With Test Drawing Area) -->
     <div id="brush-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-slate-200 text-base"><i class="fa-solid fa-palette text-indigo-400 mr-2"></i>ブラシ・スタイル設定</h3>
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-4xl w-full p-5 space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
+                <h3 class="font-bold text-slate-200 text-sm sm:text-base"><i class="fa-solid fa-palette text-indigo-400 mr-2"></i>ブラシ・スタイル・色の設定</h3>
                 <button onclick="closeModal('brush-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
-            <!-- Brush Shapes Selection -->
-            <div>
-                <label class="block text-xs font-bold text-slate-400 mb-2">ブラシの形状（タッチ・質感）</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="brush-shapes-grid">
-                    <button onclick="updateBrushShape('normal')" id="shape-normal" class="p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-pen"></i><span>標準ペン</span>
-                    </button>
-                    <button onclick="updateBrushShape('calligraphy')" id="shape-calligraphy" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-pen-nib"></i><span>カリグラフィ</span>
-                    </button>
-                    <button onclick="updateBrushShape('airbrush')" id="shape-airbrush" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-spray-can"></i><span>エアブラシ</span>
-                    </button>
-                    <button onclick="updateBrushShape('crayon')" id="shape-crayon" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-marker"></i><span>クレヨン</span>
-                    </button>
-                    <button onclick="updateBrushShape('marker')" id="shape-marker" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-highlighter"></i><span>マーカー</span>
-                    </button>
-                    <button onclick="updateBrushShape('pencil')" id="shape-pencil" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-pencil"></i><span>鉛筆</span>
-                    </button>
-                    <button onclick="updateBrushShape('watercolor')" id="shape-watercolor" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-droplet"></i><span>水彩ブラシ</span>
-                    </button>
-                    <button onclick="updateBrushShape('brush')" id="shape-brush" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
-                        <i class="fa-solid fa-paintbrush"></i><span>毛筆</span>
-                    </button>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                <!-- Left configuration column -->
+                <div class="md:col-span-7 space-y-3">
+                    <!-- Brush Shapes -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">ブラシの形状（タッチ・質感）</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="brush-shapes-grid">
+                            <button onclick="setBrushShape('normal')" id="shape-normal" class="p-2 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-pen"></i><span>標準ペン</span>
+                            </button>
+                            <button onclick="setBrushShape('calligraphy')" id="shape-calligraphy" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-pen-nib"></i><span>カリグラフィ</span>
+                            </button>
+                            <button onclick="setBrushShape('airbrush')" id="shape-airbrush" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-spray-can"></i><span>エアブラシ</span>
+                            </button>
+                            <button onclick="setBrushShape('crayon')" id="shape-crayon" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-marker"></i><span>クレヨン</span>
+                            </button>
+                            <button onclick="setBrushShape('marker')" id="shape-marker" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-highlighter"></i><span>マーカー</span>
+                            </button>
+                            <button onclick="setBrushShape('pencil')" id="shape-pencil" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-pencil"></i><span>鉛筆</span>
+                            </button>
+                            <button onclick="setBrushShape('watercolor')" id="shape-watercolor" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-droplet"></i><span>水彩ブラシ</span>
+                            </button>
+                            <button onclick="setBrushShape('brush')" id="shape-brush" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2">
+                                <i class="fa-solid fa-paintbrush"></i><span>毛筆</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Color Selection -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">カラー選択</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="color" id="modal-color" class="w-10 h-10 rounded-xl border border-dark-700 cursor-pointer p-0 bg-transparent" value="#ec4899" onchange="setBrushColor(this.value)">
+                            <div class="flex gap-1.5 flex-wrap flex-1">
+                                <button onclick="setBrushColor('#ffffff')" class="w-6 h-6 rounded-full bg-white border border-slate-600 shadow-sm"></button>
+                                <button onclick="setBrushColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border border-dark-700 shadow-sm"></button>
+                                <button onclick="setBrushColor('#f59e0b')" class="w-6 h-6 rounded-full bg-amber-500 border border-dark-700 shadow-sm"></button>
+                                <button onclick="setBrushColor('#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border border-dark-700 shadow-sm"></button>
+                                <button onclick="setBrushColor('#6366f1')" class="w-6 h-6 rounded-full bg-indigo-500 border border-dark-700 shadow-sm"></button>
+                                <button onclick="setBrushColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 border border-dark-700 shadow-sm"></button>
+                                <button onclick="setBrushColor('#000000')" class="w-6 h-6 rounded-full bg-black border border-dark-700 shadow-sm"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sliders -->
+                    <div class="space-y-2">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-bold text-slate-400">ブラシの太さ</label>
+                                <span id="brush-size-val" class="text-xs font-bold text-indigo-400">8px</span>
+                            </div>
+                            <input type="range" id="modal-size" min="1" max="40" value="8" class="w-full accent-indigo-500 bg-dark-800" oninput="setBrushSize(this.value)">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-bold text-slate-400">不透明度</label>
+                                <span id="brush-opacity-val" class="text-xs font-bold text-indigo-400">100%</span>
+                            </div>
+                            <input type="range" id="modal-opacity" min="0.05" max="1" step="0.05" value="1" class="w-full accent-indigo-500 bg-dark-800" oninput="setBrushOpacity(this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: Test drawing area (No save functionality) -->
+                <div class="md:col-span-5 flex flex-col gap-2 bg-dark-950 p-3.5 rounded-2xl border border-dark-800">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-pencil text-indigo-400"></i> 試し描きエリア
+                        </label>
+                        <button onclick="clearTestCanvas()" class="text-[11px] text-slate-400 hover:text-red-400 transition flex items-center gap-1 px-2 py-1 rounded bg-dark-800">
+                            <i class="fa-solid fa-rotate-right"></i> クリア
+                        </button>
+                    </div>
+                    <div class="relative w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden cursor-crosshair flex items-center justify-center" id="test-canvas-wrapper">
+                        <canvas id="test-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
+                    </div>
+                    <p class="text-[10px] text-slate-500 text-center">※ ここでの描画は保存されません</p>
                 </div>
             </div>
 
-            <!-- Color Selection -->
-            <div>
-                <label class="block text-xs font-bold text-slate-400 mb-2">カラー選択</label>
-                <div class="flex items-center space-x-3">
-                    <input type="color" id="modal-color" class="w-12 h-12 rounded-xl border border-slate-700 cursor-pointer p-0 bg-transparent" value="#ffffff" onchange="updateBrushColor(this.value)">
-                    <div class="flex gap-1.5 flex-wrap flex-1">
-                        <button onclick="updateBrushColor('#ffffff')" class="w-7 h-7 rounded-full bg-white border border-slate-600 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#f87171')" class="w-7 h-7 rounded-full bg-red-400 border border-slate-700 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#60a5fa')" class="w-7 h-7 rounded-full bg-blue-400 border border-slate-700 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#34d399')" class="w-7 h-7 rounded-full bg-emerald-400 border border-slate-700 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#fbbf24')" class="w-7 h-7 rounded-full bg-amber-400 border border-slate-700 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#f472b6')" class="w-7 h-7 rounded-full bg-pink-400 border border-slate-700 shadow-sm"></button>
-                        <button onclick="updateBrushColor('#000000')" class="w-7 h-7 rounded-full bg-black border border-slate-700 shadow-sm"></button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Brush Size & Opacity Sliders -->
-            <div class="space-y-3">
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-bold text-slate-400">ブラシの太さ</label>
-                        <span id="brush-size-val" class="text-xs font-bold text-indigo-400">5px</span>
-                    </div>
-                    <input type="range" id="modal-size" min="1" max="50" value="5" class="w-full accent-indigo-500 bg-slate-800" oninput="updateBrushSize(this.value)">
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-bold text-slate-400">不透明度 (透明度)</label>
-                        <span id="brush-opacity-val" class="text-xs font-bold text-indigo-400">100%</span>
-                    </div>
-                    <input type="range" id="modal-opacity" min="0.05" max="1" step="0.05" value="1" class="w-full accent-indigo-500 bg-slate-800" oninput="updateBrushOpacity(this.value)">
-                </div>
-            </div>
-
-            <button onclick="closeModal('brush-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-sm shadow transition">決定する</button>
+            <button onclick="closeModal('brush-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition">決定する</button>
         </div>
     </div>
 
-    <!-- Photoshop-style Layer Modal -->
+    <!-- Layer Manager Modal -->
     <div id="layer-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-slate-200 text-base"><i class="fa-solid fa-layer-group text-indigo-400 mr-2"></i>レイヤーマネージャー</h3>
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-md w-full p-5 space-y-4">
+            <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
+                <h3 class="font-bold text-slate-200 text-sm sm:text-base"><i class="fa-solid fa-layer-group text-indigo-400 mr-2"></i>レイヤーマネージャー</h3>
                 <button onclick="closeModal('layer-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold text-slate-400">アクティブレイヤー</span>
-                    <button onclick="addNewLayer()" class="bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+                    <button onclick="addNewLayer()" class="bg-dark-800 hover:bg-dark-700 text-indigo-400 border border-dark-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1">
                         <i class="fa-solid fa-plus"></i><span>新規レイヤー追加</span>
                     </button>
                 </div>
-                <div id="layer-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    <!-- Layer items generated dynamically -->
+                <div id="layer-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+            </div>
+            <button onclick="closeModal('layer-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition">閉じる</button>
+        </div>
+    </div>
+
+    <!-- History / Saved Stamps Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-3.5 border-b border-dark-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                        <i class="fa-solid fa-box-archive text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-sm sm:text-base text-slate-100">保存済み作品・イラスト一覧</h2>
+                        <p class="text-[11px] text-slate-400">ローカルストレージに保存された作品</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('history-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3" id="saved-stamps-grid"></div>
+            <div class="p-3 border-t border-dark-800 bg-dark-950/50 flex justify-between items-center text-xs text-slate-400">
+                <span>localStorageに安全に保存されています</span>
+                <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition">全作品を削除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-3.5 border-b border-dark-800 flex items-center justify-between">
+                <h2 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-indigo-400"></i> Canvas Share の使い方
+                </h2>
+                <button onclick="closeModal('help-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 flex flex-col gap-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
+                    <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <h3 class="font-bold text-slate-200">左右同時プレイ</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">画面を左右に並べ、プレイヤー1とプレイヤー2がそれぞれのキャンバスで同時にイラストを作成できます。</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
+                    <div class="p-2 bg-pink-500/20 text-pink-400 rounded-xl mt-0.5"><i class="fa-solid fa-brush"></i></div>
+                    <div>
+                        <h3 class="font-bold text-slate-200">多彩なブラシと色設定</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">毛筆、エアブラシ、水彩、クレヨンなどの質感変更や、色設定ボタンからのカラー変更が可能です。</p>
+                    </div>
                 </div>
             </div>
-            <button onclick="closeModal('layer-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-sm shadow transition">閉じる</button>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-5">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-slate-200 text-base"><i class="fa-solid fa-user-shield text-indigo-400 mr-2"></i>ログイン / ユーザー選択</h3>
-                <button onclick="closeModal('login-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-400">どちらのユーザーとしてログインするか選択してください。</p>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="loginAs('user1')" class="bg-slate-800 hover:bg-slate-700 border border-pink-900/60 text-pink-300 p-4 rounded-2xl font-bold text-center transition flex flex-col items-center space-y-2">
-                    <i class="fa-solid fa-user-pen text-2xl text-pink-400"></i>
-                    <span>User 1</span>
-                </button>
-                <button onclick="loginAs('user2')" class="bg-slate-800 hover:bg-slate-700 border border-cyan-900/60 text-cyan-300 p-4 rounded-2xl font-bold text-center transition flex flex-col items-center space-y-2">
-                    <i class="fa-solid fa-user-pen text-2xl text-cyan-400"></i>
-                    <span>User 2</span>
-                </button>
+            <div class="p-3.5 border-t border-dark-800 bg-dark-950/50 flex justify-end">
+                <button onclick="closeModal('help-modal')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">わかった</button>
             </div>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3 shrink-0">
-                <h3 class="font-bold text-slate-200 text-base"><i class="fa-solid fa-clock-rotate-left text-indigo-400 mr-2"></i>保存した作品の履歴</h3>
-                <button onclick="closeModal('history-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="history-list" class="flex-1 overflow-y-auto space-y-3 pr-1">
-                <p class="text-xs text-slate-500 text-center py-8">保存された作品はありません</p>
-            </div>
-            <button onclick="closeModal('history-modal')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold text-sm transition shrink-0">閉じる</button>
-        </div>
-    </div>
-
-    <!-- Custom Notification Dialog -->
-    <div id="msg-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-xs w-full p-6 space-y-4 text-center">
-            <div id="msg-icon" class="w-12 h-12 bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full flex items-center justify-center mx-auto text-xl">
-                <i class="fa-solid fa-info"></i>
-            </div>
-            <p id="msg-text" class="text-sm font-bold text-slate-200">お知らせメッセージ</p>
-            <button onclick="closeModal('msg-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs transition shadow">OK</button>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDKrAD162EYHWzB6hTR2vYUuQ7M41RjT8g",
-            authDomain: "canvas-share-b0784.firebaseapp.com",
-            projectId: "canvas-share-b0784",
-            storageBucket: "canvas-share-b0784.firebasestorage.app",
-            messagingSenderId: "1034578016604",
-            appId: "1:1034578016604:web:79fefa67439c2a32cee999",
-            measurementId: "G-DWMNPSFTVB"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'canvas-share-default';
-
-        let currentUserRole = null;
-        let currentActiveDrawer = 'user1';
+    <!-- Application JavaScript -->
+    <script>
+        const canvasWidth = 512;
+        const canvasHeight = 384; // 横幅512に対して縦幅を少し狭くしたアスペクト比（4:3）に調整
+        let currentActiveUser = 'a';
 
         const workspaces = {
-            user1: {
-                color: '#ffffff',
-                size: 5,
+            a: {
+                color: '#ec4899',
+                size: 8,
                 opacity: 1,
                 shape: 'normal',
                 tool: 'brush',
@@ -324,9 +401,9 @@
                 history: [],
                 redoStack: []
             },
-            user2: {
-                color: '#ffffff',
-                size: 5,
+            b: {
+                color: '#6366f1',
+                size: 8,
                 opacity: 1,
                 shape: 'normal',
                 tool: 'brush',
@@ -339,169 +416,116 @@
             }
         };
 
-        window.showModalMsg = function(text, type = 'info') {
-            document.getElementById('msg-text').textContent = text;
-            const icon = document.getElementById('msg-icon');
-            if(type === 'success') {
-                icon.className = "w-12 h-12 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-full flex items-center justify-center mx-auto text-xl";
-                icon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                icon.className = "w-12 h-12 bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full flex items-center justify-center mx-auto text-xl";
-                icon.innerHTML = '<i class="fa-solid fa-info"></i>';
-            }
-            document.getElementById('msg-modal').classList.remove('hidden');
-        };
-
-        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
-        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
-        window.openLoginModal = function() { openModal('login-modal'); };
-        window.openBrushModal = function() { 
-            const ws = workspaces[currentActiveDrawer];
-            document.getElementById('modal-color').value = ws.color;
-            document.getElementById('modal-size').value = ws.size;
-            document.getElementById('brush-size-val').textContent = ws.size + 'px';
-            document.getElementById('modal-opacity').value = ws.opacity;
-            document.getElementById('brush-opacity-val').textContent = Math.round(ws.opacity * 100) + '%';
-            updateBrushShapeUI(ws.shape);
-            openModal('brush-modal'); 
-        };
-        window.openLayerModal = function() { 
-            renderLayerList();
-            openModal('layer-modal'); 
-        };
-
-        window.setActiveUser = function(user) {
-            currentActiveDrawer = user;
-        };
-
-        async function initAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                console.warn("Auth initialization skipped or Anonymous Auth disabled in Firebase Console:", e);
-                // Firebase Authがコンソールで未有効の場合でもお絵かき機能が壊れないようにフォールバック
-            }
-        }
-
-        window.loginAs = function(role) {
-            currentUserRole = role;
-            const badge = document.getElementById('user-badge');
-            badge.textContent = role === 'user1' ? 'ログイン中: User 1' : 'ログイン中: User 2';
-            badge.className = role === 'user1' ? 'bg-pink-950 text-pink-300 border border-pink-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner' : 'bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner';
-            badge.classList.remove('hidden');
-            closeModal('login-modal');
-            showModalMsg(`${role === 'user1' ? 'User 1' : 'User 2'}としてログインしました`, 'success');
-        };
-
-        function initWorkspace(userKey) {
-            const container = document.getElementById(`${userKey}-canvas-container`);
+        function initWorkspace(prefix) {
+            const ws = workspaces[prefix];
+            const container = document.querySelector(`.canvas-wrapper-${prefix}`);
             container.innerHTML = '';
-            
-            workspaces[userKey].layers.forEach(layer => {
-                const c = document.createElement('canvas');
-                c.width = 400;
-                c.height = 400;
-                c.className = `absolute inset-0 w-full h-full ${layer.visible ? '' : 'hidden'}`;
-                c.style.opacity = layer.opacity;
-                container.appendChild(c);
-                layer.canvas = c;
-                layer.ctx = c.getContext('2d');
+
+            ws.layers.forEach((layer) => {
+                const cvs = document.createElement('canvas');
+                cvs.className = `absolute inset-0 w-full h-full touch-none ${layer.visible ? '' : 'hidden'}`;
+                cvs.width = canvasWidth;
+                cvs.height = canvasHeight;
+                cvs.style.opacity = layer.opacity;
+                container.appendChild(cvs);
+                layer.canvas = cvs;
+                layer.ctx = cvs.getContext('2d', { willReadFrequently: true });
             });
 
-            setupDrawingEvents(userKey, container);
-            saveState(userKey);
+            if (ws.history.length > 0) {
+                const latest = ws.history[ws.history.length - 1];
+                ws.layers.forEach((l, idx) => {
+                    if (latest[idx]) l.ctx.putImageData(latest[idx], 0, 0);
+                });
+            } else {
+                saveState(prefix);
+            }
+
+            if (!container.dataset.initialized) {
+                setupDrawingEvents(prefix, container);
+                container.dataset.initialized = "true";
+            }
         }
 
-        function setupDrawingEvents(userKey, container) {
+        function setupDrawingEvents(prefix, wrapper) {
             let isDrawing = false;
             let lastX = 0, lastY = 0;
+            let lastSpeed = 0;
 
-            const getPos = (e) => {
-                const rect = container.getBoundingClientRect();
+            const getCoords = (e) => {
+                const rect = wrapper.getBoundingClientRect();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 return {
-                    x: (clientX - rect.left) * (400 / rect.width),
-                    y: (clientY - rect.top) * (400 / rect.height)
+                    x: Math.floor((clientX - rect.left) * (canvasWidth / rect.width)),
+                    y: Math.floor((clientY - rect.top) * (canvasHeight / rect.height))
                 };
             };
 
             const startDraw = (e) => {
-                if (!currentUserRole) {
-                    currentUserRole = userKey;
-                    const badge = document.getElementById('user-badge');
-                    badge.textContent = `ログイン中: ${userKey === 'user1' ? 'User 1' : 'User 2'}`;
-                    badge.className = userKey === 'user1' ? 'bg-pink-950 text-pink-300 border border-pink-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner' : 'bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner';
-                    badge.classList.remove('hidden');
-                }
-
-                isDrawing = true;
-                const pos = getPos(e);
-                lastX = pos.x;
-                lastY = pos.y;
-
-                const ws = workspaces[userKey];
+                const coords = getCoords(e);
+                const ws = workspaces[prefix];
                 if (ws.tool === 'bucket') {
-                    floodFill(userKey, Math.floor(pos.x), Math.floor(pos.y), ws.color, ws.opacity);
-                    isDrawing = false;
-                    saveState(userKey);
-                } else {
-                    drawPoint(userKey, pos.x, pos.y);
+                    saveState(prefix);
+                    floodFill(prefix, coords.x, coords.y, ws.color, ws.opacity);
+                    return;
                 }
+                saveState(prefix);
+                isDrawing = true;
+                lastX = coords.x;
+                lastY = coords.y;
+                lastSpeed = 0;
+                drawPoint(prefix, coords.x, coords.y);
             };
 
-            const draw = (e) => {
+            const moveDraw = (e) => {
                 if (!isDrawing) return;
-                const ws = workspaces[userKey];
+                const coords = getCoords(e);
+                const ws = workspaces[prefix];
                 const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
                 if (!activeLayer || !activeLayer.visible) return;
 
-                const pos = getPos(e);
-                renderBrushStroke(ws, activeLayer.ctx, lastX, lastY, pos.x, pos.y);
-                lastX = pos.x;
-                lastY = pos.y;
+                const dx = coords.x - lastX;
+                const dy = coords.y - lastY;
+                const speed = Math.hypot(dx, dy);
+                const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
+                lastSpeed = currentSpeed;
+
+                renderBrushStroke(ws, activeLayer.ctx, lastX, lastY, coords.x, coords.y, currentSpeed);
+                lastX = coords.x;
+                lastY = coords.y;
             };
 
-            const stopDraw = () => {
-                if (isDrawing) {
-                    isDrawing = false;
-                    saveState(userKey);
-                }
-            };
+            const endDraw = () => { isDrawing = false; lastSpeed = 0; };
 
-            container.addEventListener('mousedown', startDraw);
-            container.addEventListener('mousemove', draw);
-            container.addEventListener('mouseup', stopDraw);
-            container.addEventListener('mouseleave', stopDraw);
-
-            container.addEventListener('touchstart', (e) => { startDraw(e); e.preventDefault(); });
-            container.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); });
-            container.addEventListener('touchend', stopDraw);
+            wrapper.addEventListener('mousedown', startDraw);
+            wrapper.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', endDraw);
+            wrapper.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, { passive: false });
+            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); moveDraw(e); }, { passive: false });
+            window.addEventListener('touchend', endDraw);
         }
 
-        function drawPoint(userKey, x, y) {
-            const ws = workspaces[userKey];
+        function drawPoint(prefix, x, y) {
+            const ws = workspaces[prefix];
             const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
             if (!activeLayer || !activeLayer.visible) return;
-            renderBrushStroke(ws, activeLayer.ctx, x, y, x, y);
+            renderBrushStroke(ws, activeLayer.ctx, x, y, x, y, 0);
         }
 
-        function renderBrushStroke(ws, ctx, x1, y1, x2, y2) {
+        function renderBrushStroke(ws, ctx, x1, y1, x2, y2, speed = 5) {
             ctx.save();
             ctx.globalAlpha = ws.opacity;
 
             if (ws.tool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
                 ctx.lineWidth = ws.size;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
                 ctx.stroke();
                 ctx.restore();
                 return;
@@ -513,7 +537,6 @@
 
             switch (ws.shape) {
                 case 'calligraphy':
-                    // Slanted flat nib
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'square';
                     ctx.beginPath();
@@ -521,79 +544,77 @@
                     ctx.lineTo(x2 - ws.size/3, y2 + ws.size/3);
                     ctx.stroke();
                     break;
-
                 case 'airbrush':
-                    // Spray dot distribution
                     const dist = Math.hypot(x2 - x1, y2 - y1);
                     const steps = Math.max(1, Math.floor(dist));
                     for (let i = 0; i <= steps; i++) {
                         const cx = x1 + (x2 - x1) * (i / steps);
                         const cy = y1 + (y2 - y1) * (i / steps);
-                        for (let j = 0; j < 8; j++) {
+                        for (let j = 0; j < 6; j++) {
                             const angle = Math.random() * Math.PI * 2;
-                            const r = Math.random() * (ws.size * 1.5);
+                            const r = Math.random() * (ws.size * 1.2);
                             ctx.fillRect(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r, 1.2, 1.2);
                         }
                     }
                     break;
-
                 case 'crayon':
-                    // Textured dotted stroke
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'round';
-                    ctx.setLineDash([2, 3]);
+                    ctx.setLineDash([2, 2]);
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
-
                 case 'marker':
-                    // Semi-transparent bold rectangle stroke
                     ctx.globalAlpha = ws.opacity * 0.7;
-                    ctx.lineWidth = ws.size * 1.8;
+                    ctx.lineWidth = ws.size * 1.6;
                     ctx.lineCap = 'butt';
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
-
                 case 'pencil':
-                    // Thin scratchy line
                     ctx.globalAlpha = ws.opacity * 0.8;
                     ctx.lineWidth = Math.max(1, ws.size * 0.4);
-                    ctx.lineCap = 'round';
                     ctx.beginPath();
-                    ctx.moveTo(x1 + (Math.random()-0.5)*2, y1 + (Math.random()-0.5)*2);
+                    ctx.moveTo(x1 + (Math.random()-0.5)*1.5, y1 + (Math.random()-0.5)*1.5);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
-
                 case 'watercolor':
-                    // Soft blurred multi-pass stroke
                     ctx.globalAlpha = ws.opacity * 0.25;
-                    for (let wOff = -ws.size/2; wOff <= ws.size/2; wOff += 2) {
+                    for (let wOff = -ws.size/2; wOff <= ws.size/2; wOff += 3) {
                         ctx.beginPath();
                         ctx.moveTo(x1 + wOff, y1);
                         ctx.lineTo(x2 + wOff, y2);
-                        ctx.lineWidth = 3;
+                        ctx.lineWidth = 2.5;
                         ctx.stroke();
                     }
                     break;
-
                 case 'brush':
-                    // Tapered pressure-like毛筆 stroke
-                    ctx.lineWidth = ws.size * 1.2;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
+                    const dynamicSize = Math.max(1.5, ws.size * Math.max(0.2, 1.8 - Math.min(speed * 0.08, 1.2)));
+                    ctx.lineWidth = dynamicSize;
+                    ctx.globalAlpha = Math.min(1, ws.opacity * (1.1 - Math.min(speed * 0.03, 0.4)));
+                    
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
-                    break;
 
-                default: // normal
+                    if (ws.size > 4) {
+                        ctx.globalAlpha *= 0.4;
+                        ctx.lineWidth = dynamicSize * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x1 + 0.8, y1 + 0.8);
+                        ctx.lineTo(x2 + 0.8, y2 + 0.8);
+                        ctx.stroke();
+                    }
+                    break;
+                default:
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -606,127 +627,255 @@
             ctx.restore();
         }
 
-        window.setTool = function(userKey, toolName) {
-            workspaces[userKey].tool = toolName;
-            document.getElementById(`${userKey}-eraser-btn`).classList.toggle('bg-slate-700', toolName === 'eraser');
-            document.getElementById(`${userKey}-bucket-btn`).classList.toggle('bg-slate-700', toolName === 'bucket');
-        };
-
-        window.updateBrushColor = function(color) {
-            workspaces[currentActiveDrawer].color = color;
-            document.getElementById('modal-color').value = color;
-        };
-
-        window.updateBrushSize = function(size) {
-            workspaces[currentActiveDrawer].size = parseInt(size);
-            document.getElementById('brush-size-val').textContent = size + 'px';
-        };
-
-        window.updateBrushOpacity = function(opacity) {
-            workspaces[currentActiveDrawer].opacity = parseFloat(opacity);
-            document.getElementById('brush-opacity-val').textContent = Math.round(opacity * 100) + '%';
-        };
-
-        window.updateBrushShape = function(shape) {
-            workspaces[currentActiveDrawer].shape = shape;
-            updateBrushShapeUI(shape);
-        };
-
-        function updateBrushShapeUI(activeShape) {
-            const shapes = ['normal', 'calligraphy', 'airbrush', 'crayon', 'marker', 'pencil', 'watercolor', 'brush'];
-            shapes.forEach(s => {
-                const btn = document.getElementById(`shape-${s}`);
-                if (btn) {
-                    if (s === activeShape) {
-                        btn.className = "p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2";
-                    } else {
-                        btn.className = "p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2";
-                    }
-                }
-            });
-        }
-
-        function saveState(userKey) {
-            const ws = workspaces[userKey];
-            const snapshot = ws.layers.map(l => l.ctx.getImageData(0, 0, 400, 400));
-            ws.history.push(snapshot);
-            if (ws.history.length > 20) ws.history.shift();
-            ws.redoStack = [];
-        }
-
-        window.undoCanvas = function(userKey) {
-            const ws = workspaces[userKey];
-            if (ws.history.length <= 1) return;
-            const current = ws.history.pop();
-            ws.redoStack.push(current);
-            const prev = ws.history[ws.history.length - 1];
-            ws.layers.forEach((l, idx) => {
-                if (prev[idx]) l.ctx.putImageData(prev[idx], 0, 0);
-            });
-        };
-
-        window.redoCanvas = function(userKey) {
-            const ws = workspaces[userKey];
-            if (ws.redoStack.length === 0) return;
-            const next = ws.redoStack.pop();
-            ws.history.push(next);
-            ws.layers.forEach((l, idx) => {
-                if (next[idx]) l.ctx.putImageData(next[idx], 0, 0);
-            });
-        };
-
-        function floodFill(userKey, startX, startY, fillColor, opacity) {
-            const ws = workspaces[userKey];
+        function floodFill(prefix, startX, startY, fillColorHex, opacity) {
+            const ws = workspaces[prefix];
             const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
             if (!activeLayer) return;
             const ctx = activeLayer.ctx;
-            const imgData = ctx.getImageData(0, 0, 400, 400);
+            const imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
             const data = imgData.data;
+            const startIdx = (startY * canvasWidth + startX) * 4;
+            const startR = data[startIdx], startG = data[startIdx + 1], startB = data[startIdx + 2], startA = data[startIdx + 3];
 
-            const getPixel = (x, y) => {
-                const i = (y * 400 + x) * 4;
-                return [data[i], data[i+1], data[i+2], data[i+3]];
-            };
-
-            const setPixel = (x, y, color, alpha) => {
-                const i = (y * 400 + x) * 4;
-                data[i] = color[0];
-                data[i+1] = color[1];
-                data[i+2] = color[2];
-                data[i+3] = Math.round(alpha * 255);
-            };
-
-            const hexToRgb = (hex) => {
-                const bigint = parseInt(hex.replace('#',''), 16);
-                return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-            };
-
-            const targetColor = getPixel(startX, startY);
-            const fillRgb = hexToRgb(fillColor);
-
-            if (targetColor[0] === fillRgb[0] && targetColor[1] === fillRgb[1] && targetColor[2] === fillRgb[2]) return;
+            const r = parseInt(fillColorHex.slice(1, 3), 16);
+            const g = parseInt(fillColorHex.slice(3, 5), 16);
+            const b = parseInt(fillColorHex.slice(5, 7), 16);
+            if (startR === r && startG === g && startB === b) return;
 
             const queue = [[startX, startY]];
-            while(queue.length > 0) {
+            const visited = new Uint8Array(canvasWidth * canvasHeight);
+
+            while (queue.length > 0) {
                 const [x, y] = queue.pop();
-                if (x < 0 || x >= 400 || y < 0 || y >= 400) continue;
-                const current = getPixel(x, y);
-                if (current[0] === targetColor[0] && current[1] === targetColor[1] && current[2] === targetColor[2] && current[3] === targetColor[3]) {
-                    setPixel(x, y, fillRgb, opacity);
+                if (x < 0 || x >= canvasWidth || y < 0 || y >= canvasHeight) continue;
+                const idx = y * canvasWidth + x;
+                if (visited[idx]) continue;
+                visited[idx] = 1;
+
+                const currIdx = idx * 4;
+                if (data[currIdx] === startR && data[currIdx+1] === startG && data[currIdx+2] === startB && data[currIdx+3] === startA) {
+                    data[currIdx] = r; data[currIdx+1] = g; data[currIdx+2] = b; data[currIdx+3] = Math.round(opacity * 255);
                     queue.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
                 }
             }
             ctx.putImageData(imgData, 0, 0);
         }
 
+        function saveState(prefix) {
+            const ws = workspaces[prefix];
+            const snapshot = ws.layers.map(l => {
+                if (l.ctx) {
+                    return l.ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                }
+                return null;
+            });
+            ws.history.push(snapshot);
+            if (ws.history.length > 20) ws.history.shift();
+            ws.redoStack = [];
+            updateUndoRedoButtons(prefix);
+        }
+
+        function updateUndoRedoButtons(prefix) {
+            const ws = workspaces[prefix];
+            document.querySelector(`.undo-btn-${prefix}`).disabled = ws.history.length <= 1;
+            document.querySelector(`.redo-btn-${prefix}`).disabled = ws.redoStack.length === 0;
+        }
+
+        function updateColorIndicator(prefix) {
+            const ws = workspaces[prefix];
+            const indicator = document.getElementById(`color-indicator-${prefix}`);
+            if (indicator) {
+                indicator.style.backgroundColor = ws.color;
+            }
+        }
+
+        ['a', 'b'].forEach(prefix => {
+            document.querySelector(`.undo-btn-${prefix}`).addEventListener('click', () => {
+                const ws = workspaces[prefix];
+                if (ws.history.length <= 1) return;
+                ws.redoStack.push(ws.history.pop());
+                const prev = ws.history[ws.history.length - 1];
+                ws.layers.forEach((l, idx) => { if (prev[idx]) l.ctx.putImageData(prev[idx], 0, 0); });
+                updateUndoRedoButtons(prefix);
+            });
+            document.querySelector(`.redo-btn-${prefix}`).addEventListener('click', () => {
+                const ws = workspaces[prefix];
+                if (ws.redoStack.length === 0) return;
+                const next = ws.redoStack.pop();
+                ws.history.push(next);
+                ws.layers.forEach((l, idx) => { if (next[idx]) l.ctx.putImageData(next[idx], 0, 0); });
+                updateUndoRedoButtons(prefix);
+            });
+            document.querySelector(`.clear-btn-${prefix}`).addEventListener('click', () => {
+                saveState(prefix);
+                workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
+            });
+
+            document.querySelectorAll(`.tool-btn-${prefix}`).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll(`.tool-btn-${prefix}`).forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'bg-pink-600', 'text-white', 'shadow');
+                        b.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-dark-800');
+                    });
+                    btn.classList.add(prefix === 'a' ? 'bg-indigo-600' : 'bg-pink-600', 'text-white', 'shadow');
+                    btn.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-dark-800');
+                    workspaces[prefix].tool = btn.getAttribute('data-tool');
+                });
+            });
+
+            document.querySelector(`.save-btn-${prefix}`).addEventListener('click', () => {
+                const titleInput = document.querySelector(`.stamp-title-${prefix}`);
+                const title = titleInput.value.trim() || `作品 (${prefix.toUpperCase()})`;
+                const ws = workspaces[prefix];
+                const tempCvs = document.createElement('canvas');
+                tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
+                const tCtx = tempCvs.getContext('2d');
+                ws.layers.forEach(l => {
+                    if (l.visible && l.canvas) {
+                        tCtx.globalAlpha = l.opacity;
+                        tCtx.drawImage(l.canvas, 0, 0);
+                    }
+                });
+
+                const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+                stamps.unshift({ id: Date.now(), title, dataUrl: tempCvs.toDataURL('image/png'), date: new Date().toLocaleDateString() });
+                localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
+                updateStampCount();
+                alert(`作品「${title}」を保存しました！`);
+            });
+        });
+
+        // Test Canvas setup in Brush Modal
+        let testCanvas, testCtx;
+        const testWidth = 300;
+        const testHeight = 225; // 試し描きエリアも4:3の比率に合わせる
+
+        function initTestCanvas() {
+            testCanvas = document.getElementById('test-canvas');
+            testCanvas.width = testWidth;
+            testCanvas.height = testHeight;
+            testCtx = testCanvas.getContext('2d', { willReadFrequently: true });
+
+            const wrapper = document.getElementById('test-canvas-wrapper');
+            if (wrapper.dataset.initialized) return;
+
+            let isTestDrawing = false;
+            let lastX = 0, lastY = 0;
+            let lastSpeed = 0;
+
+            const getCoords = (e) => {
+                const rect = wrapper.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: Math.floor((clientX - rect.left) * (testWidth / rect.width)),
+                    y: Math.floor((clientY - rect.top) * (testHeight / rect.height))
+                };
+            };
+
+            const start = (e) => {
+                const coords = getCoords(e);
+                isTestDrawing = true;
+                lastX = coords.x;
+                lastY = coords.y;
+                lastSpeed = 0;
+                renderBrushStroke(workspaces[currentActiveUser], testCtx, coords.x, coords.y, coords.x, coords.y, 0);
+            };
+
+            const move = (e) => {
+                if (!isTestDrawing) return;
+                const coords = getCoords(e);
+                const ws = workspaces[currentActiveUser];
+                const dx = coords.x - lastX;
+                const dy = coords.y - lastY;
+                const speed = Math.hypot(dx, dy);
+                const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
+                lastSpeed = currentSpeed;
+
+                renderBrushStroke(ws, testCtx, lastX, lastY, coords.x, coords.y, currentSpeed);
+                lastX = coords.x;
+                lastY = coords.y;
+            };
+
+            const end = () => { isTestDrawing = false; lastSpeed = 0; };
+
+            wrapper.addEventListener('mousedown', start);
+            wrapper.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            wrapper.addEventListener('touchstart', (e) => { e.preventDefault(); start(e); }, { passive: false });
+            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, { passive: false });
+            window.addEventListener('touchend', end);
+
+            wrapper.dataset.initialized = "true";
+        }
+
+        window.clearTestCanvas = function() {
+            if (testCtx) {
+                testCtx.clearRect(0, 0, testWidth, testHeight);
+            }
+        };
+
+        // Modal controls
+        window.openBrushModalFor = function(prefix) {
+            currentActiveUser = prefix;
+            const ws = workspaces[prefix];
+            document.getElementById('modal-color').value = ws.color;
+            document.getElementById('modal-size').value = ws.size;
+            document.getElementById('brush-size-val').textContent = ws.size + 'px';
+            document.getElementById('modal-opacity').value = ws.opacity;
+            document.getElementById('brush-opacity-val').textContent = Math.round(ws.opacity * 100) + '%';
+            updateBrushShapeUI(ws.shape);
+            openModal('brush-modal');
+            setTimeout(initTestCanvas, 50);
+        };
+
+        window.openLayerModalFor = function(prefix) {
+            currentActiveUser = prefix;
+            renderLayerList();
+            openModal('layer-modal');
+        };
+
+        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+
+        window.setBrushColor = function(color) {
+            workspaces[currentActiveUser].color = color;
+            document.getElementById('modal-color').value = color;
+            updateColorIndicator(currentActiveUser);
+        };
+        window.setBrushSize = function(size) {
+            workspaces[currentActiveUser].size = parseInt(size);
+            document.getElementById('brush-size-val').textContent = size + 'px';
+        };
+        window.setBrushOpacity = function(opacity) {
+            workspaces[currentActiveUser].opacity = parseFloat(opacity);
+            document.getElementById('brush-opacity-val').textContent = Math.round(opacity * 100) + '%';
+        };
+        window.setBrushShape = function(shape) {
+            workspaces[currentActiveUser].shape = shape;
+            updateBrushShapeUI(shape);
+        };
+
+        function updateBrushShapeUI(activeShape) {
+            ['normal', 'calligraphy', 'airbrush', 'crayon', 'marker', 'pencil', 'watercolor', 'brush'].forEach(s => {
+                const btn = document.getElementById(`shape-${s}`);
+                if (btn) {
+                    if (s === activeShape) {
+                        btn.className = "p-2 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2";
+                    } else {
+                        btn.className = "p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2";
+                    }
+                }
+            });
+        }
+
         window.renderLayerList = function() {
             const container = document.getElementById('layer-list-container');
-            const ws = workspaces[currentActiveDrawer];
+            const ws = workspaces[currentActiveUser];
             container.innerHTML = '';
-
             ws.layers.slice().reverse().forEach(layer => {
                 const div = document.createElement('div');
-                div.className = `flex items-center justify-between p-3 rounded-2xl border ${layer.id === ws.activeLayerId ? 'border-indigo-500 bg-indigo-950/40' : 'border-slate-800 bg-slate-900'}`;
+                div.className = `flex items-center justify-between p-3 rounded-2xl border ${layer.id === ws.activeLayerId ? 'border-indigo-500 bg-indigo-950/40' : 'border-dark-800 bg-dark-900'}`;
                 div.innerHTML = `
                     <div class="flex items-center space-x-3 flex-1">
                         <button onclick="toggleLayerVisibility(${layer.id})" class="text-slate-400 hover:text-slate-200">
@@ -735,8 +884,8 @@
                         <span class="font-bold text-xs text-slate-300 flex-1">${layer.name}</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <input type="range" min="0" max="1" step="0.1" value="${layer.opacity}" oninput="changeLayerOpacity(${layer.id}, this.value)" class="w-20 accent-indigo-500 bg-slate-800">
-                        <button onclick="setActiveLayer(${layer.id})" class="px-2.5 py-1 rounded-xl text-xs font-bold ${layer.id === ws.activeLayerId ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'}">選択</button>
+                        <input type="range" min="0" max="1" step="0.1" value="${layer.opacity}" oninput="changeLayerOpacity(${layer.id}, this.value)" class="w-20 accent-indigo-500 bg-dark-800">
+                        <button onclick="setActiveLayer(${layer.id})" class="px-2.5 py-1 rounded-xl text-xs font-bold ${layer.id === ws.activeLayerId ? 'bg-indigo-600 text-white' : 'bg-dark-800 text-slate-300'}">選択</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -744,167 +893,90 @@
         };
 
         window.addNewLayer = function() {
-            const ws = workspaces[currentActiveDrawer];
+            const ws = workspaces[currentActiveUser];
             const newId = ws.layers.length + 1;
-            ws.layers.push({
-                id: newId,
-                name: `レイヤー ${newId}`,
-                visible: true,
-                opacity: 1,
-                canvas: null,
-                ctx: null
-            });
-            initWorkspace(currentActiveDrawer);
+            ws.layers.push({ id: newId, name: `レイヤー ${newId}`, visible: true, opacity: 1, canvas: null, ctx: null });
+            initWorkspace(currentActiveUser);
             renderLayerList();
         };
 
         window.setActiveLayer = function(id) {
-            workspaces[currentActiveDrawer].activeLayerId = id;
+            workspaces[currentActiveUser].activeLayerId = id;
             renderLayerList();
         };
 
         window.toggleLayerVisibility = function(id) {
-            const ws = workspaces[currentActiveDrawer];
+            const ws = workspaces[currentActiveUser];
             const layer = ws.layers.find(l => l.id === id);
             if (layer) {
                 layer.visible = !layer.visible;
-                layer.canvas.classList.toggle('hidden', !layer.visible);
+                if (layer.canvas) {
+                    layer.canvas.classList.toggle('hidden', !layer.visible);
+                }
                 renderLayerList();
             }
         };
 
         window.changeLayerOpacity = function(id, val) {
-            const ws = workspaces[currentActiveDrawer];
+            const ws = workspaces[currentActiveUser];
             const layer = ws.layers.find(l => l.id === id);
             if (layer) {
                 layer.opacity = val;
-                layer.canvas.style.opacity = val;
+                if (layer.canvas) {
+                    layer.canvas.style.opacity = val;
+                }
             }
         };
 
-        function getMergedCanvasDataURL(userKey) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 400;
-            tempCanvas.height = 400;
-            const tCtx = tempCanvas.getContext('2d');
-            
-            workspaces[userKey].layers.forEach(layer => {
-                if (layer.visible) {
-                    tCtx.globalAlpha = layer.opacity;
-                    tCtx.drawImage(layer.canvas, 0, 0);
-                }
-            });
-            return tempCanvas.toDataURL();
+        // Saved history modal
+        const historyModal = document.getElementById('history-modal');
+        const savedStampsGrid = document.getElementById('saved-stamps-grid');
+        const stampCountSpan = document.getElementById('stamp-count');
+
+        function updateStampCount() {
+            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+            stampCountSpan.textContent = stamps.length;
         }
 
-        window.publishCanvas = async function(userKey) {
-            if (!auth.currentUser) {
-                await initAuth();
+        function renderSavedStamps() {
+            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+            savedStampsGrid.innerHTML = '';
+            if (stamps.length === 0) {
+                savedStampsGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs">保存された作品はまだありません。</div>`;
+                return;
             }
-            const dataUrl = getMergedCanvasDataURL(userKey);
-            try {
-                if (!auth.currentUser) {
-                    showModalMsg("Firebase ConsoleでAuthentication（匿名認証）を有効化すると共有可能になります。");
-                    return;
-                }
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `shared_${userKey}`);
-                await setDoc(docRef, {
-                    image: dataUrl,
-                    updatedAt: new Date().toISOString(),
-                    user: userKey
-                });
-                showModalMsg(`${userKey === 'user1' ? 'User 1' : 'User 2'}の絵を更新しました！`, 'success');
-            } catch (e) {
-                console.error("Publish error:", e);
-                showModalMsg("送信に失敗しました。Firebaseの設定をご確認ください。");
-            }
-        };
-
-        window.saveMyArt = async function(userKey) {
-            if (!auth.currentUser) {
-                await initAuth();
-            }
-            const dataUrl = getMergedCanvasDataURL(userKey);
-            try {
-                if (!auth.currentUser) {
-                    showModalMsg("Firebase ConsoleでAuthentication（匿名認証）を有効化すると履歴保存が可能になります。");
-                    return;
-                }
-                const colRef = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'my_artworks');
-                await addDoc(colRef, {
-                    image: dataUrl,
-                    createdAt: new Date().toISOString(),
-                    user: userKey
-                });
-                showModalMsg("作品をマイ履歴に保存しました！", 'success');
-            } catch(e) {
-                console.error("Save error:", e);
-                showModalMsg("保存に失敗しました。");
-            }
-        };
-
-        window.openHistoryModal = async function() {
-            if (!auth.currentUser) {
-                await initAuth();
-            }
-            openModal('history-modal');
-            const listContainer = document.getElementById('history-list');
-            listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">読み込み中...</p>';
-
-            try {
-                if (!auth.currentUser) {
-                    listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Firebase ConsoleでAuthentication（匿名認証）を有効化してください。</p>';
-                    return;
-                }
-                const colRef = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'my_artworks');
-                const snapshot = await getDocs(colRef);
-                listContainer.innerHTML = '';
-                if(snapshot.empty) {
-                    listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">保存された作品はありません</p>';
-                    return;
-                }
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const card = document.createElement('div');
-                    card.className = "flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded-2xl shadow-sm";
-                    card.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <img src="${data.image}" class="w-16 h-16 object-cover rounded-xl border border-slate-700 shadow-sm bg-slate-950">
-                            <div>
-                                <p class="text-xs font-bold text-slate-200">${new Date(data.createdAt).toLocaleString()}</p>
-                                <span class="text-[10px] bg-indigo-950 text-indigo-400 border border-indigo-800 px-2 py-0.5 rounded-full font-bold">${data.user} の作品</span>
-                            </div>
-                        </div>
-                        <a href="${data.image}" download="canvas_share_${data.user}.png" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow">ダウンロード</a>
-                    `;
-                    listContainer.appendChild(card);
-                });
-            } catch(e) {
-                console.error("History error:", e);
-                listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-8">履歴の読み込みに失敗しました</p>';
-            }
-        };
-
-        function subscribeSharedCanvases() {
-            ['user1', 'user2'].forEach(userKey => {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `shared_${userKey}`);
-                onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        const statusEl = document.getElementById(`${userKey}-status`);
-                        statusEl.textContent = `最終更新: ${new Date(data.updatedAt).toLocaleTimeString()}`;
-                    }
-                }, (error) => {
-                    console.warn("Snapshot subscription error (check Firebase config):", error);
-                });
+            stamps.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'bg-dark-950 border border-dark-800 rounded-2xl p-3 flex flex-col items-center gap-2 relative';
+                card.innerHTML = `
+                    <div class="w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center">
+                        <img src="${s.dataUrl}" class="w-full h-full object-contain">
+                    </div>
+                    <span class="text-xs font-bold text-slate-200 truncate w-full text-center">#${s.title}</span>
+                `;
+                savedStampsGrid.appendChild(card);
             });
         }
 
-        window.addEventListener('load', async () => {
-            await initAuth();
-            initWorkspace('user1');
-            initWorkspace('user2');
-            subscribeSharedCanvases();
+        document.getElementById('view-history-tab-btn').addEventListener('click', () => { renderSavedStamps(); historyModal.classList.remove('hidden'); });
+        document.getElementById('clear-all-stamps-btn').addEventListener('click', () => {
+            if (confirm('すべての保存作品を削除しますか？')) {
+                localStorage.removeItem('canvas_share_artworks');
+                renderSavedStamps();
+                updateStampCount();
+            }
+        });
+
+        const helpModal = document.getElementById('help-modal');
+        document.getElementById('help-btn').addEventListener('click', () => helpModal.classList.remove('hidden'));
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initWorkspace('a');
+            initWorkspace('b');
+            updateColorIndicator('a');
+            updateColorIndicator('b');
+            updateStampCount();
         });
     </script>
 </body>
