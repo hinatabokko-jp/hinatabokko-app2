@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Share - ログイン & 管理システム</title>
+    <title>Canvas Share</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,159 +28,6 @@
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
 
-    <!-- ========================================== -->
-    <!-- LOGIN SCREEN CONTAINER -->
-    <!-- ========================================== -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-4xl w-full p-8 space-y-6">
-            <div class="text-center space-y-2 border-b border-slate-800 pb-5">
-                <div class="bg-indigo-600 text-white p-3 rounded-2xl shadow font-bold text-2xl inline-flex items-center justify-center w-14 h-14 mb-1">
-                    <i class="fa-solid fa-palette"></i>
-                </div>
-                <h1 class="font-extrabold text-2xl tracking-wide text-white">Canvas Share ログイン</h1>
-                <p class="text-xs text-slate-400">User1、User2ルームの選択、またはマスター管理者としてログインしてください</p>
-            </div>
-
-            <!-- Two Columns for User1 & User2 Login -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- User 1 Column -->
-                <div class="bg-slate-950/70 border border-pink-900/40 rounded-2xl p-6 space-y-4 shadow-lg relative flex flex-col justify-between">
-                    <div id="u1-occupancy-badge" class="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                        空室
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <span class="w-4 h-4 rounded-full bg-pink-500"></span>
-                            <h2 class="font-bold text-lg text-pink-200">User 1 ルーム</h2>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">ユーザー名</label>
-                                <input type="text" id="u1-username" placeholder="User1 ユーザー名を入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-pink-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">パスワード</label>
-                                <input type="password" id="u1-password" placeholder="パスワードを入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-pink-500">
-                            </div>
-                            <div class="flex items-center space-x-2 pt-1">
-                                <input type="checkbox" id="u1-autologin" class="w-4 h-4 rounded accent-pink-500 bg-slate-900 border-slate-700">
-                                <label for="u1-autologin" class="text-xs text-slate-300 font-medium">次回から自動ログイン</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="handleLogin('user1')" id="u1-login-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-3 rounded-xl font-bold text-sm shadow transition mt-4">
-                        User1 で入室
-                    </button>
-                </div>
-
-                <!-- User 2 Column -->
-                <div class="bg-slate-950/70 border border-cyan-900/40 rounded-2xl p-6 space-y-4 shadow-lg relative flex flex-col justify-between">
-                    <div id="u2-occupancy-badge" class="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                        空室
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <span class="w-4 h-4 rounded-full bg-cyan-500"></span>
-                            <h2 class="font-bold text-lg text-cyan-200">User 2 ルーム</h2>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">ユーザー名</label>
-                                <input type="text" id="u2-username" placeholder="User2 ユーザー名を入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 mb-1">パスワード</label>
-                                <input type="password" id="u2-password" placeholder="パスワードを入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500">
-                            </div>
-                            <div class="flex items-center space-x-2 pt-1">
-                                <input type="checkbox" id="u2-autologin" class="w-4 h-4 rounded accent-cyan-500 bg-slate-900 border-slate-700">
-                                <label for="u2-autologin" class="text-xs text-slate-300 font-medium">次回から自動ログイン</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="handleLogin('user2')" id="u2-login-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-xl font-bold text-sm shadow transition mt-4">
-                        User2 で入室
-                    </button>
-                </div>
-            </div>
-
-            <!-- Footer Action for Register -->
-            <div class="pt-2 border-t border-slate-800 flex justify-center">
-                <button onclick="showRegisterScreen()" class="bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-slate-700 px-6 py-2.5 rounded-xl text-xs font-bold transition shadow flex items-center space-x-2">
-                    <i class="fa-solid fa-user-plus"></i><span>新規ユーザー登録画面へ</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- NEW USER REGISTRATION SCREEN CONTAINER -->
-    <!-- ========================================== -->
-    <div id="register-screen" class="fixed inset-0 bg-slate-950 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-5">
-            <div class="text-center space-y-2 border-b border-slate-800 pb-4">
-                <div class="bg-indigo-600 text-white p-3 rounded-2xl shadow font-bold text-xl inline-flex items-center justify-center w-12 h-12 mb-1">
-                    <i class="fa-solid fa-user-plus"></i>
-                </div>
-                <h2 class="font-bold text-xl text-slate-100">新規ユーザー登録</h2>
-                <p class="text-xs text-slate-400">新しいアカウントを作成してください</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">ユーザー名</label>
-                    <input type="text" id="reg-username" placeholder="ユーザー名を入力" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1">パスワード</label>
-                    <input type="password" id="reg-password" placeholder="パスワードを入力" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
-                </div>
-            </div>
-            <div class="space-y-2 pt-2">
-                <button onclick="registerNewUser()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-sm shadow transition">
-                    登録
-                </button>
-                <button onclick="showLoginScreen()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 py-3 rounded-xl font-bold text-sm transition">
-                    ログイン画面へ
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MASTER MANAGEMENT SCREEN CONTAINER -->
-    <!-- ========================================== -->
-    <div id="master-screen" class="fixed inset-0 bg-slate-950 z-50 hidden flex flex-col p-6 overflow-y-auto">
-        <div class="max-w-4xl w-full mx-auto space-y-6 flex-1 flex flex-col">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-4 shrink-0">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-amber-600 text-white p-2.5 rounded-2xl shadow font-bold text-lg flex items-center justify-center w-10 h-10">
-                        <i class="fa-solid fa-user-shield"></i>
-                    </div>
-                    <div>
-                        <h2 class="font-bold text-lg text-slate-100">管理画面 (Master Dashboard)</h2>
-                        <p class="text-xs text-slate-400">登録されているすべてのユーザー情報管理および編集・削除</p>
-                    </div>
-                </div>
-                <button onclick="logoutMaster()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
-                    <i class="fa-solid fa-right-from-bracket"></i><span>ログアウト</span>
-                </button>
-            </div>
-
-            <!-- Users List Table / Cards -->
-            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 flex-1 shadow-xl">
-                <h3 class="font-bold text-sm text-slate-300 flex items-center space-x-2">
-                    <i class="fa-solid fa-users text-indigo-400"></i><span>登録ユーザー一覧</span>
-                </h3>
-                <div id="master-users-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                    <!-- Dynamically populated user list -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MAIN APP UI (DRAWING WORKSPACES) -->
-    <!-- ========================================== -->
     <header class="bg-slate-900 border-b border-slate-800 text-slate-100 shadow-lg px-4 py-3 flex justify-between items-center z-10 shrink-0">
         <div class="flex items-center space-x-3">
             <div class="bg-indigo-600 text-white p-2 rounded-xl shadow font-bold text-xl flex items-center justify-center w-10 h-10">
@@ -192,12 +39,12 @@
             </div>
         </div>
         <div class="flex items-center space-x-2">
-            <span id="user-badge" class="bg-slate-800 text-indigo-400 px-3 py-1 rounded-full text-xs font-semibold shadow-inner border border-indigo-500/30">未ログイン</span>
+            <span id="user-badge" class="bg-slate-800 text-indigo-400 px-3 py-1 rounded-full text-xs font-semibold shadow-inner border border-indigo-500/30 hidden">未ログイン</span>
             <button onclick="openHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
                 <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i><span>保存履歴</span>
             </button>
-            <button onclick="logoutToLogin()" class="bg-red-600 hover:bg-red-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
-                <i class="fa-solid fa-right-from-bracket"></i><span>ログアウト</span>
+            <button onclick="openLoginModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-1.5">
+                <i class="fa-solid fa-right-to-bracket"></i><span>ログイン切替</span>
             </button>
         </div>
     </header>
@@ -394,6 +241,27 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-200 text-base"><i class="fa-solid fa-user-shield text-indigo-400 mr-2"></i>ログイン / ユーザー選択</h3>
+                <button onclick="closeModal('login-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">どちらのユーザーとしてログインするか選択してください。</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="loginAs('user1')" class="bg-slate-800 hover:bg-slate-700 border border-pink-900/60 text-pink-300 p-4 rounded-2xl font-bold text-center transition flex flex-col items-center space-y-2">
+                    <i class="fa-solid fa-user-pen text-2xl text-pink-400"></i>
+                    <span>User 1</span>
+                </button>
+                <button onclick="loginAs('user2')" class="bg-slate-800 hover:bg-slate-700 border border-cyan-900/60 text-cyan-300 p-4 rounded-2xl font-bold text-center transition flex flex-col items-center space-y-2">
+                    <i class="fa-solid fa-user-pen text-2xl text-cyan-400"></i>
+                    <span>User 2</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- History Modal -->
     <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[85vh] flex flex-col">
@@ -421,8 +289,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDKrAD162EYHWzB6hTR2vYUuQ7M41RjT8g",
@@ -486,7 +354,7 @@
 
         window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
         window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
-
+        window.openLoginModal = function() { openModal('login-modal'); };
         window.openBrushModal = function() { 
             const ws = workspaces[currentActiveDrawer];
             document.getElementById('modal-color').value = ws.color;
@@ -497,7 +365,6 @@
             updateBrushShapeUI(ws.shape);
             openModal('brush-modal'); 
         };
-
         window.openLayerModal = function() { 
             renderLayerList();
             openModal('layer-modal'); 
@@ -515,251 +382,21 @@
                     await signInAnonymously(auth);
                 }
             } catch (e) {
-                console.warn("Auth initialization skipped:", e);
+                console.warn("Auth initialization skipped or Anonymous Auth disabled in Firebase Console:", e);
+                // Firebase Authがコンソールで未有効の場合でもお絵かき機能が壊れないようにフォールバック
             }
         }
 
-        // --- NAVIGATION BETWEEN SCREENS ---
-        window.showLoginScreen = function() {
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('register-screen').classList.add('hidden');
-            document.getElementById('master-screen').classList.add('hidden');
-        };
-
-        window.showRegisterScreen = function() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('register-screen').classList.remove('hidden');
-            document.getElementById('master-screen').classList.add('hidden');
-        };
-
-        window.showMasterScreen = function() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('register-screen').classList.add('hidden');
-            document.getElementById('master-screen').classList.remove('hidden');
-            loadMasterUsersList();
-        };
-
-        window.showMainApp = function(role) {
+        window.loginAs = function(role) {
             currentUserRole = role;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('register-screen').classList.add('hidden');
-            document.getElementById('master-screen').classList.add('hidden');
-
             const badge = document.getElementById('user-badge');
             badge.textContent = role === 'user1' ? 'ログイン中: User 1' : 'ログイン中: User 2';
             badge.className = role === 'user1' ? 'bg-pink-950 text-pink-300 border border-pink-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner' : 'bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner';
-
-            // Broadcast occupancy
-            updateRoomOccupancyInFirestore(role, true);
+            badge.classList.remove('hidden');
+            closeModal('login-modal');
+            showModalMsg(`${role === 'user1' ? 'User 1' : 'User 2'}としてログインしました`, 'success');
         };
 
-        window.logoutToLogin = async function() {
-            if (currentUserRole) {
-                await updateRoomOccupancyInFirestore(currentUserRole, false);
-            }
-            currentUserRole = null;
-            localStorage.removeItem('canvas_share_autologin_user');
-            localStorage.removeItem('canvas_share_autologin_role');
-            showLoginScreen();
-        };
-
-        window.logoutMaster = function() {
-            showLoginScreen();
-        };
-
-        // --- AUTH & ROOM OCCUPANCY LOGIC ---
-        async function updateRoomOccupancyInFirestore(role, isEntering) {
-            try {
-                if (!auth.currentUser) await initAuth();
-                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'rooms', `room_${role}`);
-                await setDoc(roomDocRef, {
-                    occupied: isEntering,
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
-            } catch (e) {
-                console.warn("Room occupancy update error:", e);
-            }
-        }
-
-        // Listen to room occupancies in real-time
-        function listenRoomOccupancies() {
-            ['user1', 'user2'].forEach(role => {
-                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'rooms', `room_${role}`);
-                onSnapshot(roomDocRef, (docSnap) => {
-                    const badge = document.getElementById(`${role}-occupancy-badge`);
-                    if (docSnap.exists() && docSnap.data().occupied) {
-                        badge.textContent = "使用中";
-                        badge.className = "absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold bg-red-950 text-red-400 border border-red-800";
-                    } else {
-                        badge.textContent = "空室";
-                        badge.className = "absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-800";
-                    }
-                }, err => console.warn(err));
-            });
-        }
-
-        window.handleLogin = async function(role) {
-            const uName = document.getElementById(`${role}-username`).value.trim();
-            const pWord = document.getElementById(`${role}-password`).value.trim();
-            const autoLogin = document.getElementById(`${role}-autologin`).checked;
-
-            if (!uName || !pWord) {
-                showModalMsg("ユーザー名とパスワードを入力してください。");
-                return;
-            }
-
-            // Check if Master
-            if (uName === "master" && pWord === "0813") {
-                showMasterScreen();
-                return;
-            }
-
-            try {
-                if (!auth.currentUser) await initAuth();
-
-                // Check occupancy in Firestore first
-                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'rooms', `room_${role}`);
-                const roomSnap = await getDoc(roomDocRef);
-                if (roomSnap.exists() && roomSnap.data().occupied) {
-                    showModalMsg(`${role === 'user1' ? 'User 1' : 'User 2'}ルームは現在使用中です。`);
-                    return;
-                }
-
-                // Verify credentials against registered users in Firestore
-                const usersColRef = collection(db, 'artifacts', appId, 'public', 'registered_users');
-                const userSnapshot = await getDocs(usersColRef);
-                
-                let foundUser = null;
-                userSnapshot.forEach(d => {
-                    const data = d.data();
-                    if (data.username === uName && data.password === pWord) {
-                        foundUser = { id: d.id, ...data };
-                    }
-                });
-
-                if (!foundUser && !(uName === 'user1' || uName === 'user2')) {
-                    showModalMsg("ユーザー名またはパスワードが正しくありません。新規登録を行ってください。");
-                    return;
-                }
-
-                if (autoLogin) {
-                    localStorage.setItem('canvas_share_autologin_user', uName);
-                    localStorage.setItem('canvas_share_autologin_role', role);
-                }
-
-                showMainApp(role);
-            } catch (e) {
-                console.error("Login error:", e);
-                showMainApp(role);
-            }
-        };
-
-        // --- NEW USER REGISTRATION ---
-        window.registerNewUser = async function() {
-            const uName = document.getElementById('reg-username').value.trim();
-            const pWord = document.getElementById('reg-password').value.trim();
-
-            if (!uName || !pWord) {
-                showModalMsg("ユーザー名とパスワードを入力してください。");
-                return;
-            }
-
-            try {
-                if (!auth.currentUser) await initAuth();
-                const usersColRef = collection(db, 'artifacts', appId, 'public', 'registered_users');
-                await addDoc(usersColRef, {
-                    username: uName,
-                    password: pWord,
-                    createdAt: new Date().toISOString()
-                });
-                showModalMsg("ユーザー登録が完了しました！ログイン画面へ移動します。", "success");
-                setTimeout(() => {
-                    showLoginScreen();
-                }, 1500);
-            } catch (e) {
-                console.error("Registration error:", e);
-                showModalMsg("登録に失敗しました。");
-            }
-        };
-
-        // --- MASTER MANAGEMENT DASHBOARD ---
-        async function loadMasterUsersList() {
-            const container = document.getElementById('master-users-list');
-            container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">読み込み中...</p>';
-
-            try {
-                if (!auth.currentUser) await initAuth();
-                const usersColRef = collection(db, 'artifacts', appId, 'public', 'registered_users');
-                const snapshot = await getDocs(usersColRef);
-
-                container.innerHTML = '';
-                if (snapshot.empty) {
-                    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">登録されているユーザーはありません</p>';
-                    return;
-                }
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const docId = docSnap.id;
-
-                    const card = document.createElement('div');
-                    card.className = "flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-2xl gap-3";
-                    card.innerHTML = `
-                        <div class="space-y-1">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-bold text-sm text-slate-200">${data.username}</span>
-                                <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">ID: ${docId.substring(0,6)}...</span>
-                            </div>
-                            <p class="text-xs text-slate-400">パスワード: <span class="font-mono text-indigo-400">${data.password}</span></p>
-                        </div>
-                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-                            <button onclick="editUserPrompt('${docId}', '${data.username}', '${data.password}')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow">
-                                <i class="fa-solid fa-pen-to-square mr-1"></i>編集
-                            </button>
-                            <button onclick="deleteUserRecord('${docId}')" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow">
-                                <i class="fa-solid fa-trash mr-1"></i>削除
-                            </button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (e) {
-                console.error("Master list load error:", e);
-                container.innerHTML = '<p class="text-xs text-red-400 text-center py-6">ユーザー一覧の取得に失敗しました</p>';
-            }
-        }
-
-        window.deleteUserRecord = async function(docId) {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'registered_users', docId);
-                await deleteDoc(docRef);
-                showModalMsg("ユーザーを削除しました", "success");
-                loadMasterUsersList();
-            } catch (e) {
-                showModalMsg("削除に失敗しました");
-            }
-        };
-
-        window.editUserPrompt = async function(docId, oldName, oldPass) {
-            const newName = prompt("新しいユーザー名を入力してください:", oldName);
-            if (newName === null) return;
-            const newPass = prompt("新しいパスワードを入力してください:", oldPass);
-            if (newPass === null) return;
-
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'registered_users', docId);
-                await updateDoc(docRef, {
-                    username: newName,
-                    password: newPass
-                });
-                showModalMsg("ユーザー情報を更新しました", "success");
-                loadMasterUsersList();
-            } catch (e) {
-                showModalMsg("更新に失敗しました");
-            }
-        };
-
-        // --- DRAWING WORKSPACE INIT ---
         function initWorkspace(userKey) {
             const container = document.getElementById(`${userKey}-canvas-container`);
             container.innerHTML = '';
@@ -772,7 +409,7 @@
                 c.style.opacity = layer.opacity;
                 container.appendChild(c);
                 layer.canvas = c;
-                layer.ctx = c.getContext('2d', { willReadFrequently: true });
+                layer.ctx = c.getContext('2d');
             });
 
             setupDrawingEvents(userKey, container);
@@ -794,6 +431,14 @@
             };
 
             const startDraw = (e) => {
+                if (!currentUserRole) {
+                    currentUserRole = userKey;
+                    const badge = document.getElementById('user-badge');
+                    badge.textContent = `ログイン中: ${userKey === 'user1' ? 'User 1' : 'User 2'}`;
+                    badge.className = userKey === 'user1' ? 'bg-pink-950 text-pink-300 border border-pink-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner' : 'bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-3 py-1 rounded-full text-xs font-semibold shadow-inner';
+                    badge.classList.remove('hidden');
+                }
+
                 isDrawing = true;
                 const pos = getPos(e);
                 lastX = pos.x;
@@ -833,8 +478,8 @@
             container.addEventListener('mouseup', stopDraw);
             container.addEventListener('mouseleave', stopDraw);
 
-            container.addEventListener('touchstart', (e) => { startDraw(e); e.preventDefault(); }, { passive: false });
-            container.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); }, { passive: false });
+            container.addEventListener('touchstart', (e) => { startDraw(e); e.preventDefault(); });
+            container.addEventListener('touchmove', (e) => { draw(e); e.preventDefault(); });
             container.addEventListener('touchend', stopDraw);
         }
 
@@ -868,6 +513,7 @@
 
             switch (ws.shape) {
                 case 'calligraphy':
+                    // Slanted flat nib
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'square';
                     ctx.beginPath();
@@ -875,7 +521,9 @@
                     ctx.lineTo(x2 - ws.size/3, y2 + ws.size/3);
                     ctx.stroke();
                     break;
+
                 case 'airbrush':
+                    // Spray dot distribution
                     const dist = Math.hypot(x2 - x1, y2 - y1);
                     const steps = Math.max(1, Math.floor(dist));
                     for (let i = 0; i <= steps; i++) {
@@ -888,7 +536,9 @@
                         }
                     }
                     break;
+
                 case 'crayon':
+                    // Textured dotted stroke
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'round';
                     ctx.setLineDash([2, 3]);
@@ -897,7 +547,9 @@
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
+
                 case 'marker':
+                    // Semi-transparent bold rectangle stroke
                     ctx.globalAlpha = ws.opacity * 0.7;
                     ctx.lineWidth = ws.size * 1.8;
                     ctx.lineCap = 'butt';
@@ -906,16 +558,20 @@
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
+
                 case 'pencil':
+                    // Thin scratchy line
                     ctx.globalAlpha = ws.opacity * 0.8;
                     ctx.lineWidth = Math.max(1, ws.size * 0.4);
                     ctx.lineCap = 'round';
                     ctx.beginPath();
-                    ctx.moveTo(x1, y1);
+                    ctx.moveTo(x1 + (Math.random()-0.5)*2, y1 + (Math.random()-0.5)*2);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
+
                 case 'watercolor':
+                    // Soft blurred multi-pass stroke
                     ctx.globalAlpha = ws.opacity * 0.25;
                     for (let wOff = -ws.size/2; wOff <= ws.size/2; wOff += 2) {
                         ctx.beginPath();
@@ -925,7 +581,9 @@
                         ctx.stroke();
                     }
                     break;
+
                 case 'brush':
+                    // Tapered pressure-like毛筆 stroke
                     ctx.lineWidth = ws.size * 1.2;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -934,7 +592,8 @@
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
                     break;
-                default:
+
+                default: // normal
                     ctx.lineWidth = ws.size;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -978,9 +637,11 @@
             shapes.forEach(s => {
                 const btn = document.getElementById(`shape-${s}`);
                 if (btn) {
-                    btn.className = (s === activeShape) 
-                        ? "p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2"
-                        : "p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2";
+                    if (s === activeShape) {
+                        btn.className = "p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2";
+                    } else {
+                        btn.className = "p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2";
+                    }
                 }
             });
         }
@@ -1043,7 +704,7 @@
             const targetColor = getPixel(startX, startY);
             const fillRgb = hexToRgb(fillColor);
 
-            if (targetColor[0] === fillRgb[0] && targetColor[1] === fillRgb[1] && targetColor[2] === fillRgb[2] && targetColor[3] === Math.round(opacity * 255)) return;
+            if (targetColor[0] === fillRgb[0] && targetColor[1] === fillRgb[1] && targetColor[2] === fillRgb[2]) return;
 
             const queue = [[startX, startY]];
             while(queue.length > 0) {
@@ -1137,25 +798,38 @@
         }
 
         window.publishCanvas = async function(userKey) {
-            if (!auth.currentUser) await initAuth();
+            if (!auth.currentUser) {
+                await initAuth();
+            }
             const dataUrl = getMergedCanvasDataURL(userKey);
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', `shared_${userKey}`);
+                if (!auth.currentUser) {
+                    showModalMsg("Firebase ConsoleでAuthentication（匿名認証）を有効化すると共有可能になります。");
+                    return;
+                }
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `shared_${userKey}`);
                 await setDoc(docRef, {
                     image: dataUrl,
                     updatedAt: new Date().toISOString(),
                     user: userKey
-                }, { merge: true });
+                });
                 showModalMsg(`${userKey === 'user1' ? 'User 1' : 'User 2'}の絵を更新しました！`, 'success');
             } catch (e) {
-                showModalMsg("送信に失敗しました。");
+                console.error("Publish error:", e);
+                showModalMsg("送信に失敗しました。Firebaseの設定をご確認ください。");
             }
         };
 
         window.saveMyArt = async function(userKey) {
-            if (!auth.currentUser) await initAuth();
+            if (!auth.currentUser) {
+                await initAuth();
+            }
             const dataUrl = getMergedCanvasDataURL(userKey);
             try {
+                if (!auth.currentUser) {
+                    showModalMsg("Firebase ConsoleでAuthentication（匿名認証）を有効化すると履歴保存が可能になります。");
+                    return;
+                }
                 const colRef = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'my_artworks');
                 await addDoc(colRef, {
                     image: dataUrl,
@@ -1164,17 +838,24 @@
                 });
                 showModalMsg("作品をマイ履歴に保存しました！", 'success');
             } catch(e) {
+                console.error("Save error:", e);
                 showModalMsg("保存に失敗しました。");
             }
         };
 
         window.openHistoryModal = async function() {
-            if (!auth.currentUser) await initAuth();
+            if (!auth.currentUser) {
+                await initAuth();
+            }
             openModal('history-modal');
             const listContainer = document.getElementById('history-list');
             listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">読み込み中...</p>';
 
             try {
+                if (!auth.currentUser) {
+                    listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Firebase ConsoleでAuthentication（匿名認証）を有効化してください。</p>';
+                    return;
+                }
                 const colRef = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'my_artworks');
                 const snapshot = await getDocs(colRef);
                 listContainer.innerHTML = '';
@@ -1199,31 +880,31 @@
                     listContainer.appendChild(card);
                 });
             } catch(e) {
+                console.error("History error:", e);
                 listContainer.innerHTML = '<p class="text-xs text-red-400 text-center py-8">履歴の読み込みに失敗しました</p>';
             }
         };
 
-        // Initialize on window load safely
+        function subscribeSharedCanvases() {
+            ['user1', 'user2'].forEach(userKey => {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', `shared_${userKey}`);
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const statusEl = document.getElementById(`${userKey}-status`);
+                        statusEl.textContent = `最終更新: ${new Date(data.updatedAt).toLocaleTimeString()}`;
+                    }
+                }, (error) => {
+                    console.warn("Snapshot subscription error (check Firebase config):", error);
+                });
+            });
+        }
+
         window.addEventListener('load', async () => {
             await initAuth();
-            if (document.getElementById('user1-canvas-container')) {
-                initWorkspace('user1');
-            }
-            if (document.getElementById('user2-canvas-container')) {
-                initWorkspace('user2');
-            }
-            listenRoomOccupancies();
-
-            // Check auto login
-            const savedRole = localStorage.getItem('canvas_share_autologin_role');
-            const savedUser = localStorage.getItem('canvas_share_autologin_user');
-            if (savedRole && savedUser) {
-                const userInp = document.getElementById(`${savedRole}-username`);
-                const autoChk = document.getElementById(`${savedRole}-autologin`);
-                if (userInp) userInp.value = savedUser;
-                if (autoChk) autoChk.checked = true;
-                showMainApp(savedRole);
-            }
+            initWorkspace('user1');
+            initWorkspace('user2');
+            subscribeSharedCanvases();
         });
     </script>
 </body>
