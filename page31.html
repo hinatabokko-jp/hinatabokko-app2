@@ -71,9 +71,9 @@
             </div>
             <div>
                 <h1 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
-                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">キャンバス共有スタジオ</span>
+                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">クロスデバイス同期</span>
                 </h1>
-                <p class="text-[11px] text-slate-400 hidden sm:block">二人で並んで同時にお絵描き・イラストを作成</p>
+                <p class="text-[11px] text-slate-400 hidden sm:block">別々の端末から同じURLでリアルタイム共同描画</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
@@ -91,7 +91,7 @@
     <!-- Main Content Layout -->
     <main class="flex-1 w-full px-2 sm:px-4 py-3 grid grid-cols-1 lg:grid-cols-2 gap-3 items-start max-w-[1500px] mx-auto">
         
-        <!-- ================= ユーザーA (左側) ================= -->
+        <!-- ================= プレイヤーA (左側) ================= -->
         <div class="bg-dark-900 border border-dark-800 rounded-3xl p-3 sm:p-4 shadow-xl flex flex-col gap-2.5 relative w-full">
             <div class="flex items-center justify-between pb-1.5 border-b border-dark-800">
                 <div class="flex items-center gap-2">
@@ -143,7 +143,7 @@
             </div>
         </div>
 
-        <!-- ================= ユーザーB (右側) ================= -->
+        <!-- ================= プレイヤーB (右側) ================= -->
         <div class="bg-dark-900 border border-dark-800 rounded-3xl p-3 sm:p-4 shadow-xl flex flex-col gap-2.5 relative w-full">
             <div class="flex items-center justify-between pb-1.5 border-b border-dark-800">
                 <div class="flex items-center gap-2">
@@ -318,8 +318,8 @@
                 <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-users"></i></div>
                     <div>
-                        <h3 class="font-bold text-slate-200">左右同時リアルタイムプレイ</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">Firebase連携により、同じURLを開いた別端末や別タブからもお互いの描画がリアルタイムに反映されます。</p>
+                        <h3 class="font-bold text-slate-200">別端末でのリアルタイム共同描画</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">同じURLを異なるスマホやパソコンで開くと、それぞれの描画や消去がクラウド経由でリアルタイムに同期されます。</p>
                     </div>
                 </div>
             </div>
@@ -332,7 +332,7 @@
     <!-- Application & Firebase JavaScript -->
     <script>
         // ==========================================
-        // Firebase 設定 (必要に応じてご自身の情報に変更)
+        // Firebase 設定 (ご自身の情報に置き換えてください)
         // ==========================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -407,22 +407,24 @@
                 saveState(prefix);
             }
 
-            // イベント重複登録を防ぎつつ確実に対象エリアに紐付ける
             if (!container.dataset.initialized) {
                 setupDrawingEvents(prefix, container);
                 container.dataset.initialized = "true";
             }
 
-            loadSavedDataFromFirebase(prefix);
+            // Firebaseからのリアルタイム同期と保存データ読込のセットアップ
             setupFirebaseSync(prefix);
         }
 
+        // 別端末間でのリアルタイム同期リスナー
         function setupFirebaseSync(prefix) {
-            const strokeRef = db.ref(`drawings/${prefix}/strokes`);
-            strokeRef.off();
+            const strokeRef = db.ref(`canvas_share_rooms/default_room/${prefix}/strokes`);
+            strokeRef.off(); // 既存のリスナー重複を防ぐ
             strokeRef.on('child_added', (snapshot) => {
                 const stroke = snapshot.val();
                 if (!stroke) return;
+                
+                // 自分が描いた直後のストロークによる二重描画を防ぐためのタイムスタンプチェック（例: 500ms以内なら無視など、またはシンプルに全体反映）
                 const ws = workspaces[prefix];
                 const targetLayer = ws.layers.find(l => l.id === stroke.layerId) || ws.layers[0];
                 if (targetLayer && targetLayer.ctx) {
@@ -430,14 +432,32 @@
                 }
             });
 
-            const clearRef = db.ref(`drawings/${prefix}/clearAction`);
+            // 全消去の同期
+            const clearRef = db.ref(`canvas_share_rooms/default_room/${prefix}/clearAction`);
             clearRef.on('value', (snapshot) => {
                 const timestamp = snapshot.val();
-                if (timestamp && window.lastClearTime !== timestamp) {
-                    window.lastClearTime = timestamp;
+                if (timestamp && window[`lastClear_${prefix}`] !== timestamp) {
+                    window[`lastClear_${prefix}`] = timestamp;
                     const ws = workspaces[prefix];
                     ws.layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
                     saveState(prefix);
+                }
+            });
+
+            // 保存データの同期・復元
+            db.ref(`canvas_share_rooms/default_room/${prefix}/saved`).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.dataUrl) {
+                    const img = new Image();
+                    img.onload = () => {
+                        const ws = workspaces[prefix];
+                        if (ws.layers[0] && ws.layers[0].ctx) {
+                            ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                            ws.layers[0].ctx.drawImage(img, 0, 0);
+                            saveState(prefix);
+                        }
+                    };
+                    img.src = data.dataUrl;
                 }
             });
         }
@@ -468,31 +488,15 @@
             const dataUrl = tempCvs.toDataURL('image/png');
             const stampData = { id: Date.now(), title, dataUrl, date: new Date().toLocaleDateString() };
 
-            db.ref(`drawings/${prefix}/saved`).set(stampData);
+            // Firebaseへ保存
+            db.ref(`canvas_share_rooms/default_room/${prefix}/saved`).set(stampData);
 
+            // ローカルにも保存
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             stamps.unshift(stampData);
             localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
             updateStampCount();
-            alert(`作品「${title}」を保存しました！`);
-        }
-
-        function loadSavedDataFromFirebase(prefix) {
-            db.ref(`drawings/${prefix}/saved`).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.dataUrl) {
-                    const img = new Image();
-                    img.onload = () => {
-                        const ws = workspaces[prefix];
-                        if (ws.layers[0] && ws.layers[0].ctx) {
-                            ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                            ws.layers[0].ctx.drawImage(img, 0, 0);
-                            saveState(prefix);
-                        }
-                    };
-                    img.src = data.dataUrl;
-                }
-            });
+            alert(`作品「${title}」をクラウドに保存しました！`);
         }
 
         function setupDrawingEvents(prefix, wrapper) {
@@ -539,9 +543,11 @@
                 const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
                 lastSpeed = currentSpeed;
 
+                // 自端末で描画
                 renderBrushStroke(ws, activeLayer.ctx, lastX, lastY, coords.x, coords.y, currentSpeed);
 
-                db.ref(`drawings/${prefix}/strokes`).push({
+                // Firebaseへストロークデータを送信（別端末へリアルタイム同期）
+                db.ref(`canvas_share_rooms/default_room/${prefix}/strokes`).push({
                     layerId: ws.activeLayerId,
                     tool: ws.tool,
                     color: ws.color,
@@ -550,8 +556,7 @@
                     shape: ws.shape,
                     x1: lastX, y1: lastY,
                     x2: coords.x, y2: coords.y,
-                    speed: currentSpeed,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                    speed: currentSpeed
                 });
 
                 lastX = coords.x;
@@ -771,7 +776,7 @@
             document.querySelector(`.clear-btn-${prefix}`).addEventListener('click', () => {
                 saveState(prefix);
                 workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
-                db.ref(`drawings/${prefix}/clearAction`).set(Date.now());
+                db.ref(`canvas_share_rooms/default_room/${prefix}/clearAction`).set(Date.now());
             });
 
             document.querySelectorAll(`.tool-btn-${prefix}`).forEach(btn => {
@@ -954,7 +959,7 @@
 
         window.toggleLayerVisibility = function(id) {
             const ws = workspaces[currentActiveUser];
-            const layer = ws.layers.layers ? ws.layers.find(l => l.id === id) : ws.layers.find(l => l.id === id);
+            const layer = ws.layers.find(l => l.id === id);
             if (layer) {
                 layer.visible = !layer.visible;
                 if (layer.canvas) {
