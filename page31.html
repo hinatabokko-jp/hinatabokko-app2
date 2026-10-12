@@ -51,6 +51,10 @@
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
             background-color: #0f172a;
         }
+        /* 試し描きエリア専用のプレーンな白背景クラス */
+        .test-checkerboard {
+            background-color: #ffffff;
+        }
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -296,7 +300,8 @@
                         <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-pencil text-indigo-400"></i> 試し描き</label>
                         <button onclick="clearTestCanvas()" class="text-[11px] text-slate-400 hover:text-red-400 transition flex items-center gap-1 px-2 py-1 rounded bg-dark-800"><i class="fa-solid fa-rotate-right"></i> クリア</button>
                     </div>
-                    <div class="relative w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center" id="test-canvas-wrapper">
+                    <!-- 背景色を白に変更した試し描きエリア -->
+                    <div class="relative w-full aspect-[4/3] test-checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center" id="test-canvas-wrapper">
                         <canvas id="test-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
                     </div>
                 </div>
@@ -425,6 +430,30 @@
         const canvasHeight = 384;
         let currentActiveUser = 'a';
 
+        // デフォルトで3層に設定
+        // レイヤー1（最下層）：透過
+        // レイヤー2（真ん中）：白色で塗りつぶし
+        // レイヤー3（最上層）：透過（デフォルト選択）
+        const createDefaultLayers = () => {
+            const l1Canvas = document.createElement('canvas');
+            l1Canvas.width = canvasWidth; l1Canvas.height = canvasHeight;
+            
+            const l2Canvas = document.createElement('canvas');
+            l2Canvas.width = canvasWidth; l2Canvas.height = canvasHeight;
+            const l2Ctx = l2Canvas.getContext('2d', { willReadFrequently: true });
+            l2Ctx.fillStyle = '#ffffff';
+            l2Ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            const l3Canvas = document.createElement('canvas');
+            l3Canvas.width = canvasWidth; l3Canvas.height = canvasHeight;
+
+            return [
+                { id: 1, name: 'レイヤー 1 (下)', visible: true, opacity: 1, canvas: l1Canvas, ctx: l1Canvas.getContext('2d', { willReadFrequently: true }) },
+                { id: 2, name: 'レイヤー 2 (背景白)', visible: true, opacity: 1, canvas: l2Canvas, ctx: l2Ctx },
+                { id: 3, name: 'レイヤー 3 (上)', visible: true, opacity: 1, canvas: l3Canvas, ctx: l3Canvas.getContext('2d', { willReadFrequently: true }) }
+            ];
+        };
+
         const workspaces = {
             a: {
                 color: '#ec4899',
@@ -432,10 +461,8 @@
                 opacity: 1,
                 shape: 'normal',
                 tool: 'brush',
-                layers: [
-                    { id: 1, name: 'レイヤー 1', visible: true, opacity: 1, canvas: null, ctx: null }
-                ],
-                activeLayerId: 1,
+                layers: createDefaultLayers(),
+                activeLayerId: 3, // デフォルトで最上層を選択
                 history: [],
                 redoStack: []
             },
@@ -445,10 +472,8 @@
                 opacity: 1,
                 shape: 'normal',
                 tool: 'brush',
-                layers: [
-                    { id: 1, name: 'レイヤー 1', visible: true, opacity: 1, canvas: null, ctx: null }
-                ],
-                activeLayerId: 1,
+                layers: createDefaultLayers(),
+                activeLayerId: 3, // デフォルトで最上層を選択
                 history: [],
                 redoStack: []
             }
@@ -461,22 +486,14 @@
             container.innerHTML = '';
 
             ws.layers.forEach((layer) => {
-                const cvs = document.createElement('canvas');
-                cvs.className = `absolute inset-0 w-full h-full touch-none ${layer.visible ? '' : 'hidden'}`;
-                cvs.width = canvasWidth;
-                cvs.height = canvasHeight;
-                cvs.style.opacity = layer.opacity;
-                container.appendChild(cvs);
-                layer.canvas = cvs;
-                layer.ctx = cvs.getContext('2d', { willReadFrequently: true });
+                if (layer.canvas) {
+                    layer.canvas.className = `absolute inset-0 w-full h-full touch-none ${layer.visible ? '' : 'hidden'}`;
+                    layer.canvas.style.opacity = layer.opacity;
+                    container.appendChild(layer.canvas);
+                }
             });
 
-            if (ws.history.length > 0) {
-                const latest = ws.history[ws.history.length - 1];
-                ws.layers.forEach((l, idx) => {
-                    if (latest[idx]) l.ctx.putImageData(latest[idx], 0, 0);
-                });
-            } else {
+            if (ws.history.length === 0) {
                 saveState(prefix);
             }
 
@@ -501,9 +518,11 @@
                 const ws = workspaces[prefix];
                 const img = new Image();
                 img.onload = () => {
-                    if (ws.layers[0] && ws.layers[0].ctx) {
-                        ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                        ws.layers[0].ctx.drawImage(img, 0, 0);
+                    // 同期データ受信時は最上層（またはアクティブ層）に反映
+                    const targetLayer = ws.layers.find(l => l.id === ws.activeLayerId) || ws.layers[ws.layers.length - 1];
+                    if (targetLayer && targetLayer.ctx) {
+                        targetLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        targetLayer.ctx.drawImage(img, 0, 0);
                         saveState(prefix);
                     }
                 };
@@ -816,8 +835,13 @@
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
                     saveState(prefix);
-                    workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
-                    sendSyncCanvas(prefix, true); // 自動同期フラグ付きで送信
+                    workspaces[prefix].layers.forEach(l => {
+                        // 背景白のレイヤー(id:2)以外をクリア
+                        if (l.id !== 2) {
+                            l.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        }
+                    });
+                    sendSyncCanvas(prefix, true);
                 });
             }
 
@@ -1068,6 +1092,12 @@
             const ws = workspaces[currentActiveUser];
             const newId = ws.layers.length + 1;
             ws.layers.push({ id: newId, name: `レイヤー ${newId}`, visible: true, opacity: 1, canvas: null, ctx: null });
+            // 新規作成されたCanvas要素の初期化
+            const cvs = document.createElement('canvas');
+            cvs.width = canvasWidth; cvs.height = canvasHeight;
+            ws.layers[ws.layers.length - 1].canvas = cvs;
+            ws.layers[ws.layers.length - 1].ctx = cvs.getContext('2d', { willReadFrequently: true });
+            
             initWorkspace(currentActiveUser);
             renderLayerList();
         };
@@ -1194,10 +1224,11 @@
             const ws = workspaces[targetUser];
             const img = new Image();
             img.onload = () => {
-                if (ws.layers[0] && ws.layers[0].ctx) {
+                const targetLayer = ws.layers.find(l => l.id === ws.activeLayerId) || ws.layers[ws.layers.length - 1];
+                if (targetLayer && targetLayer.ctx) {
                     saveState(targetUser);
-                    ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                    ws.layers[0].ctx.drawImage(img, 0, 0);
+                    targetLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    targetLayer.ctx.drawImage(img, 0, 0);
                     saveState(targetUser);
                     alert(`作品「${artwork.title}」をプレイヤー${targetUser.toUpperCase()}のキャンバスに読み込みました！`);
                     closeModal('history-modal');
