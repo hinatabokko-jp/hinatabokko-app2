@@ -1034,7 +1034,7 @@
 
       try {
         const snap = await get(passcodeRef);
-        const correctPass = snap.exists() ? snap.val() : '1234';
+        const correctPass = snap.exists() ? snap.val() : 'rmk813';
 
         if (inputPass === correctPass) {
           if (rememberMeCheckbox.checked) {
@@ -1048,8 +1048,19 @@
           passError.style.display = 'block';
         }
       } catch (e) {
-        passError.textContent = '認証に失敗しました';
-        passError.style.display = 'block';
+        // Firebaseから取得できない場合等のフォールバックとして設定
+        const correctPass = 'rmk813';
+        if (inputPass === correctPass) {
+          if (rememberMeCheckbox.checked) {
+            localStorage.setItem('memo_app_unlocked', 'true');
+          } else {
+            sessionStorage.setItem('memo_app_unlocked', 'true');
+          }
+          unlockApp();
+        } else {
+          passError.textContent = 'あいことばが違います';
+          passError.style.display = 'block';
+        }
       }
     }
 
