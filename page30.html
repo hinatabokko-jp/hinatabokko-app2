@@ -305,7 +305,7 @@
       font-size: 0.65rem;
       color: #666;
     }
-    .delete-btn, .edit-btn {
+    .delete-btn, .edit-btn, .copy-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -315,7 +315,7 @@
       text-decoration: underline;
       opacity: 0.8;
     }
-    .delete-btn:hover, .edit-btn:hover {
+    .delete-btn:hover, .edit-btn:hover, .copy-btn:hover {
       opacity: 1;
       color: #fff;
     }
@@ -1706,7 +1706,7 @@
         }
         if (msg.text) {
           const tn = document.createElement('div');
-          renderFormattedTest(tn, msg.text);
+          renderFormattedText(tn, msg.text);
           bubble.appendChild(tn);
         }
 
@@ -1718,8 +1718,21 @@
         timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
-        // テキストメッセージの場合のみ編集ボタンを表示
+        // テキストメッセージの場合のみコピーボタン・編集ボタンを表示
         if (msg.text && !msg.fileData) {
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'copy-btn';
+          copyBtn.textContent = 'コピー';
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(msg.text).then(() => {
+              copyBtn.textContent = 'コピー完了';
+              setTimeout(() => { copyBtn.textContent = 'コピー'; }, 1500);
+            }).catch(err => {
+              console.error('コピーに失敗しました', err);
+            });
+          });
+          metaInfo.appendChild(copyBtn);
+
           const editBtn = document.createElement('button');
           editBtn.className = 'edit-btn'; editBtn.textContent = '編集';
           editBtn.addEventListener('click', () => {
@@ -1781,10 +1794,6 @@
       });
       
       scrollToBottom();
-    }
-
-    function renderFormattedTest(container, text) {
-      renderFormattedText(container, text);
     }
 
     function initChat() {
