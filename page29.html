@@ -86,6 +86,22 @@
         </select>
       </div>
 
+      <!-- Stamp Border Feature -->
+      <div id="border-tools-panel" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3 opacity-40 pointer-events-none transition-all">
+        <h2 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+          </svg>
+          スタンプ枠・縁取り
+        </h2>
+        <button type="button" id="add-white-border-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          輪郭に沿った20pxの白フチを追加
+        </button>
+      </div>
+
       <!-- Drawing Tools -->
       <div id="editor-tools-panel" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3 opacity-40 pointer-events-none transition-all">
         <h2 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
@@ -116,7 +132,6 @@
             <span>ブラシサイズ (最大500px):</span>
             <span id="brush-size-val">8px</span>
           </div>
-          <!-- 最大500pxまで変更可能に拡張 -->
           <input type="range" id="brush-size" min="1" max="500" value="8" class="w-full accent-emerald-500">
         </div>
       </div>
@@ -251,12 +266,14 @@
     const emptyState = document.getElementById('empty-state');
     const workspaceCard = document.getElementById('workspace-card');
     const editorToolsPanel = document.getElementById('editor-tools-panel');
+    const borderToolsPanel = document.getElementById('border-tools-panel');
     const editCanvas = document.getElementById('edit-canvas');
     const editCtx = editCanvas.getContext('2d');
     const dimensionBadge = document.getElementById('dimension-badge');
     const fileNameLabel = document.getElementById('file-name-label');
     const downloadBtn = document.getElementById('download-btn');
     const resolutionSelect = document.getElementById('resolution-select');
+    const addWhiteBorderBtn = document.getElementById('add-white-border-btn');
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -373,6 +390,7 @@
           emptyState.classList.add('hidden');
           workspaceCard.classList.remove('hidden');
           editorToolsPanel.classList.remove('opacity-40', 'pointer-events-none');
+          borderToolsPanel.classList.remove('opacity-40', 'pointer-events-none');
         };
         img.src = e.target.result;
       };
@@ -383,7 +401,6 @@
       const img = originalImage;
       const resVal = resolutionSelect.value;
       
-      // スタンプアプリ等で確実に読み込めるよう、解像度セレクトの指定（デフォルト512px等）に自動縮小・調整
       if (resVal === 'original') {
         targetSize = Math.max(img.width, img.height);
       } else {
@@ -429,6 +446,80 @@
 
       redrawLayers();
     }
+
+    // 輪郭に沿って20pxの白い縁を外側につける機能（画像の中身には入り込まない）
+    addWhiteBorderBtn.addEventListener('click', () => {
+      if (!originalImage) return;
+
+      const w = targetSize;
+      const h = targetSize;
+
+      // 現在の画像レイヤー(topCanvas)のピクセルデータを取得
+      const imgData = topCtx.getImageData(0, 0, w, h);
+      const data = imgData.data;
+
+      // 1. 不透明なピクセルのマスクを作成 (alpha > 0)
+      const alphaMap = new Uint8Array(w * h);
+      for (let i = 0; i < w * h; i++) {
+        alphaMap[i] = data[i * 4 + 3] > 10 ? 1 : 0;
+      }
+
+      // 2. 20pxの距離変換（モルフォロジー演算・膨張処理による外側拡張）
+      const radius = 20;
+      const dilatedMap = new Uint8Array(w * h);
+
+      // 高速化のため、縦方向・横方向のボックス/多段階スキャンで20px分の外側を膨張させる
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let found = false;
+          // 周囲 radius 範囲内を探す
+          for (let dy = -radius; dy <= radius && !found; dy++) {
+            const ny = y + dy;
+            if (ny < 0 || ny >= h) continue;
+            for (let dx = -radius; dx <= radius && !found; dx++) {
+              const nx = x + dx;
+              if (nx < 0 || nx >= w) continue;
+              if (dx * dx + dy * dy <= radius * radius) {
+                if (alphaMap[ny * w + nx] === 1) {
+                  found = true;
+                }
+              }
+            }
+          }
+          if (found) {
+            dilatedMap[y * w + x] = 1;
+          }
+        }
+      }
+
+      // 3. 白フチ用の一時キャンバスを作成し、膨張した部分に白を描画
+      const borderCanvas = document.createElement('canvas');
+      borderCanvas.width = w;
+      borderCanvas.height = h;
+      const borderCtx = borderCanvas.getContext('2d', { willReadFrequently: true });
+      const borderImgData = borderCtx.createImageData(w, h);
+      const bData = borderImgData.data;
+
+      for (let i = 0; i < w * h; i++) {
+        // 拡張エリアに含まれていて、かつ「元の画像自体（alphaMap）」が不透明でない部分にだけ白いフチを描く（画像に入り込ませない）
+        if (dilatedMap[i] === 1 && alphaMap[i] === 0) {
+          bData[i * 4] = 255;     // R
+          bData[i * 4 + 1] = 255; // G
+          bData[i * 4 + 2] = 255; // B
+          bData[i * 4 + 3] = 255; // A (完全な不透明白)
+        }
+      }
+      borderCtx.putImageData(borderImgData, 0, 0);
+
+      // 4. 中層（レイヤー2: 描き込み層、または新しく合成）に白フチを描き込む、もしくはトップレイヤーの背後に結合
+      // ここではレイヤー2（描き込みレイヤー）に白フチを配置することで、あとから消しゴムで微調整もできるようにします
+      middleCtx.clearRect(0, 0, w, h);
+      middleCtx.drawImage(borderCanvas, 0, 0);
+
+      // レイヤーの視覚的状態を更新
+      layerVisibility[2] = true;
+      redrawLayers();
+    });
 
     function redrawLayers() {
       editCtx.clearRect(0, 0, targetSize, targetSize);
