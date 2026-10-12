@@ -32,6 +32,9 @@
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
+    <!-- QRCode Generator Library (qrcodejs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         body {
@@ -103,6 +106,11 @@
             </div>
         </div>
         <div class="flex items-center space-x-2">
+            <!-- QRコード招待ボタン -->
+            <button id="qr-modal-btn" class="px-2.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5">
+                <i class="fa-solid fa-qrcode text-emerald-400"></i>
+                <span class="hidden sm:inline">QRコード招待</span>
+            </button>
             <button id="help-btn" class="px-2.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-question text-indigo-400"></i>
                 <span class="hidden sm:inline">使い方</span>
@@ -131,7 +139,7 @@
                     <button class="redo-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="やり直す">
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
-                    <button class="clear-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去">
+                    <button class="clear-btn-a p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去して反映">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -186,7 +194,7 @@
                     <button class="redo-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs transition disabled:opacity-40" title="やり直す">
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
-                    <button class="clear-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去">
+                    <button class="clear-btn-b p-1.5 rounded-lg bg-dark-800 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 text-slate-300 text-xs transition" title="全消去して反映">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -229,7 +237,7 @@
 
     </main>
 
-    <!-- Modals (Brush, Layer, History, Help) -->
+    <!-- Modals (Brush, Layer, History, Help, QR) -->
     <div id="brush-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-4xl w-full p-5 space-y-3 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
@@ -311,6 +319,35 @@
                 <div id="layer-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
             </div>
             <button onclick="closeModal('layer-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition">閉じる</button>
+        </div>
+    </div>
+
+    <!-- QRコード招待モーダル -->
+    <div id="qr-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-sm w-full flex flex-col shadow-2xl overflow-hidden p-5 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
+                <h2 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-emerald-400"></i> ユーザー招待QRコード
+                </h2>
+                <button onclick="closeModal('qr-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-400">スマホのカメラで読み取って参加できます</p>
+            
+            <div class="bg-white p-4 rounded-2xl mx-auto flex items-center justify-center shadow-inner" id="qrcode-container"></div>
+            
+            <div class="space-y-2">
+                <input type="text" id="invite-url-input" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 text-center select-all" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html" readonly>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="copyInviteUrl()" class="py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> URLコピー
+                    </button>
+                    <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html" target="_blank" class="py-2 bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-external-link-alt text-emerald-400"></i> 開く
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -775,10 +812,12 @@
                 });
             }
 
+            // ゴミ箱ボタン：全消去したうえで自動的に反映（同期）まで実行する
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
                     saveState(prefix);
                     workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
+                    sendSyncCanvas(prefix, true); // 自動同期フラグ付きで送信
                 });
             }
 
@@ -824,6 +863,38 @@
                 });
             }
         });
+
+        // 共通反映関数（silent=trueの場合はアラートを省略）
+        function sendSyncCanvas(prefix, silent = false) {
+            const ws = workspaces[prefix];
+            const tempCvs = document.createElement('canvas');
+            tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
+            const tCtx = tempCvs.getContext('2d');
+            ws.layers.forEach(l => {
+                if (l.visible && l.canvas) {
+                    tCtx.globalAlpha = l.opacity;
+                    tCtx.drawImage(l.canvas, 0, 0);
+                }
+            });
+
+            const dataUrl = tempCvs.toDataURL('image/png');
+
+            if (db) {
+                db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`).set(dataUrl)
+                    .then(() => {
+                        if (!silent) {
+                            alert(`プレイヤー${prefix.toUpperCase()}のキャンバスを反映しました！`);
+                        }
+                    })
+                    .catch((err) => {
+                        if (!silent) {
+                            alert("反映に失敗しました: " + err.message);
+                        }
+                    });
+            } else if (!silent) {
+                alert("Firebaseが設定されていないため、この環境では同期されません。");
+            }
+        }
 
         // Test Canvas setup in Brush Modal
         let testCanvas, testCtx;
@@ -1029,6 +1100,40 @@
             }
         };
 
+        // QRコード生成モーダル関連
+        let qrInitialized = false;
+        const qrModal = document.getElementById('qr-modal');
+        const qrModalBtn = document.getElementById('qr-modal-btn');
+
+        if (qrModalBtn && qrModal) {
+            qrModalBtn.addEventListener('click', () => {
+                qrModal.classList.remove('hidden');
+                if (!qrInitialized) {
+                    const container = document.getElementById('qrcode-container');
+                    container.innerHTML = '';
+                    new QRCode(container, {
+                        text: "https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html",
+                        width: 180,
+                        height: 180,
+                        colorDark: "#020617",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    qrInitialized = true;
+                }
+            });
+        }
+
+        window.copyInviteUrl = function() {
+            const input = document.getElementById('invite-url-input');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert("招待用URLをコピーしました！");
+            }).catch(err => {
+                alert("コピーに失敗しました");
+            });
+        };
+
         const historyModal = document.getElementById('history-modal');
         const savedStampsGrid = document.getElementById('saved-stamps-grid');
         const stampCountSpan = document.getElementById('stamp-count');
@@ -1038,7 +1143,6 @@
             if (stampCountSpan) stampCountSpan.textContent = stamps.length;
         }
 
-        // 保存済み作品の描画および操作ボタン機能
         function renderSavedStamps() {
             if (!savedStampsGrid) return;
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
@@ -1047,7 +1151,7 @@
                 savedStampsGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs">保存された作品はまだありません。</div>`;
                 return;
             }
-            stamps.forEach((s, index) => {
+            stamps.forEach((s) => {
                 const card = document.createElement('div');
                 card.className = 'bg-dark-950 border border-dark-800 rounded-2xl p-3 flex flex-col items-center gap-2 relative shadow-md';
                 card.innerHTML = `
@@ -1059,7 +1163,6 @@
                         <span class="text-[10px] text-slate-500">${s.date || ''}</span>
                     </div>
                     
-                    <!-- アクションボタン群 -->
                     <div class="w-full flex flex-col gap-1.5 pt-1 border-t border-dark-800/80">
                         <div class="grid grid-cols-2 gap-1">
                             <button onclick="loadArtworkToCanvas(${s.id}, 'a')" class="px-2 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
@@ -1083,7 +1186,6 @@
             });
         }
 
-        // 保存済み作品をキャンバスに反映（復元）する
         window.loadArtworkToCanvas = function(id, targetUser) {
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
@@ -1104,7 +1206,6 @@
             img.src = artwork.dataUrl;
         };
 
-        // 保存済み作品をダウンロードする
         window.downloadArtwork = function(id) {
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
@@ -1118,7 +1219,6 @@
             document.body.removeChild(link);
         };
 
-        // 個別作品の削除
         window.deleteSingleArtwork = function(id) {
             let stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
