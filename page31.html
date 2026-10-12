@@ -29,7 +29,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase App (Compat) & Realtime Database CDN -->
+    <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -71,9 +71,9 @@
             </div>
             <div>
                 <h1 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
-                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">クロスデバイス同期</span>
+                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">キャンバス共有スタジオ</span>
                 </h1>
-                <p class="text-[11px] text-slate-400 hidden sm:block">別々の端末から同じURLでリアルタイム共同描画</p>
+                <p class="text-[11px] text-slate-400 hidden sm:block">二人で並んで同時にお絵描き・イラストを作成</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
@@ -295,14 +295,14 @@
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl"><i class="fa-solid fa-box-archive text-sm"></i></div>
                     <div>
                         <h2 class="font-bold text-sm sm:text-base text-slate-100">保存済み作品・イラスト一覧</h2>
-                        <p class="text-[11px] text-slate-400">Firebase & ローカルストレージに保存された作品</p>
+                        <p class="text-[11px] text-slate-400">ローカル & クラウド保存された作品</p>
                     </div>
                 </div>
                 <button onclick="closeModal('history-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3" id="saved-stamps-grid"></div>
             <div class="p-3 border-t border-dark-800 bg-dark-950/50 flex justify-between items-center text-xs text-slate-400">
-                <span>クラウドに安全に保存されています</span>
+                <span>作品リスト</span>
                 <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition">全作品を削除</button>
             </div>
         </div>
@@ -318,8 +318,8 @@
                 <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-users"></i></div>
                     <div>
-                        <h3 class="font-bold text-slate-200">別端末でのリアルタイム共同描画</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">同じURLを異なるスマホやパソコンで開くと、それぞれの描画や消去がクラウド経由でリアルタイムに同期されます。</p>
+                        <h3 class="font-bold text-slate-200">安定した動作とリアルタイム同期</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">ボタン操作やブラシ設定がスムーズに動き、別端末間でも同じURLでキャンバス共有が可能です。</p>
                     </div>
                 </div>
             </div>
@@ -329,10 +329,11 @@
         </div>
     </div>
 
-    <!-- Application & Firebase JavaScript -->
+    <!-- Application JavaScript -->
     <script>
         // ==========================================
-        // Firebase 設定 (ご自身の情報に置き換えてください)
+        // Firebase 設定 (必要に応じてご自身の情報に変更)
+        // 未設定でもローカル保存・描画はそのまま動作します
         // ==========================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -344,10 +345,15 @@
             appId: "YOUR_APP_ID"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        let db = null;
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY" && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+            }
+        } catch (e) {
+            console.log("Firebase未設定のためローカルモードで動作します");
         }
-        const db = firebase.database();
 
         const canvasWidth = 512;
         const canvasHeight = 384;
@@ -385,6 +391,7 @@
         function initWorkspace(prefix) {
             const ws = workspaces[prefix];
             const container = document.querySelector(`.canvas-wrapper-${prefix}`);
+            if (!container) return;
             container.innerHTML = '';
 
             ws.layers.forEach((layer) => {
@@ -412,19 +419,18 @@
                 container.dataset.initialized = "true";
             }
 
-            // Firebaseからのリアルタイム同期と保存データ読込のセットアップ
-            setupFirebaseSync(prefix);
+            if (db) {
+                setupFirebaseSync(prefix);
+            }
         }
 
-        // 別端末間でのリアルタイム同期リスナー
         function setupFirebaseSync(prefix) {
-            const strokeRef = db.ref(`canvas_share_rooms/default_room/${prefix}/strokes`);
-            strokeRef.off(); // 既存のリスナー重複を防ぐ
+            if (!db) return;
+            const strokeRef = db.ref(`canvas_share_rooms/room_v1/${prefix}/strokes`);
+            strokeRef.off();
             strokeRef.on('child_added', (snapshot) => {
                 const stroke = snapshot.val();
                 if (!stroke) return;
-                
-                // 自分が描いた直後のストロークによる二重描画を防ぐためのタイムスタンプチェック（例: 500ms以内なら無視など、またはシンプルに全体反映）
                 const ws = workspaces[prefix];
                 const targetLayer = ws.layers.find(l => l.id === stroke.layerId) || ws.layers[0];
                 if (targetLayer && targetLayer.ctx) {
@@ -432,8 +438,7 @@
                 }
             });
 
-            // 全消去の同期
-            const clearRef = db.ref(`canvas_share_rooms/default_room/${prefix}/clearAction`);
+            const clearRef = db.ref(`canvas_share_rooms/room_v1/${prefix}/clearAction`);
             clearRef.on('value', (snapshot) => {
                 const timestamp = snapshot.val();
                 if (timestamp && window[`lastClear_${prefix}`] !== timestamp) {
@@ -441,23 +446,6 @@
                     const ws = workspaces[prefix];
                     ws.layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
                     saveState(prefix);
-                }
-            });
-
-            // 保存データの同期・復元
-            db.ref(`canvas_share_rooms/default_room/${prefix}/saved`).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.dataUrl) {
-                    const img = new Image();
-                    img.onload = () => {
-                        const ws = workspaces[prefix];
-                        if (ws.layers[0] && ws.layers[0].ctx) {
-                            ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                            ws.layers[0].ctx.drawImage(img, 0, 0);
-                            saveState(prefix);
-                        }
-                    };
-                    img.src = data.dataUrl;
                 }
             });
         }
@@ -471,32 +459,6 @@
                 shape: stroke.shape
             };
             renderBrushStroke(tempWs, ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.speed);
-        }
-
-        function saveDrawingToFirebase(prefix, title) {
-            const ws = workspaces[prefix];
-            const tempCvs = document.createElement('canvas');
-            tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
-            const tCtx = tempCvs.getContext('2d');
-            ws.layers.forEach(l => {
-                if (l.visible && l.canvas) {
-                    tCtx.globalAlpha = l.opacity;
-                    tCtx.drawImage(l.canvas, 0, 0);
-                }
-            });
-
-            const dataUrl = tempCvs.toDataURL('image/png');
-            const stampData = { id: Date.now(), title, dataUrl, date: new Date().toLocaleDateString() };
-
-            // Firebaseへ保存
-            db.ref(`canvas_share_rooms/default_room/${prefix}/saved`).set(stampData);
-
-            // ローカルにも保存
-            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            stamps.unshift(stampData);
-            localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
-            updateStampCount();
-            alert(`作品「${title}」をクラウドに保存しました！`);
         }
 
         function setupDrawingEvents(prefix, wrapper) {
@@ -543,21 +505,21 @@
                 const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
                 lastSpeed = currentSpeed;
 
-                // 自端末で描画
                 renderBrushStroke(ws, activeLayer.ctx, lastX, lastY, coords.x, coords.y, currentSpeed);
 
-                // Firebaseへストロークデータを送信（別端末へリアルタイム同期）
-                db.ref(`canvas_share_rooms/default_room/${prefix}/strokes`).push({
-                    layerId: ws.activeLayerId,
-                    tool: ws.tool,
-                    color: ws.color,
-                    size: ws.size,
-                    opacity: ws.opacity,
-                    shape: ws.shape,
-                    x1: lastX, y1: lastY,
-                    x2: coords.x, y2: coords.y,
-                    speed: currentSpeed
-                });
+                if (db) {
+                    db.ref(`canvas_share_rooms/room_v1/${prefix}/strokes`).push({
+                        layerId: ws.activeLayerId,
+                        tool: ws.tool,
+                        color: ws.color,
+                        size: ws.size,
+                        opacity: ws.opacity,
+                        shape: ws.shape,
+                        x1: lastX, y1: lastY,
+                        x2: coords.x, y2: coords.y,
+                        speed: currentSpeed
+                    });
+                }
 
                 lastX = coords.x;
                 lastY = coords.y;
@@ -744,8 +706,10 @@
 
         function updateUndoRedoButtons(prefix) {
             const ws = workspaces[prefix];
-            document.querySelector(`.undo-btn-${prefix}`).disabled = ws.history.length <= 1;
-            document.querySelector(`.redo-btn-${prefix}`).disabled = ws.redoStack.length === 0;
+            const undoBtn = document.querySelector(`.undo-btn-${prefix}`);
+            const redoBtn = document.querySelector(`.redo-btn-${prefix}`);
+            if (undoBtn) undoBtn.disabled = ws.history.length <= 1;
+            if (redoBtn) redoBtn.disabled = ws.redoStack.length === 0;
         }
 
         function updateColorIndicator(prefix) {
@@ -757,27 +721,42 @@
         }
 
         ['a', 'b'].forEach(prefix => {
-            document.querySelector(`.undo-btn-${prefix}`).addEventListener('click', () => {
-                const ws = workspaces[prefix];
-                if (ws.history.length <= 1) return;
-                ws.redoStack.push(ws.history.pop());
-                const prev = ws.history[ws.history.length - 1];
-                ws.layers.forEach((l, idx) => { if (prev[idx]) l.ctx.putImageData(prev[idx], 0, 0); });
-                updateUndoRedoButtons(prefix);
-            });
-            document.querySelector(`.redo-btn-${prefix}`).addEventListener('click', () => {
-                const ws = workspaces[prefix];
-                if (ws.redoStack.length === 0) return;
-                const next = ws.redoStack.pop();
-                ws.history.push(next);
-                ws.layers.forEach((l, idx) => { if (next[idx]) l.ctx.putImageData(next[idx], 0, 0); });
-                updateUndoRedoButtons(prefix);
-            });
-            document.querySelector(`.clear-btn-${prefix}`).addEventListener('click', () => {
-                saveState(prefix);
-                workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
-                db.ref(`canvas_share_rooms/default_room/${prefix}/clearAction`).set(Date.now());
-            });
+            const undoBtn = document.querySelector(`.undo-btn-${prefix}`);
+            const redoBtn = document.querySelector(`.redo-btn-${prefix}`);
+            const clearBtn = document.querySelector(`.clear-btn-${prefix}`);
+            const saveBtn = document.querySelector(`.save-btn-${prefix}`);
+
+            if (undoBtn) {
+                undoBtn.addEventListener('click', () => {
+                    const ws = workspaces[prefix];
+                    if (ws.history.length <= 1) return;
+                    ws.redoStack.push(ws.history.pop());
+                    const prev = ws.history[ws.history.length - 1];
+                    ws.layers.forEach((l, idx) => { if (prev[idx]) l.ctx.putImageData(prev[idx], 0, 0); });
+                    updateUndoRedoButtons(prefix);
+                });
+            }
+
+            if (redoBtn) {
+                redoBtn.addEventListener('click', () => {
+                    const ws = workspaces[prefix];
+                    if (ws.redoStack.length === 0) return;
+                    const next = ws.redoStack.pop();
+                    ws.history.push(next);
+                    ws.layers.forEach((l, idx) => { if (next[idx]) l.ctx.putImageData(next[idx], 0, 0); });
+                    updateUndoRedoButtons(prefix);
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    saveState(prefix);
+                    workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
+                    if (db) {
+                        db.ref(`canvas_share_rooms/room_v1/${prefix}/clearAction`).set(Date.now());
+                    }
+                });
+            }
 
             document.querySelectorAll(`.tool-btn-${prefix}`).forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -791,11 +770,28 @@
                 });
             });
 
-            document.querySelector(`.save-btn-${prefix}`).addEventListener('click', () => {
-                const titleInput = document.querySelector(`.stamp-title-${prefix}`);
-                const title = titleInput.value.trim() || `作品 (${prefix.toUpperCase()})`;
-                saveDrawingToFirebase(prefix, title);
-            });
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const titleInput = document.querySelector(`.stamp-title-${prefix}`);
+                    const title = titleInput ? titleInput.value.trim() || `作品 (${prefix.toUpperCase()})` : `作品 (${prefix.toUpperCase()})`;
+                    const ws = workspaces[prefix];
+                    const tempCvs = document.createElement('canvas');
+                    tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
+                    const tCtx = tempCvs.getContext('2d');
+                    ws.layers.forEach(l => {
+                        if (l.visible && l.canvas) {
+                            tCtx.globalAlpha = l.opacity;
+                            tCtx.drawImage(l.canvas, 0, 0);
+                        }
+                    });
+
+                    const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+                    stamps.unshift({ id: Date.now(), title, dataUrl: tempCvs.toDataURL('image/png'), date: new Date().toLocaleDateString() });
+                    localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
+                    updateStampCount();
+                    alert(`作品「${title}」を保存しました！`);
+                });
+            }
         });
 
         // Test Canvas setup in Brush Modal
@@ -805,12 +801,13 @@
 
         function initTestCanvas() {
             testCanvas = document.getElementById('test-canvas');
+            if (!testCanvas) return;
             testCanvas.width = testWidth;
             testCanvas.height = testHeight;
             testCtx = testCanvas.getContext('2d', { willReadFrequently: true });
 
             const wrapper = document.getElementById('test-canvas-wrapper');
-            if (wrapper.dataset.initialized) return;
+            if (!wrapper || wrapper.dataset.initialized) return;
 
             let isTestDrawing = false;
             let lastX = 0, lastY = 0;
@@ -871,11 +868,18 @@
         window.openBrushModalFor = function(prefix) {
             currentActiveUser = prefix;
             const ws = workspaces[prefix];
-            document.getElementById('modal-color').value = ws.color;
-            document.getElementById('modal-size').value = ws.size;
-            document.getElementById('brush-size-val').textContent = ws.size + 'px';
-            document.getElementById('modal-opacity').value = ws.opacity;
-            document.getElementById('brush-opacity-val').textContent = Math.round(ws.opacity * 100) + '%';
+            const modalColor = document.getElementById('modal-color');
+            const modalSize = document.getElementById('modal-size');
+            const sizeVal = document.getElementById('brush-size-val');
+            const modalOpacity = document.getElementById('modal-opacity');
+            const opacityVal = document.getElementById('brush-opacity-val');
+
+            if (modalColor) modalColor.value = ws.color;
+            if (modalSize) modalSize.value = ws.size;
+            if (sizeVal) sizeVal.textContent = ws.size + 'px';
+            if (modalOpacity) modalOpacity.value = ws.opacity;
+            if (opacityVal) opacityVal.textContent = Math.round(ws.opacity * 100) + '%';
+            
             updateBrushShapeUI(ws.shape);
             openModal('brush-modal');
             setTimeout(initTestCanvas, 50);
@@ -887,22 +891,35 @@
             openModal('layer-modal');
         };
 
-        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
-        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+        window.openModal = function(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('hidden');
+        };
+
+        window.closeModal = function(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('hidden');
+        };
 
         window.setBrushColor = function(color) {
             workspaces[currentActiveUser].color = color;
-            document.getElementById('modal-color').value = color;
+            const modalColor = document.getElementById('modal-color');
+            if (modalColor) modalColor.value = color;
             updateColorIndicator(currentActiveUser);
         };
+
         window.setBrushSize = function(size) {
             workspaces[currentActiveUser].size = parseInt(size);
-            document.getElementById('brush-size-val').textContent = size + 'px';
+            const sizeVal = document.getElementById('brush-size-val');
+            if (sizeVal) sizeVal.textContent = size + 'px';
         };
+
         window.setBrushOpacity = function(opacity) {
             workspaces[currentActiveUser].opacity = parseFloat(opacity);
-            document.getElementById('brush-opacity-val').textContent = Math.round(opacity * 100) + '%';
+            const opacityVal = document.getElementById('brush-opacity-val');
+            if (opacityVal) opacityVal.textContent = Math.round(opacity * 100) + '%';
         };
+
         window.setBrushShape = function(shape) {
             workspaces[currentActiveUser].shape = shape;
             updateBrushShapeUI(shape);
@@ -923,6 +940,7 @@
 
         window.renderLayerList = function() {
             const container = document.getElementById('layer-list-container');
+            if (!container) return;
             const ws = workspaces[currentActiveUser];
             container.innerHTML = '';
             ws.layers.slice().reverse().forEach(layer => {
@@ -986,10 +1004,11 @@
 
         function updateStampCount() {
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            stampCountSpan.textContent = stamps.length;
+            if (stampCountSpan) stampCountSpan.textContent = stamps.length;
         }
 
         function renderSavedStamps() {
+            if (!savedStampsGrid) return;
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             savedStampsGrid.innerHTML = '';
             if (stamps.length === 0) {
@@ -1009,17 +1028,27 @@
             });
         }
 
-        document.getElementById('view-history-tab-btn').addEventListener('click', () => { renderSavedStamps(); historyModal.classList.remove('hidden'); });
-        document.getElementById('clear-all-stamps-btn').addEventListener('click', () => {
-            if (confirm('すべての保存作品を削除しますか？')) {
-                localStorage.removeItem('canvas_share_artworks');
-                renderSavedStamps();
-                updateStampCount();
-            }
-        });
+        const historyBtn = document.getElementById('view-history-tab-btn');
+        if (historyBtn) {
+            historyBtn.addEventListener('click', () => { renderSavedStamps(); if (historyModal) historyModal.classList.remove('hidden'); });
+        }
+
+        const clearStampsBtn = document.getElementById('clear-all-stamps-btn');
+        if (clearStampsBtn) {
+            clearStampsBtn.addEventListener('click', () => {
+                if (confirm('すべての保存作品を削除しますか？')) {
+                    localStorage.removeItem('canvas_share_artworks');
+                    renderSavedStamps();
+                    updateStampCount();
+                }
+            });
+        }
 
         const helpModal = document.getElementById('help-modal');
-        document.getElementById('help-btn').addEventListener('click', () => helpModal.classList.remove('hidden'));
+        const helpBtn = document.getElementById('help-btn');
+        if (helpBtn && helpModal) {
+            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+        }
 
         // Initialize on load
         window.addEventListener('load', () => {
