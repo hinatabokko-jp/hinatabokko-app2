@@ -81,7 +81,7 @@
                 padding: 6px 10px;
             }
             main {
-                grid-template-columns: 1fr; /* スマホ縦向きでどうしてもはみ出る場合のフォールバック、または横スクロール回避 */
+                grid-template-columns: 1fr;
                 overflow-x: auto;
             }
         }
@@ -314,22 +314,25 @@
         </div>
     </div>
 
+    <!-- 保存済み作品モーダル -->
     <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-3.5 border-b border-dark-800 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl"><i class="fa-solid fa-box-archive text-sm"></i></div>
                     <div>
                         <h2 class="font-bold text-sm sm:text-base text-slate-100">保存済み作品一覧</h2>
-                        <p class="text-[11px] text-slate-400">ローカル保存された作品</p>
+                        <p class="text-[11px] text-slate-400">キャンバスへの復元・ダウンロード・削除を行えます</p>
                     </div>
                 </div>
                 <button onclick="closeModal('history-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3" id="saved-stamps-grid"></div>
+            <div class="p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="saved-stamps-grid"></div>
             <div class="p-3 border-t border-dark-800 bg-dark-950/50 flex justify-between items-center text-xs text-slate-400">
-                <span>一覧</span>
-                <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition">全削除</button>
+                <span>作品一覧</span>
+                <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can text-xs"></i> 全削除
+                </button>
             </div>
         </div>
     </div>
@@ -1035,6 +1038,7 @@
             if (stampCountSpan) stampCountSpan.textContent = stamps.length;
         }
 
+        // 保存済み作品の描画および操作ボタン機能
         function renderSavedStamps() {
             if (!savedStampsGrid) return;
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
@@ -1043,18 +1047,90 @@
                 savedStampsGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs">保存された作品はまだありません。</div>`;
                 return;
             }
-            stamps.forEach(s => {
+            stamps.forEach((s, index) => {
                 const card = document.createElement('div');
-                card.className = 'bg-dark-950 border border-dark-800 rounded-2xl p-3 flex flex-col items-center gap-2 relative';
+                card.className = 'bg-dark-950 border border-dark-800 rounded-2xl p-3 flex flex-col items-center gap-2 relative shadow-md';
                 card.innerHTML = `
                     <div class="w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center">
                         <img src="${s.dataUrl}" class="w-full h-full object-contain">
                     </div>
-                    <span class="text-xs font-bold text-slate-200 truncate w-full text-center">#${s.title}</span>
+                    <div class="w-full flex justify-between items-center px-1">
+                        <span class="text-xs font-bold text-slate-200 truncate flex-1">${s.title}</span>
+                        <span class="text-[10px] text-slate-500">${s.date || ''}</span>
+                    </div>
+                    
+                    <!-- アクションボタン群 -->
+                    <div class="w-full flex flex-col gap-1.5 pt-1 border-t border-dark-800/80">
+                        <div class="grid grid-cols-2 gap-1">
+                            <button onclick="loadArtworkToCanvas(${s.id}, 'a')" class="px-2 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-arrow-left"></i> P1に反映
+                            </button>
+                            <button onclick="loadArtworkToCanvas(${s.id}, 'b')" class="px-2 py-1 bg-pink-600/80 hover:bg-pink-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
+                                P2に反映 <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <button onclick="downloadArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-dark-700 text-slate-300 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
+                                <i class="fa-solid fa-download text-emerald-400"></i> 保存
+                            </button>
+                            <button onclick="deleteSingleArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
+                                <i class="fa-solid fa-trash-can text-red-400"></i> 削除
+                            </button>
+                        </div>
+                    </div>
                 `;
                 savedStampsGrid.appendChild(card);
             });
         }
+
+        // 保存済み作品をキャンバスに反映（復元）する
+        window.loadArtworkToCanvas = function(id, targetUser) {
+            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+            const artwork = stamps.find(item => item.id === id);
+            if (!artwork) return;
+
+            const ws = workspaces[targetUser];
+            const img = new Image();
+            img.onload = () => {
+                if (ws.layers[0] && ws.layers[0].ctx) {
+                    saveState(targetUser);
+                    ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    ws.layers[0].ctx.drawImage(img, 0, 0);
+                    saveState(targetUser);
+                    alert(`作品「${artwork.title}」をプレイヤー${targetUser.toUpperCase()}のキャンバスに読み込みました！`);
+                    closeModal('history-modal');
+                }
+            };
+            img.src = artwork.dataUrl;
+        };
+
+        // 保存済み作品をダウンロードする
+        window.downloadArtwork = function(id) {
+            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+            const artwork = stamps.find(item => item.id === id);
+            if (!artwork) return;
+
+            const link = document.createElement('a');
+            link.href = artwork.dataUrl;
+            link.download = `${artwork.title || 'canvas_artwork'}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // 個別作品の削除
+        window.deleteSingleArtwork = function(id) {
+            let stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
+            const artwork = stamps.find(item => item.id === id);
+            if (!artwork) return;
+
+            if (confirm(`作品「${artwork.title}」を削除してもよろしいですか？`)) {
+                stamps = stamps.filter(item => item.id !== id);
+                localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
+                renderSavedStamps();
+                updateStampCount();
+            }
+        };
 
         const historyBtn = document.getElementById('view-history-tab-btn');
         if (historyBtn) {
