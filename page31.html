@@ -71,9 +71,9 @@
             </div>
             <div>
                 <h1 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2">
-                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">キャンバス共有スタジオ</span>
+                    Canvas Share <span class="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/30">メッセージ送信スタイル</span>
                 </h1>
-                <p class="text-[11px] text-slate-400 hidden sm:block">二人で並んで同時にお絵描き・イラストを作成</p>
+                <p class="text-[11px] text-slate-400 hidden sm:block">描いた後に「反映」ボタンを押してキャンバスを共有</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
@@ -136,8 +136,11 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <input type="text" class="stamp-title-a flex-1 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="作品名 (例: プレイヤー1の作品)">
-                <button class="save-btn-a py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1.5">
+                <button class="sync-btn-a flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 描画を「反映」する
+                </button>
+                <input type="text" class="stamp-title-a w-1/3 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="作品名">
+                <button class="save-btn-a py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1">
                     <i class="fa-solid fa-floppy-disk"></i> 保存
                 </button>
             </div>
@@ -188,8 +191,11 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <input type="text" class="stamp-title-b flex-1 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500" placeholder="作品名 (例: プレイヤー2の作品)">
-                <button class="save-btn-b py-2 px-4 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1.5">
+                <button class="sync-btn-b flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 描画を「反映」する
+                </button>
+                <input type="text" class="stamp-title-b w-1/3 bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-pink-500" placeholder="作品名">
+                <button class="save-btn-b py-2.5 px-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center gap-1">
                     <i class="fa-solid fa-floppy-disk"></i> 保存
                 </button>
             </div>
@@ -197,18 +203,17 @@
 
     </main>
 
-    <!-- Modals -->
+    <!-- Modals (Brush, Layer, History, Help) -->
     <div id="brush-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-4xl w-full p-5 space-y-3 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
                 <h3 class="font-bold text-slate-200 text-sm sm:text-base"><i class="fa-solid fa-palette text-indigo-400 mr-2"></i>ブラシ・スタイル・色の設定</h3>
                 <button onclick="closeModal('brush-modal')" class="text-slate-400 hover:text-slate-200 p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                 <div class="md:col-span-7 space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 mb-1.5">ブラシの形状（タッチ・質感）</label>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">ブラシの形状</label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="brush-shapes-grid">
                             <button onclick="setBrushShape('normal')" id="shape-normal" class="p-2 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-pen"></i><span>標準ペン</span></button>
                             <button onclick="setBrushShape('calligraphy')" id="shape-calligraphy" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-pen-nib"></i><span>カリグラフィ</span></button>
@@ -220,7 +225,6 @@
                             <button onclick="setBrushShape('brush')" id="shape-brush" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-paintbrush"></i><span>毛筆</span></button>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-bold text-slate-400 mb-1.5">カラー選択</label>
                         <div class="flex items-center space-x-3">
@@ -236,7 +240,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="space-y-2">
                         <div>
                             <div class="flex justify-between items-center mb-1">
@@ -254,19 +257,16 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="md:col-span-5 flex flex-col gap-2 bg-dark-950 p-3.5 rounded-2xl border border-dark-800">
                     <div class="flex justify-between items-center">
-                        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-pencil text-indigo-400"></i> 試し描きエリア</label>
+                        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-pencil text-indigo-400"></i> 試し描き</label>
                         <button onclick="clearTestCanvas()" class="text-[11px] text-slate-400 hover:text-red-400 transition flex items-center gap-1 px-2 py-1 rounded bg-dark-800"><i class="fa-solid fa-rotate-right"></i> クリア</button>
                     </div>
-                    <div class="relative w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden cursor-crosshair flex items-center justify-center" id="test-canvas-wrapper">
+                    <div class="relative w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center" id="test-canvas-wrapper">
                         <canvas id="test-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
                     </div>
-                    <p class="text-[10px] text-slate-500 text-center">※ ここでの描画は保存されません</p>
                 </div>
             </div>
-
             <button onclick="closeModal('brush-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition">決定する</button>
         </div>
     </div>
@@ -280,7 +280,7 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold text-slate-400">アクティブレイヤー</span>
-                    <button onclick="addNewLayer()" class="bg-dark-800 hover:bg-dark-700 text-indigo-400 border border-dark-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"><i class="fa-solid fa-plus"></i><span>新規レイヤー追加</span></button>
+                    <button onclick="addNewLayer()" class="bg-dark-800 hover:bg-dark-700 text-indigo-400 border border-dark-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"><i class="fa-solid fa-plus"></i><span>新規レイヤー</span></button>
                 </div>
                 <div id="layer-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
             </div>
@@ -294,16 +294,16 @@
                 <div class="flex items-center gap-2">
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl"><i class="fa-solid fa-box-archive text-sm"></i></div>
                     <div>
-                        <h2 class="font-bold text-sm sm:text-base text-slate-100">保存済み作品・イラスト一覧</h2>
-                        <p class="text-[11px] text-slate-400">ローカル & クラウド保存された作品</p>
+                        <h2 class="font-bold text-sm sm:text-base text-slate-100">保存済み作品一覧</h2>
+                        <p class="text-[11px] text-slate-400">ローカル保存された作品</p>
                     </div>
                 </div>
                 <button onclick="closeModal('history-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3" id="saved-stamps-grid"></div>
             <div class="p-3 border-t border-dark-800 bg-dark-950/50 flex justify-between items-center text-xs text-slate-400">
-                <span>作品リスト</span>
-                <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition">全作品を削除</button>
+                <span>一覧</span>
+                <button id="clear-all-stamps-btn" class="text-red-400 hover:text-red-300 font-medium transition">全削除</button>
             </div>
         </div>
     </div>
@@ -311,15 +311,15 @@
     <div id="help-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-dark-800 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-3.5 border-b border-dark-800 flex items-center justify-between">
-                <h2 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2"><i class="fa-solid fa-circle-question text-indigo-400"></i> Canvas Share の使い方</h2>
+                <h2 class="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-2"><i class="fa-solid fa-circle-question text-indigo-400"></i> 使い方</h2>
                 <button onclick="closeModal('help-modal')" class="p-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 transition"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 flex flex-col gap-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
                 <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
-                    <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-users"></i></div>
+                    <div class="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl mt-0.5"><i class="fa-solid fa-paper-plane"></i></div>
                     <div>
-                        <h3 class="font-bold text-slate-200">安定した動作とリアルタイム同期</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">ボタン操作やブラシ設定がスムーズに動き、別端末間でも同じURLでキャンバス共有が可能です。</p>
+                        <h3 class="font-bold text-slate-200">「反映」ボタンでメッセージ共有</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">描き終わったら「描画を反映する」ボタンを押すと、メッセージの送信のように相手の画面（および自分の画面）に最新のキャンバス画像がパッと反映されます。</p>
                     </div>
                 </div>
             </div>
@@ -332,8 +332,7 @@
     <!-- Application JavaScript -->
     <script>
         // ==========================================
-        // Firebase 設定 (必要に応じてご自身の情報に変更)
-        // 未設定でもローカル保存・描画はそのまま動作します
+        // Firebase 設定 (ご自身の情報に変更してください)
         // ==========================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -352,7 +351,7 @@
                 db = firebase.database();
             }
         } catch (e) {
-            console.log("Firebase未設定のためローカルモードで動作します");
+            console.log("Firebase未設定モード");
         }
 
         const canvasWidth = 512;
@@ -419,46 +418,58 @@
                 container.dataset.initialized = "true";
             }
 
+            // Firebaseから「反映」された最新データを受信監視
             if (db) {
-                setupFirebaseSync(prefix);
+                listenSyncedCanvas(prefix);
             }
         }
 
-        function setupFirebaseSync(prefix) {
-            if (!db) return;
-            const strokeRef = db.ref(`canvas_share_rooms/room_v1/${prefix}/strokes`);
-            strokeRef.off();
-            strokeRef.on('child_added', (snapshot) => {
-                const stroke = snapshot.val();
-                if (!stroke) return;
-                const ws = workspaces[prefix];
-                const targetLayer = ws.layers.find(l => l.id === stroke.layerId) || ws.layers[0];
-                if (targetLayer && targetLayer.ctx) {
-                    renderRemoteStroke(ws, targetLayer.ctx, stroke);
-                }
-            });
+        // メッセージ送信方式：Firebaseから最新の同期画像を受信してキャンバスに描画する
+        function listenSyncedCanvas(prefix) {
+            const syncRef = db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`);
+            syncRef.on('value', (snapshot) => {
+                const dataUrl = snapshot.val();
+                if (!dataUrl) return;
 
-            const clearRef = db.ref(`canvas_share_rooms/room_v1/${prefix}/clearAction`);
-            clearRef.on('value', (snapshot) => {
-                const timestamp = snapshot.val();
-                if (timestamp && window[`lastClear_${prefix}`] !== timestamp) {
-                    window[`lastClear_${prefix}`] = timestamp;
-                    const ws = workspaces[prefix];
-                    ws.layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
-                    saveState(prefix);
-                }
+                const ws = workspaces[prefix];
+                const img = new Image();
+                img.onload = () => {
+                    if (ws.layers[0] && ws.layers[0].ctx) {
+                        ws.layers[0].ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        ws.layers[0].ctx.drawImage(img, 0, 0);
+                        saveState(prefix);
+                    }
+                };
+                img.src = dataUrl;
             });
         }
 
-        function renderRemoteStroke(ws, ctx, stroke) {
-            const tempWs = {
-                tool: stroke.tool,
-                color: stroke.color,
-                size: stroke.size,
-                opacity: stroke.opacity,
-                shape: stroke.shape
-            };
-            renderBrushStroke(tempWs, ctx, stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.speed);
+        // 「反映」ボタンが押されたとき、現在のキャンバス画像をFirebaseに送信する
+        function sendSyncCanvas(prefix) {
+            const ws = workspaces[prefix];
+            const tempCvs = document.createElement('canvas');
+            tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
+            const tCtx = tempCvs.getContext('2d');
+            ws.layers.forEach(l => {
+                if (l.visible && l.canvas) {
+                    tCtx.globalAlpha = l.opacity;
+                    tCtx.drawImage(l.canvas, 0, 0);
+                }
+            });
+
+            const dataUrl = tempCvs.toDataURL('image/png');
+
+            if (db) {
+                db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`).set(dataUrl)
+                    .then(() => {
+                        alert(`プレイヤー${prefix.toUpperCase()}のキャンバスを反映しました！`);
+                    })
+                    .catch((err) => {
+                        alert("反映に失敗しました: " + err.message);
+                    });
+            } else {
+                alert("Firebaseが設定されていないため、この環境では同期されません。");
+            }
         }
 
         function setupDrawingEvents(prefix, wrapper) {
@@ -506,21 +517,6 @@
                 lastSpeed = currentSpeed;
 
                 renderBrushStroke(ws, activeLayer.ctx, lastX, lastY, coords.x, coords.y, currentSpeed);
-
-                if (db) {
-                    db.ref(`canvas_share_rooms/room_v1/${prefix}/strokes`).push({
-                        layerId: ws.activeLayerId,
-                        tool: ws.tool,
-                        color: ws.color,
-                        size: ws.size,
-                        opacity: ws.opacity,
-                        shape: ws.shape,
-                        x1: lastX, y1: lastY,
-                        x2: coords.x, y2: coords.y,
-                        speed: currentSpeed
-                    });
-                }
-
                 lastX = coords.x;
                 lastY = coords.y;
             };
@@ -724,6 +720,7 @@
             const undoBtn = document.querySelector(`.undo-btn-${prefix}`);
             const redoBtn = document.querySelector(`.redo-btn-${prefix}`);
             const clearBtn = document.querySelector(`.clear-btn-${prefix}`);
+            const syncBtn = document.querySelector(`.sync-btn-${prefix}`);
             const saveBtn = document.querySelector(`.save-btn-${prefix}`);
 
             if (undoBtn) {
@@ -752,9 +749,13 @@
                 clearBtn.addEventListener('click', () => {
                     saveState(prefix);
                     workspaces[prefix].layers.forEach(l => l.ctx.clearRect(0, 0, canvasWidth, canvasHeight));
-                    if (db) {
-                        db.ref(`canvas_share_rooms/room_v1/${prefix}/clearAction`).set(Date.now());
-                    }
+                });
+            }
+
+            // 「反映」ボタンを押したときのイベント
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => {
+                    sendSyncCanvas(prefix);
                 });
             }
 
