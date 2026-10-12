@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>テキスト縁取りメーカー</title>
+<meta name="description" content="Webフォントで文字をデザインし、二重縁取りの透過PNGを作成するツール">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700;900&family=Yusei+Magic&family=Rampart+One&family=M+PLUS+Rounded+1c:wght@400;700;900&family=DotGothic16&family=Kaisei+Decol:wght@400;700&family=Reggae+One&family=RocknRoll+One&family=Yuji+Boku&family=Yuji+Syuku&family=Yuji+Mai&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#061326;--panel:#0b1e35;--panel2:#102844;--line:#21496f;--blue:#1685ff;--text:#eef6ff;--muted:#9eb8d3;--field:#07182c}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#102d4c 0,#061326 55%);color:var(--text);font-family:"Noto Sans JP",sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{padding:18px 22px;display:flex;gap:14px;align-items:center;border-bottom:1px solid #183d61;position:sticky;top:0;background:#061326ee;backdrop-filter:blur(12px);z-index:5}
+.logo{font-size:30px}h1{font-size:22px;margin:0 0 3px}header p{margin:0;color:var(--muted);font-size:12px}.status{margin-left:auto;color:#8dc8ff;font-size:12px}
+main{display:grid;grid-template-columns:250px minmax(360px,1fr) 310px;gap:12px;padding:12px;max-width:1800px;margin:auto}
+.panel{background:linear-gradient(160deg,#0b2038,#07172a);border:1px solid var(--line);border-radius:12px;min-width:0;overflow:hidden}.font-panel{position:sticky;top:88px;align-self:start;max-height:calc(100vh - 102px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#2c5c86 #07172a}.font-panel::-webkit-scrollbar{width:9px}.font-panel::-webkit-scrollbar-thumb{background:#2c5c86;border-radius:10px}
+.panel h2{font-size:14px;margin:0 0 12px}.side{padding:13px}.search{width:100%;padding:10px 11px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--text);outline:none}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}.tag{border:1px solid #294c70;border-radius:20px;padding:6px 9px;background:#102945;color:#cfe4fb;font-size:11px}.tag.active{background:#087bfa;border-color:#1685ff;color:white}
+.font-list{display:grid;gap:6px;margin-top:12px}.font-card{width:100%;text-align:left;border:1px solid #1e4164;background:#081a2e;color:white;border-radius:8px;padding:10px}.font-card.active{border:2px solid #1685ff;background:#102b49}.font-sample{font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}.font-name{font-size:11px;color:#8fcaff}
+.center{display:flex;flex-direction:column;gap:10px;min-width:0}.preview-panel{padding:10px}.toolbar{display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-wrap:wrap}.toolbar select,.toolbar button{background:#102945;border:1px solid #2b5075;color:#eaf5ff;padding:7px 10px;border-radius:7px}.toolbar .spacer{flex:1}
+.canvas-wrap{height:min(61vh,690px);min-height:360px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background-color:#f8f8f8;background-image:linear-gradient(45deg,#d6d9de 25%,transparent 25%),linear-gradient(-45deg,#d6d9de 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d6d9de 75%),linear-gradient(-45deg,transparent 75%,#d6d9de 75%);background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0;position:relative}
+#preview{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.info{padding:12px;color:var(--muted);font-size:12px;line-height:1.7}
+.right{padding:13px;display:flex;flex-direction:column;gap:12px;position:sticky;top:88px;align-self:start;max-height:calc(100vh - 102px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#2c5c86 #07172a}.right::-webkit-scrollbar{width:9px}.right::-webkit-scrollbar-thumb{background:#2c5c86;border-radius:10px}.section{border-bottom:1px solid #1d3d5d;padding-bottom:12px}.section:last-child{border-bottom:0}.section-title{font-weight:700;color:#a8d4ff;margin-bottom:9px}.field-label{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#d6e9fa;font-size:12px;margin:10px 0 6px}.field-label small{color:var(--muted)}textarea{width:100%;resize:vertical;min-height:70px;padding:10px;border-radius:8px;border:1px solid #2b5075;background:var(--field);color:white;line-height:1.5}select,input[type=text],input[type=number]{background:var(--field);color:var(--text);border:1px solid #294c70;border-radius:7px;padding:8px;min-width:0}select{width:100%}.control-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.range-row{display:grid;grid-template-columns:1fr 50px;gap:8px;align-items:center}input[type=range]{width:100%;accent-color:#278fff}input[type=color]{width:42px;height:34px;padding:2px;border-radius:7px;border:1px solid #294c70;background:#07182c}.color-control{display:flex;gap:7px;align-items:center}.color-control input[type=text]{width:94px;text-transform:uppercase}.toggleline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}.toggleline label{font-size:12px;color:#d6e9fa}.toggleline input{accent-color:#1685ff}
+.button-row{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid #2a5077;background:#102b49;color:#eaf5ff;padding:10px 12px;border-radius:8px;font-weight:700}.btn.primary{background:linear-gradient(135deg,#1685ff,#4168f5);border-color:#258cff;color:#fff}.btn:disabled{opacity:.45;cursor:wait}.btn.full{width:100%}.presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.preset{padding:8px 4px;border:1px solid #254969;background:#0a1d33;border-radius:8px;color:#bcd5ec;font-size:11px}.preset canvas{width:100%;display:block;margin-bottom:5px}.foot{padding:0 14px 18px;color:#8faecc;font-size:11px;line-height:1.7}
+@media(max-width:1050px){main{grid-template-columns:220px minmax(0,1fr)}.font-panel{position:static;max-height:none;overflow:visible}.right{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));position:static;max-height:none;overflow:visible}.right .section{border-bottom:0}.status{display:none}}
+@media(max-width:700px){header{padding:13px}h1{font-size:18px}main{display:flex;flex-direction:column;padding:8px}.font-panel{order:2}.center{order:1}.right{order:3;display:flex}.canvas-wrap{min-height:260px;height:42vh}.presets{grid-template-columns:repeat(4,minmax(0,1fr))}.font-list{grid-template-columns:repeat(2,minmax(0,1fr))}.font-sample{font-size:17px}}
+</style>
+</head>
+<body>
+<header><div class="logo">✦</div><div><h1>テキスト縁取りメーカー</h1><p>好きなWebフォントで、二重縁取りの文字画像を作成。動画サムネイルやSNSに。</p></div><div class="status">● Webフォント対応（インターネット接続が必要）</div></header>
+<main>
+  <aside class="panel side font-panel">
+    <h2>◈ フォントを選ぶ</h2>
+    <input id="fontSearch" class="search" type="text" placeholder="⌕ フォント名で検索">
+    <div class="tags" id="fontTags">
+      <button class="tag active" data-filter="all">すべて</button><button class="tag" data-filter="ゴシック">ゴシック</button><button class="tag" data-filter="明朝">明朝</button><button class="tag" data-filter="手書き風">手書き風</button><button class="tag" data-filter="かわいい">かわいい</button><button class="tag" data-filter="デザイン">デザイン</button>
+    </div>
+    <div id="fontList" class="font-list"></div>
+  </aside>
+  <section class="center">
+    <div class="panel preview-panel">
+      <div class="toolbar"><select id="previewZoom" aria-label="プレビュー倍率" style="width:auto"><option value="50">50%</option><option value="75">75%</option><option value="100" selected>100%</option></select><button id="fitBtn">画面に合わせる</button><button id="transparentBtn">透過背景を確認</button><div class="spacer"></div><span id="fontStatus" style="font-size:11px;color:#8fcaff">フォント準備中…</span></div>
+      <div class="canvas-wrap" id="canvasWrap"><canvas id="preview" width="1920" height="1080"></canvas></div>
+    </div>
+    <div class="panel info"><b style="color:#d8ebff">出力のポイント</b><br>標準的なフルHD動画サイズ（1920 × 1080 px）で、文字を高解像度描画します。背景を「透明」にしてPNG保存すると、動画編集ソフトに重ねて使えます。文字がキャンバスの外にはみ出さないよう、プレビューを確認してね。</div>
+    <div class="panel side"><h2>おすすめスタイル</h2><div class="presets">
+      <button class="preset" data-preset="basic"><canvas width="150" height="58"></canvas>基本</button>
+      <button class="preset" data-preset="cute"><canvas width="150" height="58"></canvas>かわいい</button>
+      <button class="preset" data-preset="cool"><canvas width="150" height="58"></canvas>クール</button>
+      <button class="preset" data-preset="impact"><canvas width="150" height="58"></canvas>インパクト</button>
+    </div></div>
+  </section>
+  <aside class="panel right">
+    <section class="section">
+      <div class="section-title">▣ テキストを入力</div>
+      <textarea id="textInput" maxlength="180">やってみた！</textarea>
+      <div class="field-label"><span>文字揃え</span><small>改行で複数行にできます</small></div>
+      <select id="align"><option value="center">中央揃え</option><option value="left">左揃え</option><option value="right">右揃え</option></select>
+    </section>
+    <section class="section">
+      <div class="section-title">Aa フォント設定</div>
+      <select id="fontSelect">
+        <option value="Noto Sans JP">Noto Sans JP（ゴシック）</option><option value="Noto Serif JP">Noto Serif JP（明朝）</option><option value="Zen Maru Gothic">Zen Maru Gothic（丸ゴシック）</option><option value="Yusei Magic">Yusei Magic（手書き風）</option><option value="Rampart One">Rampart One（デザイン）</option><option value="M PLUS Rounded 1c">M PLUS Rounded 1c（丸ゴシック）</option><option value="DotGothic16">DotGothic16（ドット）</option><option value="Kaisei Decol">Kaisei Decol（明朝・装飾）</option><option value="Reggae One">Reggae One（個性派）</option><option value="RocknRoll One">RocknRoll One（ポップ）</option><option value="Yuji Boku">Yuji Boku（毛筆・力強い）</option><option value="Yuji Syuku">Yuji Syuku（毛筆・楷書風）</option><option value="Yuji Mai">Yuji Mai（毛筆・流麗）</option>
+      </select>
+      <div style="margin-top:8px">
+        <label for="fontUpload" class="btn" style="display:block;text-align:center;font-size:12px">＋ フォントファイルを読み込む（けいフォント・バナナスリップ等）</label>
+        <input id="fontUpload" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+        <div id="uploadedFonts" style="font-size:11px;color:#9eb8d3;margin-top:5px;line-height:1.5">配布元から取得した .ttf / .otf / .woff / .woff2 を読み込めます。フォントファイルはこのブラウザ内で使用します。</div>
+      </div>
+      <div class="field-label"><label for="fontSize">文字サイズ</label><small><output id="fontSizeOut">210</output> px</small></div><div class="range-row"><input id="fontSize" type="range" min="40" max="500" value="210"><span></span></div>
+      <div class="toggleline"><label for="bold">太字を強調</label><input id="bold" type="checkbox" checked></div>
+    </section>
+    <section class="section">
+      <div class="section-title">● 文字の色</div>
+      <div class="color-control"><input id="textColor" type="color" value="#FFD600"><input id="textColorHex" type="text" value="#FFD600" aria-label="文字色のHEX値"></div>
+      <div class="field-label"><label for="gradient">文字のグラデーション</label><input id="gradient" type="checkbox"></div>
+      <div id="gradRow" class="color-control" hidden><input id="gradientColor" type="color" value="#FF4C35"><span style="font-size:12px;color:#9eb8d3">開始色 → この色</span></div>
+    </section>
+    <section class="section">
+      <div class="section-title">① 1つ目の縁取り（内側）</div>
+      <div class="color-control"><input id="stroke1Color" type="color" value="#FFFFFF"><input id="stroke1Hex" type="text" value="#FFFFFF" aria-label="内側の縁取り色"></div>
+      <div class="field-label"><label for="stroke1Width">太さ</label><small><output id="stroke1WidthOut">14</output> px</small></div><div class="range-row"><input id="stroke1Width" type="range" min="0" max="100" value="14"><span></span></div>
+    </section>
+    <section class="section">
+      <div class="section-title">② 2つ目の縁取り（外側）</div>
+      <div class="color-control"><input id="stroke2Color" type="color" value="#087BFF"><input id="stroke2Hex" type="text" value="#087BFF" aria-label="外側の縁取り色"></div>
+      <div class="field-label"><label for="stroke2Width">太さ</label><small><output id="stroke2WidthOut">26</output> px</small></div><div class="range-row"><input id="stroke2Width" type="range" min="0" max="120" value="26"><span></span></div>
+    </section>
+    <section class="section">
+      <div class="section-title">③ 影（オプション）</div>
+      <div class="toggleline"><label for="shadowOn">影をつける</label><input id="shadowOn" type="checkbox" checked></div>
+      <div class="color-control"><input id="shadowColor" type="color" value="#000000"><span style="font-size:12px;color:#9eb8d3">影の色</span></div>
+      <div class="field-label"><label for="shadowBlur">ぼかし</label><small><output id="shadowBlurOut">18</output> px</small></div><div class="range-row"><input id="shadowBlur" type="range" min="0" max="80" value="18"><span></span></div>
+      <div class="field-label"><label for="shadowY">影の距離</label><small><output id="shadowYOut">12</output> px</small></div><div class="range-row"><input id="shadowY" type="range" min="0" max="80" value="12"><span></span></div>
+    </section>
+    <section class="section">
+      <div class="section-title">▧ 背景設定</div>
+      <select id="backgroundMode"><option value="transparent">透明（おすすめ）</option><option value="solid">単色</option><option value="gradient">グラデーション</option></select>
+      <div id="bgControls" style="margin-top:9px" hidden>
+        <div class="color-control"><input id="bgColor" type="color" value="#162A48"><span style="font-size:12px;color:#9eb8d3">背景色</span></div>
+        <div id="bgGradControls" class="color-control" hidden style="margin-top:7px"><input id="bgColor2" type="color" value="#5B2B9A"><span style="font-size:12px;color:#9eb8d3">グラデーション終点</span></div>
+      </div>
+      <div class="field-label"><label for="outputSize">PNGのサイズ</label></div>
+      <select id="outputSize"><option value="1920x1080">フルHD 1920 × 1080（おすすめ）</option><option value="1280x720">HD 1280 × 720</option><option value="3840x2160">4K 3840 × 2160</option><option value="2560x1440">WQHD 2560 × 1440</option><option value="custom">カスタムサイズ</option></select>
+      <div id="customSize" class="control-row" hidden style="margin-top:8px"><input id="customW" type="number" min="320" max="7680" value="1920" aria-label="幅"><input id="customH" type="number" min="180" max="4320" value="1080" aria-label="高さ"></div>
+    </section>
+    <div class="button-row"><button id="resetBtn" class="btn">初期設定に戻す</button><button id="downloadBtn" class="btn primary" style="flex:1">↓ 透過PNGを保存</button></div>
+    <div id="message" style="font-size:11px;color:#9eb8d3;line-height:1.6">フォント読み込み後に保存してください。</div>
+  </aside>
+</main>
+<div class="foot">※ Webフォントの読み込みにはインターネット接続が必要です。書体によっては一部の文字に対応していない場合があります。大きな画像は端末のメモリを多く使用することがあります。</div>
+<script>
+const $=id=>document.getElementById(id);
+const canvas=$('preview'),ctx=canvas.getContext('2d');
+const fonts=[
+ {name:'Noto Sans JP',label:'Noto Sans JP（ゴシック）',cats:['ゴシック']},
+ {name:'Noto Serif JP',label:'Noto Serif JP（明朝）',cats:['明朝']},
+ {name:'Zen Maru Gothic',label:'Zen Maru Gothic（丸ゴシック）',cats:['ゴシック','かわいい']},
+ {name:'Yusei Magic',label:'Yusei Magic（手書き風）',cats:['手書き風','かわいい']},
+ {name:'Rampart One',label:'Rampart One（デザイン）',cats:['デザイン']},
+ {name:'M PLUS Rounded 1c',label:'M PLUS Rounded 1c（丸ゴシック）',cats:['ゴシック','かわいい']},
+ {name:'DotGothic16',label:'DotGothic16（ドット）',cats:['デザイン']},
+ {name:'Kaisei Decol',label:'Kaisei Decol（明朝・装飾）',cats:['明朝','デザイン']},
+ {name:'Reggae One',label:'Reggae One（個性派）',cats:['デザイン','手書き風']},
+ {name:'RocknRoll One',label:'RocknRoll One（ポップ）',cats:['デザイン','かわいい']}
+];
+let activeFilter='all',selectedFont='Noto Sans JP',fontReady=false;const uploadedFontFaces=[];
+function buildFontList(){
+ const q=$('fontSearch').value.trim().toLowerCase();
+ $('fontList').innerHTML='';
+ fonts.filter(f=>(activeFilter==='all'||f.cats.includes(activeFilter))&&f.label.toLowerCase().includes(q)).forEach(f=>{
+  const b=document.createElement('button');b.className='font-card'+(f.name===selectedFont?' active':'');
+  b.innerHTML=`<div class="font-sample" style="font-family:${JSON.stringify(f.name)},sans-serif">サンプル文字</div><div class="font-name">${f.label}</div>`;
+  b.onclick=()=>{selectedFont=f.name;$('fontSelect').value=f.name;buildFontList();loadFont(f.name).then(()=>draw())};$('fontList').appendChild(b);
+ });
+}
+$('fontTags').addEventListener('click',e=>{const b=e.target.closest('button[data-filter]');if(!b)return;activeFilter=b.dataset.filter;document.querySelectorAll('.tag').forEach(t=>t.classList.toggle('active',t===b));buildFontList()});
+$('fontSearch').addEventListener('input',buildFontList);
+$('fontUpload').addEventListener('change',async e=>{
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ const safeName=file.name.replace(/\\.(ttf|otf|woff2?)$/i,'').replace(/[<>"'&]/g,'').trim()||'アップロードフォント';
+ const family='UserFont_'+Date.now();
+ try{
+  const url=URL.createObjectURL(file);
+  const face=new FontFace(family,`url("${url}")`);
+  await face.load();document.fonts.add(face);
+  uploadedFontFaces.push({family,url,fileName:file.name});
+  const opt=document.createElement('option');opt.value=family;opt.textContent=safeName+'（読み込み済み）';$('fontSelect').appendChild(opt);
+  const cardFont={name:family,label:safeName+'（読み込み済み）',cats:['アップロード']};fonts.push(cardFont);
+  selectedFont=family;$('fontSelect').value=family;buildFontList();await loadFont(family);draw();
+  $('uploadedFonts').textContent=`読み込み済み：${file.name}。このブラウザで使用できます。`;
+ }catch(err){$('message').textContent='このフォントを読み込めませんでした。別のフォントファイルをお試しください。';console.error(err)}
+ e.target.value='';
+});
+function fontSpec(){return `${$('bold').checked?'900':'700'} 100px "${selectedFont}"`}
+async function loadFont(name){
+ $('fontStatus').textContent='フォント読み込み中…';fontReady=false;
+ try{await document.fonts.load(`900 100px "${name}"`);await document.fonts.ready;fontReady=true;$('fontStatus').textContent='フォント読み込み完了';$('message').textContent='フォントを読み込みました。プレビューを確認してPNG保存できます。'}
+ catch(e){$('fontStatus').textContent='読み込みに失敗';$('message').textContent='フォントの読み込みに失敗しました。ネット接続を確認してください。'}
+}
+function val(id){return Number($(id).value)}
+function hexColor(id){return $(id).value}
+function syncColor(colorId,hexId){
+ $(colorId).addEventListener('input',()=>{$(hexId).value=$(colorId).value.toUpperCase();draw()});
+ $(hexId).addEventListener('change',()=>{let v=$(hexId).value.trim();if(/^#[0-9a-fA-F]{6}$/.test(v)){$(colorId).value=v;draw()}else $(hexId).value=$(colorId).value.toUpperCase()});
+}
+[['textColor','textColorHex'],['stroke1Color','stroke1Hex'],['stroke2Color','stroke2Hex']].forEach(x=>syncColor(...x));
+function getSize(){
+ let v=$('outputSize').value;if(v==='custom')return [Math.max(320,Math.min(7680,Number($('customW').value)||1920)),Math.max(180,Math.min(4320,Number($('customH').value)||1080))];
+ return v.split('x').map(Number);
+}
+function wrapLines(text,maxWidth,font){
+ ctx.font=font;const result=[];
+ for(const para of text.split('\n')){
+  if(!para){result.push('');continue}
+  let line='';
+  for(const ch of para){
+   const test=line+ch;
+   if(line&&ctx.measureText(test).width>maxWidth){result.push(line);line=ch}else line=test;
+  }result.push(line);
+ }return result.length?result:[''];
+}
+function drawTo(c,forExport=false){
+ const cctx=c.getContext('2d');const [W,H]=[c.width,c.height];
+ cctx.clearRect(0,0,W,H);
+ const mode=$('backgroundMode').value;
+ if(mode==='solid'||mode==='gradient'){
+  if(mode==='solid'){cctx.fillStyle=hexColor('bgColor');cctx.fillRect(0,0,W,H)}
+  else {const g=cctx.createLinearGradient(0,0,W,H);g.addColorStop(0,hexColor('bgColor'));g.addColorStop(1,hexColor('bgColor2'));cctx.fillStyle=g;cctx.fillRect(0,0,W,H)}
+ }
+ const text=$('textInput').value||' ';
+ const size=val('fontSize');
+ const scale=W/1920;
+ const baseSize=size*scale;
+ const weight=$('bold').checked?'900':'700';
+ const font=`${weight} ${baseSize}px "${selectedFont}"`;
+ cctx.font=font;cctx.textBaseline='middle';cctx.lineJoin='round';cctx.lineCap='round';
+ const margin=Math.max(30*scale,Math.max(val('stroke1Width'),val('stroke2Width'))*scale+20*scale);
+ const maxWidth=W-margin*2;
+ let lines=wrapLines(text,maxWidth,font);
+ let lineHeight=baseSize*1.18;
+ const maxHeight=H-margin*2;
+ if(lines.length*lineHeight>maxHeight){
+  const factor=maxHeight/(lines.length*lineHeight);cctx.font=`${weight} ${baseSize*factor}px "${selectedFont}"`;lineHeight=baseSize*factor*1.18;
+ }
+ const actualSize=parseFloat(cctx.font.match(/(\d+(?:\.\d+)?)px/)[1]);
+ lines=wrapLines(text,maxWidth,cctx.font);lineHeight=actualSize*1.18;
+ while(lines.length*lineHeight>maxHeight&&actualSize>8){
+  const newSize=actualSize*.94;cctx.font=`${weight} ${newSize}px "${selectedFont}"`;lines=wrapLines(text,maxWidth,cctx.font);lineHeight=newSize*1.18;
+  if(lines.length*lineHeight<=maxHeight)break;
+ }
+ const blockH=lines.length*lineHeight;
+ const yStart=(H-blockH)/2+lineHeight/2;
+ const align=$('align').value;
+ const x=align==='left'?margin:align==='right'?W-margin:W/2;
+ cctx.textAlign=align;
+ const s1=val('stroke1Width')*scale,s2=val('stroke2Width')*scale;
+ const shadowOn=$('shadowOn').checked;
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i],y=yStart+i*lineHeight;
+  // Drop shadow is painted first so it sits behind all outlines.
+  if(shadowOn){
+   cctx.save();
+   cctx.globalAlpha=0.52;
+   cctx.shadowColor=hexColor('shadowColor');
+   // Canvas shadowBlur is subtle at small values; multiply it to give the slider a useful range.
+   cctx.shadowBlur=val('shadowBlur')*scale*2.2;
+   cctx.shadowOffsetX=0;
+   cctx.shadowOffsetY=val('shadowY')*scale;
+   cctx.fillStyle=hexColor('shadowColor');
+   cctx.fillText(line,x,y);
+   cctx.restore();
+  }
+  // Outside stroke, then inside stroke, then fill.
+  if(s2>0){cctx.strokeStyle=hexColor('stroke2Color');cctx.lineWidth=s2*2;cctx.strokeText(line,x,y)}
+  if(s1>0){cctx.strokeStyle=hexColor('stroke1Color');cctx.lineWidth=s1*2;cctx.strokeText(line,x,y)}
+  if($('gradient').checked){
+   const m=cctx.measureText(line);const left=align==='left'?x:align==='right'?x-m.width:x-m.width/2;
+   const g=cctx.createLinearGradient(left,y-actualSize/2,left,y+actualSize/2);g.addColorStop(0,hexColor('textColor'));g.addColorStop(1,hexColor('gradientColor'));cctx.fillStyle=g;
+  }else cctx.fillStyle=hexColor('textColor');
+  cctx.fillText(line,x,y);
+ }
+}
+let drawPending=false;
+function draw(){
+ if(drawPending)return;drawPending=true;
+ requestAnimationFrame(()=>{drawPending=false;try{drawTo(canvas);updatePreviewScale();drawPresets()}catch(e){$('message').textContent='描画中に問題が発生しました。文字数や画像サイズを小さくしてお試しください。';console.error(e)}});
+}
+function updatePreviewScale(){
+ const [w,h]=getSize();canvas.width=w;canvas.height=h;
+ // Re-render after setting dimensions; dimensions also determine the actual export resolution.
+ drawTo(canvas);
+ const wrap=$('canvasWrap'),z=Number($('previewZoom').value)/100;
+ const scale=Math.min((wrap.clientWidth-10)/w,(wrap.clientHeight-10)/h)*z;
+ canvas.style.width=Math.max(1,w*scale)+'px';canvas.style.height=Math.max(1,h*scale)+'px';
+}
+function drawPresets(){
+ document.querySelectorAll('.preset canvas').forEach(cv=>{
+  const c=cv.getContext('2d');c.clearRect(0,0,cv.width,cv.height);c.textAlign='center';c.textBaseline='middle';c.font='900 34px "Noto Sans JP"';c.lineJoin='round';
+  const p=cv.parentElement.dataset.preset;
+  const styles={basic:{fill:'#FFD600',s1:'#fff',w1:3,s2:'#087bff',w2:5},cute:{fill:'#ff55b7',s1:'#fff',w1:3,s2:'#9a39ff',w2:5},cool:{fill:'#00e5ff',s1:'#fff',w1:2,s2:'#075cff',w2:5},impact:{fill:'#ff3838',s1:'#111',w1:4,s2:'#fff',w2:3}};
+  const s=styles[p];c.strokeStyle=s.s2;c.lineWidth=s.w2*2;c.strokeText('文字サンプル',75,29);c.strokeStyle=s.s1;c.lineWidth=s.w1*2;c.strokeText('文字サンプル',75,29);c.fillStyle=s.fill;c.fillText('文字サンプル',75,29);
+ });
+}
+document.querySelectorAll('input[type=range]').forEach(el=>el.addEventListener('input',()=>{const o=$(el.id+'Out');if(o)o.value=el.value;draw()}));
+document.querySelectorAll('input[type=checkbox],textarea,select').forEach(el=>el.addEventListener('input',()=>{
+ if(el.id==='fontSelect'){selectedFont=el.value;buildFontList();loadFont(selectedFont).then(draw)}
+ if(el.id==='gradient')$('gradRow').hidden=!el.checked;
+ if(el.id==='backgroundMode'){$('bgControls').hidden=el.value==='transparent';$('bgGradControls').hidden=el.value!=='gradient';$('downloadBtn').textContent=el.value==='transparent'?'↓ 透過PNGを保存':'↓ PNGを保存'}
+ if(el.id==='outputSize')$('customSize').hidden=el.value!=='custom';
+ draw();
+}));
+['bgColor','bgColor2','gradientColor','shadowColor'].forEach(id=>$(id).addEventListener('input',draw));
+$('previewZoom').addEventListener('change',()=>{updatePreviewScale()});
+$('fitBtn').onclick=()=>{$('previewZoom').value='100';updatePreviewScale()};
+$('transparentBtn').onclick=()=>{const mode=$('backgroundMode');mode.value='transparent';mode.dispatchEvent(new Event('input'));$('message').textContent='背景を透明にしました。'};
+$('customW').addEventListener('input',draw);$('customH').addEventListener('input',draw);
+$('downloadBtn').onclick=async()=>{
+ const btn=$('downloadBtn');btn.disabled=true;btn.textContent='フォントを確認中…';
+ try{
+  await document.fonts.load(`900 100px "${selectedFont}"`);await document.fonts.ready;
+  const [w,h]=getSize();const out=document.createElement('canvas');out.width=w;out.height=h;
+  drawTo(out,true);
+  const blob=await new Promise(resolve=>out.toBlob(resolve,'image/png'));
+  if(!blob)throw new Error('PNGを生成できませんでした');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`text-outline-${w}x${h}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+  $('message').textContent=`PNGを保存しました（${w} × ${h} px）。背景透過設定も反映されています。`;
+ }catch(e){$('message').textContent='保存できませんでした。画像サイズを下げて再度お試しください。';console.error(e)}
+ finally{btn.disabled=false;btn.textContent=$('backgroundMode').value==='transparent'?'↓ 透過PNGを保存':'↓ PNGを保存'}
+};
+document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{
+ const p=b.dataset.preset;const styles={
+ basic:{text:'#FFD600',s1:'#FFFFFF',w1:14,s2:'#087BFF',w2:26,shadow:true},
+ cute:{text:'#FF55B7',s1:'#FFFFFF',w1:18,s2:'#963CFF',w2:24,shadow:true},
+ cool:{text:'#00E5FF',s1:'#FFFFFF',w1:10,s2:'#075CFF',w2:22,shadow:true},
+ impact:{text:'#FF3838',s1:'#111111',w1:15,s2:'#FFFFFF',w2:12,shadow:true}
+ }[p];
+ $('textColor').value=styles.text;$('textColorHex').value=styles.text;$('stroke1Color').value=styles.s1;$('stroke1Hex').value=styles.s1;$('stroke1Width').value=styles.w1;$('stroke1WidthOut').value=styles.w1;$('stroke2Color').value=styles.s2;$('stroke2Hex').value=styles.s2;$('stroke2Width').value=styles.w2;$('stroke2WidthOut').value=styles.w2;$('shadowOn').checked=styles.shadow;draw();
+});
+$('resetBtn').onclick=()=>{
+ $('textInput').value='やってみた！';selectedFont='Noto Sans JP';$('fontSelect').value=selectedFont;
+ $('fontSize').value=210;$('fontSizeOut').value=210;$('bold').checked=true;$('textColor').value='#FFD600';$('textColorHex').value='#FFD600';
+ $('stroke1Color').value='#FFFFFF';$('stroke1Hex').value='#FFFFFF';$('stroke1Width').value=14;$('stroke1WidthOut').value=14;
+ $('stroke2Color').value='#087BFF';$('stroke2Hex').value='#087BFF';$('stroke2Width').value=26;$('stroke2WidthOut').value=26;
+ $('shadowOn').checked=true;$('shadowColor').value='#000000';$('shadowBlur').value=18;$('shadowBlurOut').value=18;$('shadowY').value=12;$('shadowYOut').value=12;
+ $('gradient').checked=false;$('gradRow').hidden=true;$('backgroundMode').value='transparent';$('bgControls').hidden=true;$('outputSize').value='1920x1080';$('customSize').hidden=true;
+ buildFontList();loadFont(selectedFont).then(draw);draw();
+};
+window.addEventListener('resize',()=>{updatePreviewScale()});
+buildFontList();loadFont(selectedFont).then(()=>{draw();$('fontStatus').textContent='フォント読み込み完了'});drawPresets();updatePreviewScale();
+</script>
+</body>
+</html>
