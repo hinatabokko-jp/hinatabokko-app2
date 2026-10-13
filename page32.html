@@ -93,8 +93,7 @@
                     <span><i class="fa-solid fa-pen-nib text-indigo-400 mr-1.5"></i> テキスト内容</span>
                     <span class="text-[10px] text-slate-500 font-normal">改行対応</span>
                 </label>
-                <textarea id="textInput" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y transition shadow-inner" placeholder="ここにテキストを入力...">超重要！
-二重縁取り術</textarea>
+                <textarea id="textInput" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y transition shadow-inner" placeholder="ここにテキストを入力...">文字を入力</textarea>
             </div>
 
             <!-- Font & Size Section -->
@@ -164,10 +163,10 @@
                     </label>
                 </label>
                 <div id="solidColorBox" class="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                    <input type="color" id="textColor" value="#ffff00" class="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer">
+                    <input type="color" id="textColor" value="#000000" class="w-10 h-10 rounded-lg bg-transparent border-0 cursor-pointer">
                     <div class="flex-1">
                         <div class="text-xs font-semibold text-slate-300">単色カラー</div>
-                        <div class="text-[10px] text-slate-500 font-mono" id="textColorHex">#FFFF00</div>
+                        <div class="text-[10px] text-slate-500 font-mono" id="textColorHex">#000000</div>
                     </div>
                 </div>
                 <div id="gradientBox" class="hidden space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -175,15 +174,15 @@
                         <div>
                             <label class="text-[10px] text-slate-400">上部カラー</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="color" id="gradientTop" value="#ffff00" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
-                                <span class="text-xs font-mono text-slate-300" id="gradientTopHex">#FFFF00</span>
+                                <input type="color" id="gradientTop" value="#000000" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
+                                <span class="text-xs font-mono text-slate-300" id="gradientTopHex">#000000</span>
                             </div>
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-400">下部カラー</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="color" id="gradientBottom" value="#ff8800" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
-                                <span class="text-xs font-mono text-slate-300" id="gradientBottomHex">#FF8800</span>
+                                <input type="color" id="gradientBottom" value="#333333" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
+                                <span class="text-xs font-mono text-slate-300" id="gradientBottomHex">#333333</span>
                             </div>
                         </div>
                     </div>
@@ -204,18 +203,18 @@
                 </div>
                 <div id="stroke1Controls" class="space-y-3 pt-1">
                     <div class="flex items-center gap-3">
-                        <input type="color" id="stroke1Color" value="#000000" class="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
+                        <input type="color" id="stroke1Color" value="#ffffff" class="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
                         <div class="flex-1">
                             <div class="text-[11px] font-medium text-slate-300">縁の色</div>
-                            <div class="text-[10px] text-slate-500 font-mono" id="stroke1ColorHex">#000000</div>
+                            <div class="text-[10px] text-slate-500 font-mono" id="stroke1ColorHex">#FFFFFF</div>
                         </div>
                     </div>
                     <div>
                         <div class="flex justify-between text-xs text-slate-300 mb-1">
                             <span>太さ (px)</span>
-                            <span id="stroke1WidthVal" class="text-pink-400 font-mono">16px</span>
+                            <span id="stroke1WidthVal" class="text-pink-400 font-mono">10px</span>
                         </div>
-                        <input type="range" id="stroke1Width" min="0" max="40" value="16" class="w-full accent-pink-500 cursor-pointer">
+                        <input type="range" id="stroke1Width" min="0" max="40" value="10" class="w-full accent-pink-500 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -232,18 +231,18 @@
                 </div>
                 <div id="stroke2Controls" class="space-y-3 pt-1">
                     <div class="flex items-center gap-3">
-                        <input type="color" id="stroke2Color" value="#ffffff" class="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
+                        <input type="color" id="stroke2Color" value="#00d2fc" class="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
                         <div class="flex-1">
                             <div class="text-[11px] font-medium text-slate-300">外側縁の色</div>
-                            <div class="text-[10px] text-slate-500 font-mono" id="stroke2ColorHex">#FFFFFF</div>
+                            <div class="text-[10px] text-slate-500 font-mono" id="stroke2ColorHex">#00D2FC</div>
                         </div>
                     </div>
                     <div>
                         <div class="flex justify-between text-xs text-slate-300 mb-1">
                             <span>追加の太さ (px)</span>
-                            <span id="stroke2WidthVal" class="text-cyan-400 font-mono">16px</span>
+                            <span id="stroke2WidthVal" class="text-cyan-400 font-mono">0px</span>
                         </div>
-                        <input type="range" id="stroke2Width" min="0" max="40" value="16" class="w-full accent-cyan-500 cursor-pointer">
+                        <input type="range" id="stroke2Width" min="0" max="40" value="0" class="w-full accent-cyan-500 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -255,10 +254,10 @@
                         <i class="fa-solid fa-cloud text-xs mr-1.5"></i> ドロップシャドウ
                     </label>
                     <label class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-400">
-                        <input type="checkbox" id="enableShadow" checked class="rounded accent-amber-500"> 有効
+                        <input type="checkbox" id="enableShadow" class="rounded accent-amber-500"> 有効
                     </label>
                 </div>
-                <div id="shadowControls" class="grid grid-cols-2 gap-3 pt-1">
+                <div id="shadowControls" class="grid grid-cols-2 gap-3 pt-1 opacity-40 pointer-events-none">
                     <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
                         <input type="color" id="shadowColor" value="#000000" class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer">
                         <div class="text-xs text-slate-300">影の色</div>
@@ -315,12 +314,17 @@
             <!-- Action / Export Section -->
             <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-bold text-white">高画質PNG保存</h3>
-                    <p class="text-xs text-slate-400">選択した解像度でなめらかな縁取り画像をダウンロードします。</p>
+                    <h3 class="text-sm font-bold text-white">画像出力・コピー</h3>
+                    <p class="text-xs text-slate-400">クリップボードへのコピーまたはPNGファイルのダウンロードを行います。</p>
                 </div>
-                <button onclick="downloadPNG()" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-pink-600 to-amber-500 hover:opacity-95 text-white font-bold text-sm rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2.5">
-                    <i class="fa-solid fa-download text-base"></i> PNG画像をダウンロード
-                </button>
+                <div class="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+                    <button onclick="copyImageToClipboard()" id="copyBtn" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 border border-slate-700">
+                        <i class="fa-solid fa-copy text-base text-indigo-400"></i> 画像をコピー
+                    </button>
+                    <button onclick="downloadPNG()" class="px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-pink-600 to-amber-500 hover:opacity-95 text-white font-bold text-sm rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2.5">
+                        <i class="fa-solid fa-download text-base"></i> PNG画像をダウンロード
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -442,9 +446,9 @@
             renderCanvas();
         }
 
-        // Reset settings function
+        // Reset settings function (reverting to requested defaults)
         function resetSettings() {
-            textInput.value = "超重要！\n二重縁取り術";
+            textInput.value = "文字を入力";
             fontFamily.value = "'M PLUS Rounded 1c', sans-serif";
             fontSize.value = 110;
             textAlign.value = "center";
@@ -453,18 +457,20 @@
             enableGradient.checked = false;
             solidColorBox.classList.remove('hidden');
             gradientBox.classList.add('hidden');
-            textColor.value = "#ffff00";
-            gradientTop.value = "#ffff00";
-            gradientBottom.value = "#ff8800";
+            textColor.value = "#000000";
+            gradientTop.value = "#000000";
+            gradientBottom.value = "#333333";
             enableStroke1.checked = true;
-            stroke1Color.value = "#000000";
-            stroke1Width.value = 16;
+            stroke1Color.value = "#ffffff";
+            stroke1Width.value = 10;
             enableStroke2.checked = true;
-            stroke2Color.value = "#ffffff";
-            stroke2Width.value = 16;
-            enableShadow.checked = true;
+            stroke2Color.value = "#00d2fc";
+            stroke2Width.value = 0;
+            enableShadow.checked = false;
             shadowColor.value = "#000000";
             shadowBlur.value = 12;
+            shadowControls.style.opacity = '0.4';
+            shadowControls.style.pointerEvents = 'none';
 
             updateLabels();
             renderCanvas();
@@ -613,14 +619,47 @@
             document.body.removeChild(link);
         }
 
+        // Copy image to clipboard function
+        async function copyImageToClipboard() {
+            renderCanvas();
+            const copyBtn = document.getElementById('copyBtn');
+            const originalHTML = copyBtn.innerHTML;
+
+            try {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        throw new Error('画像の生成に失敗しました');
+                    }
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    
+                    // Success feedback
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> コピーしました！';
+                    copyBtn.classList.add('border-emerald-500/50');
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('border-emerald-500/50');
+                    }, 2000);
+                }, 'image/png');
+            } catch (err) {
+                console.error('クリップボードへのコピーに失敗しました: ', err);
+                alert('お使いのブラウザ環境ではクリップボードへの画像コピーが許可されていないか、サポートされていません。');
+            }
+        }
+
         // Bind interactive inputs to re-render
         [textInput, fontFamily, fontSize, textAlign, lineHeight, letterSpacing, enableGradient, textColor, gradientTop, gradientBottom, enableStroke1, stroke1Color, stroke1Width, enableStroke2, stroke2Color, stroke2Width, enableShadow, shadowColor, shadowBlur].forEach(el => {
             el.addEventListener('input', renderCanvas);
             el.addEventListener('change', renderCanvas);
         });
 
-        // Initialize fonts and render on window load
+        // Initialize fonts and render on window load with requested defaults
         window.onload = function() {
+            // Apply initial disabled state for shadow based on default checkbox state
+            shadowControls.style.opacity = '0.4';
+            shadowControls.style.pointerEvents = 'none';
+
             document.fonts.ready.then(() => {
                 renderCanvas();
             });
