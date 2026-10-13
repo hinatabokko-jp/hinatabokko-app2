@@ -160,14 +160,24 @@
         <div class="relative w-full aspect-square rounded-xl overflow-hidden checkered-pattern border border-slate-700/50 flex items-center justify-center cursor-crosshair">
           <canvas id="edit-canvas" class="max-w-full max-h-full object-contain touch-none"></canvas>
         </div>
-        <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center justify-between pt-1 flex-wrap gap-2">
           <p id="file-name-label" class="text-xs font-semibold text-slate-200 truncate max-w-[200px]"></p>
-          <button id="download-btn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-4 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-            </svg>
-            チャットスタンプ用PNG保存
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- コピーボタン -->
+            <button id="copy-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-3 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 border border-slate-600">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+              </svg>
+              コピー
+            </button>
+            <!-- チャットスタンプ用PNG保存ボタン -->
+            <button id="download-btn" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-2 px-4 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              チャットスタンプ用PNG保存
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -272,6 +282,7 @@
     const dimensionBadge = document.getElementById('dimension-badge');
     const fileNameLabel = document.getElementById('file-name-label');
     const downloadBtn = document.getElementById('download-btn');
+    const copyBtn = document.getElementById('copy-btn');
     const resolutionSelect = document.getElementById('resolution-select');
     const addWhiteBorderBtn = document.getElementById('add-white-border-btn');
 
@@ -447,32 +458,26 @@
       redrawLayers();
     }
 
-    // 輪郭に沿って20pxの白い縁を外側につける機能（画像の中身には入り込まない）
     addWhiteBorderBtn.addEventListener('click', () => {
       if (!originalImage) return;
 
       const w = targetSize;
       const h = targetSize;
 
-      // 現在の画像レイヤー(topCanvas)のピクセルデータを取得
       const imgData = topCtx.getImageData(0, 0, w, h);
       const data = imgData.data;
 
-      // 1. 不透明なピクセルのマスクを作成 (alpha > 0)
       const alphaMap = new Uint8Array(w * h);
       for (let i = 0; i < w * h; i++) {
         alphaMap[i] = data[i * 4 + 3] > 10 ? 1 : 0;
       }
 
-      // 2. 20pxの距離変換（モルフォロジー演算・膨張処理による外側拡張）
       const radius = 20;
       const dilatedMap = new Uint8Array(w * h);
 
-      // 高速化のため、縦方向・横方向のボックス/多段階スキャンで20px分の外側を膨張させる
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           let found = false;
-          // 周囲 radius 範囲内を探す
           for (let dy = -radius; dy <= radius && !found; dy++) {
             const ny = y + dy;
             if (ny < 0 || ny >= h) continue;
@@ -492,7 +497,6 @@
         }
       }
 
-      // 3. 白フチ用の一時キャンバスを作成し、膨張した部分に白を描画
       const borderCanvas = document.createElement('canvas');
       borderCanvas.width = w;
       borderCanvas.height = h;
@@ -501,22 +505,18 @@
       const bData = borderImgData.data;
 
       for (let i = 0; i < w * h; i++) {
-        // 拡張エリアに含まれていて、かつ「元の画像自体（alphaMap）」が不透明でない部分にだけ白いフチを描く（画像に入り込ませない）
         if (dilatedMap[i] === 1 && alphaMap[i] === 0) {
-          bData[i * 4] = 255;     // R
-          bData[i * 4 + 1] = 255; // G
-          bData[i * 4 + 2] = 255; // B
-          bData[i * 4 + 3] = 255; // A (完全な不透明白)
+          bData[i * 4] = 255;
+          bData[i * 4 + 1] = 255;
+          bData[i * 4 + 2] = 255;
+          bData[i * 4 + 3] = 255;
         }
       }
       borderCtx.putImageData(borderImgData, 0, 0);
 
-      // 4. 中層（レイヤー2: 描き込み層、または新しく合成）に白フチを描き込む、もしくはトップレイヤーの背後に結合
-      // ここではレイヤー2（描き込みレイヤー）に白フチを配置することで、あとから消しゴムで微調整もできるようにします
       middleCtx.clearRect(0, 0, w, h);
       middleCtx.drawImage(borderCanvas, 0, 0);
 
-      // レイヤーの視覚的状態を更新
       layerVisibility[2] = true;
       redrawLayers();
     });
@@ -591,7 +591,8 @@
     editCanvas.addEventListener('touchmove', draw);
     window.addEventListener('touchend', stopDrawing);
 
-    downloadBtn.addEventListener('click', () => {
+    // 共通の画像生成処理（透過を維持）
+    function createExportCanvas() {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = targetSize;
       exportCanvas.height = targetSize;
@@ -599,7 +600,43 @@
 
       if (layerVisibility[2]) exportCtx.drawImage(middleCanvas, 0, 0);
       if (layerVisibility[3]) exportCtx.drawImage(topCanvas, 0, 0);
+      return exportCanvas;
+    }
 
+    // コピーボタンの処理（Clipboard APIでPNG画像をクリップボードに格納）
+    copyBtn.addEventListener('click', async () => {
+      if (!originalImage) return;
+      try {
+        const exportCanvas = createExportCanvas();
+        exportCanvas.toBlob(async (blob) => {
+          if (!blob) return;
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            // 一時的にボタンのテキストを「コピー完了！」に変更してフィードバック
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = `
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              コピー完了！
+            `;
+            setTimeout(() => {
+              copyBtn.innerHTML = originalText;
+            }, 2000);
+          } catch (err) {
+            console.error('クリップボードへの書き込みに失敗しました:', err);
+            alert('お使いの環境またはブラウザのセキュリティ設定により、クリップボードへのコピーが制限されています。');
+          }
+        }, 'image/png');
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const exportCanvas = createExportCanvas();
       const dataUrl = exportCanvas.toDataURL('image/png');
       const cleanName = originalFileName.replace(/\.[^/.]+$/, "") + "_stamp.png";
 
