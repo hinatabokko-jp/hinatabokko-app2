@@ -360,7 +360,6 @@
             color: var(--text-color);
         }
 
-        /* iOS/iPadでの画像・スタンプ自動回転対策 */
         .chat-image {
             max-width: 100%;
             max-height: 250px;
@@ -929,6 +928,8 @@
             <span id="statusBadge" class="status-badge">グループチャット</span>
         </div>
         <div class="header-actions">
+            <!-- 依頼に基づきメッセージ送受信画面（チャット画面）の右上にも追加 -->
+            <button id="inviteHeaderBtn" class="btn-action" style="display:none;" onclick="openModal('inviteModal')">🔗 招待する</button>
             <button id="membersBtn" class="btn-action" style="display:none;" onclick="openModal('membersModal')">👥 メンバー</button>
             <button id="changeUserBtn" class="btn-action" style="display:none;" onclick="logoutUser()">ログアウト</button>
         </div>
@@ -1204,6 +1205,7 @@
     const joinView = document.getElementById('joinView');
     const chatView = document.getElementById('chatView');
     const changeUserBtn = document.getElementById('changeUserBtn');
+    const inviteHeaderBtn = document.getElementById('inviteHeaderBtn');
     const membersBtn = document.getElementById('membersBtn');
     const chatMessages = document.getElementById('chatMessages');
     const messageInput = document.getElementById('messageInput');
@@ -1258,7 +1260,6 @@
     let currentBrushType = 'pen';
     let historyStack = [];
 
-    // 自動ログインの判定（localStorage または sessionStorage をチェック）
     const savedUserLocal = localStorage.getItem('airchat_username');
     const savedUserSession = sessionStorage.getItem('airchat_username');
     const savedUser = savedUserLocal || savedUserSession;
@@ -1377,6 +1378,7 @@
         joinView.classList.remove('active');
         chatView.classList.add('active');
         changeUserBtn.style.display = 'block';
+        inviteHeaderBtn.style.display = 'block';
         membersBtn.style.display = 'block';
 
         if (isAdmin) {
@@ -1406,6 +1408,7 @@
         joinView.classList.add('active');
         chatView.classList.remove('active');
         changeUserBtn.style.display = 'none';
+        inviteHeaderBtn.style.display = 'none';
         membersBtn.style.display = 'none';
         adminPanel.classList.remove('active');
         appContainer.classList.remove('admin-layout');
@@ -1664,7 +1667,6 @@
         messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
     });
 
-    /* 画像のEXIF回転情報を除去して正位置でDataURL化する補助関数 (iOS縦向き固定対策) */
     function processImageOrientation(file, callback) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -2036,7 +2038,6 @@
             lastPoint = pos;
             const ctx = activeObj.ctx;
 
-            // 最初の点の描画
             drawSegment(ctx, pos, pos);
         }
 
@@ -2053,7 +2054,6 @@
             lastPoint = pos;
         }
 
-        /* ブラシの種類別に異なる質感・パス描画処理を行う実体関数 */
         function drawSegment(ctx, p1, p2) {
             const baseSize = parseFloat(stampSizeInput.value);
             const colorHex = stampColorInput.value;
@@ -2088,7 +2088,6 @@
                     ctx.globalAlpha = opacity;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
-                    // 速度に応じて太さを可変
                     const speed = Math.min(dist, 20);
                     ctx.lineWidth = Math.max(1, baseSize * (1.3 - speed / 30));
                     ctx.shadowBlur = 2;
@@ -2102,7 +2101,6 @@
                 case 'calligraphy-pen': {
                     ctx.globalAlpha = opacity;
                     ctx.lineCap = 'square';
-                    // カリグラフィペン特有のアングル（斜めライン）
                     const steps = Math.max(1, Math.floor(dist));
                     const angleSize = baseSize * 1.2;
                     for (let i = 0; i <= steps; i++) {
@@ -2117,7 +2115,6 @@
                     break;
                 }
                 case 'airbrush': {
-                    // ドット散布によるエアブラシ質感
                     const density = Math.floor(baseSize * 4);
                     const radius = baseSize * 2;
                     const steps = Math.max(1, Math.floor(dist / 2));
@@ -2139,7 +2136,6 @@
                     break;
                 }
                 case 'oil': {
-                    // 重ね塗り感のある油彩ブラシ
                     ctx.globalAlpha = opacity * 0.7;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -2152,7 +2148,6 @@
                     ctx.lineTo(p2.x, p2.y);
                     ctx.stroke();
 
-                    // テクスチャの副ストローク
                     ctx.lineWidth = baseSize * 0.5;
                     ctx.globalAlpha = opacity * 0.4;
                     ctx.beginPath();
@@ -2162,7 +2157,6 @@
                     break;
                 }
                 case 'crayon': {
-                    // かすれ感・粒子感のあるクレヨン
                     const steps = Math.max(1, Math.floor(dist / 2));
                     const radius = baseSize;
                     ctx.globalAlpha = opacity * 0.4;
@@ -2181,7 +2175,6 @@
                     break;
                 }
                 case 'marker': {
-                    // 半透明のマーカー（蛍光ペン風）
                     ctx.globalAlpha = opacity * 0.45;
                     ctx.lineCap = 'square';
                     ctx.lineJoin = 'miter';
@@ -2193,7 +2186,6 @@
                     break;
                 }
                 case 'pencil': {
-                    // 細く薄い鉛筆ラインと微小ノイズ
                     ctx.globalAlpha = opacity * 0.8;
                     ctx.lineWidth = Math.max(0.8, baseSize * 0.35);
                     ctx.lineCap = 'round';
@@ -2202,7 +2194,6 @@
                     ctx.lineTo(p2.x, p2.y);
                     ctx.stroke();
 
-                    // 微細粒子
                     const steps = Math.max(1, Math.floor(dist));
                     ctx.globalAlpha = opacity * 0.3;
                     for (let i = 0; i <= steps; i++) {
@@ -2214,7 +2205,6 @@
                     break;
                 }
                 case 'watercolor': {
-                    // にじみ・広がりのある水彩ブラシ
                     ctx.globalAlpha = opacity * 0.15;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -2231,7 +2221,6 @@
                     break;
                 }
                 default: {
-                    // 通常のペン
                     ctx.globalAlpha = opacity;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
