@@ -197,10 +197,11 @@
                         <i class="fa-solid fa-layer-group text-indigo-400"></i>
                     </button>
                 </div>
-                <div class="grid grid-cols-3 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
+                <div class="grid grid-cols-4 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
                     <button data-tool="brush" class="tool-btn-a p-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow"><i class="fa-solid fa-pen"><span>ペン</span></i></button>
                     <button data-tool="bucket" class="tool-btn-a p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-fill-drip"><span>ペンキ</span></i></button>
                     <button data-tool="eraser" class="tool-btn-a p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-eraser"><span>消ゴム</span></i></button>
+                    <button data-tool="select" class="tool-btn-a p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-vector-square"><span>選択</span></i></button>
                 </div>
             </div>
 
@@ -255,10 +256,11 @@
                         <i class="fa-solid fa-layer-group text-pink-400"></i>
                     </button>
                 </div>
-                <div class="grid grid-cols-3 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
+                <div class="grid grid-cols-4 gap-1 bg-dark-900 p-1 rounded-xl border border-dark-800">
                     <button data-tool="brush" class="tool-btn-b p-1.5 rounded-lg bg-pink-600 text-white text-xs font-bold flex items-center justify-center gap-1 transition shadow"><i class="fa-solid fa-pen"><span>ペン</span></i></button>
                     <button data-tool="bucket" class="tool-btn-b p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-fill-drip"><span>ペンキ</span></i></button>
                     <button data-tool="eraser" class="tool-btn-b p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-eraser"><span>消ゴム</span></i></button>
+                    <button data-tool="select" class="tool-btn-b p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-dark-800 text-xs font-bold flex items-center justify-center gap-1 transition"><i class="fa-solid fa-vector-square"><span>選択</span></i></button>
                 </div>
             </div>
 
@@ -546,8 +548,8 @@
                 <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-scissors"></i></div>
                     <div>
-                        <h3 class="font-bold text-slate-200">範囲選択・移動と貼り付け機能</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">描画エリア内でドラッグして範囲選択し、選択した領域をそのままマウス/タッチで移動できます（Windowsのペイント同様）。また、クリップボードからの画像貼り付け（Ctrl+V等）にも対応しています。</p>
+                        <h3 class="font-bold text-slate-200">範囲選択ボタンと移動機能</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">「選択」ボタンを押すと、描画エリア内でドラッグして範囲選択・移動が行えます。ペンボタンを押すと通常のブラシ描画モードに戻ります。</p>
                     </div>
                 </div>
             </div>
@@ -610,19 +612,19 @@
                 size: 8,
                 opacity: 1,
                 shape: 'normal',
-                tool: 'brush',
+                tool: 'brush', // デフォルト挙動はブラシ
                 layers: createDefaultLayers(),
                 activeLayerId: 3,
                 history: [],
                 redoStack: [],
-                selection: null // {x, y, w, h, imageData}
+                selection: null
             },
             b: {
                 color: '#6366f1',
                 size: 8,
                 opacity: 1,
                 shape: 'normal',
-                tool: 'brush',
+                tool: 'brush', // デフォルト挙動はブラシ
                 layers: createDefaultLayers(),
                 activeLayerId: 3,
                 history: [],
@@ -645,7 +647,6 @@
                 }
             });
 
-            // 選択範囲を描画するためのオーバーレイCanvas
             let selCanvas = container.querySelector('.selection-overlay');
             if (!selCanvas) {
                 selCanvas = document.createElement('canvas');
@@ -717,7 +718,7 @@
         }
 
         // ==========================================
-        // 範囲選択・移動 & クリップボード貼り付け機能
+        // 描画・選択・移動イベント処理
         // ==========================================
         function setupDrawingEvents(prefix, wrapper) {
             let isDrawing = false;
@@ -738,24 +739,35 @@
                 };
             };
 
-            const startDraw = (e) => {
+            const startAction = (e) => {
                 const coords = getCoords(e);
                 const ws = workspaces[prefix];
                 const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
                 if (!activeLayer) return;
 
-                // 選択範囲が存在し、その中をクリックした場合は移動モード開始
-                if (ws.selection) {
-                    const s = ws.selection;
-                    if (coords.x >= s.x && coords.x <= s.x + s.w && coords.y >= s.y && coords.y <= s.y + s.h) {
-                        isMovingSelection = true;
-                        moveStartX = coords.x;
-                        moveStartY = coords.y;
-                        return;
-                    } else {
-                        // 選択範囲外をクリックした場合は選択を確定（レイヤーに焼き込み）して新規描画へ
-                        commitSelection(prefix);
+                // 選択ツール時の処理
+                if (ws.tool === 'select') {
+                    if (ws.selection) {
+                        const s = ws.selection;
+                        if (coords.x >= s.x && coords.x <= s.x + s.w && coords.y >= s.y && coords.y <= s.y + s.h) {
+                            isMovingSelection = true;
+                            moveStartX = coords.x;
+                            moveStartY = coords.y;
+                            return;
+                        } else {
+                            commitSelection(prefix);
+                        }
                     }
+                    isSelecting = true;
+                    selStartX = coords.x;
+                    selStartY = coords.y;
+                    ws.selection = { x: selStartX, y: selStartY, w: 0, h: 0, imageData: null };
+                    return;
+                }
+
+                // 範囲選択中に別の場所を触った場合は選択を確定
+                if (ws.selection) {
+                    commitSelection(prefix);
                 }
 
                 if (ws.tool === 'bucket') {
@@ -764,38 +776,42 @@
                     return;
                 }
 
-                // 選択範囲作成の開始（マウスドラッグ）
-                isSelecting = true;
-                selStartX = coords.x;
-                selStartY = coords.y;
-                ws.selection = { x: selStartX, y: selStartY, w: 0, h: 0, imageData: null };
+                // ブラシ・消しゴムモード
+                isDrawing = true;
+                saveState(prefix);
+                lastX = coords.x;
+                lastY = coords.y;
+                lastSpeed = 0;
+                drawPoint(prefix, coords.x, coords.y);
             };
 
-            const moveDraw = (e) => {
+            const moveAction = (e) => {
                 const coords = getCoords(e);
                 const ws = workspaces[prefix];
                 const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
 
-                if (isMovingSelection && ws.selection) {
-                    const dx = coords.x - moveStartX;
-                    const dy = coords.y - moveStartY;
-                    ws.selection.x += dx;
-                    ws.selection.y += dy;
-                    moveStartX = coords.x;
-                    moveStartY = coords.y;
-                    renderSelectionOverlay(prefix, wrapper);
-                    return;
-                }
-
-                if (isSelecting && ws.selection) {
-                    const currentX = coords.x;
-                    const currentY = coords.y;
-                    const x = Math.min(selStartX, currentX);
-                    const y = Math.min(selStartY, currentY);
-                    const w = Math.abs(currentX - selStartX);
-                    const h = Math.abs(currentY - selStartY);
-                    ws.selection = { x, y, w, h, imageData: null };
-                    renderSelectionOverlay(prefix, wrapper);
+                if (ws.tool === 'select') {
+                    if (isMovingSelection && ws.selection) {
+                        const dx = coords.x - moveStartX;
+                        const dy = coords.y - moveStartY;
+                        ws.selection.x += dx;
+                        ws.selection.y += dy;
+                        moveStartX = coords.x;
+                        moveStartY = coords.y;
+                        renderSelectionOverlay(prefix, wrapper);
+                        return;
+                    }
+                    if (isSelecting && ws.selection) {
+                        const currentX = coords.x;
+                        const currentY = coords.y;
+                        const x = Math.min(selStartX, currentX);
+                        const y = Math.min(selStartY, currentY);
+                        const w = Math.abs(currentX - selStartX);
+                        const h = Math.abs(currentY - selStartY);
+                        ws.selection = { x, y, w, h, imageData: null };
+                        renderSelectionOverlay(prefix, wrapper);
+                        return;
+                    }
                     return;
                 }
 
@@ -813,41 +829,45 @@
                 lastY = coords.y;
             };
 
-            const endDraw = () => {
-                if (isSelecting && workspaces[prefix].selection) {
-                    const ws = workspaces[prefix];
-                    const s = ws.selection;
-                    if (s.w > 2 && s.h > 2) {
-                        const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
-                        if (activeLayer) {
-                            s.imageData = activeLayer.ctx.getImageData(s.x, s.y, s.w, s.h);
-                            activeLayer.ctx.clearRect(s.x, s.y, s.w, s.h);
-                            saveState(prefix);
+            const endAction = () => {
+                const ws = workspaces[prefix];
+                if (ws.tool === 'select') {
+                    if (isSelecting && ws.selection) {
+                        const s = ws.selection;
+                        if (s.w > 2 && s.h > 2) {
+                            const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
+                            if (activeLayer) {
+                                s.imageData = activeLayer.ctx.getImageData(s.x, s.y, s.w, s.h);
+                                activeLayer.ctx.clearRect(s.x, s.y, s.w, s.h);
+                                saveState(prefix);
+                            }
+                        } else {
+                            ws.selection = null;
                         }
-                    } else {
-                        ws.selection = null;
+                        isSelecting = false;
+                        renderSelectionOverlay(prefix, wrapper);
                     }
-                    isSelecting = false;
-                    renderSelectionOverlay(prefix, wrapper);
+                    if (isMovingSelection) {
+                        isMovingSelection = false;
+                        saveState(prefix);
+                    }
                     return;
                 }
-                if (isMovingSelection) {
-                    isMovingSelection = false;
-                    saveState(prefix);
-                    return;
+
+                if (isDrawing) {
+                    isDrawing = false;
+                    lastSpeed = 0;
                 }
-                isDrawing = false;
-                lastSpeed = 0;
             };
 
-            wrapper.addEventListener('mousedown', startDraw);
-            wrapper.addEventListener('mousemove', moveDraw);
-            window.addEventListener('mouseup', endDraw);
-            wrapper.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); }, { passive: false });
-            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); moveDraw(e); }, { passive: false });
-            window.addEventListener('touchend', endDraw);
+            wrapper.addEventListener('mousedown', startAction);
+            wrapper.addEventListener('mousemove', moveAction);
+            window.addEventListener('mouseup', endAction);
+            wrapper.addEventListener('touchstart', (e) => { e.preventDefault(); startAction(e); }, { passive: false });
+            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); moveAction(e); }, { passive: false });
+            window.addEventListener('touchend', endAction);
 
-            // 貼り付け (Paste) イベント対応
+            // クリップボードからの画像貼り付け (Paste)
             window.addEventListener('paste', (e) => {
                 if (currentActiveUser !== prefix) return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -909,9 +929,8 @@
                 if (s.imageData) {
                     sCtx.putImageData(s.imageData, s.x, s.y);
                 }
-                // 選択枠の点線描画
                 sCtx.save();
-                sCtx.strokeStyle = '#6366f1';
+                sCtx.strokeStyle = prefix === 'a' ? '#6366f1' : '#ec4899';
                 sCtx.lineWidth = 1.5;
                 sCtx.setLineDash([4, 4]);
                 sCtx.strokeRect(s.x, s.y, s.w, s.h);
