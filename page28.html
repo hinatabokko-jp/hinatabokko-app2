@@ -275,7 +275,7 @@
       font-size: 0.65rem;
       color: #666;
     }
-    .delete-btn {
+    .delete-btn, .edit-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -285,7 +285,7 @@
       text-decoration: underline;
       opacity: 0.8;
     }
-    .delete-btn:hover {
+    .delete-btn:hover, .edit-btn:hover {
       opacity: 1;
       color: #fff;
     }
@@ -900,7 +900,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // Firebase設定
     const firebaseConfig = {
@@ -1059,6 +1059,9 @@
     let currentBrushType = 'pen';
     let historyStack = [];
     let lastPoint = null;
+    
+    // 編集中のメッセージIDを保持する変数
+    let editingMessageKey = null;
 
     function getLayerObj(id) {
       if (id === 1) return { canvas: canvasA, ctx: ctxA };
@@ -1157,11 +1160,15 @@
     });
 
     modalOpenBtn.addEventListener('click', () => {
+      editingMessageKey = null; // 新規作成モード
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
       setTimeout(() => modalTextInput.focus(), 50);
     });
-    const closeModal = () => commentModalOverlay.classList.remove('active');
+    const closeModal = () => {
+      commentModalOverlay.classList.remove('active');
+      editingMessageKey = null;
+    };
     modalCloseX.addEventListener('click', closeModal);
     modalCloseBtn.addEventListener('click', closeModal);
     modalClearBtn.addEventListener('click', () => { modalTextInput.value = ''; modalTextInput.focus(); });
@@ -1170,7 +1177,14 @@
       const text = modalTextInput.value.trim();
       const senderName = userSelect.value;
       if (text) {
-        push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+        if (editingMessageKey) {
+          // 既存メッセージの編集更新
+          update(ref(db, `messages/${editingMessageKey}`), { text: text });
+          editingMessageKey = null;
+        } else {
+          // 新規送信
+          push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+        }
         modalTextInput.value = '';
         messageInput.value = '';
         messageInput.style.height = '40px';
@@ -1375,7 +1389,6 @@
         const pos = getCanvasCoords(e, targetCanvas);
         saveState();
         if (currentTool === 'fill') {
-          // 塗りつぶし（簡易版）
           activeObj.ctx.save();
           activeObj.ctx.fillStyle = stampColorInput.value;
           activeObj.ctx.globalAlpha = parseFloat(stampOpacityInput.value);
@@ -1545,6 +1558,14 @@
       if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
     }
 
+    // メッセージ編集モーダルを開く関数
+    function editMessage(key, currentText) {
+      editingMessageKey = key;
+      modalTextInput.value = currentText || '';
+      commentModalOverlay.classList.add('active');
+      setTimeout(() => modalTextInput.focus(), 50);
+    }
+
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
       let lastIndex = 0, match;
@@ -1618,6 +1639,15 @@
           metaInfo.appendChild(dlBtn);
         }
         
+        // テキストメッセージが存在する場合、削除リンクの隣に同じフォント・スタイルで「編集」リンクを配置
+        if (msg.text) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-btn';
+          editBtn.textContent = '編集';
+          editBtn.addEventListener('click', () => editMessage(key, msg.text));
+          metaInfo.appendChild(editBtn);
+        }
+
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
         delBtn.addEventListener('click', () => deleteMessage(key));
