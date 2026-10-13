@@ -292,7 +292,7 @@
                             <button onclick="setBrushShape('normal')" id="shape-normal" class="p-2 rounded-xl border border-indigo-500 bg-indigo-950/60 text-indigo-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-pen"></i><span>標準ペン</span></button>
                             <button onclick="setBrushShape('calligraphy')" id="shape-calligraphy" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-pen-nib"></i><span>カリグラフィ</span></button>
                             <button onclick="setBrushShape('airbrush')" id="shape-airbrush" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-spray-can"></i><span>エアブラシ</span></button>
-                            <button onclick="setBrushShape('crayon')" id="shape-crayon" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-marker"></i><span>クレヨン</span></button>
+                            <button onclick="setBrushShape('crayon')" id="shape-crayon" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-crayon"></i><span>クレヨン</span></button>
                             <button onclick="setBrushShape('marker')" id="shape-marker" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-highlighter"></i><span>マーカー</span></button>
                             <button onclick="setBrushShape('pencil')" id="shape-pencil" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-pencil"></i><span>鉛筆</span></button>
                             <button onclick="setBrushShape('watercolor')" id="shape-watercolor" class="p-2 rounded-xl border border-dark-700 bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-bold text-left transition flex items-center space-x-2"><i class="fa-solid fa-droplet"></i><span>水彩ブラシ</span></button>
@@ -454,9 +454,16 @@
                         <canvas id="tg-previewCanvas" width="400" height="300" class="max-w-full h-auto object-contain rounded shadow-lg"></canvas>
                     </div>
 
-                    <div class="flex gap-2 w-full">
-                        <button onclick="copyGeneratedTextToClipboard()" id="tg-copyBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-copy text-sm"></i> 生成したテキストを画像としてコピー
+                    <!-- 3つのボタンを横並びに配置、およびコピーボタンのキャプションを「コピー」に変更 -->
+                    <div class="grid grid-cols-3 gap-2 w-full">
+                        <button onclick="copyGeneratedTextToClipboard()" id="tg-copyBtn" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-copy text-sm"></i> コピー
+                        </button>
+                        <button onclick="addModalLayerAndPaste()" id="tg-addLayerBtn" class="py-3 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-indigo-300 font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-layer-group text-sm"></i> レイヤーを追加
+                        </button>
+                        <button onclick="pasteGeneratedTextToCanvas()" id="tg-pasteBtn" class="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-paste text-sm"></i> 貼り付け
                         </button>
                     </div>
                 </div>
@@ -549,7 +556,7 @@
                     <div class="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl mt-0.5"><i class="fa-solid fa-scissors"></i></div>
                     <div>
                         <h3 class="font-bold text-slate-200">範囲選択ボタンと移動機能</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">「選択」ボタンを押すと、描画エリア内でドラッグして範囲選択・移動が行えます。ペンボタンを押すと通常のブラシ描画モードに戻ります。</p>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">「選択」ボタンを押すと、描画エリア内でドラッグして範囲選択・移動が行えます。ペンボタンに戻すと通常のブラシ描画モードになります。</p>
                     </div>
                 </div>
             </div>
@@ -612,7 +619,7 @@
                 size: 8,
                 opacity: 1,
                 shape: 'normal',
-                tool: 'brush', // デフォルト挙動はブラシ
+                tool: 'brush',
                 layers: createDefaultLayers(),
                 activeLayerId: 3,
                 history: [],
@@ -624,7 +631,7 @@
                 size: 8,
                 opacity: 1,
                 shape: 'normal',
-                tool: 'brush', // デフォルト挙動はブラシ
+                tool: 'brush',
                 layers: createDefaultLayers(),
                 activeLayerId: 3,
                 history: [],
@@ -745,7 +752,6 @@
                 const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
                 if (!activeLayer) return;
 
-                // 選択ツール時の処理
                 if (ws.tool === 'select') {
                     if (ws.selection) {
                         const s = ws.selection;
@@ -765,7 +771,6 @@
                     return;
                 }
 
-                // 範囲選択中に別の場所を触った場合は選択を確定
                 if (ws.selection) {
                     commitSelection(prefix);
                 }
@@ -776,7 +781,6 @@
                     return;
                 }
 
-                // ブラシ・消しゴムモード
                 isDrawing = true;
                 saveState(prefix);
                 lastX = coords.x;
@@ -867,7 +871,6 @@
             wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); moveAction(e); }, { passive: false });
             window.addEventListener('touchend', endAction);
 
-            // クリップボードからの画像貼り付け (Paste)
             window.addEventListener('paste', (e) => {
                 if (currentActiveUser !== prefix) return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -990,9 +993,11 @@
                     }
                     break;
                 case 'crayon':
-                    ctx.lineWidth = ws.size;
-                    ctx.lineCap = 'round';
-                    ctx.setLineDash([2, 2]);
+                    // クレヨン特有の少しざらついた太めのストローク表現に修正
+                    ctx.lineWidth = ws.size * 1.4;
+                    ctx.lineCap = 'butt';
+                    ctx.lineJoin = 'miter';
+                    ctx.setLineDash([3, 2]);
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
@@ -1298,7 +1303,6 @@
             lines.forEach((line, index) => {
                 const currentY = startY + (index * lineHeightPx);
 
-                // 2nd Stroke
                 const s2W = parseInt(tgStroke2Width.value, 10);
                 const s1W = parseInt(tgStroke1Width.value, 10);
                 const totalStroke = s1W + s2W;
@@ -1312,7 +1316,6 @@
                     });
                 }
 
-                // 1st Stroke
                 if (s1W > 0) {
                     tgCtx.lineWidth = s1W * 2;
                     tgCtx.strokeStyle = tgStroke1Color.value;
@@ -1323,7 +1326,6 @@
                     });
                 }
 
-                // Fill
                 tgCtx.fillStyle = tgTextColor.value;
                 drawTextWithLetterSpacing(tgCtx, line, startX, currentY, align, lSpacing, (txt, cx, cy) => {
                     tgCtx.fillText(txt, cx, cy);
@@ -1343,20 +1345,88 @@
             const originalHTML = copyBtn.innerHTML;
 
             try {
-                tgPreviewCanvas.toBlob(async (blob) => {
-                    if (!blob) throw new Error('画像の生成に失敗しました');
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
-                    copyBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> 画像としてコピーしました！';
-                    setTimeout(() => {
-                        copyBtn.innerHTML = originalHTML;
-                    }, 2000);
-                }, 'image/png');
+                return new Promise((resolve, reject) => {
+                    tgPreviewCanvas.toBlob(async (blob) => {
+                        if (!blob) {
+                            reject(new Error('画像の生成に失敗しました'));
+                            return;
+                        }
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            copyBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> コピーしました！';
+                            setTimeout(() => {
+                                copyBtn.innerHTML = originalHTML;
+                            }, 2000);
+                            resolve(blob);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    }, 'image/png');
+                });
             } catch (err) {
                 console.error(err);
                 alert('お使いのブラウザ環境ではクリップボードへの画像コピーがサポートされていません。');
             }
+        };
+
+        window.pasteGeneratedTextToCanvas = async function() {
+            try {
+                const blob = await window.copyGeneratedTextToClipboard();
+                if (!blob) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const ws = workspaces[currentActiveUser];
+                        const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
+                        if (!activeLayer) return;
+                        saveState(currentActiveUser);
+                        
+                        const pW = img.width;
+                        const pH = img.height;
+                        const drawX = Math.floor((canvasWidth - pW) / 2);
+                        const drawY = Math.floor((canvasHeight - pH) / 2);
+                        
+                        activeLayer.ctx.drawImage(img, drawX, drawY);
+                        saveState(currentActiveUser);
+                        
+                        closeModal('text-generator-modal');
+                        alert(`プレイヤー${currentActiveUser.toUpperCase()}のキャンバスにテキストを貼り付けました！`);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(blob);
+            } catch (err) {
+                console.error(err);
+                alert('キャンバスへの貼り付けに失敗しました。');
+            }
+        };
+
+        window.addModalLayerAndPaste = function() {
+            const ws = workspaces[currentActiveUser];
+            const newId = ws.layers.length + 1;
+            const newLayer = {
+                id: newId,
+                name: `レイヤー ${newId}`,
+                visible: true,
+                opacity: 1,
+                canvas: null,
+                ctx: null
+            };
+            const cvs = document.createElement('canvas');
+            cvs.width = canvasWidth;
+            cvs.height = canvasHeight;
+            newLayer.canvas = cvs;
+            newLayer.ctx = cvs.getContext('2d', { willReadFrequently: true });
+
+            ws.layers.push(newLayer);
+            ws.activeLayerId = newId;
+
+            initWorkspace(currentActiveUser);
+            alert(`最上層に「${newLayer.name}」を追加し、選択状態にしました！`);
         };
 
         [tgTextInput, tgFontFamily, tgFontSize, tgTextAlign, tgLineHeight, tgLetterSpacing, tgTextColor, tgStroke1Color, tgStroke2Color, tgStroke1Width, tgStroke2Width].forEach(el => {
