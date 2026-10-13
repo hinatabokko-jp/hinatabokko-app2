@@ -27,7 +27,7 @@
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Noto+Sans+JP:wght@700;900&family=Zen+Maru+Gothic:wght@700;900&family=Potta+One&family=Dela+Gothic+One&family=Yuji+Boku&family=Hina+Mincho&family=Kiwi+Maru:wght@500;700&family=Shrikhand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -51,6 +51,7 @@
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
             background-color: #0f172a;
         }
+        /* 試し描きエリア専用のプレーンな白背景クラス */
         .test-checkerboard {
             background-color: #ffffff;
         }
@@ -66,6 +67,7 @@
             border-radius: 3px;
         }
 
+        /* スマホ縦持ち時に全体が収まるようにコンパクト化 & 横並び最適化 */
         @media (max-width: 1024px) {
             main {
                 display: grid;
@@ -108,6 +110,7 @@
             </div>
         </div>
         <div class="flex items-center space-x-2">
+            <!-- QRコード招待ボタン -->
             <button id="qr-modal-btn" class="px-2.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 text-xs font-medium transition flex items-center gap-1.5">
                 <i class="fa-solid fa-qrcode text-emerald-400"></i>
                 <span class="hidden sm:inline">QRコード招待</span>
@@ -152,14 +155,10 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-dark-950/60 p-2.5 rounded-2xl border border-dark-800">
                 <div class="flex items-center gap-2 justify-between">
-                    <button onclick="openBrushModalFor('a')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <button onclick="openBrushModalFor('a')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-brush text-indigo-400"></i><span>ブラシ設定</span>
                     </button>
-                    <!-- ご要望の「文字を入力」ボタン -->
-                    <button onclick="openTextModalFor('a')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-font text-pink-400"></i><span>文字を入力</span>
-                    </button>
-                    <button onclick="openBrushModalFor('a')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
+                    <button onclick="openBrushModalFor('a')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
                         <span id="color-indicator-a" class="w-3.5 h-3.5 rounded-full border border-slate-600 shadow-inner inline-block" style="background-color: #ec4899;"></span>
                         <i class="fa-solid fa-gear text-slate-400 text-[10px]"></i>
                     </button>
@@ -211,14 +210,10 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-dark-950/60 p-2.5 rounded-2xl border border-dark-800">
                 <div class="flex items-center gap-2 justify-between">
-                    <button onclick="openBrushModalFor('b')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <button onclick="openBrushModalFor('b')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-brush text-pink-400"></i><span>ブラシ設定</span>
                     </button>
-                    <!-- ご要望の「文字を入力」ボタン -->
-                    <button onclick="openTextModalFor('b')" class="flex-1 bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 py-2 px-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-font text-indigo-400"></i><span>文字を入力</span>
-                    </button>
-                    <button onclick="openBrushModalFor('b')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
+                    <button onclick="openBrushModalFor('b')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="色の設定">
                         <span id="color-indicator-b" class="w-3.5 h-3.5 rounded-full border border-slate-600 shadow-inner inline-block" style="background-color: #6366f1;"></span>
                         <i class="fa-solid fa-gear text-slate-400 text-[10px]"></i>
                     </button>
@@ -246,7 +241,7 @@
 
     </main>
 
-    <!-- Modals (Brush, Layer, Text Generator, History, Help, QR) -->
+    <!-- Modals (Brush, Layer, History, Help, QR) -->
     <div id="brush-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-4xl w-full p-5 space-y-3 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
@@ -305,119 +300,13 @@
                         <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-pencil text-indigo-400"></i> 試し描き</label>
                         <button onclick="clearTestCanvas()" class="text-[11px] text-slate-400 hover:text-red-400 transition flex items-center gap-1 px-2 py-1 rounded bg-dark-800"><i class="fa-solid fa-rotate-right"></i> クリア</button>
                     </div>
+                    <!-- 背景色を白に変更した試し描きエリア -->
                     <div class="relative w-full aspect-[4/3] test-checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center" id="test-canvas-wrapper">
                         <canvas id="test-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
                     </div>
                 </div>
             </div>
             <button onclick="closeModal('brush-modal')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow transition">決定する</button>
-        </div>
-    </div>
-
-    <!-- ================= テキスト縁取り・生成モーダル (Canvas用サイズ調整版) ================= -->
-    <div id="text-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
-        <div class="bg-dark-900 border border-dark-800 rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-5 space-y-4 max-h-[95vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-dark-800 pb-2.5">
-                <h3 class="font-bold text-slate-200 text-sm sm:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-font text-indigo-400"></i> 二重縁取りテキストジェネレーター
-                </h3>
-                <button onclick="closeModal('text-modal')" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl bg-dark-800"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-                <!-- Controls Column -->
-                <div class="lg:col-span-6 space-y-3 bg-dark-950/80 p-3.5 rounded-2xl border border-dark-800 text-xs">
-                    <div class="space-y-1">
-                        <label class="font-bold text-slate-300 flex justify-between">
-                            <span>テキスト内容 (改行対応)</span>
-                        </label>
-                        <textarea id="gen-textInput" rows="2" class="w-full bg-dark-900 border border-dark-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-y">文字を入力</textarea>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="space-y-1">
-                            <label class="font-bold text-slate-300">フォント</label>
-                            <select id="gen-fontFamily" class="w-full bg-dark-900 border border-dark-800 rounded-xl p-2 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                <option value="'M PLUS Rounded 1c', sans-serif" selected>M PLUS Rounded 1c</option>
-                                <option value="'Dela Gothic One', sans-serif">Dela Gothic One</option>
-                                <option value="'Potta One', cursive">Potta One</option>
-                                <option value="'Noto Sans JP', sans-serif">Noto Sans JP</option>
-                                <option value="'Zen Maru Gothic', sans-serif">Zen Maru Gothic</option>
-                                <option value="'Hina Mincho', serif">Hina Mincho</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="font-bold text-slate-300 flex justify-between">
-                                <span>サイズ</span>
-                                <span id="gen-fontSizeVal" class="text-indigo-400 font-mono">55px</span>
-                            </label>
-                            <input type="range" id="gen-fontSize" min="20" max="150" value="55" class="w-full accent-indigo-500 mt-2">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="space-y-1">
-                            <label class="font-bold text-slate-300">配置</label>
-                            <select id="gen-textAlign" class="w-full bg-dark-900 border border-dark-800 rounded-xl p-2 text-white focus:outline-none">
-                                <option value="center" selected>中央</option>
-                                <option value="left">左</option>
-                                <option value="right">右</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="font-bold text-slate-300 flex justify-between"><span>行間</span><span id="gen-lineHeightVal" class="text-indigo-400 font-mono">1.2</span></label>
-                            <input type="range" id="gen-lineHeight" min="0.8" max="2.0" step="0.1" value="1.2" class="w-full accent-indigo-500 mt-2">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="font-bold text-slate-300 flex justify-between"><span>文字間</span><span id="gen-letterSpacingVal" class="text-indigo-400 font-mono">0px</span></label>
-                            <input type="range" id="gen-letterSpacing" min="-5" max="20" value="0" class="w-full accent-indigo-500 mt-2">
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-1 border-t border-dark-800">
-                        <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-300">文字カラー</span>
-                            <label class="cursor-pointer flex items-center gap-1 text-slate-400 text-[11px]"><input type="checkbox" id="gen-enableGradient" class="rounded accent-indigo-500"> グラデーション</label>
-                        </div>
-                        <div id="gen-solidColorBox" class="flex items-center gap-2 bg-dark-900 p-2 rounded-xl border border-dark-800">
-                            <input type="color" id="gen-textColor" value="#000000" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer">
-                            <span class="text-slate-300 font-mono text-[11px]" id="gen-textColorHex">#000000</span>
-                        </div>
-                        <div id="gen-gradientBox" class="hidden grid grid-cols-2 gap-2 bg-dark-900 p-2 rounded-xl border border-dark-800">
-                            <div class="flex items-center gap-2"><input type="color" id="gen-gradientTop" value="#000000" class="w-7 h-7 rounded bg-transparent border-0"><span class="text-[10px] text-slate-300">上部</span></div>
-                            <div class="flex items-center gap-2"><input type="color" id="gen-gradientBottom" value="#333333" class="w-7 h-7 rounded bg-transparent border-0"><span class="text-[10px] text-slate-300">下部</span></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-dark-800">
-                        <div class="bg-dark-900 p-2.5 rounded-xl border border-dark-800 space-y-1.5">
-                            <div class="flex justify-between items-center"><span class="font-bold text-pink-400">1つ目の縁</span><input type="checkbox" id="gen-enableStroke1" checked class="accent-pink-500"></div>
-                            <div class="flex items-center gap-2"><input type="color" id="gen-stroke1Color" value="#ffffff" class="w-7 h-7 rounded bg-transparent border-0"><input type="range" id="gen-stroke1Width" min="0" max="25" value="6" class="w-full accent-pink-500"></div>
-                        </div>
-                        <div class="bg-dark-900 p-2.5 rounded-xl border border-dark-800 space-y-1.5">
-                            <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">2つ目の縁</span><input type="checkbox" id="gen-enableStroke2" checked class="accent-cyan-500"></div>
-                            <div class="flex items-center gap-2"><input type="color" id="gen-stroke2Color" value="#00d2fc" class="w-7 h-7 rounded bg-transparent border-0"><input type="range" id="gen-stroke2Width" min="0" max="25" value="0" class="w-full accent-cyan-500"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Preview Column -->
-                <div class="lg:col-span-6 flex flex-col gap-3">
-                    <div class="bg-dark-950 p-3 rounded-2xl border border-dark-800 flex flex-col items-center">
-                        <div class="w-full flex justify-between items-center mb-2">
-                            <span class="font-bold text-slate-300 text-[11px]"><i class="fa-solid fa-eye text-emerald-400 mr-1"></i>プレビュー (512×384px)</span>
-                        </div>
-                        <div class="w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center p-2">
-                            <canvas id="gen-thumbnailCanvas" class="max-w-full max-h-full object-contain rounded shadow-lg"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- キャンバスに反映ボタン -->
-                    <button onclick="applyTextToActiveCanvas()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-layer-group"></i> キャンバスに新しいレイヤーとして反映する
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -450,7 +339,9 @@
                 </button>
             </div>
             <p class="text-xs text-slate-400">スマホのカメラで読み取って参加できます</p>
+            
             <div class="bg-white p-4 rounded-2xl mx-auto flex items-center justify-center shadow-inner" id="qrcode-container"></div>
+            
             <div class="space-y-2">
                 <input type="text" id="invite-url-input" class="w-full bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 text-center select-all" value="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html" readonly>
                 <div class="grid grid-cols-2 gap-2">
@@ -498,8 +389,8 @@
                 <div class="flex items-start gap-3 bg-dark-950 p-3 rounded-2xl border border-dark-800">
                     <div class="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl mt-0.5"><i class="fa-solid fa-paper-plane"></i></div>
                     <div>
-                        <h3 class="font-bold text-slate-200">「文字を入力」機能について</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">ブラシ設定の右にある「文字を入力」ボタンから、二重縁取りやグラデーション付きの文字を作成してキャンバスにレイヤーとして追加できます。</p>
+                        <h3 class="font-bold text-slate-200">「反映」ボタンでメッセージ共有</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400 mt-1">描き終わったら「描画を反映する」ボタンを押すと、メッセージの送信のように相手の画面（および自分の画面）に最新のキャンバス画像がパッと反映されます。</p>
                     </div>
                 </div>
             </div>
@@ -511,6 +402,9 @@
 
     <!-- Application JavaScript -->
     <script>
+        // ==========================================
+        // Firebase 設定 (反映済)
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDKrAD162EYHWzB6hTR2vYUuQ7M41RjT8g",
             authDomain: "canvas-share-b0784.firebaseapp.com",
@@ -536,6 +430,10 @@
         const canvasHeight = 384;
         let currentActiveUser = 'a';
 
+        // デフォルトで3層に設定
+        // レイヤー1（最下層）：透過
+        // レイヤー2（真ん中）：白色で塗りつぶし
+        // レイヤー3（最上層）：透過（デフォルト選択）
         const createDefaultLayers = () => {
             const l1Canvas = document.createElement('canvas');
             l1Canvas.width = canvasWidth; l1Canvas.height = canvasHeight;
@@ -564,7 +462,7 @@
                 shape: 'normal',
                 tool: 'brush',
                 layers: createDefaultLayers(),
-                activeLayerId: 3,
+                activeLayerId: 3, // デフォルトで最上層を選択
                 history: [],
                 redoStack: []
             },
@@ -575,7 +473,7 @@
                 shape: 'normal',
                 tool: 'brush',
                 layers: createDefaultLayers(),
-                activeLayerId: 3,
+                activeLayerId: 3, // デフォルトで最上層を選択
                 history: [],
                 redoStack: []
             }
@@ -604,11 +502,13 @@
                 container.dataset.initialized = "true";
             }
 
+            // Firebaseから「反映」された最新データを受信監視
             if (db) {
                 listenSyncedCanvas(prefix);
             }
         }
 
+        // メッセージ送信方式：Firebaseから最新の同期画像を受信してキャンバスに描画する
         function listenSyncedCanvas(prefix) {
             const syncRef = db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`);
             syncRef.on('value', (snapshot) => {
@@ -618,6 +518,7 @@
                 const ws = workspaces[prefix];
                 const img = new Image();
                 img.onload = () => {
+                    // 同期データ受信時は最上層（またはアクティブ層）に反映
                     const targetLayer = ws.layers.find(l => l.id === ws.activeLayerId) || ws.layers[ws.layers.length - 1];
                     if (targetLayer && targetLayer.ctx) {
                         targetLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -629,7 +530,8 @@
             });
         }
 
-        function sendSyncCanvas(prefix, silent = false) {
+        // 「反映」ボタンが押されたとき、現在のキャンバス画像をFirebaseに送信する
+        function sendSyncCanvas(prefix) {
             const ws = workspaces[prefix];
             const tempCvs = document.createElement('canvas');
             tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
@@ -646,12 +548,12 @@
             if (db) {
                 db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`).set(dataUrl)
                     .then(() => {
-                        if (!silent) alert(`プレイヤー${prefix.toUpperCase()}のキャンバスを反映しました！`);
+                        alert(`プレイヤー${prefix.toUpperCase()}のキャンバスを反映しました！`);
                     })
                     .catch((err) => {
-                        if (!silent) alert("反映に失敗しました: " + err.message);
+                        alert("反映に失敗しました: " + err.message);
                     });
-            } else if (!silent) {
+            } else {
                 alert("Firebaseが設定されていないため、この環境では同期されません。");
             }
         }
@@ -808,10 +710,20 @@
                     const dynamicSize = Math.max(1.5, ws.size * Math.max(0.2, 1.8 - Math.min(speed * 0.08, 1.2)));
                     ctx.lineWidth = dynamicSize;
                     ctx.globalAlpha = Math.min(1, ws.opacity * (1.1 - Math.min(speed * 0.03, 0.4)));
+                    
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
+
+                    if (ws.size > 4) {
+                        ctx.globalAlpha *= 0.4;
+                        ctx.lineWidth = dynamicSize * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x1 + 0.8, y1 + 0.8);
+                        ctx.lineTo(x2 + 0.8, y2 + 0.8);
+                        ctx.stroke();
+                    }
                     break;
                 default:
                     ctx.lineWidth = ws.size;
@@ -862,7 +774,12 @@
 
         function saveState(prefix) {
             const ws = workspaces[prefix];
-            const snapshot = ws.layers.map(l => l.ctx ? l.ctx.getImageData(0, 0, canvasWidth, canvasHeight) : null);
+            const snapshot = ws.layers.map(l => {
+                if (l.ctx) {
+                    return l.ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                }
+                return null;
+            });
             ws.history.push(snapshot);
             if (ws.history.length > 20) ws.history.shift();
             ws.redoStack = [];
@@ -880,7 +797,9 @@
         function updateColorIndicator(prefix) {
             const ws = workspaces[prefix];
             const indicator = document.getElementById(`color-indicator-${prefix}`);
-            if (indicator) indicator.style.backgroundColor = ws.color;
+            if (indicator) {
+                indicator.style.backgroundColor = ws.color;
+            }
         }
 
         ['a', 'b'].forEach(prefix => {
@@ -912,18 +831,25 @@
                 });
             }
 
+            // ゴミ箱ボタン：全消去したうえで自動的に反映（同期）まで実行する
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
                     saveState(prefix);
                     workspaces[prefix].layers.forEach(l => {
-                        if (l.id !== 2) l.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        // 背景白のレイヤー(id:2)以外をクリア
+                        if (l.id !== 2) {
+                            l.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        }
                     });
                     sendSyncCanvas(prefix, true);
                 });
             }
 
+            // 「反映」ボタンを押したときのイベント
             if (syncBtn) {
-                syncBtn.addEventListener('click', () => sendSyncCanvas(prefix));
+                syncBtn.addEventListener('click', () => {
+                    sendSyncCanvas(prefix);
+                });
             }
 
             document.querySelectorAll(`.tool-btn-${prefix}`).forEach(btn => {
@@ -962,196 +888,37 @@
             }
         });
 
-        // ==========================================
-        // テキスト生成モーダル（テキスト縁取り.html統合版）のロジック
-        // ==========================================
-        const genTextInput = document.getElementById('gen-textInput');
-        const genFontFamily = document.getElementById('gen-fontFamily');
-        const genFontSize = document.getElementById('gen-fontSize');
-        const genFontSizeVal = document.getElementById('gen-fontSizeVal');
-        const genTextAlign = document.getElementById('gen-textAlign');
-        const genLineHeight = document.getElementById('gen-lineHeight');
-        const genLineHeightVal = document.getElementById('gen-lineHeightVal');
-        const genLetterSpacing = document.getElementById('gen-letterSpacing');
-        const genLetterSpacingVal = document.getElementById('gen-letterSpacingVal');
-        
-        const genEnableGradient = document.getElementById('gen-enableGradient');
-        const genSolidColorBox = document.getElementById('gen-solidColorBox');
-        const genGradientBox = document.getElementById('gen-gradientBox');
-        const genTextColor = document.getElementById('gen-textColor');
-        const genTextColorHex = document.getElementById('gen-textColorHex');
-        const genGradientTop = document.getElementById('gen-gradientTop');
-        const genGradientBottom = document.getElementById('gen-gradientBottom');
-
-        const genEnableStroke1 = document.getElementById('gen-enableStroke1');
-        const genStroke1Color = document.getElementById('gen-stroke1Color');
-        const genStroke1Width = document.getElementById('gen-stroke1Width');
-        
-        const genEnableStroke2 = document.getElementById('gen-enableStroke2');
-        const genStroke2Color = document.getElementById('gen-stroke2Color');
-        const genStroke2Width = document.getElementById('gen-stroke2Width');
-
-        const genCanvas = document.getElementById('gen-thumbnailCanvas');
-        const genCtx = genCanvas.getContext('2d');
-
-        genEnableGradient.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                genSolidColorBox.classList.add('hidden');
-                genGradientBox.classList.remove('hidden');
-            } else {
-                genSolidColorBox.classList.remove('hidden');
-                genGradientBox.classList.add('hidden');
-            }
-            renderGenCanvas();
-        });
-
-        function updateGenLabels() {
-            genFontSizeVal.textContent = genFontSize.value + 'px';
-            genLineHeightVal.textContent = genLineHeight.value;
-            genLetterSpacingVal.textContent = genLetterSpacing.value + 'px';
-            genTextColorHex.textContent = genTextColor.value.toUpperCase();
-        }
-
-        function drawTextWithLetterSpacing(context, text, x, y, align, spacing, drawAction) {
-            if (spacing === 0) {
-                drawAction(text, x, y);
-                return;
-            }
-            let totalWidth = 0;
-            for (let i = 0; i < text.length; i++) {
-                totalWidth += context.measureText(text[i]).width + (i < text.length - 1 ? spacing : 0);
-            }
-            let currentX = x;
-            if (align === 'center') currentX = x - (totalWidth / 2);
-            else if (align === 'right') currentX = x - totalWidth;
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                drawAction(char, currentX, y);
-                currentX += context.measureText(char).width + spacing;
-            }
-        }
-
-        function renderGenCanvas() {
-            updateGenLabels();
-            genCanvas.width = canvasWidth;
-            genCanvas.height = canvasHeight;
-            genCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            const lines = genTextInput.value.split('\n');
-            const fontName = genFontFamily.value;
-            const baseFontSize = parseInt(genFontSize.value, 10);
-            const align = genTextAlign.value;
-            const lHeight = parseFloat(genLineHeight.value);
-            const lSpacing = parseInt(genLetterSpacing.value, 10);
-
-            genCtx.font = `900 ${baseFontSize}px ${fontName}`;
-            genCtx.textBaseline = 'middle';
-            genCtx.textAlign = (lSpacing === 0) ? align : 'left';
-
-            const lineHeightPx = baseFontSize * lHeight;
-            const totalTextHeight = lines.length * lineHeightPx;
-            let startY = (canvasHeight - totalTextHeight) / 2 + (lineHeightPx / 2);
-
-            let startX = canvasWidth / 2;
-            if (align === 'left') startX = canvasWidth * 0.1;
-            if (align === 'right') startX = canvasWidth * 0.9;
-
-            genCtx.shadowColor = 'transparent';
-            genCtx.shadowBlur = 0;
-
-            lines.forEach((line, index) => {
-                const currentY = startY + (index * lineHeightPx);
-
-                // 2nd Stroke
-                if (genEnableStroke2.checked) {
-                    const s1W = genEnableStroke1.checked ? parseInt(genStroke1Width.value, 10) : 0;
-                    const s2W = parseInt(genStroke2Width.value, 10);
-                    const totalStrokeWidth = s1W + s2W;
-                    if (totalStrokeWidth > 0) {
-                        genCtx.lineWidth = totalStrokeWidth * 2;
-                        genCtx.strokeStyle = genStroke2Color.value;
-                        genCtx.lineJoin = 'round';
-                        genCtx.miterLimit = 2;
-                        drawTextWithLetterSpacing(genCtx, line, startX, currentY, align, lSpacing, (txt, cx, cy) => {
-                            genCtx.strokeText(txt, cx, cy);
-                        });
-                    }
+        // 共通反映関数（silent=trueの場合はアラートを省略）
+        function sendSyncCanvas(prefix, silent = false) {
+            const ws = workspaces[prefix];
+            const tempCvs = document.createElement('canvas');
+            tempCvs.width = canvasWidth; tempCvs.height = canvasHeight;
+            const tCtx = tempCvs.getContext('2d');
+            ws.layers.forEach(l => {
+                if (l.visible && l.canvas) {
+                    tCtx.globalAlpha = l.opacity;
+                    tCtx.drawImage(l.canvas, 0, 0);
                 }
-
-                // 1st Stroke
-                if (genEnableStroke1.checked) {
-                    const s1W = parseInt(genStroke1Width.value, 10);
-                    if (s1W > 0) {
-                        genCtx.lineWidth = s1W * 2;
-                        genCtx.strokeStyle = genStroke1Color.value;
-                        genCtx.lineJoin = 'round';
-                        genCtx.miterLimit = 2;
-                        drawTextWithLetterSpacing(genCtx, line, startX, currentY, align, lSpacing, (txt, cx, cy) => {
-                            genCtx.strokeText(txt, cx, cy);
-                        });
-                    }
-                }
-
-                // Fill
-                if (genEnableGradient.checked) {
-                    const gradTopY = currentY - (baseFontSize / 2);
-                    const gradBottomY = currentY + (baseFontSize / 2);
-                    const gradient = genCtx.createLinearGradient(0, gradTopY, 0, gradBottomY);
-                    gradient.addColorStop(0, genGradientTop.value);
-                    gradient.addColorStop(1, genGradientBottom.value);
-                    genCtx.fillStyle = gradient;
-                } else {
-                    genCtx.fillStyle = genTextColor.value;
-                }
-
-                drawTextWithLetterSpacing(genCtx, line, startX, currentY, align, lSpacing, (txt, cx, cy) => {
-                    genCtx.fillText(txt, cx, cy);
-                });
-            });
-        }
-
-        [genTextInput, genFontFamily, genFontSize, genTextAlign, genLineHeight, genLetterSpacing, genEnableGradient, genTextColor, genGradientTop, genGradientBottom, genEnableStroke1, genStroke1Color, genStroke1Width, genEnableStroke2, genStroke2Color, genStroke2Width].forEach(el => {
-            if (el) {
-                el.addEventListener('input', renderGenCanvas);
-                el.addEventListener('change', renderGenCanvas);
-            }
-        });
-
-        window.openTextModalFor = function(prefix) {
-            currentActiveUser = prefix;
-            openModal('text-modal');
-            setTimeout(renderGenCanvas, 50);
-        };
-
-        window.applyTextToActiveCanvas = function() {
-            renderGenCanvas();
-            const ws = workspaces[currentActiveUser];
-            
-            // 新規レイヤーを作成して追加
-            const newLayerId = ws.layers.length + 1;
-            const lCanvas = document.createElement('canvas');
-            lCanvas.width = canvasWidth; lCanvas.height = canvasHeight;
-            const lCtx = lCanvas.getContext('2d', { willReadFrequently: true });
-            
-            // 生成されたテキストを描画
-            lCtx.drawImage(genCanvas, 0, 0);
-
-            ws.layers.push({
-                id: newLayerId,
-                name: `テキストレイヤー ${newLayerId}`,
-                visible: true,
-                opacity: 1,
-                canvas: lCanvas,
-                ctx: lCtx
             });
 
-            ws.activeLayerId = newLayerId;
-            initWorkspace(currentActiveUser);
-            saveState(currentActiveUser);
-            closeModal('text-modal');
-            alert(`プレイヤー${currentActiveUser.toUpperCase()}のキャンバスにテキストを新しいレイヤーとして追加しました！`);
-        };
+            const dataUrl = tempCvs.toDataURL('image/png');
+
+            if (db) {
+                db.ref(`canvas_share_message_rooms/room_v1/${prefix}/syncedImage`).set(dataUrl)
+                    .then(() => {
+                        if (!silent) {
+                            alert(`プレイヤー${prefix.toUpperCase()}のキャンバスを反映しました！`);
+                        }
+                    })
+                    .catch((err) => {
+                        if (!silent) {
+                            alert("反映に失敗しました: " + err.message);
+                        }
+                    });
+            } else if (!silent) {
+                alert("Firebaseが設定されていないため、この環境では同期されません。");
+            }
+        }
 
         // Test Canvas setup in Brush Modal
         let testCanvas, testCtx;
@@ -1219,7 +986,9 @@
         }
 
         window.clearTestCanvas = function() {
-            if (testCtx) testCtx.clearRect(0, 0, testWidth, testHeight);
+            if (testCtx) {
+                testCtx.clearRect(0, 0, testWidth, testHeight);
+            }
         };
 
         window.openBrushModalFor = function(prefix) {
@@ -1322,9 +1091,13 @@
         window.addNewLayer = function() {
             const ws = workspaces[currentActiveUser];
             const newId = ws.layers.length + 1;
+            ws.layers.push({ id: newId, name: `レイヤー ${newId}`, visible: true, opacity: 1, canvas: null, ctx: null });
+            // 新規作成されたCanvas要素の初期化
             const cvs = document.createElement('canvas');
             cvs.width = canvasWidth; cvs.height = canvasHeight;
-            ws.layers.push({ id: newId, name: `レイヤー ${newId}`, visible: true, opacity: 1, canvas: cvs, ctx: cvs.getContext('2d', { willReadFrequently: true }) });
+            ws.layers[ws.layers.length - 1].canvas = cvs;
+            ws.layers[ws.layers.length - 1].ctx = cvs.getContext('2d', { willReadFrequently: true });
+            
             initWorkspace(currentActiveUser);
             renderLayerList();
         };
@@ -1339,7 +1112,9 @@
             const layer = ws.layers.find(l => l.id === id);
             if (layer) {
                 layer.visible = !layer.visible;
-                if (layer.canvas) layer.canvas.classList.toggle('hidden', !layer.visible);
+                if (layer.canvas) {
+                    layer.canvas.classList.toggle('hidden', !layer.visible);
+                }
                 renderLayerList();
             }
         };
@@ -1349,10 +1124,13 @@
             const layer = ws.layers.find(l => l.id === id);
             if (layer) {
                 layer.opacity = val;
-                if (layer.canvas) layer.canvas.style.opacity = val;
+                if (layer.canvas) {
+                    layer.canvas.style.opacity = val;
+                }
             }
         };
 
+        // QRコード生成モーダル関連
         let qrInitialized = false;
         const qrModal = document.getElementById('qr-modal');
         const qrModalBtn = document.getElementById('qr-modal-btn');
@@ -1379,7 +1157,11 @@
         window.copyInviteUrl = function() {
             const input = document.getElementById('invite-url-input');
             input.select();
-            navigator.clipboard.writeText(input.value).then(() => alert("招待用URLをコピーしました！")).catch(() => alert("コピーに失敗しました"));
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert("招待用URLをコピーしました！");
+            }).catch(err => {
+                alert("コピーに失敗しました");
+            });
         };
 
         const historyModal = document.getElementById('history-modal');
@@ -1410,14 +1192,23 @@
                         <span class="text-xs font-bold text-slate-200 truncate flex-1">${s.title}</span>
                         <span class="text-[10px] text-slate-500">${s.date || ''}</span>
                     </div>
+                    
                     <div class="w-full flex flex-col gap-1.5 pt-1 border-t border-dark-800/80">
                         <div class="grid grid-cols-2 gap-1">
-                            <button onclick="loadArtworkToCanvas(${s.id}, 'a')" class="px-2 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">P1に反映</button>
-                            <button onclick="loadArtworkToCanvas(${s.id}, 'b')" class="px-2 py-1 bg-pink-600/80 hover:bg-pink-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">P2に反映</button>
+                            <button onclick="loadArtworkToCanvas(${s.id}, 'a')" class="px-2 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-arrow-left"></i> P1に反映
+                            </button>
+                            <button onclick="loadArtworkToCanvas(${s.id}, 'b')" class="px-2 py-1 bg-pink-600/80 hover:bg-pink-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
+                                P2に反映 <i class="fa-solid fa-arrow-right"></i>
+                            </button>
                         </div>
                         <div class="grid grid-cols-2 gap-1">
-                            <button onclick="downloadArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-dark-700 text-slate-300 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">保存</button>
-                            <button onclick="deleteSingleArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">削除</button>
+                            <button onclick="downloadArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-dark-700 text-slate-300 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
+                                <i class="fa-solid fa-download text-emerald-400"></i> 保存
+                            </button>
+                            <button onclick="deleteSingleArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
+                                <i class="fa-solid fa-trash-can text-red-400"></i> 削除
+                            </button>
                         </div>
                     </div>
                 `;
@@ -1429,6 +1220,7 @@
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
             if (!artwork) return;
+
             const ws = workspaces[targetUser];
             const img = new Image();
             img.onload = () => {
@@ -1438,7 +1230,7 @@
                     targetLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                     targetLayer.ctx.drawImage(img, 0, 0);
                     saveState(targetUser);
-                    alert(`作品「${artwork.title}」を読み込みました！`);
+                    alert(`作品「${artwork.title}」をプレイヤー${targetUser.toUpperCase()}のキャンバスに読み込みました！`);
                     closeModal('history-modal');
                 }
             };
@@ -1449,6 +1241,7 @@
             const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
             if (!artwork) return;
+
             const link = document.createElement('a');
             link.href = artwork.dataUrl;
             link.download = `${artwork.title || 'canvas_artwork'}.png`;
@@ -1461,7 +1254,8 @@
             let stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
             const artwork = stamps.find(item => item.id === id);
             if (!artwork) return;
-            if (confirm(`作品「${artwork.title}」を削除しますか？`)) {
+
+            if (confirm(`作品「${artwork.title}」を削除してもよろしいですか？`)) {
                 stamps = stamps.filter(item => item.id !== id);
                 localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
                 renderSavedStamps();
@@ -1471,7 +1265,7 @@
 
         const historyBtn = document.getElementById('view-history-tab-btn');
         if (historyBtn) {
-            historyBtn.addEventListener('click', () => { renderSavedStamps(); historyModal.classList.remove('hidden'); });
+            historyBtn.addEventListener('click', () => { renderSavedStamps(); if (historyModal) historyModal.classList.remove('hidden'); });
         }
 
         const clearStampsBtn = document.getElementById('clear-all-stamps-btn');
@@ -1491,13 +1285,13 @@
             helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
         }
 
+        // Initialize on load
         window.addEventListener('load', () => {
             initWorkspace('a');
             initWorkspace('b');
             updateColorIndicator('a');
             updateColorIndicator('b');
             updateStampCount();
-            renderGenCanvas();
         });
     </script>
 </body>
