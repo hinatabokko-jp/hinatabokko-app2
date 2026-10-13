@@ -353,6 +353,13 @@
 
         // Dictionary Database
         const dictionaryData = [
+            // 追加された用語
+            { id: "smi", term: "#SMI", reading: "エスエムアイ / えいえんし・こえだ", fullName: "Small Marginal Branch", category: "PCI", initial: "S", meaning: "鋭縁枝・小枝。心臓を包む「右冠動脈（RCA）」から分岐する細い枝（血管）のことです。" },
+            { id: "rca_new", term: "RCA", reading: "アールシーエー / うかんどうみゃく", fullName: "Right Coronary Artery", category: "PCI", initial: "R", meaning: "右冠動脈。心臓に酸素や栄養を運ぶ3本の主要な血管（冠動脈）のうち、右側を走る血管です。" },
+            { id: "num_1_2", term: "#1-2", reading: "イチノニ / うかんどうみゃくきんいぶ・ちゅうおうぶ", fullName: "Right Coronary Artery Segment #1-#2", category: "PCI", initial: "#", meaning: "冠動脈の部位番号（AHA分類）。#1は右冠動脈の入口〜前半部（近位部）、#2は中央部（中位部）を指し、#1-2は右冠動脈の根元から中央にかけての領域を示します。" },
+            { id: "diffuse", term: "diffuse 75-90%", reading: "ディフューズナナジュウゴ カク ジュウパーセント / びまんせいきょうさく", fullName: "Diffuse Stenosis 75-90%", category: "PCI", initial: "D", meaning: "びまん性（広範囲）の75〜90%狭窄。局所的ではなく、ある程度長い区間にわたってダラダラと細くなっており、血管内径が本来の太さに比べて75〜90%狭くなっている状態です。" },
+            { id: "ffr_angio", term: "FFR angio < 0.7", reading: "エフエフアール アンギオ", fullName: "FFR angio < 0.7", category: "PCI", initial: "F", meaning: "画像から解析した冠血流予備量比（FFR angio）が0.7未満。造影像の3Dデータ等から計算で算出した値で、明らかに心筋への血流障害（機能的有意な狭窄）があることを示します。" },
+
             // A
             { id: "access", term: "access", reading: "アクセス / しんにゅうろ", fullName: "Vascular Access", category: "TL", initial: "A", meaning: "アクセス・血管への到達経路。カテーテルを挿入するための血管への入口・経路。" },
             { id: "acs", term: "ACS", reading: "エーシーエス / きゅうせいかんしょうこうぐん", fullName: "Acute Coronary Syndrome", category: "PCI", initial: "A", meaning: "急性冠症候群。冠動脈の動脈硬化プラーク破綻や血栓形成により、急速に心筋虚血が進行する病態の総称（STEMI, NSTEMI, UAが含まれる）。" },
@@ -564,7 +571,7 @@
         const resetInitialBtn = document.getElementById("reset-initial");
 
         function initAlphabetButtons() {
-            const alphabets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            const alphabets = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
             
             let html = `
                 <button data-initial="ALL" class="init-btn active px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-500 border border-cyan-400 text-slate-950 shadow-sm transition-all">
