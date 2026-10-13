@@ -353,7 +353,7 @@
       font-size: 0.65rem;
       color: #666;
     }
-    .delete-btn {
+    .delete-btn, .edit-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -363,7 +363,7 @@
       text-decoration: underline;
       opacity: 0.8;
     }
-    .delete-btn:hover {
+    .delete-btn:hover, .edit-btn:hover {
       opacity: 1;
       color: #fff;
     }
@@ -995,7 +995,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
@@ -1137,6 +1137,7 @@
     let currentBrushType = 'pen';
     let historyStack = [];
     let lastPoint = null;
+    let editingMessageKey = null; // メッセージ編集用ステート
 
     function getLayerObj(id) {
       if (id === 1) return { canvas: canvasA, ctx: ctxA };
@@ -1235,11 +1236,15 @@
     });
 
     modalOpenBtn.addEventListener('click', () => {
+      editingMessageKey = null; // 新規作成モード
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
       setTimeout(() => modalTextInput.focus(), 50);
     });
-    const closeModal = () => commentModalOverlay.classList.remove('active');
+    const closeModal = () => {
+      commentModalOverlay.classList.remove('active');
+      editingMessageKey = null;
+    };
     modalCloseX.addEventListener('click', closeModal);
     modalCloseBtn.addEventListener('click', closeModal);
     modalClearBtn.addEventListener('click', () => { modalTextInput.value = ''; modalTextInput.focus(); });
@@ -1248,10 +1253,15 @@
       const text = modalTextInput.value.trim();
       const senderName = userSelect.value;
       if (text) {
-        push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
-        modalTextInput.value = '';
-        messageInput.value = '';
-        messageInput.style.height = '40px';
+        if (editingMessageKey) {
+          // 既存メッセージのテキスト編集更新
+          update(ref(db, `messages/${editingMessageKey}`), { text: text });
+          editingMessageKey = null;
+        } else {
+          push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+          messageInput.value = '';
+          messageInput.style.height = '40px';
+        }
       }
       closeModal();
     });
@@ -1263,7 +1273,6 @@
       updateLayerDOMOrder();
     });
 
-    // フッターのスタンプ履歴ボタン直接表示ロジック
     footerStampHistoryBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
@@ -1404,7 +1413,6 @@
 
       ctx.globalCompositeOperation = 'source-over';
       const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
       switch (currentBrushType) {
         case 'calligraphy-brush':
@@ -1681,6 +1689,14 @@
       if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
     }
 
+    // メッセージの編集開始処理
+    function editMessage(key, currentText) {
+      editingMessageKey = key;
+      modalTextInput.value = currentText || '';
+      commentModalOverlay.classList.add('active');
+      setTimeout(() => modalTextInput.focus(), 50);
+    }
+
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
       let lastIndex = 0, match;
@@ -1694,7 +1710,6 @@
       if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
     }
 
-    // チャット画面を一番下までスクロールさせる関数
     function scrollToBottom() {
       requestAnimationFrame(() => {
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -1754,6 +1769,15 @@
           metaInfo.appendChild(dlBtn);
         }
         
+        // テキストメッセージの場合のみ編集リンクを表示（自分のメッセージ、またはすべてのテキストメッセージ）
+        if (msg.text) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-btn';
+          editBtn.textContent = '編集';
+          editBtn.addEventListener('click', () => editMessage(key, msg.text));
+          metaInfo.appendChild(editBtn);
+        }
+
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
         delBtn.addEventListener('click', () => deleteMessage(key));
@@ -1773,7 +1797,6 @@
         renderMessages();
       });
 
-      // Firebaseメッセージ監視（リアルタイム更新＆過去ログ取得）
       onValue(messagesRef, (snapshot) => {
         cachedMessages = snapshot.val() || {};
         renderMessages();
@@ -1792,10 +1815,8 @@
       });
     }
 
-    // アプリ起動時の全体初期化
     initChat();
 
-    // 自動ログイン判定（localStorage または sessionStorage をチェック）
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
