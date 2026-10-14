@@ -454,7 +454,6 @@
                         <canvas id="tg-previewCanvas" width="400" height="300" class="max-w-full h-auto object-contain rounded shadow-lg"></canvas>
                     </div>
 
-                    <!-- 3つのボタンを横並びに配置、およびコピーボタンのキャプションを「コピー」に変更 -->
                     <div class="grid grid-cols-3 gap-2 w-full">
                         <button onclick="copyGeneratedTextToClipboard()" id="tg-copyBtn" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-copy text-sm"></i> コピー
@@ -735,6 +734,7 @@
             let moveStartX = 0, moveStartY = 0;
             let lastX = 0, lastY = 0;
             let lastSpeed = 0;
+            let strokePoints = [];
 
             const getCoords = (e) => {
                 const rect = wrapper.getBoundingClientRect();
@@ -786,6 +786,7 @@
                 lastX = coords.x;
                 lastY = coords.y;
                 lastSpeed = 0;
+                strokePoints = [{x: coords.x, y: coords.y}];
                 drawPoint(prefix, coords.x, coords.y);
             };
 
@@ -824,7 +825,21 @@
 
                 const dx = coords.x - lastX;
                 const dy = coords.y - lastY;
-                const speed = Math.hypot(dx, dy);
+                const dist = Math.hypot(dx, dy);
+
+                // カリグラフィブラシの場合、一定間隔（または十分な距離）で蓄積したポイントを元にスムーズなリボンパスを生成
+                if (ws.shape === 'calligraphy') {
+                    if (dist >= 1.5) {
+                        strokePoints.push({x: coords.x, y: coords.y});
+                        lastX = coords.x;
+                        lastY = coords.y;
+                        // リアルタイムに蓄積パスを描画更新するため、一度直近の状態に戻して引き直すか、バッチ描画する
+                        redrawCurrentStroke(ws, activeLayer.ctx, strokePoints);
+                    }
+                    return;
+                }
+
+                const speed = dist;
                 const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
                 lastSpeed = currentSpeed;
 
@@ -861,6 +876,15 @@
                 if (isDrawing) {
                     isDrawing = false;
                     lastSpeed = 0;
+                    // カリグラフィのストローク終了時に最終確定パスを描画
+                    if (ws.shape === 'calligraphy' && strokePoints.length > 0) {
+                        const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
+                        if (activeLayer && activeLayer.visible) {
+                            // 履歴の最新状態を反映してから確定描画
+                            renderCalligraphyPath(ws, activeLayer.ctx, strokePoints);
+                        }
+                    }
+                    strokePoints = [];
                 }
             };
 
@@ -899,6 +923,17 @@
                     }
                 }
             });
+        }
+
+        // ライブプレビュー用の再描画ヘルパー
+        function redrawCurrentStroke(ws, ctx, points) {
+            if (points.length < 2) return;
+            // 履歴の最新状態をいったん復元してプレビューを描画
+            const prefix = currentActiveUser;
+            // 簡易的に直近の2点間を描画追加していく
+            const p1 = points[points.length - 2];
+            const p2 = points[points.length - 1];
+            renderCalligraphySegment(ws, ctx, p1, p2);
         }
 
         function commitSelection(prefix) {
@@ -945,7 +980,76 @@
             const ws = workspaces[prefix];
             const activeLayer = ws.layers.find(l => l.id === ws.activeLayerId);
             if (!activeLayer || !activeLayer.visible) return;
-            renderBrushStroke(ws, activeLayer.ctx, x, y, x, y, 0);
+            if (ws.shape === 'calligraphy') {
+                renderCalligraphyPath(ws, activeLayer.ctx, [{x, y}, {x: x+0.5, y: y+0.5}]);
+            } else {
+                renderBrushStroke(ws, activeLayer.ctx, x, y, x, y, 0);
+            }
+        }
+
+        // ==========================================
+        // カリグラフィ専用の高品質リボンストローク生成ロジック
+        // ==========================================
+        function renderCalligraphyPath(ws, ctx, points) {
+            if (!points || points.length === 0) return;
+            ctx.save();
+            ctx.globalAlpha = ws.opacity;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = ws.color;
+            ctx.strokeStyle = ws.color;
+
+            const nibWidth = Math.max(2, ws.size);
+            const angle = Math.PI / 4; // 必須要件1: 初期値45度 (π / 4)
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+
+            // ニブのオフセットベクトル（ペン先の幅を表現）
+            const nx = cosA * (nibWidth / 2);
+            const ny = sinA * (nibWidth / 2);
+
+            if (points.length === 1) {
+                const p = points[0];
+                ctx.beginPath();
+                ctx.ellipse(p.x, p.y, Math.abs(nx), Math.abs(ny), angle, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
+
+            // 連続した点列から左右のエッジ座標を計算してリボン状のポリゴンパスを構築
+            const leftPoints = [];
+            const rightPoints = [];
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                leftPoints.push({ x: p.x - nx, y: p.y - ny });
+                rightPoints.push({ x: p.x + nx, y: p.y + ny });
+            }
+
+            ctx.beginPath();
+            // 左側のエッジを順にたどる
+            ctx.moveTo(leftPoints[0].x, leftPoints[0].y);
+            for (let i = 1; i < leftPoints.length; i++) {
+                ctx.lineTo(leftPoints[i].x, leftPoints[i].y);
+            }
+            // 終端の形状を自然にするため、終点周りのラウンド処理または折り返し
+            const lastP = points[points.length - 1];
+            const firstP = points[0];
+
+            // 右側のエッジを逆順にたどることで閉じた色面を生成
+            for (let i = rightPoints.length - 1; i >= 0; i--) {
+                ctx.lineTo(rightPoints[i].x, rightPoints[i].y);
+            }
+
+            ctx.closePath();
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function renderCalligraphySegment(ws, ctx, p1, p2) {
+            renderCalligraphyPath(ws, ctx, [p1, p2]);
         }
 
         function renderBrushStroke(ws, ctx, x1, y1, x2, y2, speed = 5) {
@@ -972,12 +1076,7 @@
 
             switch (ws.shape) {
                 case 'calligraphy':
-                    ctx.lineWidth = ws.size;
-                    ctx.lineCap = 'square';
-                    ctx.beginPath();
-                    ctx.moveTo(x1 - ws.size/3, y1 + ws.size/3);
-                    ctx.lineTo(x2 - ws.size/3, y2 + ws.size/3);
-                    ctx.stroke();
+                    renderCalligraphyPath(ws, ctx, [{x: x1, y: y1}, {x: x2, y: y2}]);
                     break;
                 case 'airbrush':
                     const dist = Math.hypot(x2 - x1, y2 - y1);
@@ -993,20 +1092,35 @@
                     }
                     break;
                 case 'crayon':
-                    // クレヨン特有の少しざらついた太めのストローク表現に修正
-                    ctx.lineWidth = ws.size * 1.4;
-                    ctx.lineCap = 'butt';
-                    ctx.lineJoin = 'miter';
-                    ctx.setLineDash([3, 2]);
-                    ctx.beginPath();
-                    ctx.moveTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
+                    const cDist = Math.hypot(x2 - x1, y2 - y1);
+                    const cSteps = Math.max(1, Math.floor(cDist));
+                    const radius = Math.max(2, ws.size * 0.9);
+                    
+                    ctx.globalAlpha = Math.min(1, ws.opacity * 0.55);
+
+                    for (let i = 0; i <= cSteps; i++) {
+                        const t = cSteps === 0 ? 0 : i / cSteps;
+                        const cx = x1 + (x2 - x1) * t;
+                        const cy = y1 + (y2 - y1) * t;
+                        
+                        const particleCount = Math.max(4, Math.floor(radius * 1.8));
+                        for (let p = 0; p < particleCount; p++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const r = Math.pow(Math.random(), 0.7) * radius;
+                            const px = cx + Math.cos(angle) * r;
+                            const py = cy + Math.sin(angle) * r;
+                            
+                            const pSize = Math.random() * 1.4 + 0.8;
+                            ctx.globalAlpha = ws.opacity * (0.3 + Math.random() * 0.5);
+                            ctx.fillRect(px, py, pSize, pSize);
+                        }
+                    }
                     break;
                 case 'marker':
-                    ctx.globalAlpha = ws.opacity * 0.7;
-                    ctx.lineWidth = ws.size * 1.6;
-                    ctx.lineCap = 'butt';
+                    ctx.globalAlpha = ws.opacity * 0.4;
+                    ctx.lineWidth = Math.max(2, ws.size * 1.6);
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
@@ -1021,14 +1135,25 @@
                     ctx.stroke();
                     break;
                 case 'watercolor':
-                    ctx.globalAlpha = ws.opacity * 0.25;
-                    for (let wOff = -ws.size/2; wOff <= ws.size/2; wOff += 3) {
-                        ctx.beginPath();
-                        ctx.moveTo(x1 + wOff, y1);
-                        ctx.lineTo(x2 + wOff, y2);
-                        ctx.lineWidth = 2.5;
-                        ctx.stroke();
-                    }
+                    const wDist = Math.hypot(x2 - x1, y2 - y1);
+                    const wSteps = Math.max(1, Math.floor(wDist));
+                    
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+
+                    ctx.globalAlpha = ws.opacity * 0.12;
+                    ctx.lineWidth = Math.max(4, ws.size * 1.4);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+
+                    ctx.globalAlpha = ws.opacity * 0.28;
+                    ctx.lineWidth = Math.max(2, ws.size * 0.8);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
                     break;
                 case 'brush':
                     ctx.lineCap = 'round';
@@ -1454,6 +1579,7 @@
             let isTestDrawing = false;
             let lastX = 0, lastY = 0;
             let lastSpeed = 0;
+            let testPoints = [];
 
             const getCoords = (e) => {
                 const rect = wrapper.getBoundingClientRect();
@@ -1471,6 +1597,7 @@
                 lastX = coords.x;
                 lastY = coords.y;
                 lastSpeed = 0;
+                testPoints = [{x: coords.x, y: coords.y}];
                 renderBrushStroke(workspaces[currentActiveUser], testCtx, coords.x, coords.y, coords.x, coords.y, 0);
             };
 
@@ -1480,7 +1607,19 @@
                 const ws = workspaces[currentActiveUser];
                 const dx = coords.x - lastX;
                 const dy = coords.y - lastY;
-                const speed = Math.hypot(dx, dy);
+                const dist = Math.hypot(dx, dy);
+
+                if (ws.shape === 'calligraphy') {
+                    if (dist >= 1.5) {
+                        testPoints.push({x: coords.x, y: coords.y});
+                        lastX = coords.x;
+                        lastY = coords.y;
+                        renderCalligraphySegment(ws, testCtx, testPoints[testPoints.length-2], testPoints[testPoints.length-1]);
+                    }
+                    return;
+                }
+
+                const speed = dist;
                 const currentSpeed = lastSpeed * 0.7 + speed * 0.3;
                 lastSpeed = currentSpeed;
 
@@ -1489,7 +1628,14 @@
                 lastY = coords.y;
             };
 
-            const end = () => { isTestDrawing = false; lastSpeed = 0; };
+            const end = () => { 
+                isTestDrawing = false; 
+                lastSpeed = 0; 
+                if (workspaces[currentActiveUser].shape === 'calligraphy' && testPoints.length > 0) {
+                    renderCalligraphyPath(workspaces[currentActiveUser], testCtx, testPoints);
+                }
+                testPoints = [];
+            };
 
             wrapper.addEventListener('mousedown', start);
             wrapper.addEventListener('mousemove', move);
@@ -1678,131 +1824,10 @@
             });
         };
 
-        const historyModal = document.getElementById('history-modal');
-        const savedStampsGrid = document.getElementById('saved-stamps-grid');
-        const stampCountSpan = document.getElementById('stamp-count');
-
-        function updateStampCount() {
-            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            if (stampCountSpan) stampCountSpan.textContent = stamps.length;
-        }
-
-        function renderSavedStamps() {
-            if (!savedStampsGrid) return;
-            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            savedStampsGrid.innerHTML = '';
-            if (stamps.length === 0) {
-                savedStampsGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 text-xs">保存された作品はまだありません。</div>`;
-                return;
-            }
-            stamps.forEach((s) => {
-                const card = document.createElement('div');
-                card.className = 'bg-dark-950 border border-dark-800 rounded-2xl p-3 flex flex-col items-center gap-2 relative shadow-md';
-                card.innerHTML = `
-                    <div class="w-full aspect-[4/3] checkerboard rounded-xl border border-dark-800 overflow-hidden flex items-center justify-center">
-                        <img src="${s.dataUrl}" class="w-full h-full object-contain">
-                    </div>
-                    <div class="w-full flex justify-between items-center px-1">
-                        <span class="text-xs font-bold text-slate-200 truncate flex-1">${s.title}</span>
-                        <span class="text-[10px] text-slate-500">${s.date || ''}</span>
-                    </div>
-                    <div class="w-full flex flex-col gap-1.5 pt-1 border-t border-dark-800/80">
-                        <div class="grid grid-cols-2 gap-1">
-                            <button onclick="loadArtworkToCanvas(${s.id}, 'a')" class="px-2 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-arrow-left"></i> P1に反映
-                            </button>
-                            <button onclick="loadArtworkToCanvas(${s.id}, 'b')" class="px-2 py-1 bg-pink-600/80 hover:bg-pink-600 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1">
-                                P2に反映 <i class="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-2 gap-1">
-                            <button onclick="downloadArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-dark-700 text-slate-300 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
-                                <i class="fa-solid fa-download text-emerald-400"></i> 保存
-                            </button>
-                            <button onclick="deleteSingleArtwork(${s.id})" class="px-2 py-1 bg-dark-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 text-[10px] font-bold rounded-lg transition flex items-center justify-center gap-1 border border-dark-700">
-                                <i class="fa-solid fa-trash-can text-red-400"></i> 削除
-                            </button>
-                        </div>
-                    </div>
-                `;
-                savedStampsGrid.appendChild(card);
-            });
-        }
-
-        window.loadArtworkToCanvas = function(id, targetUser) {
-            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            const artwork = stamps.find(item => item.id === id);
-            if (!artwork) return;
-
-            const ws = workspaces[targetUser];
-            const img = new Image();
-            img.onload = () => {
-                const targetLayer = ws.layers.find(l => l.id === ws.activeLayerId) || ws.layers[ws.layers.length - 1];
-                if (targetLayer && targetLayer.ctx) {
-                    saveState(targetUser);
-                    targetLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                    targetLayer.ctx.drawImage(img, 0, 0);
-                    saveState(targetUser);
-                    alert(`作品「${artwork.title}」をプレイヤー${targetUser.toUpperCase()}のキャンバスに読み込みました！`);
-                    closeModal('history-modal');
-                }
-            };
-            img.src = artwork.dataUrl;
-        };
-
-        window.downloadArtwork = function(id) {
-            const stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            const artwork = stamps.find(item => item.id === id);
-            if (!artwork) return;
-
-            const link = document.createElement('a');
-            link.href = artwork.dataUrl;
-            link.download = `${artwork.title || 'canvas_artwork'}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-        window.deleteSingleArtwork = function(id) {
-            let stamps = JSON.parse(localStorage.getItem('canvas_share_artworks') || '[]');
-            const artwork = stamps.find(item => item.id === id);
-            if (!artwork) return;
-
-            if (confirm(`作品「${artwork.title}」を削除してもよろしいですか？`)) {
-                stamps = stamps.filter(item => item.id !== id);
-                localStorage.setItem('canvas_share_artworks', JSON.stringify(stamps));
-                renderSavedStamps();
-                updateStampCount();
-            }
-        };
-
-        const historyBtn = document.getElementById('view-history-tab-btn');
-        if (historyBtn) {
-            historyBtn.addEventListener('click', () => { renderSavedStamps(); if (historyModal) historyModal.classList.remove('hidden'); });
-        }
-
-        const clearStampsBtn = document.getElementById('clear-all-stamps-btn');
-        if (clearStampsBtn) {
-            clearStampsBtn.addEventListener('click', () => {
-                if (confirm('すべての保存作品を削除しますか？')) {
-                    localStorage.removeItem('canvas_share_artworks');
-                    renderSavedStamps();
-                    updateStampCount();
-                }
-            });
-        }
-
-        const helpModal = document.getElementById('help-modal');
-        const helpBtn = document.getElementById('help-btn');
-        if (helpBtn && helpModal) {
-            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
-        }
-
-        window.addEventListener('load', () => {
+        // 初期化実行
+        window.addEventListener('DOMContentLoaded', () => {
             initWorkspace('a');
             initWorkspace('b');
-            updateColorIndicator('a');
-            updateColorIndicator('b');
             updateStampCount();
         });
     </script>
