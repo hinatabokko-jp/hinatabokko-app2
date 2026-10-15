@@ -135,6 +135,10 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
+                    <button onclick="openInviteModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="招待QRコード">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                        <span class="hidden sm:inline">招待</span>
+                    </button>
                     <button onclick="handleLogout()" class="px-4 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -155,17 +159,13 @@
             <!-- Message Input Footer -->
             <footer class="p-4 bg-cardBg border-t border-white/5 flex-shrink-0">
                 <form id="messageForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
-                    <button type="button" onclick="openStampModal()" title="手描きスタンプ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
-                        🎨
-                    </button>
-                    <button type="button" onclick="openTextEditorModal()" title="絵文字・改行エディタ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
-                        ✨
-                    </button>
+                    <!-- 1. ファイルを送りためのボタン -->
                     <label title="ファイル添付" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
                         📎
                         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
                     </label>
 
+                    <!-- 2. メッセージを書き込むテキストボックス -->
                     <div class="relative flex-1">
                         <input 
                             type="text" 
@@ -176,6 +176,22 @@
                             class="w-full px-4 py-3 bg-inputBg text-mainText placeholder-subText/50 rounded-2xl border border-transparent focus:border-accent focus:outline-none text-sm sm:text-base"
                         />
                     </div>
+
+                    <!-- 3. 手描きスタンプの履歴モーダル用のボタン -->
+                    <button type="button" onclick="openStampHistoryModal()" title="スタンプ履歴" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        🕒
+                    </button>
+
+                    <!-- 4. 手描きスタンプ作成モーダル用のボタン -->
+                    <button type="button" onclick="openStampModal()" title="手描きスタンプ作成" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        🎨
+                    </button>
+
+                    <!-- 5. 改行テキスト作成モーダル用のボタン -->
+                    <button type="button" onclick="openTextEditorModal()" title="絵文字・改行エディタ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        ✨
+                    </button>
+
                     <button 
                         type="submit" 
                         id="sendButton"
@@ -359,6 +375,21 @@
             </div>
         </div>
 
+        <!-- MODAL: 招待QRコードモーダル -->
+        <div id="inviteModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl flex flex-col items-center gap-4 text-center">
+                <h3 class="text-lg font-bold">お友達を招待する</h3>
+                <p class="text-xs text-subText">以下のQRコードまたはURLを共有してください。</p>
+                <div class="p-3 bg-white rounded-2xl shadow-inner">
+                    <img id="qrCodeImg" src="" alt="QR Code" class="w-48 h-48 object-contain">
+                </div>
+                <div class="w-full bg-inputBg p-2.5 rounded-xl text-xs font-mono text-subText break-all select-all">
+                    https://hinatabokko-jp.github.io/hinatabokko-app2/page33.html
+                </div>
+                <button onclick="closeInviteModal()" class="w-full py-3 rounded-xl bg-insta-gradient text-white font-semibold text-sm cursor-pointer">閉じる</button>
+            </div>
+        </div>
+
         <!-- MODAL: メッセージ編集モーダル -->
         <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
@@ -454,6 +485,13 @@
         window.openAuthModal = function() { document.getElementById('authModal').classList.remove('hidden', 'opacity-0'); };
         window.closeAuthModal = function() { document.getElementById('authModal').classList.add('hidden'); };
 
+        window.openInviteModal = function() {
+            const inviteUrl = "https://hinatabokko-jp.github.io/hinatabokko-app2/page33.html";
+            document.getElementById('qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteUrl)}`;
+            document.getElementById('inviteModal').classList.remove('hidden', 'opacity-0');
+        };
+        window.closeInviteModal = function() { document.getElementById('inviteModal').classList.add('hidden'); };
+
         window.handleAdminAuth = async function(event) {
             event.preventDefault();
             const id = document.getElementById('adminIdInput').value.trim();
@@ -528,7 +566,7 @@
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
                 nickname: currentNickname,
                 text: content,
-                type: type, // 'text' | 'image' | 'stamp' | 'file'
+                type: type, // 'text' | 'image' | 'stamp' | 'file' | 'jpg_image'
                 fileName: fileName,
                 userId: currentUser ? currentUser.uid : 'anonymous',
                 createdAt: serverTimestamp()
@@ -551,16 +589,19 @@
             }
         };
 
-        // ファイル・画像送信（LINE風スタンプ仕様対応）
+        // ファイル・画像送信
         window.handleFileSelect = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const fileData = e.target.result;
+                const isJpg = file.type === 'image/jpeg' || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg');
                 const isImage = file.type.startsWith('image/');
-                if (isImage) {
-                    // 画像の場合はスタンプ仕様（透過・吹き出しなし）として送信
+                
+                if (isJpg) {
+                    await sendTextMessage(fileData, 'jpg_image', file.name);
+                } else if (isImage) {
                     await sendTextMessage(fileData, 'stamp', file.name);
                 } else {
                     await sendTextMessage(fileData, 'file', file.name);
@@ -569,7 +610,7 @@
             reader.readAsDataURL(file);
         };
 
-        // 2層レイヤー＆質感向上ブラシ描画ロジック
+        // 2層レイヤー＆質感向上ブラシ描画ロジック（マウス＆タッチ対応）
         let activeLayer = 2;
         let canvas1, ctx1, canvas2, ctx2;
         let history1 = [], history2 = [];
@@ -588,7 +629,6 @@
         };
         window.closeStampHistoryModal = function() { document.getElementById('stampHistoryModal').classList.add('hidden'); };
 
-        // スタンプ履歴へPNG画像を取り込む処理
         window.handleImportStampImage = function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -638,11 +678,11 @@
         function setupCanvasEvents(targetCanvas, layerNum) {
             const getCtx = () => layerNum === 2 ? ctx2 : ctx1;
 
-            targetCanvas.onmousedown = (e) => {
+            const startDrawing = (clientX, clientY) => {
                 if (layerNum !== activeLayer) return;
                 const rect = targetCanvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
 
                 if (isPaintBucket) {
                     floodFill(targetCanvas, Math.floor(x), Math.floor(y), document.getElementById('stampColor').value);
@@ -658,11 +698,11 @@
                 ctx.moveTo(x, y);
             };
 
-            targetCanvas.onmousemove = (e) => {
+            const moveDrawing = (clientX, clientY) => {
                 if (!isDrawing || layerNum !== activeLayer || isPaintBucket) return;
                 const rect = targetCanvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
                 const ctx = getCtx();
                 const color = document.getElementById('stampColor').value;
                 const size = parseInt(document.getElementById('stampSize').value);
@@ -680,9 +720,7 @@
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.shadowBlur = 0;
 
-                    // 質感改善済みのブラシ描画ロジック
                     if (brush === 'calligraphy') {
-                        // カリグラフィペン（角度をつけたフラット・幅広の筆跡）
                         ctx.save();
                         ctx.strokeStyle = color;
                         ctx.lineWidth = Math.max(1, size * 1.6);
@@ -697,17 +735,40 @@
                 lastY = y;
             };
 
-            targetCanvas.onmouseup = () => {
+            const endDrawing = () => {
                 if (isDrawing && layerNum === activeLayer) {
                     isDrawing = false;
                     saveHistory(layerNum);
                 }
             };
+
+            // マウスイベント
+            targetCanvas.onmousedown = (e) => startDrawing(e.clientX, e.clientY);
+            targetCanvas.onmousemove = (e) => moveDrawing(e.clientX, e.clientY);
+            targetCanvas.onmouseup = endDrawing;
+            targetCanvas.onmouseleave = endDrawing;
+
+            // タッチイベント（スマホ対応）
+            targetCanvas.ontouchstart = (e) => {
+                if (e.touches.length === 1) {
+                    startDrawing(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                }
+            };
+            targetCanvas.ontouchmove = (e) => {
+                if (e.touches.length === 1) {
+                    moveDrawing(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                }
+            };
+            targetCanvas.ontouchend = (e) => {
+                endDrawing();
+                e.preventDefault();
+            };
         }
 
         function importBrushEffect(ctx, brush, color, size, x, y) {
             if (brush === 'brush') {
-                // 毛筆（筆圧や掠れ感を模した有機的な太さ変化）
                 ctx.strokeStyle = color;
                 const speed = Math.hypot(x - lastX, y - lastY);
                 const dynamicSize = Math.max(1, size * Math.min(1.5, 3 / (speed + 0.5)));
@@ -715,7 +776,6 @@
                 ctx.lineTo(x, y);
                 ctx.stroke();
             } else if (brush === 'watercolor') {
-                // 水彩ブラシ（滲み・重なり感を出すため多層かつ低不透明度）
                 ctx.save();
                 ctx.globalAlpha = 0.2;
                 ctx.strokeStyle = color;
@@ -724,7 +784,6 @@
                 ctx.stroke();
                 ctx.restore();
             } else if (brush === 'crayon') {
-                // クレヨン（ざらついた質感を演出する粒子ノイズ）
                 ctx.save();
                 ctx.strokeStyle = color;
                 ctx.lineWidth = size;
@@ -733,7 +792,6 @@
                 ctx.stroke();
                 ctx.restore();
             } else if (brush === 'airbrush') {
-                // エアブラシ（中心から周囲に柔らかく霧状に広がるスプレー質感）
                 ctx.save();
                 ctx.fillStyle = color;
                 ctx.globalAlpha = 0.12;
@@ -746,7 +804,6 @@
                 }
                 ctx.restore();
             } else if (brush === 'neon') {
-                // ネオン発光（強いグロー効果）
                 ctx.save();
                 ctx.shadowBlur = 14;
                 ctx.shadowColor = color;
@@ -756,7 +813,6 @@
                 ctx.stroke();
                 ctx.restore();
             } else if (brush === 'dotted') {
-                // 点線ブラシ（一定間隔でドットを打つ形状）
                 const dist = Math.hypot(x - lastX, y - lastY);
                 if (dist > size * 1.5) {
                     ctx.fillStyle = color;
@@ -767,7 +823,6 @@
                     lastY = y;
                 }
             } else {
-                // 通常ブラシ
                 ctx.strokeStyle = color;
                 ctx.lineTo(x, y);
                 ctx.stroke();
@@ -835,7 +890,6 @@
             savedStamps.push(dataUrl);
             localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
 
-            // スタンプ透過PNGをLINE風スタンプとして送信
             await sendTextMessage(dataUrl, 'stamp', 'stamp.png');
             closeStampModal();
         };
@@ -856,8 +910,8 @@
                     </div>
                     <div class="flex items-center justify-between w-full gap-1 pt-1">
                         <button onclick="sendSavedStamp('${stamp}')" class="flex-1 py-1.5 px-2 bg-insta-gradient text-white rounded-xl text-xs font-bold text-center cursor-pointer shadow-sm hover:opacity-95">送信</button>
-                        <a href="${stamp}" download="stamp_${idx+1}.png" class="p-1.5 bg-inputBg hover:bg-inputBg/80 text-subText rounded-xl text-xs" title="ダウンロード">⬇️</a>
-                        <button onclick="deleteSavedStamp(${idx})" class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs cursor-pointer" title="削除">🗑️</button>
+                        <a href="${stamp}" download="stamp_${idx+1}.png" class="py-1.5 px-2 bg-inputBg hover:bg-inputBg/80 text-subText rounded-xl text-xs font-semibold text-center" title="ダウンロード">ダウンロード</a>
+                        <button onclick="deleteSavedStamp(${idx})" class="py-1.5 px-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold cursor-pointer" title="削除">削除</button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -909,7 +963,6 @@
                     document.getElementById('roomLockToggle').checked = !!roomSettings.roomLocked;
                 }
             });
-            // 管理画面用のメッセージ監視
             onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'messages')), (snapshot) => {
                 allMessagesList = [];
                 snapshot.forEach(docSnap => allMessagesList.push({ id: docSnap.id, ...docSnap.data() }));
@@ -959,6 +1012,8 @@
                 let contentPreview = '';
                 if (msg.type === 'stamp' || msg.type === 'image') {
                     contentPreview = `<div class="flex items-center gap-2"><img src="${msg.text}" class="w-10 h-10 object-contain checkerboard rounded-lg"><span class="text-xs text-subText">[スタンプ画像]</span></div>`;
+                } else if (msg.type === 'jpg_image') {
+                    contentPreview = `<div class="flex items-center gap-2"><img src="${msg.text}" class="w-10 h-10 object-cover rounded-lg"><span class="text-xs text-subText">[JPG画像]</span></div>`;
                 } else if (msg.type === 'file') {
                     contentPreview = `<span class="text-xs text-subText">[ファイル添付: ${msg.fileName || 'file'}]</span>`;
                 } else {
@@ -1016,9 +1071,7 @@
 
             wrapper.appendChild(nameLabel);
 
-            // メッセージ種別ごとの表示仕様（LINE風スタンプ対応）
             if (msg.type === 'stamp' || msg.type === 'image') {
-                // スタンプ画像：透過維持、吹き出しなし、余白・枠線・影なし、LINE風サイズ
                 const imgContainer = document.createElement('div');
                 imgContainer.className = 'flex flex-col gap-1 py-1 max-w-[200px] sm:max-w-[240px]';
                 
@@ -1027,54 +1080,42 @@
                 img.className = 'w-32 sm:w-40 h-auto object-contain';
                 imgContainer.appendChild(img);
 
-                // ダウンロードテキストリンク（削除テキストと同じ並び・同じフォント）
-                if (isMe) {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = msg.text;
-                    downloadLink.download = msg.fileName || 'stamp.png';
-                    downloadLink.className = 'text-[10px] text-subText hover:text-white underline cursor-pointer px-1';
-                    downloadLink.textContent = 'ダウンロード';
-                    imgContainer.appendChild(downloadLink);
-                }
-
                 wrapper.appendChild(imgContainer);
+            } else if (msg.type === 'jpg_image') {
+                const jpgContainer = document.createElement('div');
+                jpgContainer.className = 'flex flex-col gap-1 py-1 w-full max-w-full';
+                
+                const img = document.createElement('img');
+                img.src = msg.text;
+                img.className = 'w-full h-auto rounded-2xl object-cover shadow-lg max-h-[400px]';
+                jpgContainer.appendChild(img);
+
+                wrapper.appendChild(jpgContainer);
             } else if (msg.type === 'file') {
-                // ファイル添付
                 const fileContainer = document.createElement('div');
                 fileContainer.className = isMe 
                     ? 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md flex flex-col gap-1 max-w-xs' 
                     : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md flex flex-col gap-1 max-w-xs';
                 
                 fileContainer.innerHTML = `<span class="text-xs">📎 ${msg.fileName || '添付ファイル'}</span>`;
-                
-                if (isMe) {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = msg.text;
-                    downloadLink.download = msg.fileName || 'file';
-                    downloadLink.className = 'text-[10px] text-white/80 hover:text-white underline cursor-pointer';
-                    downloadLink.textContent = 'ダウンロード';
-                    fileContainer.appendChild(downloadLink);
-                }
                 wrapper.appendChild(fileContainer);
             } else {
-                // 通常テキストメッセージ
                 const bubble = document.createElement('div');
                 bubble.className = (isMe ? 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md break-words max-w-xs sm:max-w-md' : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md break-words max-w-xs sm:max-w-md') + ' whitespace-pre-wrap';
                 bubble.innerHTML = msg.text;
                 wrapper.appendChild(bubble);
             }
 
-            // 自分からのメッセージに対するアクション（編集・削除など）
+            // 自分からのメッセージに対するアクション（編集・削除・ダウンロード）
             if (isMe) {
                 const actions = document.createElement('div');
                 actions.className = 'flex gap-2 text-[10px] text-subText px-1 mt-0.5 items-center';
                 
-                // スタンプやファイルの場合のダウンロードリンクをアクション行に並べる
-                if (msg.type === 'stamp' || msg.type === 'image' || msg.type === 'file') {
+                if (msg.type === 'stamp' || msg.type === 'image' || msg.type === 'jpg_image' || msg.type === 'file') {
                     const dlTextLink = document.createElement('a');
                     dlTextLink.href = msg.text;
-                    dlTextLink.download = msg.fileName || (msg.type === 'file' ? 'file' : 'stamp.png');
-                    dlTextLink.className = 'hover:text-white cursor-pointer';
+                    dlTextLink.download = msg.fileName || (msg.type === 'file' ? 'file' : 'image.png');
+                    dlTextLink.className = 'hover:text-white cursor-pointer underline';
                     dlTextLink.textContent = 'ダウンロード';
                     actions.appendChild(dlTextLink);
                     
@@ -1110,4 +1151,3 @@
     </script>
 </body>
 </html>
-```[cite: 1, 2]
