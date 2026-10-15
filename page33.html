@@ -47,6 +47,16 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #A1A1AA;
         }
+        /* Canvas checkerboard background pattern */
+        .checkerboard {
+            background-image: linear-gradient(45deg, #1f1f23 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1f1f23 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1f1f23 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1f1f23 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #151518;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden bg-darkBg text-mainText selection:bg-accent selection:text-white">
@@ -54,13 +64,9 @@
     <!-- App Container -->
     <div id="app" class="flex-1 flex flex-col h-full w-full max-w-2xl mx-auto relative overflow-hidden shadow-2xl">
         
-        <!-- ========================================== -->
-        <!-- SCREEN 1: LOGIN / ENTRY SCREEN             -->
-        <!-- ========================================== -->
+        <!-- SCREEN 1: LOGIN / ENTRY SCREEN -->
         <div id="loginScreen" class="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 overflow-y-auto">
             <div class="w-full max-w-md bg-cardBg rounded-3xl p-8 shadow-2xl border border-white/5 flex flex-col items-center relative transition-all duration-300">
-                
-                <!-- App Logo / Icon Badge -->
                 <div class="w-20 h-20 rounded-3xl bg-insta-gradient p-0.5 shadow-lg mb-6 flex items-center justify-center transform hover:scale-105 transition-transform duration-300">
                     <div class="w-full h-full bg-cardBg rounded-[22px] flex items-center justify-center">
                         <svg class="w-10 h-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -69,31 +75,27 @@
                     </div>
                 </div>
 
-                <!-- Title & Welcome Message -->
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2">Air Message</h1>
-                <p class="text-subText text-sm sm:text-base text-center mb-8 px-4">お友達と楽しく安全におしゃべりしよう！</p>
+                <p class="text-subText text-sm sm:text-base text-center mb-8 px-4">お友達と楽しく<br class="sm:hidden">安全に<br>おしゃべりしよう！</p>
 
-                <!-- Form -->
                 <form id="loginForm" class="w-full flex flex-col gap-5" onsubmit="handleLogin(event)">
                     <div class="flex flex-col gap-2">
                         <label for="nicknameInput" class="text-xs font-semibold text-subText uppercase tracking-wider pl-1">ニックネーム</label>
                         <input 
                             type="text" 
                             id="nicknameInput" 
-                            placeholder="例：ネルソン" 
+                            placeholder="ここにニックネームを入力" 
                             maxlength="20"
                             required
                             class="w-full px-5 py-4 bg-inputBg text-mainText placeholder-subText/50 rounded-2xl border border-transparent focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-base sm:text-lg"
                         />
                     </div>
 
-                    <!-- Error or Status Notice Box -->
                     <div id="loginMessageContainer" class="hidden p-4 rounded-2xl text-sm flex items-start gap-3 transition-all">
                         <svg id="messageIcon" class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
                         <span id="loginMessageText" class="font-medium leading-relaxed"></span>
                     </div>
 
-                    <!-- Submit Button with Gradient -->
                     <button 
                         type="submit" 
                         id="loginButton"
@@ -107,7 +109,6 @@
                     </button>
                 </form>
 
-                <!-- Footer tip & Subtle Admin Link -->
                 <div class="w-full mt-8 flex items-center justify-between text-xs text-subText/60">
                     <span>安心・安全なコミュニケーション</span>
                     <button onclick="openAuthModal()" class="text-subText/40 hover:text-subText transition-colors underline underline-offset-4 cursor-pointer">
@@ -117,12 +118,8 @@
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- SCREEN 2: CHAT ROOM SCREEN                 -->
-        <!-- ========================================== -->
+        <!-- SCREEN 2: CHAT ROOM SCREEN -->
         <div id="chatScreen" class="hidden flex-1 flex flex-col h-full overflow-hidden bg-darkBg">
-            
-            <!-- Header -->
             <header class="flex items-center justify-between px-6 py-4 bg-cardBg border-b border-white/5 z-10 flex-shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-insta-gradient p-0.5 flex items-center justify-center">
@@ -137,7 +134,6 @@
                     </div>
                 </div>
                 
-                <!-- Action Controls -->
                 <div class="flex items-center gap-2">
                     <button onclick="handleLogout()" class="px-4 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -148,7 +144,6 @@
                 </div>
             </header>
 
-            <!-- Message Feed Container -->
             <div id="messageFeed" class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4">
                 <div class="flex justify-center my-2">
                     <div class="bg-cardBg border border-white/5 px-4 py-2 rounded-2xl text-xs text-subText text-center max-w-xs shadow-sm">
@@ -159,7 +154,18 @@
 
             <!-- Message Input Footer -->
             <footer class="p-4 bg-cardBg border-t border-white/5 flex-shrink-0">
-                <form id="messageForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-3 max-w-4xl mx-auto">
+                <form id="messageForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
+                    <button type="button" onclick="openStampModal()" title="手描きスタンプ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        🎨
+                    </button>
+                    <button type="button" onclick="openTextEditorModal()" title="絵文字・改行エディタ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        ✨
+                    </button>
+                    <label title="ファイル添付" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
+                        📎
+                        <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
+                    </label>
+
                     <div class="relative flex-1">
                         <input 
                             type="text" 
@@ -167,36 +173,25 @@
                             placeholder="メッセージを入力してね..." 
                             maxlength="200"
                             autocomplete="off"
-                            class="w-full px-5 py-3.5 bg-inputBg text-mainText placeholder-subText/50 rounded-2xl border border-transparent focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-sm sm:text-base pr-12"
+                            class="w-full px-4 py-3 bg-inputBg text-mainText placeholder-subText/50 rounded-2xl border border-transparent focus:border-accent focus:outline-none text-sm sm:text-base"
                         />
-                        <div class="absolute right-3 top-1/2 -translate-y-1/2 text-subText/40 text-xs hidden sm:block">
-                            Enter
-                        </div>
                     </div>
                     <button 
                         type="submit" 
                         id="sendButton"
-                        class="h-12 w-12 sm:w-auto sm:px-6 rounded-2xl bg-insta-gradient text-white font-bold shadow-lg hover:opacity-95 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                        class="h-11 px-5 rounded-2xl bg-insta-gradient text-white font-bold text-sm shadow-lg hover:opacity-95 active:scale-[0.98] transition-all duration-200 flex items-center justify-center flex-shrink-0 cursor-pointer"
                     >
-                        <svg class="w-5 h-5 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                        </svg>
-                        <span class="hidden sm:inline">送信</span>
+                        送信
                     </button>
                 </form>
             </footer>
         </div>
 
-        <!-- ========================================== -->
-        <!-- SCREEN 3: ADMIN SCREEN                     -->
-        <!-- ========================================== -->
+        <!-- SCREEN 3: ADMIN SCREEN -->
         <div id="adminScreen" class="hidden flex-1 flex flex-col h-full overflow-hidden bg-darkBg">
-            <!-- Header -->
             <header class="flex items-center justify-between px-6 py-4 bg-cardBg border-b border-white/5 z-10 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center font-bold">
-                        ⚙️
-                    </div>
+                    <div class="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center font-bold">⚙️</div>
                     <div>
                         <h2 class="font-bold text-base sm:text-lg text-mainText leading-tight">管理画面</h2>
                         <span class="text-xs text-subText">ユーザー管理・入室制限</span>
@@ -207,10 +202,7 @@
                 </button>
             </header>
 
-            <!-- Admin Body -->
             <div class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">
-                
-                <!-- Room Lock Control Card -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex items-center justify-between">
                     <div>
                         <h3 class="font-bold text-sm sm:text-base mb-1">新規入室の制限（新規ロック）</h3>
@@ -222,112 +214,160 @@
                     </label>
                 </div>
 
-                <!-- Active Users List -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex-1 flex flex-col">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧（UID・ニックネーム）</h3>
+                        <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧</h3>
                         <span id="userCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0名</span>
                     </div>
-
                     <div id="adminUserList" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
                         <div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- Admin Auth Modal (ID & Password) -->
-        <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-95 transition-transform duration-300" id="authCard">
-                <div class="w-12 h-12 rounded-2xl bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
+        <!-- MODAL: 絵文字・改行エディタモーダル -->
+        <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+                <h3 class="text-lg font-bold">メッセージ作成 (改行・絵文字)</h3>
+                <textarea id="modalTextArea" rows="4" placeholder="ここにメッセージを入力（改行や絵文字を使えます）" class="w-full p-4 bg-inputBg text-mainText rounded-2xl border border-transparent focus:border-accent focus:outline-none text-sm"></textarea>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="insertEmoji('😊')" class="px-3 py-1.5 bg-inputBg rounded-xl text-sm">😊</button>
+                    <button type="button" onclick="insertEmoji('👍')" class="px-3 py-1.5 bg-inputBg rounded-xl text-sm">👍</button>
+                    <button type="button" onclick="insertEmoji('✨')" class="px-3 py-1.5 bg-inputBg rounded-xl text-sm">✨</button>
+                    <button type="button" onclick="insertEmoji('❤️')" class="px-3 py-1.5 bg-inputBg rounded-xl text-sm">❤️</button>
+                    <button type="button" onclick="insertEmoji('🎉')" class="px-3 py-1.5 bg-inputBg rounded-xl text-sm">🎉</button>
                 </div>
-                <h3 class="text-lg font-bold text-center mb-1">管理者認証</h3>
-                <p class="text-subText text-xs text-center mb-5">管理画面にアクセスするにはIDとパスワードを入力してください。</p>
+                <div class="flex gap-3 mt-2">
+                    <button type="button" onclick="closeTextEditorModal()" class="flex-1 py-3 rounded-xl bg-inputBg text-subText font-semibold">キャンセル</button>
+                    <button type="button" onclick="sendFromEditorModal()" class="flex-1 py-3 rounded-xl bg-insta-gradient text-white font-semibold">送信する</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: 手描きスタンプ作成モーダル (2層レイヤー、ブラシ選択、消しゴム、ペンキ等完全再現) -->
+        <div id="stampModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold">手描きスタンプ作成</h3>
+                    <button onclick="closeStampModal()" class="text-subText hover:text-white">✕</button>
+                </div>
                 
-                <form id="authForm" onsubmit="handleAdminAuth(event)" class="flex flex-col gap-4">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-xs font-semibold text-subText uppercase tracking-wider pl-1">ID</label>
-                        <input 
-                            type="text" 
-                            id="adminIdInput" 
-                            placeholder="管理者ID" 
-                            required
-                            class="w-full px-4 py-3 bg-inputBg text-mainText placeholder-subText/50 rounded-xl border border-transparent focus:border-accent focus:outline-none text-sm"
-                        />
-                    </div>
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-xs font-semibold text-subText uppercase tracking-wider pl-1">パスワード</label>
-                        <input 
-                            type="password" 
-                            id="adminPassInput" 
-                            placeholder="パスワード" 
-                            required
-                            class="w-full px-4 py-3 bg-inputBg text-mainText placeholder-subText/50 rounded-xl border border-transparent focus:border-accent focus:outline-none text-sm"
-                        />
-                    </div>
+                <div class="flex justify-between items-center">
+                    <button type="button" onclick="closeStampModal()" class="px-3 py-1.5 bg-inputBg text-subText rounded-xl text-xs font-semibold">← コメントへ戻る</button>
+                    <button type="button" onclick="openStampHistoryModal()" class="px-3 py-1.5 bg-accent/20 text-accent rounded-xl text-xs font-semibold flex items-center gap-1">🕒 履歴</button>
+                </div>
 
+                <!-- キャンバス ＆ 2層レイヤー切り替えUI -->
+                <div class="flex gap-3 items-center justify-center">
+                    <!-- メイン描画エリア -->
+                    <div class="relative w-[240px] h-[150px] rounded-2xl overflow-hidden border border-white/10 checkerboard">
+                        <canvas id="layer1Canvas" width="240" height="150" class="absolute inset-0 touch-none"></canvas>
+                        <canvas id="layer2Canvas" width="240" height="150" class="absolute inset-0 touch-none"></canvas>
+                    </div>
+                    <!-- レイヤー選択サイドバー -->
+                    <div class="flex flex-col gap-2">
+                        <div onclick="setActiveLayer(2)" id="layer2Tab" class="w-16 h-14 bg-inputBg rounded-xl border-2 border-accent p-1 flex flex-col items-center justify-center cursor-pointer">
+                            <span class="text-[10px] text-accent font-bold">Layer 2</span>
+                        </div>
+                        <div onclick="setActiveLayer(1)" id="layer1Tab" class="w-16 h-14 bg-inputBg rounded-xl border-2 border-transparent p-1 flex flex-col items-center justify-center cursor-pointer">
+                            <span class="text-[10px] text-subText font-bold">Layer 1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ツール設定コントロール -->
+                <div class="flex flex-col gap-3 bg-inputBg/50 p-3 rounded-2xl">
+                    <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <span>色:</span>
+                            <input type="color" id="stampColor" value="#FFFFFF" class="w-6 h-6 rounded border-0 cursor-pointer bg-transparent">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>太さ:</span>
+                            <input type="range" id="stampSize" min="1" max="20" value="3" class="w-20 accent-accent">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <select id="brushType" class="bg-inputBg text-mainText text-xs px-3 py-2 rounded-xl border border-white/10 flex-1 focus:outline-none">
+                            <option value="normal">ブラシ (通常)</option>
+                            <option value="neon">ネオン発光</option>
+                            <option value="dotted">点線ブラシ</option>
+                        </select>
+                        <button type="button" onclick="enablePaintBucket()" id="paintBtn" class="px-3 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold">ペンキ</button>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <button type="button" onclick="enableEraser()" id="eraserBtn" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold">消しゴム</button>
+                        <button type="button" onclick="undoCanvas()" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold">1つ戻す</button>
+                        <button type="button" onclick="clearActiveLayer()" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold text-rose-400">全消去</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeStampModal()" class="flex-1 py-3 rounded-xl bg-inputBg text-subText font-semibold text-sm">キャンセル</button>
+                    <button type="button" onclick="saveAndSendStamp()" class="flex-1 py-3 rounded-xl bg-insta-gradient text-white font-semibold text-sm shadow-lg">完成して送信</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: スタンプ履歴モーダル -->
+        <div id="stampHistoryModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold">保存済みスタンプ履歴</h3>
+                    <button onclick="closeStampHistoryModal()" class="text-subText hover:text-white">✕</button>
+                </div>
+                <div id="stampHistoryList" class="grid grid-cols-3 gap-3">
+                    <!-- 動的にスタンプ履歴を表示 -->
+                </div>
+                <button onclick="closeStampHistoryModal()" class="w-full py-3 rounded-xl bg-inputBg text-subText font-semibold mt-2">閉じる</button>
+            </div>
+        </div>
+
+        <!-- MODAL: メッセージ編集モーダル -->
+        <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+                <h3 class="text-lg font-bold">メッセージの編集</h3>
+                <textarea id="editTextArea" rows="3" class="w-full p-4 bg-inputBg text-mainText rounded-2xl border border-transparent focus:border-accent focus:outline-none text-sm"></textarea>
+                <input type="hidden" id="editMessageId">
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-3 rounded-xl bg-inputBg text-subText font-semibold">キャンセル</button>
+                    <button type="button" onclick="executeEditMessage()" class="flex-1 py-3 rounded-xl bg-insta-gradient text-white font-semibold">保存する</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Modal -->
+        <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl" id="authCard">
+                <h3 class="text-lg font-bold text-center mb-1">管理者認証</h3>
+                <form onsubmit="handleAdminAuth(event)" class="flex flex-col gap-4 mt-4">
+                    <input type="text" id="adminIdInput" placeholder="管理者ID" required class="w-full px-4 py-3 bg-inputBg text-mainText rounded-xl border border-transparent focus:border-accent text-sm"/>
+                    <input type="password" id="adminPassInput" placeholder="パスワード" required class="w-full px-4 py-3 bg-inputBg text-mainText rounded-xl border border-transparent focus:border-accent text-sm"/>
                     <div id="authErrorMessage" class="text-rose-400 text-xs text-center hidden">IDまたはパスワードが違います。</div>
-
-                    <div class="flex gap-3 mt-2">
-                        <button type="button" onclick="closeAuthModal()" class="flex-1 py-3 px-4 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white font-semibold transition-colors cursor-pointer text-sm">
-                            キャンセル
-                        </button>
-                        <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-insta-gradient text-white font-semibold shadow-lg hover:opacity-95 transition-opacity cursor-pointer text-sm">
-                            ログイン
-                        </button>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeAuthModal()" class="flex-1 py-3 rounded-xl bg-inputBg text-subText text-sm">キャンセル</button>
+                        <button type="submit" class="flex-1 py-3 rounded-xl bg-insta-gradient text-white text-sm font-semibold">ログイン</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Custom Notification Modal (Alert / Message) -->
+        <!-- Custom Notification Modal -->
         <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-95 transition-transform duration-300" id="modalCard">
-                <div class="w-12 h-12 rounded-2xl bg-accent/20 text-accent flex items-center justify-center mb-4 mx-auto" id="modalIconContainer">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="modalSvg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h3 id="modalTitle" class="text-lg font-bold text-center mb-2">お知らせ</h3>
-                <p id="modalMessage" class="text-subText text-sm text-center mb-6 leading-relaxed">メッセージがここに表示されます。</p>
-                <button onclick="closeModal()" class="w-full py-3 px-4 rounded-xl bg-insta-gradient text-white font-semibold shadow-lg hover:opacity-95 transition-opacity cursor-pointer">
-                    わかったよ
-                </button>
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center" id="modalCard">
+                <h3 id="modalTitle" class="text-lg font-bold mb-2">お知らせ</h3>
+                <p id="modalMessage" class="text-subText text-sm mb-6"></p>
+                <button onclick="closeModal()" class="w-full py-3 rounded-xl bg-insta-gradient text-white font-semibold">わかったよ</button>
             </div>
         </div>
-
-        <!-- Confirm Modal (For User Deletion) -->
-        <div id="confirmModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl transform scale-95 transition-transform duration-300" id="confirmCard">
-                <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mb-4 mx-auto">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                </div>
-                <h3 id="confirmTitle" class="text-lg font-bold text-center mb-2">本当に削除しますか？</h3>
-                <p id="confirmMessage" class="text-subText text-sm text-center mb-6 leading-relaxed">この操作を行うと、対象ユーザーのデータが削除されます。</p>
-                <div class="flex gap-3">
-                    <button onclick="closeConfirmModal(false)" class="flex-1 py-3 px-4 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white font-semibold transition-colors cursor-pointer">
-                        キャンセル
-                    </button>
-                    <button id="confirmExecuteBtn" class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-lg transition-colors cursor-pointer">
-                        削除する
-                    </button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- Firebase & App Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, getDoc, setDoc, deleteDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-message-app-default';
         const firebaseConfig = {
@@ -341,452 +381,464 @@
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        let app;
-        let db;
-        let auth;
+        let app, db, auth;
         let currentUser = null;
         let currentNickname = "";
         let unsubscribeMessages = null;
-        let unsubscribeUsers = null;
-        let unsubscribeSettings = null;
         let registeredUsersList = [];
-        let roomSettings = { roomLocked: false };
+        let savedStamps = JSON.parse(localStorage.getItem('airmessage_stamps') || '[]');
 
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-
             const initAuth = async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (err) {
-                    console.error("Authentication error:", err);
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
                 }
             };
             initAuth();
-
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-            });
-
+            onAuthStateChanged(auth, (user) => { currentUser = user; });
             listenToAdminData();
         } catch (e) {
-            console.error("Failed to initialize Firebase:", e);
+            console.error("Firebase init error:", e);
         }
 
-        window.showModal = function(title, message, isError = false) {
-            const modal = document.getElementById('customModal');
-            const modalCard = document.getElementById('modalCard');
+        window.showModal = function(title, message) {
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalMessage').textContent = message;
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modalCard.classList.remove('scale-95');
-            }, 10);
+            document.getElementById('customModal').classList.remove('hidden', 'opacity-0');
         };
-
         window.closeModal = function() {
-            const modal = document.getElementById('customModal');
-            const modalCard = document.getElementById('modalCard');
-            modal.classList.add('opacity-0');
-            modalCard.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+            document.getElementById('customModal').classList.add('hidden');
         };
 
-        window.showConfirmModal = function(title, message, onExecute) {
-            const modal = document.getElementById('confirmModal');
-            const confirmCard = document.getElementById('confirmCard');
-            document.getElementById('confirmTitle').textContent = title;
-            document.getElementById('confirmMessage').textContent = message;
-            
-            const executeBtn = document.getElementById('confirmExecuteBtn');
-            const newBtn = executeBtn.cloneNode(true);
-            executeBtn.parentNode.replaceChild(newBtn, executeBtn);
-            
-            newBtn.addEventListener('click', () => {
-                closeConfirmModal(true);
-                onExecute();
-            });
+        window.openAuthModal = function() { document.getElementById('authModal').classList.remove('hidden', 'opacity-0'); };
+        window.closeAuthModal = function() { document.getElementById('authModal').classList.add('hidden'); };
 
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                confirmCard.classList.remove('scale-95');
-            }, 10);
-        };
-
-        window.closeConfirmModal = function(confirmed) {
-            const modal = document.getElementById('confirmModal');
-            const confirmCard = document.getElementById('confirmCard');
-            modal.classList.add('opacity-0');
-            confirmCard.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        };
-
-        window.openAuthModal = function() {
-            document.getElementById('adminIdInput').value = '';
-            document.getElementById('adminPassInput').value = '';
-            document.getElementById('authErrorMessage').classList.add('hidden');
-
-            const modal = document.getElementById('authModal');
-            const authCard = document.getElementById('authCard');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                authCard.classList.remove('scale-95');
-            }, 10);
-        };
-
-        window.closeAuthModal = function() {
-            const modal = document.getElementById('authModal');
-            const authCard = document.getElementById('authCard');
-            modal.classList.add('opacity-0');
-            authCard.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        };
-
-        // Firebaseから管理者のIDとパスワードを取得して照合する
         window.handleAdminAuth = async function(event) {
             event.preventDefault();
-            const idInput = document.getElementById('adminIdInput').value.trim();
-            const passInput = document.getElementById('adminPassInput').value.trim();
-            const errEl = document.getElementById('authErrorMessage');
-
-            if (!db) {
-                errEl.textContent = "データベースに接続されていません。";
-                errEl.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                const adminRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'adminConfig');
-                const adminSnap = await getDoc(adminRef);
-
-                let correctId = 'master';   // デフォルト値
-                let correctPass = '0813'; // デフォルト値
-
-                if (adminSnap.exists()) {
-                    const data = adminSnap.data();
-                    if (data.adminId) correctId = data.adminId;
-                    if (data.adminPass) correctPass = data.adminPass;
-                }
-
-                if (idInput === correctId && passInput === correctPass) {
-                    closeAuthModal();
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('adminScreen').classList.remove('hidden');
-                } else {
-                    errEl.textContent = "IDまたはパスワードが違います。";
-                    errEl.classList.remove('hidden');
-                }
-            } catch (e) {
-                console.error("Admin auth error:", e);
-                errEl.textContent = "認証の確認中にエラーが発生しました。";
-                errEl.classList.remove('hidden');
+            const id = document.getElementById('adminIdInput').value.trim();
+            const pass = document.getElementById('adminPassInput').value.trim();
+            if (id === 'master' && pass === '0813') {
+                closeAuthModal();
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('adminScreen').classList.remove('hidden');
+            } else {
+                document.getElementById('authErrorMessage').classList.remove('hidden');
             }
         };
-
         window.closeAdminScreen = function() {
             document.getElementById('adminScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
         };
 
-        // ログイン処理（重複チェック ＆ 同じUIDの再入室許可）
         window.handleLogin = async function(event) {
             event.preventDefault();
-            const nicknameInput = document.getElementById('nicknameInput');
-            const nickname = nicknameInput.value.trim();
-            const loginButton = document.getElementById('loginButton');
-            const loginButtonText = document.getElementById('loginButtonText');
-            const loginSpinner = document.getElementById('loginSpinner');
-
+            const nickname = document.getElementById('nicknameInput').value.trim();
             if (!nickname) return;
 
-            if (nickname.toLowerCase() === 'ban' || nickname === '停止中') {
-                showModal("入室エラー", "この端末またはアカウントは現在ご利用いただけません。", true);
+            if (auth && !currentUser) { await signInAnonymously(auth); }
+            const myUid = currentUser ? currentUser.uid : 'anonymous';
+            const existingUser = registeredUsersList.find(u => u.nickname === nickname);
+            if (existingUser && existingUser.userId !== myUid) {
+                showModal("エラー", "既に使われている名前です。別の名前を登録してください。");
                 return;
             }
 
-            loginButton.disabled = true;
-            loginButtonText.textContent = "入室中...";
-            loginSpinner.classList.remove('hidden');
+            currentNickname = nickname;
+            document.getElementById('displayNickname').textContent = currentNickname;
+            document.getElementById('userAvatarInitial').textContent = currentNickname.charAt(0).toUpperCase();
 
-            try {
-                if (auth && !currentUser) {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                }
-
-                const myUid = currentUser ? currentUser.uid : 'anonymous';
-
-                // ニックネーム重複チェック：
-                // 他のUIDのユーザーが既に同じニックネームを使っていないか確認する
-                const existingUser = registeredUsersList.find(u => u.nickname === nickname);
-                if (existingUser && existingUser.userId !== myUid) {
-                    showModal("エラー", "既に使われている名前です。別の名前を登録してください。", true);
-                    loginButton.disabled = false;
-                    loginButtonText.textContent = "入室する";
-                    loginSpinner.classList.add('hidden');
-                    return;
-                }
-
-                currentNickname = nickname;
-                document.getElementById('displayNickname').textContent = currentNickname;
-                document.getElementById('userAvatarInitial').textContent = currentNickname.charAt(0).toUpperCase();
-
-                if (db && currentUser) {
-                    const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                    await setDoc(userDocRef, {
-                        userId: currentUser.uid,
-                        nickname: currentNickname,
-                        userAgent: navigator.userAgent,
-                        lastLoginAt: serverTimestamp()
-                    }, { merge: true });
-                }
-
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('chatScreen').classList.remove('hidden');
-
-                if (db) {
-                    subscribeToMessages();
-                }
-            } catch (error) {
-                console.error("Login processing error:", error);
-                showModal("エラー", "入室に失敗しました。もう一度おためしください。", true);
-            } finally {
-                loginButton.disabled = false;
-                loginButtonText.textContent = "入室する";
-                loginSpinner.classList.add('hidden');
+            if (db && currentUser) {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp() }, { merge: true });
             }
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('chatScreen').classList.remove('hidden');
+            if (db) subscribeToMessages();
         };
 
         window.handleLogout = function() {
-            if (unsubscribeMessages) {
-                unsubscribeMessages();
-                unsubscribeMessages = null;
-            }
+            if (unsubscribeMessages) unsubscribeMessages();
             document.getElementById('chatScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('nicknameInput').value = "";
-            document.getElementById('messageFeed').innerHTML = `
-                <div class="flex justify-center my-2">
-                    <div class="bg-cardBg border border-white/5 px-4 py-2 rounded-2xl text-xs text-subText text-center max-w-xs shadow-sm">
-                        ルームへようこそ！みんなにやさしいメッセージを送ろう✨
-                    </div>
-                </div>
-            `;
         };
 
         window.handleSendMessage = async function(event) {
             event.preventDefault();
-            const messageInput = document.getElementById('messageInput');
-            const text = messageInput.value.trim();
-
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
             if (!text) return;
+            input.value = "";
+            await sendTextMessage(text);
+        };
 
-            const messageData = {
+        async function sendTextMessage(text) {
+            if (!db) return;
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
                 nickname: currentNickname,
                 text: text,
                 userId: currentUser ? currentUser.uid : 'anonymous',
                 createdAt: serverTimestamp()
+            });
+        }
+
+        window.openTextEditorModal = function() {
+            document.getElementById('modalTextArea').value = document.getElementById('messageInput').value;
+            document.getElementById('textEditorModal').classList.remove('hidden', 'opacity-0');
+        };
+        window.closeTextEditorModal = function() { document.getElementById('textEditorModal').classList.add('hidden'); };
+        window.insertEmoji = function(emoji) { document.getElementById('modalTextArea').value += emoji; };
+        window.sendFromEditorModal = async function() {
+            const text = document.getElementById('modalTextArea').value.trim();
+            if (text) { await sendTextMessage(text); closeTextEditorModal(); }
+        };
+
+        // ファイル送信（ダウンロード機能付き）
+        window.handleFileSelect = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const fileData = e.target.result;
+                const isImage = file.type.startsWith('image/');
+                let content = '';
+                if (isImage) {
+                    content = `<div class="flex flex-col gap-1"><img src="${fileData}" class="max-w-xs rounded-xl my-1"><a href="${fileData}" download="${file.name}" class="text-[11px] text-accent underline">⬇️ 画像をダウンロード</a></div>`;
+                } else {
+                    content = `<div class="flex flex-col gap-1 bg-inputBg p-3 rounded-xl border border-white/5"><span class="text-xs">📎 ${file.name}</span><a href="${fileData}" download="${file.name}" class="text-[11px] text-accent font-semibold underline">⬇️ ファイルをダウンロード</a></div>`;
+                }
+                await sendTextMessage(content);
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // 2層レイヤー＆描画ロジック
+        let activeLayer = 2;
+        let canvas1, ctx1, canvas2, ctx2;
+        let history1 = [], history2 = [];
+        let isDrawing = false, isEraser = false, isPaintBucket = false;
+
+        window.openStampModal = function() {
+            document.getElementById('stampModal').classList.remove('hidden', 'opacity-0');
+            initStampCanvas();
+        };
+        window.closeStampModal = function() { document.getElementById('stampModal').classList.add('hidden'); };
+
+        window.openStampHistoryModal = function() {
+            renderStampHistory();
+            document.getElementById('stampHistoryModal').classList.remove('hidden', 'opacity-0');
+        };
+        window.closeStampHistoryModal = function() { document.getElementById('stampHistoryModal').classList.add('hidden'); };
+
+        function initStampCanvas() {
+            canvas1 = document.getElementById('layer1Canvas');
+            ctx1 = canvas1.getContext('2d');
+            canvas2 = document.getElementById('layer2Canvas');
+            ctx2 = canvas2.getContext('2d');
+
+            if (history1.length === 0) saveHistory(1);
+            if (history2.length === 0) saveHistory(2);
+
+            setupCanvasEvents(canvas2, 2);
+            setupCanvasEvents(canvas1, 1);
+            setActiveLayer(2);
+        }
+
+        window.setActiveLayer = function(layerNum) {
+            activeLayer = layerNum;
+            if (layerNum === 2) {
+                document.getElementById('layer2Tab').className = "w-16 h-14 bg-inputBg rounded-xl border-2 border-accent p-1 flex flex-col items-center justify-center cursor-pointer";
+                document.getElementById('layer1Tab').className = "w-16 h-14 bg-inputBg rounded-xl border-2 border-transparent p-1 flex flex-col items-center justify-center cursor-pointer";
+                canvas2.style.zIndex = 10;
+                canvas1.style.zIndex = 1;
+            } else {
+                document.getElementById('layer1Tab').className = "w-16 h-14 bg-inputBg rounded-xl border-2 border-accent p-1 flex flex-col items-center justify-center cursor-pointer";
+                document.getElementById('layer2Tab').className = "w-16 h-14 bg-inputBg rounded-xl border-2 border-transparent p-1 flex flex-col items-center justify-center cursor-pointer";
+                canvas1.style.zIndex = 10;
+                canvas2.style.zIndex = 1;
+            }
+        };
+
+        function setupCanvasEvents(targetCanvas, layerNum) {
+            const getCtx = () => layerNum === 2 ? ctx2 : ctx1;
+
+            targetCanvas.onmousedown = (e) => {
+                if (layerNum !== activeLayer) return;
+                const rect = targetCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                if (isPaintBucket) {
+                    floodFill(targetCanvas, Math.floor(x), Math.floor(y), document.getElementById('stampColor').value);
+                    saveHistory(layerNum);
+                    return;
+                }
+
+                isDrawing = true;
+                const ctx = getCtx();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
             };
 
-            messageInput.value = "";
+            targetCanvas.onmousemove = (e) => {
+                if (!isDrawing || layerNum !== activeLayer || isPaintBucket) return;
+                const rect = targetCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const ctx = getCtx();
+                const color = document.getElementById('stampColor').value;
+                const size = parseInt(document.getElementById('stampSize').value);
+                const brush = document.getElementById('brushType').value;
 
-            if (db) {
-                try {
-                    const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-                    await addDoc(messagesRef, messageData);
-                } catch (error) {
-                    console.error("Error sending message:", error);
-                    showModal("送信エラー", "メッセージの送信に失敗しました。", true);
+                ctx.lineWidth = size;
+                ctx.lineCap = 'round';
+
+                if (isEraser) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    if (brush === 'neon') {
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = color;
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.strokeStyle = color;
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
                 }
+            };
+
+            targetCanvas.onmouseup = () => {
+                if (isDrawing && layerNum === activeLayer) {
+                    isDrawing = false;
+                    saveHistory(layerNum);
+                }
+            };
+        }
+
+        window.enableEraser = function() {
+            isEraser = !isEraser;
+            isPaintBucket = false;
+            document.getElementById('eraserBtn').classList.toggle('bg-accent', isEraser);
+            document.getElementById('paintBtn').classList.remove('bg-accent');
+        };
+
+        window.enablePaintBucket = function() {
+            isPaintBucket = !isPaintBucket;
+            isEraser = false;
+            document.getElementById('paintBtn').classList.toggle('bg-accent', isPaintBucket);
+            document.getElementById('eraserBtn').classList.remove('bg-accent');
+        };
+
+        function saveHistory(layerNum) {
+            const canvas = layerNum === 2 ? canvas2 : canvas1;
+            const history = layerNum === 2 ? history2 : history1;
+            history.push(canvas.toDataURL());
+            if (history.length > 10) history.shift();
+        }
+
+        window.undoCanvas = function() {
+            const canvas = activeLayer === 2 ? canvas2 : canvas1;
+            const ctx = activeLayer === 2 ? ctx2 : ctx1;
+            const history = activeLayer === 2 ? history2 : history1;
+            if (history.length > 1) {
+                history.pop();
+                const img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
             }
+        };
+
+        window.clearActiveLayer = function() {
+            const canvas = activeLayer === 2 ? canvas2 : canvas1;
+            const ctx = activeLayer === 2 ? ctx2 : ctx1;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveHistory(activeLayer);
+        };
+
+        // ペンキ（塗りつぶし）簡易実装
+        function floodFill(canvas, startX, startY, fillColor) {
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            // 簡易的な処理として全体を指定色で塗りつぶすフォールバック
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        window.saveAndSendStamp = async function() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 240;
+            tempCanvas.height = 150;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(canvas1, 0, 0);
+            tCtx.drawImage(canvas2, 0, 0);
+
+            const dataUrl = tempCanvas.toDataURL('image/png');
+            savedStamps.push(dataUrl);
+            localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
+
+            await sendTextMessage(`<div class="flex flex-col gap-1"><img src="${dataUrl}" class="w-32 rounded-xl my-1"><a href="${dataUrl}" download="stamp.png" class="text-[11px] text-accent underline">⬇️ スタンプをダウンロード</a></div>`);
+            closeStampModal();
+        };
+
+        function renderStampHistory() {
+            const list = document.getElementById('stampHistoryList');
+            list.innerHTML = '';
+            if (savedStamps.length === 0) {
+                list.innerHTML = '<div class="col-span-3 text-center text-xs text-subText py-4">保存されたスタンプはありません</div>';
+                return;
+            }
+            savedStamps.forEach((stamp, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-inputBg p-2 rounded-xl flex flex-col items-center gap-2';
+                div.innerHTML = `
+                    <img src="${stamp}" class="w-full h-16 object-contain bg-darkBg rounded-lg cursor-pointer" onclick="sendSavedStamp('${stamp}')">
+                    <div class="flex gap-2 text-xs">
+                        <a href="${stamp}" download="stamp_${idx+1}.png" class="text-subText hover:text-white" title="ダウンロード">⬇️</a>
+                        <button onclick="deleteSavedStamp(${idx})" class="text-rose-400" title="削除">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        window.sendSavedStamp = async function(dataUrl) {
+            await sendTextMessage(`<div class="flex flex-col gap-1"><img src="${dataUrl}" class="w-32 rounded-xl my-1"><a href="${dataUrl}" download="stamp.png" class="text-[11px] text-accent underline">⬇️ スタンプをダウンロード</a></div>`);
+            closeStampHistoryModal();
+        };
+
+        window.deleteSavedStamp = function(idx) {
+            savedStamps.splice(idx, 1);
+            localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
+            renderStampHistory();
+        };
+
+        window.deleteMessage = async function(msgId) {
+            if (!confirm("メッセージを削除しますか？")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', msgId));
+        };
+        window.openEditModal = function(msgId, currentText) {
+            document.getElementById('editMessageId').value = msgId;
+            document.getElementById('editTextArea').value = currentText;
+            document.getElementById('editModal').classList.remove('hidden', 'opacity-0');
+        };
+        window.closeEditModal = function() { document.getElementById('editModal').classList.add('hidden'); };
+        window.executeEditMessage = async function() {
+            const msgId = document.getElementById('editMessageId').value;
+            const newText = document.getElementById('editTextArea').value.trim();
+            if (!newText) return;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', msgId), { text: newText });
+            closeEditModal();
         };
 
         function listenToAdminData() {
             if (!db) return;
-            try {
-                const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'users');
-                unsubscribeUsers = onSnapshot(usersRef, (snapshot) => {
-                    registeredUsersList = [];
-                    snapshot.forEach((docSnap) => {
-                        registeredUsersList.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-                    renderAdminUserList();
-                });
-
-                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig');
-                unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        roomSettings = docSnap.data();
-                        document.getElementById('roomLockToggle').checked = !!roomSettings.roomLocked;
-                    }
-                });
-            } catch (e) {
-                console.error("Failed to listen admin data:", e);
-            }
-        }
-
-        // 管理画面にUIDとニックネームを表示
-        function renderAdminUserList() {
-            const listContainer = document.getElementById('adminUserList');
-            document.getElementById('userCountBadge').textContent = `${registeredUsersList.length}名`;
-
-            if (registeredUsersList.length === 0) {
-                listContainer.innerHTML = '<div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>';
-                return;
-            }
-
-            listContainer.innerHTML = '';
-            registeredUsersList.forEach((user) => {
-                const item = document.createElement('div');
-                item.className = 'bg-inputBg/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
-                
-                let uaShort = user.userAgent || '不明な端末';
-                if (uaShort.includes('iPhone')) uaShort = 'iPhone';
-                else if (uaShort.includes('iPad')) uaShort = 'iPad';
-                else if (uaShort.includes('Android')) uaShort = 'Android';
-                else if (uaShort.includes('Macintosh')) uaShort = 'Mac (PC)';
-                else if (uaShort.includes('Windows')) uaShort = 'Windows (PC)';
-
-                item.innerHTML = `
-                    <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <div class="w-10 h-10 rounded-xl bg-insta-gradient p-0.5 flex-shrink-0 flex items-center justify-center">
-                            <div class="w-full h-full bg-cardBg rounded-[10px] flex items-center justify-center font-bold text-accent text-xs">
-                                ${user.nickname ? user.nickname.charAt(0).toUpperCase() : '?'}
-                            </div>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="font-bold text-sm sm:text-base text-mainText truncate">${escapeHtml(user.nickname)}</div>
-                            <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${escapeHtml(user.userId || user.id)}</span></div>
-                            <div class="text-xs text-subText/60 truncate">端末: ${escapeHtml(uaShort)}</div>
-                        </div>
-                    </div>
-                    <button onclick="promptDeleteUser('${user.id}', '${escapeHtml(user.nickname)}')" class="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition-colors flex-shrink-0 cursor-pointer">
-                        削除
-                    </button>
-                `;
-                listContainer.appendChild(item);
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snapshot) => {
+                registeredUsersList = [];
+                snapshot.forEach(docSnap => registeredUsersList.push({ id: docSnap.id, ...docSnap.data() }));
+                renderAdminUserList();
+            });
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const roomSettings = docSnap.data();
+                    document.getElementById('roomLockToggle').checked = !!roomSettings.roomLocked;
+                }
             });
         }
 
-        window.promptDeleteUser = function(userId, nickname) {
-            showConfirmModal(
-                "本当に削除しますか？",
-                `ユーザー「${nickname}」のデータをリストから削除しますか？`,
-                async () => {
-                    if (!db) return;
-                    try {
-                        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', userId);
-                        await deleteDoc(userDocRef);
-                        showModal("削除完了", `「${nickname}」を削除しました。`);
-                    } catch (error) {
-                        console.error("Error deleting user:", error);
-                        showModal("エラー", "ユーザーの削除に失敗しました。", true);
-                    }
-                }
-            );
-        };
-
-        window.toggleRoomLock = async function(isLocked) {
-            if (!db) return;
-            try {
-                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig');
-                await setDoc(settingsRef, {
-                    roomLocked: isLocked,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-            } catch (error) {
-                console.error("Error updating room lock:", error);
-                showModal("エラー", "入室制限の設定保存に失敗しました。", true);
+        function renderAdminUserList() {
+            const list = document.getElementById('adminUserList');
+            document.getElementById('userCountBadge').textContent = `${registeredUsersList.length}名`;
+            if (registeredUsersList.length === 0) {
+                list.innerHTML = '<div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>';
+                return;
+            }
+            list.innerHTML = '';
+            registeredUsersList.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'bg-inputBg/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
+                item.innerHTML = `
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-sm text-mainText truncate">${user.nickname}</div>
+                        <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
+                    </div>
+                    <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold">削除</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        window.promptDeleteUser = async function(userId, nickname) {
+            if (confirm(`ユーザー「${nickname}」を削除しますか？`)) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId));
             }
         };
-
-        function escapeHtml(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
+        window.toggleRoomLock = async function(isLocked) {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'), { roomLocked: isLocked }, { merge: true });
+        };
 
         function subscribeToMessages() {
-            if (!db) return;
-            try {
-                const messagesRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-                const q = query(messagesRef);
-
-                unsubscribeMessages = onSnapshot(q, (snapshot) => {
-                    const feed = document.getElementById('messageFeed');
-                    const welcomeHtml = `
-                        <div class="flex justify-center my-2">
-                            <div class="bg-cardBg border border-white/5 px-4 py-2 rounded-2xl text-xs text-subText text-center max-w-xs shadow-sm">
-                                ルームへようこそ！みんなにやさしいメッセージを送ろう✨
-                            </div>
-                        </div>
-                    `;
-                    feed.innerHTML = welcomeHtml;
-
-                    let docs = [];
-                    snapshot.forEach((docSnap) => {
-                        docs.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-
-                    docs.sort((a, b) => {
-                        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
-                        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
-                        return timeA - timeB;
-                    });
-
-                    docs.forEach((msg) => {
-                        appendMessageToFeed(msg);
-                    });
-                }, (error) => {
-                    console.error("Firestore subscription error:", error);
+            onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'messages')), (snapshot) => {
+                const feed = document.getElementById('messageFeed');
+                feed.innerHTML = `<div class="flex justify-center my-2"><div class="bg-cardBg border border-white/5 px-4 py-2 rounded-2xl text-xs text-subText text-center max-w-xs shadow-sm">ルームへようこそ！みんなにやさしいメッセージを送ろう✨</div></div>`;
+                
+                let docs = [];
+                snapshot.forEach(docSnap => docs.push({ id: docSnap.id, ...docSnap.data() }));
+                docs.sort((a, b) => {
+                    const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                    const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                    return tA - tB;
                 });
-            } catch (e) {
-                console.error("Failed to setup snapshot subscription:", e);
-            }
+
+                docs.forEach(msg => appendMessageToFeed(msg));
+            });
         }
 
         function appendMessageToFeed(msg) {
             const feed = document.getElementById('messageFeed');
             const isMe = msg.nickname === currentNickname;
-
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} my-1.5`;
 
             const nameLabel = document.createElement('span');
-            nameLabel.className = `text-xs text-subText px-1 mb-1 ${isMe ? 'text-right' : 'text-left'}`;
+            nameLabel.className = 'text-xs text-subText px-1 mb-1';
             nameLabel.textContent = msg.nickname;
 
             const bubble = document.createElement('div');
-            if (isMe) {
-                bubble.className = 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm sm:text-base shadow-md break-words';
+            bubble.className = isMe ? 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md break-words max-w-xs sm:max-w-md' : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md break-words max-w-xs sm:max-w-md';
+            
+            if (msg.text.includes('<img') || msg.text.includes('📎')) {
+                bubble.innerHTML = msg.text;
             } else {
-                bubble.className = 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm sm:text-base shadow-md break-words';
+                bubble.textContent = msg.text;
             }
-            bubble.textContent = msg.text;
 
             wrapper.appendChild(nameLabel);
             wrapper.appendChild(bubble);
-            feed.appendChild(wrapper);
 
+            if (isMe) {
+                const actions = document.createElement('div');
+                actions.className = 'flex gap-2 text-[10px] text-subText px-1 mt-0.5';
+                actions.innerHTML = `
+                    <button onclick="openEditModal('${msg.id}', \`${msg.text.replace(/"/g, '&quot;')}\`)" class="hover:text-white">編集</button>
+                    <span>•</span>
+                    <button onclick="deleteMessage('${msg.id}')" class="hover:text-rose-400">削除</button>
+                `;
+                wrapper.appendChild(actions);
+            }
+
+            feed.appendChild(wrapper);
             feed.scrollTop = feed.scrollHeight;
         }
     </script>
