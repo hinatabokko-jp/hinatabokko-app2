@@ -57,6 +57,10 @@
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
             background-color: #151518;
         }
+        .tool-btn.active {
+            background-color: #C13584 !important;
+            color: #FFFFFF !important;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden bg-darkBg text-mainText selection:bg-accent selection:text-white">
@@ -361,18 +365,18 @@
                     </div>
                     <div class="flex items-center justify-between gap-2">
                         <select id="brushType" class="bg-inputBg text-mainText text-xs px-3 py-2 rounded-xl border border-white/10 flex-1 focus:outline-none">
-                            <option value="normal">ブラシ (通常)</option>
+                            <option value="normal" selected>ブラシ (通常)</option>
                             <option value="calligraphy">カリグラフィペン</option>
                             <option value="brush">毛筆</option>
-                            <option value="watercolor" selected>水彩ブラシ</option>
+                            <option value="watercolor">水彩ブラシ</option>
                             <option value="crayon">クレヨン</option>
                             <option value="airbrush">エアブラシ</option>
                             <option value="neon">ネオン発光</option>
                         </select>
-                        <button type="button" onclick="enablePaintBucket()" id="paintBtn" class="px-3 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">ペンキ</button>
+                        <button type="button" id="tool-fill" class="tool-btn px-3 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">ペンキ</button>
                     </div>
                     <div class="flex justify-between gap-2">
-                        <button type="button" onclick="enableEraser()" id="eraserBtn" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">消しゴム</button>
+                        <button type="button" id="tool-eraser" class="tool-btn flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">消しゴム</button>
                         <button type="button" onclick="undoCanvas()" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">1つ戻す</button>
                         <button type="button" onclick="clearActiveLayer()" class="flex-1 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold text-rose-400 cursor-pointer">全消去</button>
                     </div>
@@ -658,23 +662,19 @@
             }
         };
 
-        // 【要望対応】JPEG画像を送信する前にサイズを検知し、大きすぎる場合は縮小してから送信する仕組み（指示文準拠）
         window.handleFileSelect = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // 画像ファイルの場合のみ縮小・圧縮処理を行う
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const img = new Image();
                     img.onload = async () => {
-                        // 許容範囲の最大サイズ（例: スタンプの2倍 = 最大幅・高さを500pxに設定）
                         const MAX_SIZE = 800;
                         let width = img.width;
                         let height = img.height;
 
-                        // アスペクト比（縦横比）を維持したままサイズを計算
                         if (width > height) {
                             if (width > MAX_SIZE) {
                                 height *= MAX_SIZE / width;
@@ -687,26 +687,20 @@
                             }
                         }
 
-                        // Canvasを使って縮小描画
                         const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // JPEG形式で圧縮（第2引数で画質を指定: 0.8 = 80%の品質）
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-
-                        // 縮小・圧縮されたデータを Firestore 経由で送信
                         await sendTextMessage(compressedDataUrl, 'stamp', file.name);
-
                         event.target.value = '';
                     };
                     img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             } else {
-                // 画像以外のファイル（PDFやZIPなど）はそのまま処理
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     await sendTextMessage(event.target.result, 'file', file.name);
@@ -719,7 +713,8 @@
         let activeLayer = 2;
         let canvas1, ctx1, canvas2, ctx2;
         let history1 = [], history2 = [];
-        let isDrawing = false, isEraser = false, isPaintBucket = false;
+        let isDrawing = false;
+        let currentTool = 'pen'; // 'pen', 'eraser', 'fill'
         let lastX = 0, lastY = 0;
 
         window.openStampModal = function() {
@@ -759,6 +754,29 @@
             setupCanvasEvents(canvas2, 2);
             setupCanvasEvents(canvas1, 1);
             setActiveLayer(2);
+
+            // ツールボタンのイベント紐付け
+            const toolFill = document.getElementById('tool-fill');
+            const toolEraser = document.getElementById('tool-eraser');
+            const brushSelect = document.getElementById('brushType');
+
+            toolFill.onclick = () => { 
+                currentTool = 'fill'; 
+                toolEraser.classList.remove('active'); 
+                toolFill.classList.add('active'); 
+            };
+
+            toolEraser.onclick = () => {
+                currentTool = (currentTool === 'eraser') ? 'pen' : 'eraser';
+                toolEraser.classList.toggle('active', currentTool === 'eraser');
+                toolFill.classList.remove('active');
+            };
+
+            brushSelect.onchange = () => {
+                currentTool = 'pen';
+                toolFill.classList.remove('active');
+                toolEraser.classList.remove('active');
+            };
         }
 
         window.setActiveLayer = function(layerNum) {
@@ -789,9 +807,11 @@
                 const x = clientX - rect.left;
                 const y = clientY - rect.top;
 
-                if (isPaintBucket) {
-                    floodFill(targetCanvas, Math.floor(x), Math.floor(y), document.getElementById('stampColor').value);
-                    saveHistory(layerNum);
+                saveHistory(layerNum);
+
+                // ツールが 'fill'（ペンキ）の場合の実行処理
+                if (currentTool === 'fill') {
+                    floodFill(targetCanvas, Math.floor(x), Math.floor(y), document.getElementById('stampColor').value, parseInt(document.getElementById('stampOpacity').value) / 100);
                     return;
                 }
 
@@ -804,7 +824,7 @@
             };
 
             const moveDrawing = (clientX, clientY) => {
-                if (!isDrawing || layerNum !== activeLayer || isPaintBucket) return;
+                if (!isDrawing || layerNum !== activeLayer || currentTool === 'fill') return;
                 const rect = targetCanvas.getBoundingClientRect();
                 const x = clientX - rect.left;
                 const y = clientY - rect.top;
@@ -819,7 +839,7 @@
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
-                if (isEraser) {
+                if (currentTool === 'eraser') {
                     ctx.globalCompositeOperation = 'destination-out';
                     ctx.lineTo(x, y);
                     ctx.stroke();
@@ -833,27 +853,17 @@
                     if (brush === 'calligraphy') {
                         renderCalligraphySegment(ws, ctx, {x: x1, y: y1}, {x: x2, y: y2});
                     } else if (brush === 'brush') {
+                        // 【改善】毛筆ブラシの描画ロジックを正しく修正（色の設定や動的太さが反映されるように適用）
+                        ctx.globalAlpha = ws.opacity;
+                        ctx.strokeStyle = ws.color;
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
-                        const dynamicSize = Math.max(1.5, ws.size * Math.max(0.2, 1.8 - Math.min(speed * 0.08, 1.2)));
-                        ctx.lineWidth = dynamicSize;
-                        ctx.globalAlpha = Math.min(1, ws.opacity * (1.1 - Math.min(speed * 0.03, 0.4)));
-                        
+                        ctx.lineWidth = Math.max(1, ws.size * (1 - Math.min(speed / 20, 0.7)));
                         ctx.beginPath();
                         ctx.moveTo(x1, y1);
                         ctx.lineTo(x2, y2);
                         ctx.stroke();
-
-                        if (ws.size > 4) {
-                            ctx.globalAlpha *= 0.4;
-                            ctx.lineWidth = dynamicSize * 0.5;
-                            ctx.beginPath();
-                            ctx.moveTo(x1 + 0.8, y1 + 0.8);
-                            ctx.lineTo(x2 + 0.8, y2 + 0.8);
-                            ctx.stroke();
-                        }
                     } else if (brush === 'airbrush') {
-                        // 【要望対応】エアブラシが黒くなってしまう不具合を解消（fillStyleに指定色を明示的に設定）
                         ctx.save();
                         ctx.fillStyle = color;
                         const dist = Math.hypot(x2 - x1, y2 - y1);
@@ -870,7 +880,7 @@
                         }
                         ctx.restore();
                     } else {
-                        importBrushEffect(ctx, brush, color, size, opacityVal, x, y);
+                        importBrushEffect(ctx, brush, color, size, opacityVal, {x: x1, y: y1}, {x: x2, y: y2}, speed);
                     }
                 }
                 lastX = x;
@@ -880,7 +890,6 @@
             const endDrawing = () => {
                 if (isDrawing && layerNum === activeLayer) {
                     isDrawing = false;
-                    saveHistory(layerNum);
                 }
             };
 
@@ -905,6 +914,58 @@
                 endDrawing();
                 e.preventDefault();
             };
+        }
+
+        function hexToRgb(hex) {
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            const num = parseInt(c, 16);
+            return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+        }
+
+        function floodFill(canvas, startX, startY, fillColorHex, opacity) {
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const targetPos = (startY * width + startX) * 4;
+            const targetR = data[targetPos];
+            const targetG = data[targetPos + 1];
+            const targetB = data[targetPos + 2];
+            const targetA = data[targetPos + 3];
+
+            const fillRgb = hexToRgb(fillColorHex);
+            const fillA = Math.round(opacity * 255);
+
+            if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
+
+            const queue = [[startX, startY]];
+            const visited = new Uint8Array(width * height);
+
+            while (queue.length > 0) {
+                const [x, y] = queue.pop();
+                const pos = (y * width + x) * 4;
+                const idx = y * width + x;
+
+                if (x < 0 || x >= width || y < 0 || y >= height) continue;
+                if (visited[idx]) continue;
+                visited[idx] = 1;
+
+                if (Math.abs(data[pos] - targetR) < 30 &&
+                    Math.abs(data[pos + 1] - targetG) < 30 &&
+                    Math.abs(data[pos + 2] - targetB) < 30 &&
+                    Math.abs(data[pos + 3] - targetA) < 30) {
+                    data[pos] = fillRgb.r;
+                    data[pos + 1] = fillRgb.g;
+                    data[pos + 2] = fillRgb.b;
+                    data[pos + 3] = fillA;
+
+                    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
         }
 
         function renderCalligraphyPath(ws, ctx, points) {
@@ -962,17 +1023,17 @@
             renderCalligraphyPath(ws, ctx, [p1, p2]);
         }
 
-        function importBrushEffect(ctx, brush, color, size, opacityVal, x, y) {
+        function importBrushEffect(ctx, brush, color, size, opacityVal, p1, p2, speed) {
             if (brush === 'crayon') {
                 ctx.save();
                 ctx.fillStyle = color;
-                const dist = Math.hypot(x - lastX, y - lastY);
+                const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
                 const steps = Math.max(1, Math.floor(dist / 1.5));
                 
                 for (let i = 0; i <= steps; i++) {
                     const t = steps === 0 ? 0 : i / steps;
-                    const cx = lastX + (x - lastX) * t;
-                    const cy = lastY + (y - lastY) * t;
+                    const cx = p1.x + (p2.x - p1.x) * t;
+                    const cy = p1.y + (p2.y - p1.y) * t;
                     
                     const particleCount = Math.max(6, Math.floor(size * 1.2));
                     for (let p = 0; p < particleCount; p++) {
@@ -991,38 +1052,18 @@
                 ctx.restore();
             } else if (brush === 'watercolor') {
                 ctx.save();
+                const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                const baseSize = size;
+                
+                ctx.globalAlpha = opacityVal * 0.12;
                 ctx.fillStyle = color;
-                const dist = Math.hypot(x - lastX, y - lastY);
-                const stepLength = Math.max(1, size * 0.4);
-                const steps = Math.max(1, Math.floor(dist / stepLength));
-
-                for (let i = 0; i <= steps; i++) {
-                    const t = steps === 0 ? 0 : i / steps;
-                    const cx = lastX + (x - lastX) * t;
-                    const cy = lastY + (y - lastY) * t;
-
-                    const radius = Math.max(4, size * 1.8);
-                    const particleCount = Math.max(12, Math.floor(size * 2.2));
-
-                    for (let p = 0; p < particleCount; p++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const rNorm = Math.pow(Math.random(), 0.8);
-                        let r = radius * rNorm;
-                        
-                        if (Math.random() < 0.3) {
-                            r = radius * (0.7 + Math.random() * 0.3);
-                        }
-
-                        const px = cx + Math.cos(angle) * r;
-                        const py = cy + Math.sin(angle) * r;
-                        const pSize = Math.max(1.0, Math.random() * 2.2);
-
-                        if (Math.random() > 0.15) {
-                            const edgeFactor = (r > radius * 0.6) ? 1.3 : 0.8;
-                            ctx.globalAlpha = Math.min(1.0, opacityVal * (0.08 + Math.random() * 0.18) * edgeFactor);
-                            ctx.fillRect(px, py, pSize, pSize);
-                        }
-                    }
+                const wcSteps = Math.max(1, Math.floor(dist / 2));
+                for (let i = 0; i <= wcSteps; i++) {
+                    const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+                    const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+                    ctx.beginPath();
+                    ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+                    ctx.fill();
                 }
                 ctx.restore();
             } else if (brush === 'neon') {
@@ -1032,30 +1073,21 @@
                 ctx.strokeStyle = color;
                 ctx.globalAlpha = opacityVal;
                 ctx.lineWidth = Math.max(2, size * 0.8);
-                ctx.lineTo(x, y);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
                 ctx.stroke();
                 ctx.restore();
             } else {
                 ctx.strokeStyle = color;
                 ctx.globalAlpha = opacityVal;
-                ctx.lineTo(x, y);
+                ctx.lineWidth = size;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
                 ctx.stroke();
             }
         }
-
-        window.enableEraser = function() {
-            isEraser = !isEraser;
-            isPaintBucket = false;
-            document.getElementById('eraserBtn').classList.toggle('bg-accent', isEraser);
-            document.getElementById('paintBtn').classList.remove('bg-accent');
-        };
-
-        window.enablePaintBucket = function() {
-            isPaintBucket = !isPaintBucket;
-            isEraser = false;
-            document.getElementById('paintBtn').classList.toggle('bg-accent', isPaintBucket);
-            document.getElementById('eraserBtn').classList.remove('bg-accent');
-        };
 
         function saveHistory(layerNum) {
             const canvas = layerNum === 2 ? canvas2 : canvas1;
@@ -1085,12 +1117,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             saveHistory(activeLayer);
         };
-
-        function floodFill(canvas, startX, startY, fillColor) {
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = fillColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
 
         window.saveAndSendStamp = async function() {
             const tempCanvas = document.createElement('canvas');
