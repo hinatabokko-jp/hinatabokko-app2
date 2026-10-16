@@ -76,7 +76,8 @@
                 </div>
 
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2">Air Message</h1>
-                <p class="text-subText text-sm sm:text-base text-center mb-8 px-4">お友達と楽しく<br class="sm:hidden">安全に<br>おしゃべりしよう！</p>
+                <!-- 指示：安全に を削除 -->
+                <p class="text-subText text-sm sm:text-base text-center mb-8 px-4">お友達と楽しく<br>おしゃべりしよう！</p>
 
                 <form id="loginForm" class="w-full flex flex-col gap-5" onsubmit="handleLogin(event)">
                     <div class="flex flex-col gap-2">
@@ -126,13 +127,7 @@
                         <div class="w-full h-full bg-cardBg rounded-[14px] flex items-center justify-center font-bold text-accent text-sm" id="userAvatarInitial">?</div>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="font-bold text-base sm:text-lg text-mainText leading-tight" id="displayNickname">ゲスト</h2>
-                            <!-- ニックネーム変更ボタン -->
-                            <button onclick="openNicknameModal()" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-xs font-medium transition-colors cursor-pointer flex items-center gap-1" title="ニックネーム変更">
-                                ✏️ 変更
-                            </button>
-                        </div>
+                        <h2 class="font-bold text-base sm:text-lg text-mainText leading-tight" id="displayNickname">ゲスト</h2>
                         <div class="flex items-center gap-1.5 mt-0.5">
                             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                             <span class="text-xs text-subText">おしゃべりルーム</span>
@@ -141,6 +136,10 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
+                    <!-- 指示：ニックネーム変更ボタンを、招待ボタンの左側に同じ書式（px-3 py-2 rounded-xl bg-inputBg text-subText text-sm font-medium など）で配置（鉛筆削除） -->
+                    <button onclick="openNicknameModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="ニックネーム変更">
+                        変更
+                    </button>
                     <button onclick="openInviteModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="招待QRコード">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
                         <span class="hidden sm:inline">招待</span>
@@ -256,7 +255,7 @@
             </div>
         </div>
 
-        <!-- MODAL: ニックネーム変更モーダル（新規追加） -->
+        <!-- MODAL: ニックネーム変更モーダル -->
         <div id="nicknameModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
                 <h3 class="text-lg font-bold">ニックネームの変更</h3>
@@ -264,6 +263,7 @@
                     <span>現在のニックネーム: <strong id="currentNicknameDisplay" class="text-mainText"></strong></span>
                 </div>
                 <div class="flex flex-col gap-2">
+                    <!-- 指示：変更後のニックネームというテキストを配置し、テキストボックス（プレースホルダーは「新しいニックネームを入力」）、キャンセルボタン、決定ボタンを配置 -->
                     <label class="text-xs font-semibold text-subText uppercase tracking-wider">変更後のニックネーム</label>
                     <input 
                         type="text" 
@@ -307,7 +307,7 @@
             </div>
         </div>
 
-        <!-- MODAL: 手描きスタンプ作成モーダル -->
+        <!-- MODAL: 手描きスタンプ作成モーダル（点線ブラシ削除版） -->
         <div id="stampModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
                 <div class="flex justify-between items-center">
@@ -363,7 +363,7 @@
                             <option value="crayon">クレヨン</option>
                             <option value="airbrush">エアブラシ</option>
                             <option value="neon">ネオン発光</option>
-                            <option value="dotted">点線ブラシ</option>
+                            <!-- 指示：点線ブラシは削除 -->
                         </select>
                         <button type="button" onclick="enablePaintBucket()" id="paintBtn" class="px-3 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">ペンキ</button>
                     </div>
@@ -445,7 +445,7 @@
             </div>
         </div>
 
-        <!-- Custom Notification Modal (アクセス制限時などのモーダル：指示通り文言削除＆ボタンをOKに変更) -->
+        <!-- Custom Notification Modal (アクセス制限時などのモーダル：指示通り「管理者に確認してください。」を「今は入室できません。」に変更) -->
         <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center" id="modalCard">
                 <h3 id="modalTitle" class="text-lg font-bold mb-2">お知らせ</h3>
@@ -518,7 +518,7 @@
         };
         window.closeInviteModal = function() { document.getElementById('inviteModal').classList.add('hidden'); };
 
-        // ニックネーム変更モーダルの制御関数（新規追加）
+        // ニックネーム変更モーダルの制御関数
         window.openNicknameModal = function() {
             document.getElementById('currentNicknameDisplay').textContent = currentNickname;
             document.getElementById('newNicknameInput').value = "";
@@ -576,15 +576,15 @@
             if (auth && !currentUser) { await signInAnonymously(auth); }
             const myUid = currentUser ? currentUser.uid : 'anonymous';
             
-            // アクセス制限チェック（指示通り文言から「このアカウントは現在アクセスが拒否されています。」を削除）
-            const foundUser = registeredUsersList.find(u => u.nickname === nickname);
-            if (foundUser && foundUser.accessDenied) {
-                showModal("アクセス制限", "管理者に確認してください。");
+            // 指示：UIDで識別して入室を拒否するよう変更（およびモーダル文言「今は入室できません。」）
+            const foundUserByUid = registeredUsersList.find(u => (u.userId === myUid || u.id === myUid));
+            if (foundUserByUid && foundUserByUid.accessDenied) {
+                showModal("アクセス制限", "今は入室できません。");
                 return;
             }
 
             const existingUser = registeredUsersList.find(u => u.nickname === nickname);
-            if (existingUser && existingUser.userId !== myUid) {
+            if (existingUser && (existingUser.userId !== myUid && existingUser.id !== myUid)) {
                 showModal("エラー", "既に使われている名前です。別の名前を登録してください。");
                 return;
             }
@@ -595,7 +595,7 @@
 
             if (db && currentUser) {
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp(), accessDenied: false }, { merge: true });
+                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp(), accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false) }, { merge: true });
             }
 
             document.getElementById('loginScreen').classList.add('hidden');
@@ -656,7 +656,6 @@
             }
         };
 
-        // JPEG画像判定の改善（MIMEタイプ空欄・大文字拡張子.JPG/.JPEG等に対応、PNG誤判定防止）
         window.handleFileSelect = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -835,7 +834,7 @@
             };
         }
 
-        // ブラシエフェクト描画処理（クレヨン・エアブラシの品質改善版）
+        // ブラシエフェクト描画処理（点線ブラシ削除版）
         function importBrushEffect(ctx, brush, color, size, x, y) {
             if (brush === 'brush') {
                 ctx.strokeStyle = color;
@@ -853,7 +852,6 @@
                 ctx.stroke();
                 ctx.restore();
             } else if (brush === 'crayon') {
-                // クレヨン：発色と塗りの密度を大幅に改善（カスレと手描き感を維持しつつ濃くしっかり定着）
                 ctx.save();
                 ctx.fillStyle = color;
                 const dist = Math.hypot(x - lastX, y - lastY);
@@ -866,21 +864,20 @@
                     
                     const particleCount = Math.max(6, Math.floor(size * 1.2));
                     for (let p = 0; p < particleCount; p++) {
-                        if (Math.random() > 0.22) { // 隙間を適度に残しつつスカスカ感を解消
+                        if (Math.random() > 0.22) {
                             const angle = Math.random() * Math.PI * 2;
                             const r = Math.pow(Math.random(), 0.5) * size * 0.7;
                             const px = cx + Math.cos(angle) * r;
                             const py = cy + Math.sin(angle) * r;
                             const pSize = Math.max(1.2, Math.random() * 2.8);
                             
-                            ctx.globalAlpha = 0.65 + Math.random() * 0.35; // 発色を強く調整
+                            ctx.globalAlpha = 0.65 + Math.random() * 0.35;
                             ctx.fillRect(px, py, pSize, pSize);
                         }
                     }
                 }
                 ctx.restore();
             } else if (brush === 'airbrush') {
-                // エアブラシ：ガウス分布風の滑らかな霧状グラデーション（中心が濃く、外側に向かって自然に消える）
                 ctx.save();
                 ctx.fillStyle = color;
                 const dist = Math.hypot(x - lastX, y - lastY);
@@ -896,13 +893,11 @@
                     
                     for (let p = 0; p < particleCount; p++) {
                         const angle = Math.random() * Math.PI * 2;
-                        // ガウス分布に近い偏り（中心付近に多く、外側へまばらに拡散）
                         const r = sprayRadius * Math.pow(Math.random(), 1.4);
                         const px = cx + Math.cos(angle) * r;
                         const py = cy + Math.sin(angle) * r;
                         const pSize = Math.max(1, Math.random() * (size * 0.35));
                         
-                        // 中心ほど濃く、外側に行くほど透明に
                         const distanceRatio = 1 - (r / sprayRadius);
                         ctx.globalAlpha = Math.max(0.02, 0.15 * Math.max(0, distanceRatio));
                         
@@ -921,16 +916,6 @@
                 ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.restore();
-            } else if (brush === 'dotted') {
-                const dist = Math.hypot(x - lastX, y - lastY);
-                if (dist > size * 1.5) {
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.arc(x, y, size * 0.55, 0, Math.PI * 2);
-                    ctx.fill();
-                    lastX = x;
-                    lastY = y;
-                }
             } else {
                 ctx.strokeStyle = color;
                 ctx.lineTo(x, y);
@@ -1243,7 +1228,7 @@
                     if (msg.type === 'stamp' || msg.type === 'image' || msg.type === 'jpg_image') {
                         const dlTextLink = document.createElement('a');
                         dlTextLink.href = msg.text;
-                        dlTestLink.download = msg.fileName || 'image.png';
+                        dlTextLink.download = msg.fileName || 'image.png';
                         dlTextLink.className = 'hover:text-white cursor-pointer underline';
                         dlTextLink.textContent = 'ダウンロード';
                         actions.appendChild(dlTextLink);
