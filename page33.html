@@ -76,7 +76,6 @@
                 </div>
 
                 <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2">Air Message</h1>
-                <!-- 指示：安全に を削除 -->
                 <p class="text-subText text-sm sm:text-base text-center mb-8 px-4">お友達と楽しく<br>おしゃべりしよう！</p>
 
                 <form id="loginForm" class="w-full flex flex-col gap-5" onsubmit="handleLogin(event)">
@@ -136,12 +135,11 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                    <!-- 指示：ニックネーム変更ボタンを、招待ボタンの左側に同じ書式（px-3 py-2 rounded-xl bg-inputBg text-subText text-sm font-medium など）で配置（鉛筆削除） -->
                     <button onclick="openNicknameModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="ニックネーム変更">
                         変更
                     </button>
                     <button onclick="openInviteModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="招待QRコード">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zM12 20h4m-4 0H8m4 0v-4m0 0H8m4 0h4"></path></svg>
                         <span class="hidden sm:inline">招待</span>
                     </button>
                     <button onclick="handleLogout()" class="px-4 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer">
@@ -263,7 +261,6 @@
                     <span>現在のニックネーム: <strong id="currentNicknameDisplay" class="text-mainText"></strong></span>
                 </div>
                 <div class="flex flex-col gap-2">
-                    <!-- 指示：変更後のニックネームというテキストを配置し、テキストボックス（プレースホルダーは「新しいニックネームを入力」）、キャンセルボタン、決定ボタンを配置 -->
                     <label class="text-xs font-semibold text-subText uppercase tracking-wider">変更後のニックネーム</label>
                     <input 
                         type="text" 
@@ -307,7 +304,7 @@
             </div>
         </div>
 
-        <!-- MODAL: 手描きスタンプ作成モーダル（点線ブラシ削除版） -->
+        <!-- MODAL: 手描きスタンプ作成モーダル -->
         <div id="stampModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
                 <div class="flex justify-between items-center">
@@ -354,6 +351,14 @@
                             <input type="range" id="stampSize" min="1" max="40" value="3" class="w-20 accent-accent">
                         </div>
                     </div>
+                    <!-- 追加：色の透過度（アルファ値）調整スライダー -->
+                    <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <span>透明度:</span>
+                            <span id="opacityValueDisplay" class="font-mono text-accent">100%</span>
+                        </div>
+                        <input type="range" id="stampOpacity" min="10" max="100" value="100" class="w-32 accent-accent" oninput="document.getElementById('opacityValueDisplay').textContent = this.value + '%'">
+                    </div>
                     <div class="flex items-center justify-between gap-2">
                         <select id="brushType" class="bg-inputBg text-mainText text-xs px-3 py-2 rounded-xl border border-white/10 flex-1 focus:outline-none">
                             <option value="normal">ブラシ (通常)</option>
@@ -363,7 +368,6 @@
                             <option value="crayon">クレヨン</option>
                             <option value="airbrush">エアブラシ</option>
                             <option value="neon">ネオン発光</option>
-                            <!-- 指示：点線ブラシは削除 -->
                         </select>
                         <button type="button" onclick="enablePaintBucket()" id="paintBtn" class="px-3 py-2 bg-inputBg hover:bg-inputBg/80 text-xs rounded-xl font-semibold cursor-pointer">ペンキ</button>
                     </div>
@@ -445,7 +449,7 @@
             </div>
         </div>
 
-        <!-- Custom Notification Modal (アクセス制限時などのモーダル：指示通り「管理者に確認してください。」を「今は入室できません。」に変更) -->
+        <!-- Custom Notification Modal -->
         <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center" id="modalCard">
                 <h3 id="modalTitle" class="text-lg font-bold mb-2">お知らせ</h3>
@@ -518,7 +522,6 @@
         };
         window.closeInviteModal = function() { document.getElementById('inviteModal').classList.add('hidden'); };
 
-        // ニックネーム変更モーダルの制御関数
         window.openNicknameModal = function() {
             document.getElementById('currentNicknameDisplay').textContent = currentNickname;
             document.getElementById('newNicknameInput').value = "";
@@ -576,7 +579,6 @@
             if (auth && !currentUser) { await signInAnonymously(auth); }
             const myUid = currentUser ? currentUser.uid : 'anonymous';
             
-            // 指示：UIDで識別して入室を拒否するよう変更（およびモーダル文言「今は入室できません。」）
             const foundUserByUid = registeredUsersList.find(u => (u.userId === myUid || u.id === myUid));
             if (foundUserByUid && foundUserByUid.accessDenied) {
                 showModal("アクセス制限", "今は入室できません。");
@@ -775,6 +777,7 @@
                 const ctx = getCtx();
                 const color = document.getElementById('stampColor').value;
                 const size = parseInt(document.getElementById('stampSize').value);
+                const opacityVal = parseInt(document.getElementById('stampOpacity').value) / 100;
                 const brush = document.getElementById('brushType').value;
 
                 ctx.lineWidth = size;
@@ -792,13 +795,23 @@
                     if (brush === 'calligraphy') {
                         ctx.save();
                         ctx.strokeStyle = color;
-                        ctx.lineWidth = Math.max(1, size * 1.6);
+                        ctx.globalAlpha = opacityVal;
+                        const dx = x - lastX;
+                        const dy = y - lastY;
+                        const angle = Math.atan2(dy, dx);
+                        const thicknessFactor = Math.abs(Math.sin(angle + Math.PI / 4));
+                        const dynamicWidth = Math.max(1, size * (0.5 + thicknessFactor * 1.5));
+                        
+                        ctx.lineWidth = dynamicWidth;
+                        ctx.lineCap = 'butt';
                         ctx.beginPath();
-                        ctx.moveTo(lastX - 3, lastY - 3);
-                        ctx.lineTo(x - 3, y - 3);
+                        ctx.moveTo(lastX, lastY);
+                        ctx.lineTo(x, y);
                         ctx.stroke();
                         ctx.restore();
-                    } else importBrushEffect(ctx, brush, color, size, x, y);
+                    } else {
+                        importBrushEffect(ctx, brush, color, size, opacityVal, x, y);
+                    }
                 }
                 lastX = x;
                 lastY = y;
@@ -834,22 +847,77 @@
             };
         }
 
-        // ブラシエフェクト描画処理（点線ブラシ削除版）
-        function importBrushEffect(ctx, brush, color, size, x, y) {
+        // ブラシ効果の適用（水彩ブラシを大幅に質感改善）
+        function importBrushEffect(ctx, brush, color, size, opacityVal, x, y) {
             if (brush === 'brush') {
-                ctx.strokeStyle = color;
-                const speed = Math.hypot(x - lastX, y - lastY);
-                const dynamicSize = Math.max(1, size * Math.min(1.5, 3 / (speed + 0.5)));
-                ctx.lineWidth = dynamicSize;
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            } else if (brush === 'watercolor') {
                 ctx.save();
-                ctx.globalAlpha = 0.2;
-                ctx.strokeStyle = color;
-                ctx.lineWidth = size * 2.2;
-                ctx.lineTo(x, y);
-                ctx.stroke();
+                ctx.fillStyle = color;
+                const dist = Math.hypot(x - lastX, y - lastY);
+                const steps = Math.max(1, Math.floor(dist));
+                const speed = dist;
+                const baseWidth = Math.max(1, size * Math.min(2.0, 4.5 / (speed + 0.3)));
+
+                for (let i = 0; i <= steps; i++) {
+                    const t = steps === 0 ? 0 : i / steps;
+                    const cx = lastX + (x - lastX) * t;
+                    const cy = lastY + (y - lastY) * t;
+
+                    const bristles = Math.max(5, Math.floor(baseWidth * 1.8));
+                    for (let b = 0; b < bristles; b++) {
+                        if (b === 0 || Math.random() > 0.25) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const r = Math.pow(Math.random(), 0.6) * baseWidth * 0.9;
+                            const px = cx + Math.cos(angle) * r;
+                            const py = cy + Math.sin(angle) * r;
+                            const pSize = Math.max(1, Math.random() * (baseWidth * 0.45));
+
+                            ctx.globalAlpha = opacityVal * ((b === 0) ? 0.9 : (0.5 + Math.random() * 0.4));
+                            ctx.fillRect(px, py, pSize, pSize);
+                        }
+                    }
+                }
+                ctx.restore();
+            } else if (brush === 'watercolor') {
+                // 【水彩ブラシの質感改善実装】
+                // 水を含んだ顔料の広がり、輪郭の顔料溜まり、紙目（シボ）の粒子感、重なりによる自然な色の深まり
+                ctx.save();
+                ctx.fillStyle = color;
+                const dist = Math.hypot(x - lastX, y - lastY);
+                const stepLength = Math.max(1, size * 0.4);
+                const steps = Math.max(1, Math.floor(dist / stepLength));
+
+                for (let i = 0; i <= steps; i++) {
+                    const t = steps === 0 ? 0 : i / steps;
+                    const cx = lastX + (x - lastX) * t;
+                    const cy = lastY + (y - lastY) * t;
+
+                    const radius = Math.max(4, size * 1.8);
+                    const particleCount = Math.max(12, Math.floor(size * 2.2));
+
+                    for (let p = 0; p < particleCount; p++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        // ガウス分布風の偏りと、輪郭付近に色素が集まるエッジ効果（顔料の溜まり）
+                        const rNorm = Math.pow(Math.random(), 0.8);
+                        let r = radius * rNorm;
+                        
+                        // 輪郭近辺（外縁0.7〜1.0）の確率を高めて顔料の溜まりを演出
+                        if (Math.random() < 0.3) {
+                            r = radius * (0.7 + Math.random() * 0.3);
+                        }
+
+                        const px = cx + Math.cos(angle) * r;
+                        const py = cy + Math.sin(angle) * r;
+                        const pSize = Math.max(1.0, Math.random() * 2.2);
+
+                        // 紙のシボ（凹凸）による抜け感を表現するため、一部の粒子をスキップ（塗りムラ）
+                        if (Math.random() > 0.15) {
+                            // 中心付近は薄く、エッジやランダムなポイントで深みが出る透明度設計
+                            const edgeFactor = (r > radius * 0.6) ? 1.3 : 0.8;
+                            ctx.globalAlpha = Math.min(1.0, opacityVal * (0.08 + Math.random() * 0.18) * edgeFactor);
+                            ctx.fillRect(px, py, pSize, pSize);
+                        }
+                    }
+                }
                 ctx.restore();
             } else if (brush === 'crayon') {
                 ctx.save();
@@ -871,7 +939,7 @@
                             const py = cy + Math.sin(angle) * r;
                             const pSize = Math.max(1.2, Math.random() * 2.8);
                             
-                            ctx.globalAlpha = 0.65 + Math.random() * 0.35;
+                            ctx.globalAlpha = opacityVal * (0.65 + Math.random() * 0.35);
                             ctx.fillRect(px, py, pSize, pSize);
                         }
                     }
@@ -881,7 +949,8 @@
                 ctx.save();
                 ctx.fillStyle = color;
                 const dist = Math.hypot(x - lastX, y - lastY);
-                const steps = Math.max(1, Math.floor(dist / 2));
+                const stepLength = Math.max(2, size * 0.5);
+                const steps = Math.max(1, Math.floor(dist / stepLength));
                 
                 for (let i = 0; i <= steps; i++) {
                     const t = steps === 0 ? 0 : i / steps;
@@ -889,17 +958,17 @@
                     const cy = lastY + (y - lastY) * t;
                     
                     const sprayRadius = Math.max(6, size * 2.5);
-                    const particleCount = Math.max(12, Math.floor(size * 2));
+                    const particleCount = Math.max(10, Math.floor(size * 1.8));
                     
                     for (let p = 0; p < particleCount; p++) {
                         const angle = Math.random() * Math.PI * 2;
-                        const r = sprayRadius * Math.pow(Math.random(), 1.4);
+                        const r = sprayRadius * Math.pow(Math.random(), 1.3);
                         const px = cx + Math.cos(angle) * r;
                         const py = cy + Math.sin(angle) * r;
-                        const pSize = Math.max(1, Math.random() * (size * 0.35));
+                        const pSize = Math.max(1, Math.random() * (size * 0.3));
                         
                         const distanceRatio = 1 - (r / sprayRadius);
-                        ctx.globalAlpha = Math.max(0.02, 0.15 * Math.max(0, distanceRatio));
+                        ctx.globalAlpha = opacityVal * Math.max(0.01, 0.12 * Math.max(0, distanceRatio));
                         
                         ctx.beginPath();
                         ctx.arc(px, py, pSize, 0, Math.PI * 2);
@@ -912,12 +981,14 @@
                 ctx.shadowBlur = 14;
                 ctx.shadowColor = color;
                 ctx.strokeStyle = color;
+                ctx.globalAlpha = opacityVal;
                 ctx.lineWidth = Math.max(2, size * 0.8);
                 ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.restore();
             } else {
                 ctx.strokeStyle = color;
+                ctx.globalAlpha = opacityVal;
                 ctx.lineTo(x, y);
                 ctx.stroke();
             }
@@ -1104,7 +1175,6 @@
             });
         }
 
-        // 管理画面の画像表示改善
         function renderAdminImageFeed() {
             const feed = document.getElementById('adminImageFeed');
             const imageMessages = allMessagesList.filter(m => m.type === 'jpg_image' || (m.type === 'stamp' && m.text && m.text.startsWith('data:image/')));
