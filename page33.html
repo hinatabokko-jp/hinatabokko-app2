@@ -20,6 +20,7 @@
                     },
                     backgroundImage: {
                         'insta-gradient': 'linear-gradient(135deg, #833AB4 0%, #C13584 50%, #E1306C 75%, #F77737 100%)',
+                        'bubble-gradient': 'linear-gradient(135deg, #833AB4 0%, #C13584 45%, #F77737 100%)',
                     }
                 }
             }
@@ -47,7 +48,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #A1A1AA;
         }
-        /* Canvas checkerboard background pattern */
         .checkerboard {
             background-image: linear-gradient(45deg, #1f1f23 25%, transparent 25%), 
                               linear-gradient(-45deg, #1f1f23 25%, transparent 25%), 
@@ -159,13 +159,11 @@
             <!-- Message Input Footer -->
             <footer class="p-4 bg-cardBg border-t border-white/5 flex-shrink-0">
                 <form id="messageForm" onsubmit="handleSendMessage(event)" class="flex items-center gap-2 max-w-4xl mx-auto">
-                    <!-- 1. ファイルを送りためのボタン -->
                     <label title="ファイル添付" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
                         📎
                         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
                     </label>
 
-                    <!-- 2. メッセージを書き込むテキストボックス -->
                     <div class="relative flex-1">
                         <input 
                             type="text" 
@@ -177,17 +175,14 @@
                         />
                     </div>
 
-                    <!-- 3. 手描きスタンプの履歴モーダル用のボタン -->
                     <button type="button" onclick="openStampHistoryModal()" title="スタンプ履歴" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
                         🕒
                     </button>
 
-                    <!-- 4. 手描きスタンプ作成モーダル用のボタン -->
                     <button type="button" onclick="openStampModal()" title="手描きスタンプ作成" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer">
                         🎨
                     </button>
 
-                    <!-- 5. 改行テキスト作成モーダル用のボタン (指示3: 絵文字から改行とわかる記号に変更) -->
                     <button type="button" onclick="openTextEditorModal()" title="改行・絵文字エディタ" class="h-11 w-11 rounded-2xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer text-sm font-bold">
                         ⏎
                     </button>
@@ -210,7 +205,7 @@
                     <div class="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center font-bold">⚙️</div>
                     <div>
                         <h2 class="font-bold text-base sm:text-lg text-mainText leading-tight">管理画面</h2>
-                        <span class="text-xs text-subText">ユーザー管理・メッセージ管理・入室制限</span>
+                        <span class="text-xs text-subText">ユーザー管理・JPEG画像管理・入室制限</span>
                     </div>
                 </div>
                 <button onclick="closeAdminScreen()" class="px-4 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors cursor-pointer">
@@ -231,21 +226,21 @@
                     </label>
                 </div>
 
-                <!-- 管理画面用 メッセージ送受信プレビュー・削除エリア -->
+                <!-- JPEG画像管理エリア -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex flex-col h-72 flex-shrink-0">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-sm sm:text-base">メッセージ送受信画面（管理プレビュー & 削除）</h3>
-                        <span id="adminMsgCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0件</span>
+                        <h3 class="font-bold text-sm sm:text-base">JPEG画像管理（一覧・削除）</h3>
+                        <span id="adminImageCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0件</span>
                     </div>
-                    <div id="adminMessageFeed" class="flex-1 overflow-y-auto bg-darkBg/50 border border-white/5 rounded-2xl p-3 flex flex-col gap-3">
-                        <div class="text-center text-subText/50 text-sm py-4">メッセージがありません</div>
+                    <div id="adminImageFeed" class="flex-1 overflow-y-auto bg-darkBg/50 border border-white/5 rounded-2xl p-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div class="col-span-full text-center text-subText/50 text-sm py-4">JPEG画像がありません</div>
                     </div>
                 </div>
 
-                <!-- 登録ユーザー一覧 -->
+                <!-- 登録ユーザー一覧 ＆ アクセス拒否機能 -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex-1 flex flex-col min-h-[240px]">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧</h3>
+                        <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧（アクセス制限）</h3>
                         <span id="userCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0名</span>
                     </div>
                     <div id="adminUserList" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
@@ -255,23 +250,20 @@
             </div>
         </div>
 
-        <!-- MODAL: 改行テキスト作成・編集エディタモーダル (指示4: 顔文字ボタン追加) -->
+        <!-- MODAL: 改行テキスト作成・編集エディタモーダル -->
         <div id="textEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
                 <h3 class="text-lg font-bold">メッセージ作成 (改行・絵文字・顔文字)</h3>
                 <textarea id="modalTextArea" rows="4" placeholder="ここにメッセージを入力（改行や絵文字を使えます）" class="w-full p-4 bg-inputBg text-mainText rounded-2xl border border-transparent focus:border-accent focus:outline-none text-sm"></textarea>
                 
-                <!-- 絵文字・顔文字パレット -->
                 <div class="flex flex-col gap-2">
                     <span class="text-[10px] text-subText uppercase font-semibold">絵文字・顔文字クイック入力</span>
                     <div class="flex flex-wrap gap-2">
-                        <!-- 絵文字 -->
                         <button type="button" onclick="insertEmoji('😊')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-sm transition-colors">😊</button>
                         <button type="button" onclick="insertEmoji('👍')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-sm transition-colors">👍</button>
                         <button type="button" onclick="insertEmoji('✨')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-sm transition-colors">✨</button>
                         <button type="button" onclick="insertEmoji('❤️')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-sm transition-colors">❤️</button>
                         <button type="button" onclick="insertEmoji('🎉')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-sm transition-colors">🎉</button>
-                        <!-- 指定顔文字 (指示4) -->
                         <button type="button" onclick="insertEmoji('( ﾟДﾟ)')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-xs font-mono transition-colors">( ﾟДﾟ)</button>
                         <button type="button" onclick="insertEmoji('( *´艸)')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-xs font-mono transition-colors">( *´艸｀)</button>
                         <button type="button" onclick="insertEmoji('(*´ω｀*)')" class="px-3 py-1.5 bg-inputBg hover:bg-inputBg/80 rounded-xl text-xs font-mono transition-colors">(*´ω｀*)</button>
@@ -285,7 +277,7 @@
             </div>
         </div>
 
-        <!-- MODAL: 手描きスタンプ作成モーダル (Photoshop風2層レイヤーUI) -->
+        <!-- MODAL: 手描きスタンプ作成モーダル -->
         <div id="stampModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
                 <div class="flex justify-between items-center">
@@ -298,14 +290,11 @@
                     <button type="button" onclick="openStampHistoryModal()" class="px-3 py-1.5 bg-accent/20 text-accent rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer">🕒 履歴</button>
                 </div>
 
-                <!-- キャンバス ＆ Photoshop風レイヤー選択UI -->
                 <div class="flex gap-3 items-center justify-center">
-                    <!-- メイン描画エリア -->
                     <div class="relative w-[240px] h-[150px] rounded-2xl overflow-hidden border border-white/10 checkerboard shadow-inner">
                         <canvas id="layer1Canvas" width="240" height="150" class="absolute inset-0 touch-none"></canvas>
                         <canvas id="layer2Canvas" width="240" height="150" class="absolute inset-0 touch-none"></canvas>
                     </div>
-                    <!-- Photoshop風レイヤーパネル -->
                     <div class="flex flex-col gap-2 bg-inputBg/40 p-2 rounded-2xl border border-white/5">
                         <div class="text-[10px] font-bold text-subText px-1 uppercase tracking-wider">Layers</div>
                         <div onclick="setActiveLayer(2)" id="layer2Tab" class="w-20 h-12 bg-inputBg rounded-xl border-2 border-accent p-1.5 flex flex-col justify-between cursor-pointer transition-all shadow-sm">
@@ -324,7 +313,6 @@
                     </div>
                 </div>
 
-                <!-- ツール設定コントロール -->
                 <div class="flex flex-col gap-3 bg-inputBg/50 p-3 rounded-2xl">
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2">
@@ -363,7 +351,7 @@
             </div>
         </div>
 
-        <!-- MODAL: スタンプ履歴モーダル (指示1: 送信・ダウンロード・削除ボタンを縦並び＆送信ボタンスタイルに統一) -->
+        <!-- MODAL: スタンプ履歴モーダル -->
         <div id="stampHistoryModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
                 <div class="flex justify-between items-center">
@@ -371,7 +359,6 @@
                     <button onclick="closeStampHistoryModal()" class="text-subText hover:text-white cursor-pointer">✕</button>
                 </div>
                 
-                <!-- PNG画像取り込みボタン -->
                 <div class="w-full">
                     <label class="w-full py-2.5 px-4 rounded-xl bg-accent/20 hover:bg-accent/30 text-accent font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors border border-accent/30">
                         <span>📁 端末からPNG画像を取り込む</span>
@@ -379,9 +366,7 @@
                     </label>
                 </div>
 
-                <div id="stampHistoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- 動的にスタンプ履歴を表示 (縦並びボタン仕様) -->
-                </div>
+                <div id="stampHistoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
                 <button onclick="closeStampHistoryModal()" class="w-full py-3 rounded-xl bg-inputBg text-subText font-semibold mt-2 cursor-pointer">閉じる</button>
             </div>
         </div>
@@ -527,6 +512,14 @@
 
             if (auth && !currentUser) { await signInAnonymously(auth); }
             const myUid = currentUser ? currentUser.uid : 'anonymous';
+            
+            // アクセス拒否されているかチェック
+            const foundUser = registeredUsersList.find(u => u.nickname === nickname);
+            if (foundUser && foundUser.accessDenied) {
+                showModal("アクセス制限", "このアカウントは現在アクセスが拒否されています。管理者に確認してください。");
+                return;
+            }
+
             const existingUser = registeredUsersList.find(u => u.nickname === nickname);
             if (existingUser && existingUser.userId !== myUid) {
                 showModal("エラー", "既に使われている名前です。別の名前を登録してください。");
@@ -539,7 +532,7 @@
 
             if (db && currentUser) {
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp() }, { merge: true });
+                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp(), accessDenied: false }, { merge: true });
             }
 
             document.getElementById('loginScreen').classList.add('hidden');
@@ -600,7 +593,6 @@
             }
         };
 
-        // ファイル・画像送信
         window.handleFileSelect = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -621,7 +613,6 @@
             reader.readAsDataURL(file);
         };
 
-        // 2層レイヤー＆質感向上ブラシ描画ロジック（マウス＆タッチ対応）
         let activeLayer = 2;
         let canvas1, ctx1, canvas2, ctx2;
         let history1 = [], history2 = [];
@@ -903,7 +894,6 @@
             closeStampModal();
         };
 
-        // 指示1: スタンプ履歴のボタン（送信・ダウンロード・削除）を「送信」ボタンと同じスタイルにして縦並びにする
         function renderStampHistory() {
             const list = document.getElementById('stampHistoryList');
             list.innerHTML = '';
@@ -981,9 +971,13 @@
                     const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
                     return tA - tB;
                 });
-                renderAdminMessageFeed();
+                renderAdminImageFeed();
             });
         }
+
+        window.toggleUserAccess = async function(userId, isDenied) {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { accessDenied: isDenied }, { merge: true });
+        };
 
         function renderAdminUserList() {
             const list = document.getElementById('adminUserList');
@@ -1001,43 +995,42 @@
                         <div class="font-bold text-sm text-mainText truncate">${user.nickname}</div>
                         <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
                     </div>
-                    <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer">削除</button>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 text-xs text-subText">
+                            <span>アクセス拒否</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" ${user.accessDenied ? 'checked' : ''} onchange="toggleUserAccess('${user.id}', this.checked)">
+                                <div class="w-9 h-5 bg-inputBg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                            </label>
+                        </div>
+                        <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer">削除</button>
+                    </div>
                 `;
                 list.appendChild(item);
             });
         }
 
-        function renderAdminMessageFeed() {
-            const feed = document.getElementById('adminMessageFeed');
-            document.getElementById('adminMsgCountBadge').textContent = `${allMessagesList.length}件`;
-            if (allMessagesList.length === 0) {
-                feed.innerHTML = '<div class="text-center text-subText/50 text-sm py-8">メッセージがありません</div>';
+        function renderAdminImageFeed() {
+            const feed = document.getElementById('adminImageFeed');
+            const jpgMessages = allMessagesList.filter(m => m.type === 'jpg_image');
+            document.getElementById('adminImageCountBadge').textContent = `${jpgMessages.length}件`;
+            
+            if (jpgMessages.length === 0) {
+                feed.innerHTML = '<div class="col-span-full text-center text-subText/50 text-sm py-8">JPEG画像がありません</div>';
                 return;
             }
             feed.innerHTML = '';
-            allMessagesList.forEach(msg => {
+            jpgMessages.forEach(msg => {
                 const item = document.createElement('div');
-                item.className = 'bg-cardBg border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3';
-                
-                let contentPreview = '';
-                if (msg.type === 'stamp' || msg.type === 'image') {
-                    contentPreview = `<div class="flex items-center gap-2"><img src="${msg.text}" class="w-10 h-10 object-contain checkerboard rounded-lg"><span class="text-xs text-subText">[スタンプ画像]</span></div>`;
-                } else if (msg.type === 'jpg_image') {
-                    contentPreview = `<div class="flex items-center gap-2"><img src="${msg.text}" class="w-10 h-10 object-cover rounded-lg"><span class="text-xs text-subText">[JPG画像]</span></div>`;
-                } else if (msg.type === 'file') {
-                    contentPreview = `<span class="text-xs text-subText">[ファイル添付: ${msg.fileName || 'file'}]</span>`;
-                } else {
-                    contentPreview = `<div class="text-xs text-mainText truncate max-w-xs">${msg.text}</div>`;
-                }
-
+                item.className = 'bg-cardBg border border-white/5 p-2.5 rounded-2xl flex flex-col gap-2 justify-between';
                 item.innerHTML = `
-                    <div class="min-w-0 flex-1 flex flex-col gap-1">
-                        <div class="flex items-center gap-2 text-[11px] text-subText">
-                            <span class="font-bold text-accent">${msg.nickname}</span>
-                        </div>
-                        ${contentPreview}
+                    <div class="w-full h-24 rounded-xl overflow-hidden bg-darkBg flex items-center justify-center">
+                        <img src="${msg.text}" class="w-full h-full object-cover">
                     </div>
-                    <button onclick="deleteMessage('${msg.id}')" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer flex-shrink-0">削除</button>
+                    <div class="flex items-center justify-between text-[10px] text-subText">
+                        <span class="truncate font-bold text-accent">${msg.nickname}</span>
+                        <button onclick="deleteMessage('${msg.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 font-semibold cursor-pointer">削除</button>
+                    </div>
                 `;
                 feed.appendChild(item);
             });
@@ -1092,7 +1085,6 @@
 
                 wrapper.appendChild(imgContainer);
             } else if (msg.type === 'jpg_image') {
-                // 指示2: JPG画像が一定時間で消えてしまう原因対策（描画要素を安定化し、永続保持）
                 const jpgContainer = document.createElement('div');
                 jpgContainer.className = 'flex flex-col gap-1 py-1 w-full max-w-full';
                 
@@ -1105,20 +1097,23 @@
             } else if (msg.type === 'file') {
                 const fileContainer = document.createElement('div');
                 fileContainer.className = isMe 
-                    ? 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md flex flex-col gap-1 max-w-xs' 
+                    ? 'bg-bubble-gradient text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md flex flex-col gap-1 max-w-xs' 
                     : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md flex flex-col gap-1 max-w-xs';
                 
                 fileContainer.innerHTML = `<span class="text-xs">📎 ${msg.fileName || '添付ファイル'}</span>`;
                 wrapper.appendChild(fileContainer);
             } else {
                 const bubble = document.createElement('div');
-                bubble.className = (isMe ? 'bg-accent text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md break-words max-w-xs sm:max-w-md' : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md break-words max-w-xs sm:max-w-md') + ' whitespace-pre-wrap';
+                // 自分が送信したメッセージの吹き出しにInstagram風グラデーションと白文字を適用
+                const bubbleStyle = isMe 
+                    ? 'bg-bubble-gradient text-white px-4 py-3 rounded-2xl rounded-br-sm text-sm shadow-md break-words max-w-xs sm:max-w-md whitespace-pre-wrap' 
+                    : 'bg-cardBg border border-white/5 text-mainText px-4 py-3 rounded-2xl rounded-bl-sm text-sm shadow-md break-words max-w-xs sm:max-w-md whitespace-pre-wrap';
+                bubble.className = bubbleStyle;
                 bubble.innerHTML = msg.text;
                 wrapper.appendChild(bubble);
             }
 
-            // 自分からのメッセージに対するアクション（編集・削除・ダウンロード）
-            if (isMe) {
+            if (isMe || msg.type === 'stamp' || msg.type === 'image' || msg.type === 'jpg_image' || msg.type === 'file') {
                 const actions = document.createElement('div');
                 actions.className = 'flex gap-2 text-[10px] text-subText px-1 mt-0.5 items-center';
                 
@@ -1130,28 +1125,42 @@
                     dlTextLink.textContent = 'ダウンロード';
                     actions.appendChild(dlTextLink);
                     
-                    const dot = document.createElement('span');
-                    dot.textContent = '•';
-                    actions.appendChild(dot);
+                    if (isMe) {
+                        const dot = document.createElement('span');
+                        dot.textContent = '•';
+                        actions.appendChild(dot);
+                    }
+                } else if (!isMe) {
+                    // 他の人が飛ばしたスタンプ等の場合にもダウンロードできるようにする対応
+                    if (msg.type === 'stamp' || msg.type === 'image' || msg.type === 'jpg_image') {
+                        const dlTextLink = document.createElement('a');
+                        dlTextLink.href = msg.text;
+                        dlTextLink.download = msg.fileName || 'image.png';
+                        dlTextLink.className = 'hover:text-white cursor-pointer underline';
+                        dlTextLink.textContent = 'ダウンロード';
+                        actions.appendChild(dlTextLink);
+                    }
                 }
 
-                if (msg.type === 'text') {
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'hover:text-white cursor-pointer';
-                    editBtn.textContent = '編集';
-                    editBtn.onclick = () => openEditModal(msg.id, msg.text);
-                    actions.appendChild(editBtn);
+                if (isMe) {
+                    if (msg.type === 'text') {
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'hover:text-white cursor-pointer';
+                        editBtn.textContent = '編集';
+                        editBtn.onclick = () => openEditModal(msg.id, msg.text);
+                        actions.appendChild(editBtn);
 
-                    const dot = document.createElement('span');
-                    dot.textContent = '•';
-                    actions.appendChild(dot);
+                        const dot = document.createElement('span');
+                        dot.textContent = '•';
+                        actions.appendChild(dot);
+                    }
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'hover:text-rose-400 cursor-pointer';
+                    deleteBtn.textContent = '削除';
+                    deleteBtn.onclick = () => deleteMessage(msg.id);
+                    actions.appendChild(deleteBtn);
                 }
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'hover:text-rose-400 cursor-pointer';
-                deleteBtn.textContent = '削除';
-                deleteBtn.onclick = () => deleteMessage(msg.id);
-                actions.appendChild(deleteBtn);
 
                 wrapper.appendChild(actions);
             }
