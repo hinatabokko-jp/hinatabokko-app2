@@ -232,7 +232,7 @@
                 <!-- JPEG画像管理エリア -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex flex-col h-72 flex-shrink-0">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-sm sm:text-base">JPEG画像管理（一覧・削除）</h3>
+                        <h3 class="font-bold text-sm sm:text-base">JPEG画像管理（一覧・削除・ダウンロード）</h3>
                         <span id="adminImageCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0件</span>
                     </div>
                     <div id="adminImageFeed" class="flex-1 overflow-y-auto bg-darkBg/50 border border-white/5 rounded-2xl p-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -241,12 +241,12 @@
                 </div>
 
                 <!-- 登録ユーザー一覧 ＆ アクセス拒否機能 -->
-                <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex-1 flex flex-col min-h-[240px]">
+                <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex-1 flex flex-col min-h-[380px]">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧（アクセス制限）</h3>
                         <span id="userCountBadge" class="text-xs bg-inputBg px-2.5 py-1 rounded-full text-subText">0名</span>
                     </div>
-                    <div id="adminUserList" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1">
+                    <div id="adminUserList" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1 max-h-[320px]">
                         <div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>
                     </div>
                 </div>
@@ -351,7 +351,7 @@
                             <input type="range" id="stampSize" min="1" max="40" value="3" class="w-20 accent-accent">
                         </div>
                     </div>
-                    <!-- 追加：色の透過度（アルファ値）調整スライダー -->
+                    <!--色の透過度調整スライダー -->
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2">
                             <span>透明度:</span>
@@ -364,7 +364,7 @@
                             <option value="normal">ブラシ (通常)</option>
                             <option value="calligraphy">カリグラフィペン</option>
                             <option value="brush">毛筆</option>
-                            <option value="watercolor">水彩ブラシ</option>
+                            <option value="watercolor" selected>水彩ブラシ</option>
                             <option value="crayon">クレヨン</option>
                             <option value="airbrush">エアブラシ</option>
                             <option value="neon">ネオン発光</option>
@@ -658,28 +658,62 @@
             }
         };
 
+        // 【要望対応】JPEG画像を送信する前にサイズを検知し、大きすぎる場合は縮小してから送信する仕組み（指示文準拠）
         window.handleFileSelect = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const fileData = e.target.result;
-                const fileNameLower = file.name.toLowerCase();
-                const mimeType = file.type.toLowerCase();
-                
-                const isJpg = mimeType === 'image/jpeg' || mimeType === 'image/jpg' || fileNameLower.endsWith('.jpg') || fileNameLower.endsWith('.jpeg');
-                const isPng = mimeType === 'image/png' || fileNameLower.endsWith('.png');
-                const isImage = mimeType.startsWith('image/') || isJpg || isPng;
-                
-                if (isJpg) {
-                    await sendTextMessage(fileData, 'jpg_image', file.name);
-                } else if (isPng || (isImage && !isJpg)) {
-                    await sendTextMessage(fileData, 'stamp', file.name);
-                } else {
-                    await sendTextMessage(fileData, 'file', file.name);
-                }
-            };
-            reader.readAsDataURL(file);
+
+            // 画像ファイルの場合のみ縮小・圧縮処理を行う
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = async () => {
+                        // 許容範囲の最大サイズ（例: スタンプの2倍 = 最大幅・高さを500pxに設定）
+                        const MAX_SIZE = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        // アスペクト比（縦横比）を維持したままサイズを計算
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+
+                        // Canvasを使って縮小描画
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // JPEG形式で圧縮（第2引数で画質を指定: 0.8 = 80%の品質）
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+                        // 縮小・圧縮されたデータを Firestore 経由で送信
+                        await sendTextMessage(compressedDataUrl, 'stamp', file.name);
+
+                        event.target.value = '';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // 画像以外のファイル（PDFやZIPなど）はそのまま処理
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    await sendTextMessage(event.target.result, 'file', file.name);
+                    event.target.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
         };
 
         let activeLayer = 2;
@@ -779,6 +813,7 @@
                 const size = parseInt(document.getElementById('stampSize').value);
                 const opacityVal = parseInt(document.getElementById('stampOpacity').value) / 100;
                 const brush = document.getElementById('brushType').value;
+                const speed = Math.hypot(x - lastX, y - lastY);
 
                 ctx.lineWidth = size;
                 ctx.lineCap = 'round';
@@ -792,22 +827,47 @@
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.shadowBlur = 0;
 
+                    const ws = { size: size, opacity: opacityVal, color: color };
+                    const x1 = lastX, y1 = lastY, x2 = x, y2 = y;
+
                     if (brush === 'calligraphy') {
-                        ctx.save();
-                        ctx.strokeStyle = color;
-                        ctx.globalAlpha = opacityVal;
-                        const dx = x - lastX;
-                        const dy = y - lastY;
-                        const angle = Math.atan2(dy, dx);
-                        const thicknessFactor = Math.abs(Math.sin(angle + Math.PI / 4));
-                        const dynamicWidth = Math.max(1, size * (0.5 + thicknessFactor * 1.5));
+                        renderCalligraphySegment(ws, ctx, {x: x1, y: y1}, {x: x2, y: y2});
+                    } else if (brush === 'brush') {
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        const dynamicSize = Math.max(1.5, ws.size * Math.max(0.2, 1.8 - Math.min(speed * 0.08, 1.2)));
+                        ctx.lineWidth = dynamicSize;
+                        ctx.globalAlpha = Math.min(1, ws.opacity * (1.1 - Math.min(speed * 0.03, 0.4)));
                         
-                        ctx.lineWidth = dynamicWidth;
-                        ctx.lineCap = 'butt';
                         ctx.beginPath();
-                        ctx.moveTo(lastX, lastY);
-                        ctx.lineTo(x, y);
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
                         ctx.stroke();
+
+                        if (ws.size > 4) {
+                            ctx.globalAlpha *= 0.4;
+                            ctx.lineWidth = dynamicSize * 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(x1 + 0.8, y1 + 0.8);
+                            ctx.lineTo(x2 + 0.8, y2 + 0.8);
+                            ctx.stroke();
+                        }
+                    } else if (brush === 'airbrush') {
+                        // 【要望対応】エアブラシが黒くなってしまう不具合を解消（fillStyleに指定色を明示的に設定）
+                        ctx.save();
+                        ctx.fillStyle = color;
+                        const dist = Math.hypot(x2 - x1, y2 - y1);
+                        const steps = Math.max(1, Math.floor(dist));
+                        for (let i = 0; i <= steps; i++) {
+                            const cx = x1 + (x2 - x1) * (i / steps);
+                            const cy = y1 + (y2 - y1) * (i / steps);
+                            for (let j = 0; j < 6; j++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const r = Math.random() * (ws.size * 1.2);
+                                ctx.globalAlpha = opacityVal * 0.3;
+                                ctx.fillRect(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r, 1.2, 1.2);
+                            }
+                        }
                         ctx.restore();
                     } else {
                         importBrushEffect(ctx, brush, color, size, opacityVal, x, y);
@@ -847,79 +907,63 @@
             };
         }
 
-        // ブラシ効果の適用（水彩ブラシを大幅に質感改善）
+        function renderCalligraphyPath(ws, ctx, points) {
+            if (!points || points.length === 0) return;
+            ctx.save();
+            ctx.globalAlpha = ws.opacity;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = ws.color;
+            ctx.strokeStyle = ws.color;
+
+            const nibWidth = Math.max(2, ws.size);
+            const angle = Math.PI / 4;
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+
+            const nx = cosA * (nibWidth / 2);
+            const ny = sinA * (nibWidth / 2);
+
+            if (points.length === 1) {
+                const p = points[0];
+                ctx.beginPath();
+                ctx.ellipse(p.x, p.y, Math.abs(nx), Math.abs(ny), angle, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
+
+            const leftPoints = [];
+            const rightPoints = [];
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                leftPoints.push({ x: p.x - nx, y: p.y - ny });
+                rightPoints.push({ x: p.x + nx, y: p.y + ny });
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(leftPoints[0].x, leftPoints[0].y);
+            for (let i = 1; i < leftPoints.length; i++) {
+                ctx.lineTo(leftPoints[i].x, leftPoints[i].y);
+            }
+
+            for (let i = rightPoints.length - 1; i >= 0; i--) {
+                ctx.lineTo(rightPoints[i].x, rightPoints[i].y);
+            }
+
+            ctx.closePath();
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function renderCalligraphySegment(ws, ctx, p1, p2) {
+            renderCalligraphyPath(ws, ctx, [p1, p2]);
+        }
+
         function importBrushEffect(ctx, brush, color, size, opacityVal, x, y) {
-            if (brush === 'brush') {
-                ctx.save();
-                ctx.fillStyle = color;
-                const dist = Math.hypot(x - lastX, y - lastY);
-                const steps = Math.max(1, Math.floor(dist));
-                const speed = dist;
-                const baseWidth = Math.max(1, size * Math.min(2.0, 4.5 / (speed + 0.3)));
-
-                for (let i = 0; i <= steps; i++) {
-                    const t = steps === 0 ? 0 : i / steps;
-                    const cx = lastX + (x - lastX) * t;
-                    const cy = lastY + (y - lastY) * t;
-
-                    const bristles = Math.max(5, Math.floor(baseWidth * 1.8));
-                    for (let b = 0; b < bristles; b++) {
-                        if (b === 0 || Math.random() > 0.25) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const r = Math.pow(Math.random(), 0.6) * baseWidth * 0.9;
-                            const px = cx + Math.cos(angle) * r;
-                            const py = cy + Math.sin(angle) * r;
-                            const pSize = Math.max(1, Math.random() * (baseWidth * 0.45));
-
-                            ctx.globalAlpha = opacityVal * ((b === 0) ? 0.9 : (0.5 + Math.random() * 0.4));
-                            ctx.fillRect(px, py, pSize, pSize);
-                        }
-                    }
-                }
-                ctx.restore();
-            } else if (brush === 'watercolor') {
-                // 【水彩ブラシの質感改善実装】
-                // 水を含んだ顔料の広がり、輪郭の顔料溜まり、紙目（シボ）の粒子感、重なりによる自然な色の深まり
-                ctx.save();
-                ctx.fillStyle = color;
-                const dist = Math.hypot(x - lastX, y - lastY);
-                const stepLength = Math.max(1, size * 0.4);
-                const steps = Math.max(1, Math.floor(dist / stepLength));
-
-                for (let i = 0; i <= steps; i++) {
-                    const t = steps === 0 ? 0 : i / steps;
-                    const cx = lastX + (x - lastX) * t;
-                    const cy = lastY + (y - lastY) * t;
-
-                    const radius = Math.max(4, size * 1.8);
-                    const particleCount = Math.max(12, Math.floor(size * 2.2));
-
-                    for (let p = 0; p < particleCount; p++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        // ガウス分布風の偏りと、輪郭付近に色素が集まるエッジ効果（顔料の溜まり）
-                        const rNorm = Math.pow(Math.random(), 0.8);
-                        let r = radius * rNorm;
-                        
-                        // 輪郭近辺（外縁0.7〜1.0）の確率を高めて顔料の溜まりを演出
-                        if (Math.random() < 0.3) {
-                            r = radius * (0.7 + Math.random() * 0.3);
-                        }
-
-                        const px = cx + Math.cos(angle) * r;
-                        const py = cy + Math.sin(angle) * r;
-                        const pSize = Math.max(1.0, Math.random() * 2.2);
-
-                        // 紙のシボ（凹凸）による抜け感を表現するため、一部の粒子をスキップ（塗りムラ）
-                        if (Math.random() > 0.15) {
-                            // 中心付近は薄く、エッジやランダムなポイントで深みが出る透明度設計
-                            const edgeFactor = (r > radius * 0.6) ? 1.3 : 0.8;
-                            ctx.globalAlpha = Math.min(1.0, opacityVal * (0.08 + Math.random() * 0.18) * edgeFactor);
-                            ctx.fillRect(px, py, pSize, pSize);
-                        }
-                    }
-                }
-                ctx.restore();
-            } else if (brush === 'crayon') {
+            if (brush === 'crayon') {
                 ctx.save();
                 ctx.fillStyle = color;
                 const dist = Math.hypot(x - lastX, y - lastY);
@@ -945,34 +989,39 @@
                     }
                 }
                 ctx.restore();
-            } else if (brush === 'airbrush') {
+            } else if (brush === 'watercolor') {
                 ctx.save();
                 ctx.fillStyle = color;
                 const dist = Math.hypot(x - lastX, y - lastY);
-                const stepLength = Math.max(2, size * 0.5);
+                const stepLength = Math.max(1, size * 0.4);
                 const steps = Math.max(1, Math.floor(dist / stepLength));
-                
+
                 for (let i = 0; i <= steps; i++) {
                     const t = steps === 0 ? 0 : i / steps;
                     const cx = lastX + (x - lastX) * t;
                     const cy = lastY + (y - lastY) * t;
-                    
-                    const sprayRadius = Math.max(6, size * 2.5);
-                    const particleCount = Math.max(10, Math.floor(size * 1.8));
-                    
+
+                    const radius = Math.max(4, size * 1.8);
+                    const particleCount = Math.max(12, Math.floor(size * 2.2));
+
                     for (let p = 0; p < particleCount; p++) {
                         const angle = Math.random() * Math.PI * 2;
-                        const r = sprayRadius * Math.pow(Math.random(), 1.3);
+                        const rNorm = Math.pow(Math.random(), 0.8);
+                        let r = radius * rNorm;
+                        
+                        if (Math.random() < 0.3) {
+                            r = radius * (0.7 + Math.random() * 0.3);
+                        }
+
                         const px = cx + Math.cos(angle) * r;
                         const py = cy + Math.sin(angle) * r;
-                        const pSize = Math.max(1, Math.random() * (size * 0.3));
-                        
-                        const distanceRatio = 1 - (r / sprayRadius);
-                        ctx.globalAlpha = opacityVal * Math.max(0.01, 0.12 * Math.max(0, distanceRatio));
-                        
-                        ctx.beginPath();
-                        ctx.arc(px, py, pSize, 0, Math.PI * 2);
-                        ctx.fill();
+                        const pSize = Math.max(1.0, Math.random() * 2.2);
+
+                        if (Math.random() > 0.15) {
+                            const edgeFactor = (r > radius * 0.6) ? 1.3 : 0.8;
+                            ctx.globalAlpha = Math.min(1.0, opacityVal * (0.08 + Math.random() * 0.18) * edgeFactor);
+                            ctx.fillRect(px, py, pSize, pSize);
+                        }
                     }
                 }
                 ctx.restore();
@@ -1144,6 +1193,13 @@
             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { accessDenied: isDenied }, { merge: true });
         };
 
+        window.promptChangeNickname = async function(userId, currentName) {
+            const newName = prompt("新しいユーザー名を入力してください:", currentName);
+            if (newName && newName.trim() && newName.trim() !== currentName) {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', userId), { nickname: newName.trim() }, { merge: true });
+            }
+        };
+
         function renderAdminUserList() {
             const list = document.getElementById('adminUserList');
             document.getElementById('userCountBadge').textContent = `${registeredUsersList.length}名`;
@@ -1156,8 +1212,11 @@
                 const item = document.createElement('div');
                 item.className = 'bg-inputBg/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
                 item.innerHTML = `
-                    <div class="min-w-0 flex-1">
-                        <div class="font-bold text-sm text-mainText truncate">${user.nickname}</div>
+                    <div class="min-w-0 flex-1 flex flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-mainText truncate">${user.nickname}</span>
+                            <button onclick="promptChangeNickname('${user.id}', '${user.nickname}')" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-accent text-[10px] font-semibold cursor-pointer transition-colors">名前変更</button>
+                        </div>
                         <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -1177,11 +1236,11 @@
 
         function renderAdminImageFeed() {
             const feed = document.getElementById('adminImageFeed');
-            const imageMessages = allMessagesList.filter(m => m.type === 'jpg_image' || (m.type === 'stamp' && m.text && m.text.startsWith('data:image/')));
+            const imageMessages = allMessagesList.filter(m => m.type === 'stamp' || m.type === 'image' || m.type === 'jpg_image');
             document.getElementById('adminImageCountBadge').textContent = `${imageMessages.length}件`;
             
             if (imageMessages.length === 0) {
-                feed.innerHTML = '<div class="col-span-full text-center text-subText/50 text-sm py-4">JPEG画像がありません</div>';
+                feed.innerHTML = '<div class="col-span-full text-center text-subText/50 text-sm py-4">画像がありません</div>';
                 return;
             }
             feed.innerHTML = '';
@@ -1192,9 +1251,12 @@
                     <div class="w-full h-24 rounded-xl overflow-hidden bg-darkBg flex items-center justify-center">
                         <img src="${msg.text}" class="w-full h-full object-cover">
                     </div>
-                    <div class="flex items-center justify-between text-[10px] text-subText">
-                        <span class="truncate font-bold text-accent">${msg.nickname || 'ゲスト'}</span>
-                        <button onclick="deleteMessage('${msg.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 font-semibold cursor-pointer">削除</button>
+                    <div class="flex flex-col gap-2 text-[10px] text-subText">
+                        <span class="truncate font-bold text-accent">投稿者: ${msg.nickname || 'ゲスト'}</span>
+                        <div class="flex gap-2 w-full">
+                            <a href="${msg.text}" download="${msg.fileName || 'image.png'}" class="flex-1 text-center px-2 py-1 rounded-lg bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white font-semibold cursor-pointer transition-colors">ダウンロード</a>
+                            <button onclick="deleteMessage('${msg.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold cursor-pointer transition-colors">削除</button>
+                        </div>
                     </div>
                 `;
                 feed.appendChild(item);
@@ -1239,7 +1301,7 @@
 
             wrapper.appendChild(nameLabel);
 
-            if (msg.type === 'stamp' || msg.type === 'image') {
+            if (msg.type === 'stamp' || msg.type === 'image' || msg.type === 'jpg_image') {
                 const imgContainer = document.createElement('div');
                 imgContainer.className = 'flex flex-col gap-1 py-1 max-w-[200px] sm:max-w-[240px]';
                 
@@ -1249,16 +1311,6 @@
                 imgContainer.appendChild(img);
 
                 wrapper.appendChild(imgContainer);
-            } else if (msg.type === 'jpg_image') {
-                const jpgContainer = document.createElement('div');
-                jpgContainer.className = 'flex flex-col gap-1 py-1 w-full max-w-full';
-                
-                const img = document.createElement('img');
-                img.src = msg.text;
-                img.className = 'w-full h-auto rounded-2xl object-cover shadow-lg max-h-[400px]';
-                jpgContainer.appendChild(img);
-
-                wrapper.appendChild(jpgContainer);
             } else if (msg.type === 'file') {
                 const fileContainer = document.createElement('div');
                 fileContainer.className = isMe 
