@@ -6,16 +6,27 @@
   <title>MEMO</title>
   <style>
     :root {
-      --bg-color: #121212;
-      --surface-color: #1e1e1e;
-      --primary-color: #00bcd4;
-      --primary-hover: #008ba3;
-      --danger-color: #cf6679;
-      --text-color: #e0e0e0;
-      --text-muted: #aaa;
-      --border-color: #2d2d2d;
-      --chat-bg: #121212;
-      --my-msg-bg: #00796b;
+      --bg-color: #0b0f19;
+      --surface-color: #131b2e;
+      --surface-glass: rgba(19, 27, 46, 0.75);
+      --primary-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
+      --primary-hover-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 50%, #2563eb 100%);
+      --accent-purple: #a855f7;
+      --accent-pink: #ec4899;
+      --accent-blue: #3b82f6;
+      --danger-color: #f43f5e;
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(168, 85, 247, 0.3);
+      --chat-bg: #0b0f19;
+      --my-msg-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.15);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     * {
@@ -23,6 +34,7 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg-color);
@@ -49,59 +61,86 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: var(--bg-color);
+      background: radial-gradient(circle at center, #1a103c 0%, #0b0f19 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      gap: 16px;
-      padding: 20px;
+      gap: 20px;
+      padding: 24px;
     }
     #lock-screen h2 {
-      font-size: 1.2rem;
-      color: var(--primary-color);
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.05em;
     }
     #pass-input {
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px 16px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
       color: #fff;
       font-size: 1rem;
       text-align: center;
       outline: none;
-      width: 220px;
+      width: 240px;
+      transition: var(--transition);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+    #pass-input:focus {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.25), inset 0 2px 4px rgba(0,0,0,0.2);
     }
     .remember-container {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 0.9rem;
-      color: var(--text-color);
+      color: var(--text-muted);
       cursor: pointer;
       user-select: none;
+      transition: var(--transition);
+    }
+    .remember-container:hover {
+      color: var(--text-color);
     }
     .remember-container input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--primary-color);
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-purple);
       cursor: pointer;
+      border-radius: 4px;
     }
     #pass-btn {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 10px 24px;
-      font-weight: bold;
+      border-radius: var(--radius-sm);
+      padding: 12px 32px;
+      font-weight: 700;
       font-size: 0.95rem;
       cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+      letter-spacing: 0.05em;
+    }
+    #pass-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    #pass-btn:active {
+      transform: translateY(0);
     }
     #pass-error {
-      color: #ff5252;
+      color: var(--danger-color);
       font-size: 0.85rem;
       display: none;
+      font-weight: 500;
     }
 
     /* アプリ本体 */
@@ -115,7 +154,7 @@
     .chat-main-area {
       display: flex;
       flex: 1;
-      height: calc(100% - 61px);
+      height: calc(100% - 65px);
       overflow: hidden;
     }
 
@@ -125,74 +164,84 @@
       flex-direction: column;
       height: 100%;
       overflow: hidden;
+      background: radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.03), transparent 60%);
     }
 
     /* ヘッダー */
     header {
-      background-color: var(--surface-color);
-      padding: 10px 16px;
+      background-color: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 12px 20px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
       z-index: 10;
+      box-shadow: var(--shadow-sm);
     }
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
     .header-title-container {
       display: flex;
       flex-direction: column;
     }
     .header-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: var(--primary-color);
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       line-height: 1.2;
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-    .status-badge {
-      font-size: 0.65rem;
-      padding: 2px 8px;
-      border-radius: 12px;
-      background-color: #1b5e20;
-      color: #81c784;
+      gap: 10px;
+      letter-spacing: 0.03em;
     }
     .header-right-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .btn-logout {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 5px 10px;
-      border-radius: 6px;
+      color: var(--text-muted);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 0.8rem;
+      font-weight: 500;
+      transition: var(--transition);
     }
     .btn-logout:hover {
-      background-color: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     /* ハンバーガーボタン & サイドバーUI */
     .hamburger-btn {
-      background: none;
-      border: none;
-      color: var(--primary-color);
-      font-size: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--accent-purple);
+      font-size: 1.3rem;
       cursor: pointer;
-      padding: 4px;
+      width: 38px;
+      height: 38px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+    .hamburger-btn:hover {
+      background: rgba(168, 85, 247, 0.15);
+      border-color: var(--border-glow);
     }
     .overlay {
       position: fixed;
@@ -200,7 +249,9 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 1000;
       opacity: 0;
       visibility: hidden;
@@ -213,261 +264,323 @@
     .sidebar {
       position: fixed;
       top: 0;
-      left: -260px;
-      width: 260px;
+      left: -280px;
+      width: 280px;
       height: 100%;
-      background-color: var(--surface-color);
+      background-color: #111827;
+      border-right: 1px solid var(--border-color);
       z-index: 1001;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      box-shadow: 5px 0 25px rgba(0,0,0,0.6);
     }
     .sidebar.open {
-      transform: translateX(260px);
+      transform: translateX(280px);
     }
     .sidebar-header {
-      padding: 16px;
-      background-color: #252525;
-      border-bottom: 1px solid #333;
-      font-weight: bold;
-      color: var(--primary-color);
-      font-size: 1rem;
+      padding: 20px;
+      background-color: #1f293d;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 1.05rem;
+      letter-spacing: 0.03em;
     }
     .sidebar-menu {
       list-style: none;
-      padding: 10px 0;
+      padding: 12px 0;
       margin: 0;
       overflow-y: auto;
     }
     .sidebar-menu li a {
       display: block;
-      padding: 12px 20px;
-      color: var(--text-color);
+      padding: 13px 22px;
+      color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.95rem;
-      border-left: 4px solid transparent;
-      transition: background 0.2s;
+      font-size: 0.93rem;
+      border-left: 3px solid transparent;
+      transition: var(--transition);
+      font-weight: 500;
     }
     .sidebar-menu li a:hover,
     .sidebar-menu li a:active {
-      background-color: #2a2a2a;
+      background-color: rgba(255, 255, 255, 0.04);
+      color: var(--text-color);
     }
     .sidebar-menu li a.sidebar-link.current {
-      background-color: #2a2a2a;
-      color: var(--primary-color);
-      border-left-color: var(--primary-color);
-      font-weight: bold;
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, transparent 100%);
+      color: var(--accent-purple);
+      border-left-color: var(--accent-purple);
+      font-weight: 700;
     }
 
     /* メモ表示エリア */
     #chat-box {
       flex: 1;
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
+      scroll-behavior: smooth;
     }
 
     /* メモカード（自分の入力配置スタイル） */
     .message {
-      max-width: 85%;
+      max-width: 82%;
       display: flex;
       flex-direction: column;
       align-self: flex-end;
+      animation: fadeIn 0.25s ease-out;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .bubble {
-      padding: 10px 14px;
-      border-radius: 16px;
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
       font-size: 0.95rem;
-      line-height: 1.4;
+      line-height: 1.5;
       word-break: break-word;
       white-space: pre-wrap;
-      background-color: var(--my-msg-bg);
+      background: var(--my-msg-gradient);
       color: #ffffff;
-      border-bottom-right-radius: 2px;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(147, 51, 234, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .bubble.stamp-bubble {
-      background-color: transparent !important;
-      padding: 4px;
+      background: transparent !important;
+      padding: 6px;
+      box-shadow: none !important;
+      border: none !important;
     }
 
     .meta-info {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 3px;
-      padding: 0 4px;
+      gap: 10px;
+      margin-top: 5px;
+      padding: 0 6px;
       justify-content: flex-end;
     }
     .timestamp {
-      font-size: 0.65rem;
-      color: #666;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
     }
     .delete-btn, .edit-btn, .copy-btn {
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       cursor: pointer;
       padding: 0;
-      text-decoration: underline;
-      opacity: 0.8;
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+      opacity: 0.85;
     }
     .delete-btn:hover, .edit-btn:hover, .copy-btn:hover {
       opacity: 1;
       color: #fff;
+      text-shadow: 0 0 8px rgba(255,255,255,0.4);
     }
+    .delete-btn:hover { color: var(--danger-color); }
 
     /* 編集フォーム用スタイル */
     .edit-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       width: 100%;
-      min-width: 220px;
+      min-width: 240px;
     }
     .edit-textarea {
-      background-color: #2a2a2a;
-      border: 1px solid var(--primary-color);
-      border-radius: 8px;
-      padding: 8px;
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px;
       color: #fff;
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
       font-family: inherit;
       line-height: 1.4;
-      min-height: 60px;
+      min-height: 70px;
+      transition: var(--transition);
+    }
+    .edit-textarea:focus {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
     }
     .edit-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 6px;
+      gap: 8px;
     }
     .edit-save-btn {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: #ffffff;
+      color: #0b0f19;
       border: none;
-      border-radius: 4px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      font-weight: bold;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
       cursor: pointer;
+      transition: var(--transition);
+    }
+    .edit-save-btn:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
     }
     .edit-cancel-btn {
-      background-color: #333;
+      background: rgba(255, 255, 255, 0.1);
       color: var(--text-color);
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
       cursor: pointer;
+      transition: var(--transition);
+    }
+    .edit-cancel-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
 
     /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
-      max-height: 250px;
-      border-radius: 8px;
+      max-height: 260px;
+      border-radius: var(--radius-sm);
       margin-bottom: 6px;
       display: block;
       object-fit: contain;
       image-orientation: none;
+      box-shadow: var(--shadow-sm);
     }
     .chat-stamp {
-      max-width: 180px;
-      max-height: 180px;
+      max-width: 170px;
+      max-height: 170px;
       display: block;
       user-select: none;
       pointer-events: none;
       object-fit: contain;
       image-orientation: none;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
     }
     .chat-link {
-      color: #80deea;
+      color: #93c5fd;
       text-decoration: underline;
       word-break: break-all;
+      font-weight: 500;
+    }
+    .chat-link:hover {
+      color: #bfdbfe;
     }
     .file-attachment {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       background-color: rgba(0, 0, 0, 0.2);
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
       margin-bottom: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
     .file-name {
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 160px;
+      max-width: 170px;
+      font-weight: 500;
     }
 
     /* 入力エリア */
     footer {
-      background-color: var(--surface-color);
-      padding: 12px 16px;
+      background-color: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 14px 20px;
       border-top: 1px solid var(--border-color);
       display: flex;
       align-items: flex-end;
-      gap: 8px;
+      gap: 10px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
     }
     textarea {
       flex: 1;
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 18px;
-      padding: 8px 14px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
       color: #fff;
       font-size: 0.95rem;
       outline: none;
       resize: none;
-      height: 40px;
+      height: 42px;
       max-height: 120px;
       font-family: inherit;
       line-height: 1.4;
+      transition: var(--transition);
     }
     textarea:focus {
-      border-color: var(--primary-color);
+      border-color: var(--accent-purple);
+      background-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
     }
     button.send-btn-style {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 20px;
-      padding: 0 18px;
-      height: 40px;
-      font-weight: bold;
+      border-radius: var(--radius-md);
+      padding: 0 20px;
+      height: 42px;
+      font-weight: 700;
       font-size: 0.95rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: var(--transition);
       flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+    button.send-btn-style:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
     }
     button.send-btn-style:active {
-      background-color: var(--primary-hover);
+      transform: translateY(0);
     }
     button.icon-btn-style, label.icon-btn-style {
-      background-color: #2a2a2a;
-      color: var(--primary-color);
-      border: 1px solid #444;
-      border-radius: 20px;
-      width: 40px;
-      height: 40px;
-      font-size: 1.1rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--accent-purple);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      width: 42px;
+      height: 42px;
+      font-size: 1.15rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: background-color 0.2s, border-color 0.2s;
+      transition: var(--transition);
+    }
+    button.icon-btn-style:hover, label.icon-btn-style:hover {
+      background-color: rgba(168, 85, 247, 0.15);
+      border-color: var(--border-glow);
+      color: #d8b4fe;
+      transform: translateY(-1px);
     }
     button.icon-btn-style:active, label.icon-btn-style:active {
-      background-color: #3a3a3a;
-      border-color: var(--primary-color);
+      transform: translateY(0);
     }
 
     /* モーダル表示スタイル */
@@ -477,7 +590,9 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 10000;
       display: flex;
       justify-content: center;
@@ -492,54 +607,72 @@
       visibility: visible;
     }
     .modal-container {
-      background-color: var(--surface-color);
-      border: 1px solid #333;
-      border-radius: 12px;
+      background-color: #131b2e;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 580px;
+      max-width: 600px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.1);
       overflow: hidden;
+      animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: scale(0.95) translateY(15px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
     .modal-header {
-      padding: 14px 16px;
-      background-color: #252525;
-      border-bottom: 1px solid #333;
+      padding: 16px 20px;
+      background-color: #1a233a;
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .modal-title {
-      font-size: 1.05rem;
-      font-weight: bold;
-      color: var(--primary-color);
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.03em;
     }
     .modal-close-btn {
-      background: none;
-      border: none;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
       color: var(--text-muted);
-      font-size: 1.3rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 1rem;
       cursor: pointer;
-      padding: 0 4px;
-      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
     }
     .modal-close-btn:hover {
+      background: rgba(255,255,255,0.1);
       color: #fff;
     }
     .modal-body {
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
     .section-title {
       font-size: 0.85rem;
-      font-weight: bold;
-      color: var(--text-color);
-      margin-bottom: 4px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
     .palette-grid {
       display: flex;
@@ -547,47 +680,55 @@
       gap: 8px;
     }
     .palette-btn {
-      background-color: #2a2a2a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      height: 38px;
-      padding: 0 10px;
-      font-size: 1.1rem;
+      background-color: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      height: 40px;
+      padding: 0 12px;
+      font-size: 1.15rem;
       color: var(--text-color);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
+      transition: var(--transition);
     }
     .palette-btn:hover {
-      background-color: #3a3a3a;
-      transform: scale(1.03);
+      background-color: rgba(168, 85, 247, 0.15);
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+    }
+    .palette-btn:active {
+      transform: translateY(0);
     }
     .kaimoji-btn {
-      font-size: 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 600;
     }
     .modal-textarea {
       width: 100%;
-      height: 120px;
-      background-color: #2a2a2a;
+      height: 130px;
+      background-color: rgba(0, 0, 0, 0.25);
       color: #fff;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
       line-height: 1.4;
       font-family: inherit;
+      transition: var(--transition);
     }
     .modal-textarea:focus {
-      border-color: var(--primary-color);
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
     }
     .modal-footer {
-      padding: 12px 16px;
+      padding: 14px 20px;
       border-top: 1px solid var(--border-color);
-      background-color: var(--surface-color);
+      background-color: #131b2e;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -595,38 +736,52 @@
     }
     .modal-footer-right {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
     .secondary-btn {
-      background-color: #2a2a2a;
+      background-color: rgba(255, 255, 255, 0.05);
       color: var(--text-color);
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 8px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
       font-size: 0.85rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: var(--transition);
     }
     .secondary-btn:hover {
-      background-color: #3a3a3a;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    .secondary-btn:active {
+      transform: translateY(0);
     }
 
     /* 手描きスタンプ関連スタイル */
     .stamp-nav-btn {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-weight: bold;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .stamp-nav-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
     }
     .editor-layout {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       justify-content: center;
       align-items: flex-start;
     }
@@ -634,13 +789,14 @@
       position: relative;
       width: 250px;
       height: 250px;
-      border: 2px dashed #444;
-      border-radius: 12px;
-      background-color: #1a1a1a;
-      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
+      border: 2px dashed rgba(168, 85, 247, 0.4);
+      border-radius: var(--radius-md);
+      background-color: #0b0f19;
+      background-image: linear-gradient(45deg, #131b2e 25%, transparent 25%), linear-gradient(-45deg, #131b2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #131b2e 75%), linear-gradient(-45deg, transparent 75%, #131b2e 75%);
       background-size: 20px 20px;
       background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
       flex-shrink: 0;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
     }
     .stamp-canvas {
       position: absolute;
@@ -648,17 +804,17 @@
       left: 0;
       width: 100%;
       height: 100%;
-      border-radius: 10px;
+      border-radius: calc(var(--radius-md) - 2px);
       touch-action: none;
     }
     .ps-layers-panel {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      width: 100px;
-      background-color: #181818;
-      border: 1px solid #333;
-      border-radius: 8px;
+      width: 105px;
+      background-color: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
       padding: 8px;
     }
     .ps-layer-item {
@@ -666,31 +822,32 @@
       flex-direction: column;
       align-items: center;
       padding: 6px;
-      background-color: #262626;
+      background-color: rgba(255, 255, 255, 0.03);
       border: 2px solid transparent;
       border-radius: 6px;
       cursor: grab;
-      transition: background-color 0.2s;
+      transition: var(--transition);
     }
     .ps-layer-item.active {
-      border-color: var(--primary-color);
-      background-color: #2a383b;
+      border-color: var(--accent-purple);
+      background-color: rgba(168, 85, 247, 0.12);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
     }
     .ps-layer-title {
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       margin-bottom: 4px;
-      font-weight: bold;
+      font-weight: 700;
     }
     .ps-layer-item.active .ps-layer-title {
-      color: var(--primary-color);
+      color: var(--accent-purple);
     }
     .ps-layer-preview {
       width: 60px;
       height: 60px;
-      border: 1px solid #444;
+      border: 1px solid var(--border-color);
       border-radius: 4px;
-      background-color: #111;
+      background-color: #0b0f19;
       object-fit: contain;
       pointer-events: none;
     }
@@ -700,68 +857,91 @@
       gap: 8px;
       justify-content: center;
       align-items: center;
-      margin-top: 8px;
+      margin-top: 10px;
+      background: rgba(0,0,0,0.15);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
     }
     .tool-group {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
     .tool-btn {
-      background-color: #2a2a2a;
-      border: 1px solid #444;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
       color: #fff;
       border-radius: 6px;
-      padding: 6px 10px;
+      padding: 7px 12px;
       font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
+      transition: var(--transition);
+    }
+    .tool-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
     }
     .tool-btn.active {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-      background-color: #333;
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+      background-color: rgba(168, 85, 247, 0.15);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
     }
     select.tool-select {
-      background-color: #2a2a2a;
+      background-color: #000000;
       color: #fff;
-      border: 1px solid #444;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 6px 8px;
+      padding: 7px 10px;
       font-size: 0.8rem;
       outline: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    select.tool-select:hover {
+      background-color: #1a1a1a;
     }
     .history-header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
     .history-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 12px;
-      max-height: 350px;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 14px;
+      max-height: 380px;
       overflow-y: auto;
-      padding: 4px;
+      padding: 6px;
     }
     .history-card {
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 8px;
-      background-color: #2a2a2a;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.02);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      transition: var(--transition);
+    }
+    .history-card:hover {
+      border-color: rgba(168, 85, 247, 0.4);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
     }
     .history-img-wrapper {
       width: 100%;
-      height: 80px;
+      height: 90px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #1a1a1a;
-      border-radius: 6px;
+      background-color: #0b0f19;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
     }
     .history-img {
       max-width: 100%;
@@ -771,24 +951,43 @@
     .history-actions {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       width: 100%;
     }
     .history-action-btn {
-      background-color: #333;
+      background-color: rgba(255, 255, 255, 0.05);
       color: var(--text-color);
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 4px 6px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 8px;
       font-size: 0.75rem;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 6px;
+      transition: var(--transition);
     }
-    .history-action-btn.send { background-color: #00796b; border-color: #008ba3; color: #fff; }
-    .history-action-btn.del { background-color: #8c2a2a; border-color: #a83232; color: #fff; }
+    .history-action-btn:hover {
+      transform: translateY(-1px);
+    }
+    .history-action-btn.send { 
+      background: var(--primary-gradient); 
+      border: none; 
+      color: #fff; 
+      box-shadow: 0 2px 8px rgba(168,85,247,0.3);
+    }
+    .history-action-btn.send:hover { opacity: 0.95; }
+    .history-action-btn.del { 
+      background-color: rgba(244, 63, 94, 0.15); 
+      border-color: rgba(244, 63, 94, 0.3); 
+      color: #fb7185; 
+    }
+    .history-action-btn.del:hover { 
+      background-color: rgba(244, 63, 94, 0.25); 
+      color: #fff; 
+    }
   </style>
 </head>
 <body>
@@ -797,12 +996,11 @@
     <!-- サイドバー＆オーバーレイ -->
     <div id="overlay" class="overlay"></div>
     <aside id="sidebar" class="sidebar">
-      <div class="sidebar-header">メニュー</div>
+      <div class="sidebar-header">MENU</div>
       <ul class="sidebar-menu">
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/">漢字テスト</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page22.html">AirChat Group</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page33.html">Air Message</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page26.html">FamilyChat おかあさん</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page28.html">FamilyChat おとうさん</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page29.html">画像をスタンプ化</a></li>
@@ -812,7 +1010,7 @@
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page23.html">QRcode</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page11.html">PDF to JPG</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page30.html" class="sidebar-link current">MEMO</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/index.html">カレンダー</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html">Canvas Share</a></li>
       </ul>
     </aside>
 
@@ -836,7 +1034,6 @@
           <div class="header-title-container">
             <div class="header-title">
               MEMO
-              <span id="statusBadge" class="status-badge">マイク・メモ</span>
             </div>
           </div>
         </div>
@@ -855,8 +1052,8 @@
             <textarea id="message-input" placeholder="メモを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
-            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
-            <button id="send-btn" class="send-btn-style">追加</button>
+            <button id="modal-open-btn" class="icon-btn-style" title="改行・絵文字">⏎</button>
+            <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
       </div>
@@ -889,7 +1086,7 @@
         <div class="modal-footer-right">
           <button id="modal-clear-btn" class="secondary-btn">クリア</button>
           <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
-          <button id="modal-submit-btn" class="send-btn-style">追加</button>
+          <button id="modal-submit-btn" class="send-btn-style">送信</button>
         </div>
       </div>
     </div>
@@ -1049,7 +1246,6 @@
           passError.style.display = 'block';
         }
       } catch (e) {
-        // Firebaseから取得できない場合等のフォールバックとして設定
         const correctPass = 'rmk813';
         if (inputPass === correctPass) {
           if (rememberMeCheckbox.checked) {
@@ -1255,7 +1451,7 @@
         push(messagesRef, { text: text, timestamp: Date.now() });
         modalTextInput.value = '';
         messageInput.value = '';
-        messageInput.style.height = '40px';
+        messageInput.style.height = '42px';
       }
       closeModal();
     });
@@ -1616,7 +1812,7 @@
       historyGrid.innerHTML = '';
       const keys = Object.keys(cachedStampHistory);
       if (keys.length === 0) {
-        historyGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center;">履歴はありません</div>';
+        historyGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center; padding: 20px;">履歴はありません</div>';
         return;
       }
       keys.reverse().forEach(key => {
@@ -1653,7 +1849,7 @@
       if (!text) return;
       push(messagesRef, { text: text, timestamp: Date.now() });
       messageInput.value = '';
-      messageInput.style.height = '40px';
+      messageInput.style.height = '42px';
     }
 
     fileInput.addEventListener('change', (e) => {
@@ -1733,7 +1929,6 @@
         timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
-        // テキストメッセージの場合のみコピーボタン・編集ボタンを表示
         if (msg.text && !msg.fileData) {
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copy-btn';
@@ -1751,7 +1946,6 @@
           const editBtn = document.createElement('button');
           editBtn.className = 'edit-btn'; editBtn.textContent = '編集';
           editBtn.addEventListener('click', () => {
-            // インライン編集モードへの切り替え
             bubble.innerHTML = '';
             const editContainer = document.createElement('div');
             editContainer.className = 'edit-container';
