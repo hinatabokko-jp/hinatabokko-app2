@@ -94,12 +94,34 @@
           </svg>
           スタンプ枠・縁取り
         </h2>
-        <button type="button" id="add-white-border-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          輪郭に沿った20pxの白フチを追加
-        </button>
+        
+        <!-- 白フチ一括追加ボタン -->
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="add-white-border-10-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            10px白フチ
+          </button>
+          <button type="button" id="add-white-border-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            20px白フチ
+          </button>
+        </div>
+
+        <!-- 白フチの太さ調整スライダー -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>白フチの太さ調整:</span>
+            <span id="border-radius-val" class="text-emerald-400 font-semibold">20px</span>
+          </div>
+          <input type="range" id="border-radius-range" min="1" max="50" value="20" class="w-full accent-emerald-500">
+          <button type="button" id="apply-custom-border-btn" class="w-full mt-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
+            指定サイズで白フチを適用
+          </button>
+        </div>
       </div>
 
       <!-- Drawing Tools -->
@@ -284,7 +306,12 @@
     const downloadBtn = document.getElementById('download-btn');
     const copyBtn = document.getElementById('copy-btn');
     const resolutionSelect = document.getElementById('resolution-select');
+    
+    const addWhiteBorder10Btn = document.getElementById('add-white-border-10-btn');
     const addWhiteBorderBtn = document.getElementById('add-white-border-btn');
+    const borderRadiusRange = document.getElementById('border-radius-range');
+    const borderRadiusVal = document.getElementById('border-radius-val');
+    const applyCustomBorderBtn = document.getElementById('apply-custom-border-btn');
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -301,6 +328,10 @@
 
     resolutionSelect.addEventListener('change', () => {
       if (originalImage) processAndSetupLayers();
+    });
+
+    borderRadiusRange.addEventListener('input', (e) => {
+      borderRadiusVal.textContent = e.target.value + 'px';
     });
 
     document.querySelectorAll('.layer-item').forEach(item => {
@@ -458,7 +489,8 @@
       redrawLayers();
     }
 
-    addWhiteBorderBtn.addEventListener('click', () => {
+    // 共通の白フチ生成関数
+    function applyWhiteBorder(radius) {
       if (!originalImage) return;
 
       const w = targetSize;
@@ -472,7 +504,6 @@
         alphaMap[i] = data[i * 4 + 3] > 10 ? 1 : 0;
       }
 
-      const radius = 20;
       const dilatedMap = new Uint8Array(w * h);
 
       for (let y = 0; y < h; y++) {
@@ -519,6 +550,13 @@
 
       layerVisibility[2] = true;
       redrawLayers();
+    }
+
+    addWhiteBorder10Btn.addEventListener('click', () => applyWhiteBorder(10));
+    addWhiteBorderBtn.addEventListener('click', () => applyWhiteBorder(20));
+    applyCustomBorderBtn.addEventListener('click', () => {
+      const customRadius = parseInt(borderRadiusRange.value, 10);
+      applyWhiteBorder(customRadius);
     });
 
     function redrawLayers() {
@@ -591,7 +629,6 @@
     editCanvas.addEventListener('touchmove', draw);
     window.addEventListener('touchend', stopDrawing);
 
-    // 共通の画像生成処理（透過を維持）
     function createExportCanvas() {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = targetSize;
@@ -603,7 +640,6 @@
       return exportCanvas;
     }
 
-    // コピーボタンの処理（Clipboard APIでPNG画像をクリップボードに格納）
     copyBtn.addEventListener('click', async () => {
       if (!originalImage) return;
       try {
@@ -614,7 +650,6 @@
             await navigator.clipboard.write([
               new ClipboardItem({ 'image/png': blob })
             ]);
-            // 一時的にボタンのテキストを「コピー完了！」に変更してフィードバック
             const originalText = copyBtn.innerHTML;
             copyBtn.innerHTML = `
               <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
