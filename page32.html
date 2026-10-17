@@ -28,6 +28,20 @@
             font-style: normal;
             font-display: swap;
         }
+        @font-face {
+            font-family: 'JrmmFont';
+            src: url('jrmm00u.ttc') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'YomogiFont';
+            src: url('yomogifont.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
 
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -103,6 +117,8 @@
                         <i class="fa-solid fa-font text-indigo-400 mr-1"></i> フォント
                     </label>
                     <select id="fontFamily" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        <option value="'JrmmFont', sans-serif" style="font-family: 'JrmmFont';">jrmm00uフォント</option>
+                        <option value="'YomogiFont', sans-serif" style="font-family: 'YomogiFont';">よもぎフォント</option>
                         <option value="'BananaSlip', sans-serif" style="font-family: 'BananaSlip';">バナナスリップフォント</option>
                         <option value="'KeiFont', sans-serif" style="font-family: 'KeiFont';">けいフォント</option>
                         <option value="'Dela Gothic One', sans-serif" style="font-family: 'Dela Gothic One';">Dela Gothic One (極太ゴシック)</option>
