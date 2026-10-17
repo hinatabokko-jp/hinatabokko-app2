@@ -4,6 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>family chat</title>
+  <!-- Tailwind CSS CDN (管理画面のUIコンポーネント用) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0b0f19',
+            surface: '#131c2e',
+            surfaceHover: '#1b263b',
+            inputBg: 'rgba(0, 0, 0, 0.25)',
+            mainText: '#f1f5f9',
+            subText: '#94a3b8',
+            border: '#1e293b',
+            accent: '#00B4D8',
+            danger: '#ff5c75'
+          }
+        }
+      }
+    }
+  </script>
   <style>
     :root {
       --bg-color: #0b0f19;
@@ -130,12 +151,40 @@
       display: none;
     }
 
-    /* アプリ本体 */
+    /* 管理者ログインボタンのスタイル */
+    .admin-login-trigger {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    .admin-login-trigger:hover {
+      color: var(--accent);
+    }
+
+    /* アプリ本体・管理者画面 */
     #app-content {
       display: none;
       flex-direction: column;
       height: 100%;
       width: 100%;
+    }
+
+    #admin-screen {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      background-color: var(--bg-color);
+      z-index: 9990;
+      position: fixed;
+      top: 0;
+      left: 0;
+      overflow-y: auto;
     }
 
     .chat-main-area {
@@ -195,12 +244,6 @@
       color: #00C9A7;
       border: 1px solid rgba(0, 201, 167, 0.3);
       -webkit-text-fill-color: #00C9A7;
-    }
-    .header-subtitle {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-      line-height: 1.2;
     }
     .header-right-actions {
       display: flex;
@@ -935,6 +978,72 @@
       </label>
       <button id="pass-btn" class="send-btn-style">入室する</button>
       <div id="pass-error">あいことばが違います</div>
+      <button id="adminLoginTriggerBtn" class="admin-login-trigger">管理者ログインはこちら</button>
+    </div>
+
+    <!-- 管理者ログインモーダル -->
+    <div id="adminAuthModal" class="modal-overlay">
+      <div class="modal-container" style="max-width: 400px;">
+        <div class="modal-header">
+          <div class="modal-title">管理者認証</div>
+          <button id="adminAuthCloseBtn" class="modal-close-btn">✕</button>
+        </div>
+        <div class="modal-body" style="gap: 12px;">
+          <div>
+            <div class="section-title">管理ID</div>
+            <input type="text" id="adminIdInput" class="modal-textarea" style="height: 42px;" placeholder=NULL>
+          </div>
+          <div>
+            <div class="section-title">マスターパスワード</div>
+            <input type="password" id="adminPassInput" class="modal-textarea" style="height: 42px;" placeholder="パスワード">
+          </div>
+          <div id="authErrorMessage" class="text-danger text-xs hidden">IDまたはパスワードが違います</div>
+        </div>
+        <div class="modal-footer">
+          <button id="adminAuthCancelBtn" class="secondary-btn">キャンセル</button>
+          <button id="adminAuthSubmitBtn" class="send-btn-style">ログイン</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理画面（Admin Screen） -->
+    <div id="admin-screen">
+      <header>
+        <div class="header-left">
+          <div class="header-title-container">
+            <div class="header-title">
+              family chat 管理画面
+              <span class="status-badge">管理者</span>
+            </div>
+          </div>
+        </div>
+        <div class="header-right-actions">
+          <button id="exitAdminBtn" class="btn-logout">チャットに戻る</button>
+        </div>
+      </header>
+      <div class="p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 overflow-y-auto flex-1">
+        <!-- 新規入室制限（ルームロック）設定パネル -->
+        <div class="bg-surface border border-border p-6 rounded-2xl flex items-center justify-between">
+          <div class="flex flex-col gap-1">
+            <h3 class="font-bold text-mainText text-base">新規入室の制限（ルームロック）</h3>
+            <p class="text-xs text-subText">有効にすると、既存登録済みの端末以外からの新規入室を拒否します。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="roomLockToggle" class="sr-only peer" onchange="toggleRoomLock(this.checked)">
+            <div class="w-11 h-6 bg-inputBg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+          </label>
+        </div>
+
+        <div class="bg-surface border border-border p-6 rounded-2xl flex flex-col gap-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-mainText text-lg">アクセスユーザー管理</h3>
+            <span id="userCountBadge" class="text-xs bg-accent/20 text-accent px-3 py-1 rounded-full font-semibold">0名</span>
+          </div>
+          <div id="adminUserList" class="flex flex-col gap-3">
+            <!-- ユーザーリストが動的に挿入されます -->
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- アプリ本体 -->
@@ -1106,7 +1215,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
@@ -1121,25 +1230,70 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const appId = "family-chat-okasan";
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
+    const usersRef = ref(db, 'users');
+    const roomConfigRef = ref(db, 'settings/roomConfig');
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
+    const adminScreen = document.getElementById('admin-screen');
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 
+    // 管理者認証関連要素
+    const adminLoginTriggerBtn = document.getElementById('adminLoginTriggerBtn');
+    const adminAuthModal = document.getElementById('adminAuthModal');
+    const adminAuthCloseBtn = document.getElementById('adminAuthCloseBtn');
+    const adminAuthCancelBtn = document.getElementById('adminAuthCancelBtn');
+    const adminAuthSubmitBtn = document.getElementById('adminAuthSubmitBtn');
+    const adminIdInput = document.getElementById('adminIdInput');
+    const adminPassInput = document.getElementById('adminPassInput');
+    const authErrorMessage = document.getElementById('authErrorMessage');
+    const exitAdminBtn = document.getElementById('exitAdminBtn');
+
     // === 端末固有のUID（識別キー）の管理 ===
     let deviceUID = localStorage.getItem('family_chat_device_uid');
     if (!deviceUID) {
-      // 端末ごとに固有のランダムなIDを生成して保存
       deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       localStorage.setItem('family_chat_device_uid', deviceUID);
     }
     const userStorageKey = 'family_chat_selected_user_' + deviceUID;
+
+    let registeredUsersList = [];
+    let roomSettings = { roomLocked: false };
+
+    // ルーム設定・ユーザー情報のリアルタイム同期（AirMessage仕様に準拠）
+    function listenToAdminData() {
+      if (!db) return;
+      onSnapshotUsers();
+      onSnapshotRoomConfig();
+    }
+
+    onValue(usersRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      registeredUsersList = Object.keys(val).map(key => ({
+        id: key,
+        ...val[key]
+      }));
+      if (adminScreen.style.display === 'flex') {
+        renderAdminUserList();
+      }
+    });
+
+    onValue(roomConfigRef, (docSnap) => {
+      if (docSnap.exists()) {
+        roomSettings = docSnap.val();
+        const toggleEl = document.getElementById('roomLockToggle');
+        if (toggleEl) {
+          toggleEl.checked = !!roomSettings.roomLocked;
+        }
+      }
+    });
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
@@ -1149,6 +1303,11 @@
       appContent.style.display = 'none';
       passInput.value = '';
     });
+
+    // 1. 新規入室制限（ルームロック）設定の切り替え関数
+    window.toggleRoomLock = async function(isLocked) {
+      await set(roomConfigRef, { roomLocked: isLocked });
+    };
 
     async function handleAuth() {
       const inputPass = passInput.value;
@@ -1163,11 +1322,27 @@
         const correctPass = snap.exists() ? snap.val() : '1234';
 
         if (inputPass === correctPass) {
+          // 2. ログイン（入室）時のアクセス拒否・ルームロック判定コード
+          const foundUserByUid = registeredUsersList.find(u => (u.userId === deviceUID || u.id === deviceUID));
+          
+          if (foundUserByUid && foundUserByUid.accessDenied) {
+            passError.textContent = '今は入室できません。';
+            passError.style.display = 'block';
+            return;
+          }
+
+          if (roomSettings.roomLocked && !foundUserByUid) {
+            passError.textContent = '新規入室が制限されています。';
+            passError.style.display = 'block';
+            return;
+          }
+
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
+          await registerCurrentUser();
           unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
@@ -1179,11 +1354,25 @@
       }
     }
 
+    async function registerCurrentUser() {
+      const currentNickname = userSelect.value;
+      const userRef = ref(db, `users/${deviceUID}`);
+      const snap = await get(userRef);
+      const existing = snap.exists() ? snap.val() : {};
+
+      await set(userRef, {
+        userId: deviceUID,
+        nickname: currentNickname,
+        userAgent: navigator.userAgent,
+        lastLoginAt: Date.now(),
+        accessDenied: existing.accessDenied || false
+      });
+    }
+
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
 
-      // ログイン成功時に、この端末で前回選ばれていたユーザーを復元する
       const savedUser = localStorage.getItem(userStorageKey);
       if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
         userSelect.value = savedUser;
@@ -1197,6 +1386,90 @@
     passInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') handleAuth();
     });
+
+    // 管理者認証モーダルの開閉
+    adminLoginTriggerBtn.addEventListener('click', () => {
+      adminAuthModal.classList.add('active');
+      adminIdInput.value = '';
+      adminPassInput.value = '';
+      authErrorMessage.classList.add('hidden');
+    });
+    const closeAdminAuthModal = () => adminAuthModal.classList.remove('active');
+    adminAuthCloseBtn.addEventListener('click', closeAdminAuthModal);
+    adminAuthCancelBtn.addEventListener('click', closeAdminAuthModal);
+
+    adminAuthSubmitBtn.addEventListener('click', () => {
+      const id = adminIdInput.value.trim();
+      const pass = adminPassInput.value.trim();
+      if (id === 'master' && pass === '0813') {
+        closeAdminAuthModal();
+        lockScreen.style.display = 'none';
+        adminScreen.style.display = 'flex';
+        renderAdminUserList();
+      } else {
+        authErrorMessage.classList.remove('hidden');
+      }
+    });
+
+    exitAdminBtn.addEventListener('click', () => {
+      adminScreen.style.display = 'none';
+      lockScreen.style.display = 'flex';
+    });
+
+    // 3. 個別ユーザーごとのアクセス拒否（制限）の切り替えコード
+    window.toggleUserAccess = async function(userId, isDenied) {
+      const userRef = ref(db, `users/${userId}`);
+      await set(userRef, { accessDenied: isDenied }, { merge: true });
+    };
+
+    // ユーザー削除
+    window.promptDeleteUser = async function(userId, nickname) {
+      if (confirm(`ユーザー「${nickname}」を削除しますか？`)) {
+        await remove(ref(db, `users/${userId}`));
+      }
+    };
+
+    // 名前変更
+    window.promptChangeNickname = async function(userId, currentName) {
+      const newName = prompt("新しい名前を入力してください:", currentName);
+      if (newName && newName.trim() !== '') {
+        await set(ref(db, `users/${userId}`), { nickname: newName.trim() }, { merge: true });
+      }
+    };
+
+    function renderAdminUserList() {
+      const list = document.getElementById('adminUserList');
+      document.getElementById('userCountBadge').textContent = `${registeredUsersList.length}名`;
+      if (registeredUsersList.length === 0) {
+        list.innerHTML = '<div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>';
+        return;
+      }
+      list.innerHTML = '';
+      registeredUsersList.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'bg-inputBg border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
+        item.innerHTML = `
+          <div class="min-w-0 flex-1 flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-mainText truncate">${user.nickname || '名無し'}</span>
+              <button onclick="promptChangeNickname('${user.id}', '${user.nickname}')" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-accent text-[10px] font-semibold cursor-pointer transition-colors">名前変更</button>
+            </div>
+            <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 text-xs text-subText">
+              <span>アクセス拒否</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" ${user.accessDenied ? 'checked' : ''} onchange="toggleUserAccess('${user.id}', this.checked)">
+                <div class="w-9 h-5 bg-inputBg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+              </label>
+            </div>
+            <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer">削除</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
 
     // チャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
@@ -1893,9 +2166,9 @@
     }
 
     function initChat() {
-      // ユーザーがセレクトボックスで変更したときに、その端末のUIDに紐付けて保存する
       userSelect.addEventListener('change', () => {
         localStorage.setItem(userStorageKey, userSelect.value);
+        registerCurrentUser();
         renderMessages();
       });
 
@@ -1918,8 +2191,10 @@
     }
 
     initChat();
+    listenToAdminData();
 
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
+      registerCurrentUser();
       unlockApp();
     }
   </script>
