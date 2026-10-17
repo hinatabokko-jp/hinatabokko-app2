@@ -128,6 +128,109 @@
       font-size: 0.85rem;
       display: none;
     }
+    .admin-link-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+      margin-top: 4px;
+    }
+    .admin-link-text:hover {
+      color: var(--text-color);
+    }
+
+    /* 管理画面 */
+    #admin-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-color);
+      display: none;
+      flex-direction: column;
+      z-index: 10000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .admin-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .admin-card {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .user-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    /* トグルスイッチ用スタイル */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 22px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      transition: .3s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #fff;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    .toggle-switch input:checked + .slider {
+      background-color: var(--danger-color);
+      border-color: var(--danger-color);
+    }
+    .toggle-switch input:checked + .slider:before {
+      transform: translateX(16px);
+    }
 
     /* アプリ本体 */
     #app-content {
@@ -192,12 +295,6 @@
       color: #818cf8;
       border: 1px solid rgba(99, 102, 241, 0.3);
       font-weight: 500;
-    }
-    .header-subtitle {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-      line-height: 1.2;
     }
     .header-right-actions {
       display: flex;
@@ -296,8 +393,6 @@
       border-bottom-left-radius: 4px;
       border: 1px solid var(--border-color);
     }
-    
-    /* スタンプ用の吹き出しスタイル */
     .bubble.stamp-bubble {
       background: transparent !important;
       padding: 6px;
@@ -334,7 +429,6 @@
       color: var(--text-color);
     }
 
-    /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
       max-height: 250px;
@@ -350,33 +444,11 @@
       user-select: none;
       pointer-events: none;
       object-fit: contain;
-      image-orientation: none;
-      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
     }
     .chat-link {
       color: #38bdf8;
       text-decoration: underline;
       word-break: break-all;
-    }
-    .message.received .chat-link {
-      color: #818cf8;
-    }
-    .file-attachment {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background-color: rgba(0, 0, 0, 0.25);
-      padding: 10px 14px;
-      border-radius: 10px;
-      margin-bottom: 6px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-    .file-name {
-      font-size: 0.85rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 160px;
     }
 
     /* 入力エリア */
@@ -403,7 +475,6 @@
       max-height: 120px;
       font-family: inherit;
       line-height: 1.4;
-      transition: border-color 0.2s, box-shadow 0.2s;
     }
     textarea:focus {
       border-color: #6366F1;
@@ -420,17 +491,6 @@
       font-size: 0.95rem;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-      transition: opacity 0.2s, transform 0.1s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    button.send-btn-style:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    button.send-btn-style:active {
-      transform: scale(0.97);
     }
     button.icon-btn-style, label.icon-btn-style {
       background-color: var(--surface-color);
@@ -445,18 +505,9 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
-    }
-    button.icon-btn-style:hover, label.icon-btn-style:hover {
-      background-color: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.3);
-      transform: translateY(-1px);
-    }
-    button.icon-btn-style:active, label.icon-btn-style:active {
-      transform: scale(0.95);
     }
 
-    /* モーダル表示スタイル */
+    /* モーダル */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -511,12 +562,6 @@
       color: var(--text-muted);
       font-size: 1.3rem;
       cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-      transition: color 0.2s;
-    }
-    .modal-close-btn:hover {
-      color: #fff;
     }
     .modal-body {
       padding: 20px;
@@ -524,12 +569,6 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-    }
-    .section-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 8px;
     }
     .palette-grid {
       display: flex;
@@ -548,15 +587,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
-    }
-    .palette-btn:hover {
-      background-color: rgba(99, 102, 241, 0.15);
-      border-color: rgba(99, 102, 241, 0.4);
-      transform: scale(1.03);
-    }
-    .kaimoji-btn {
-      font-size: 0.85rem;
     }
     .modal-textarea {
       width: 100%;
@@ -569,25 +599,12 @@
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
-      line-height: 1.4;
-      font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .modal-textarea:focus {
-      border-color: #6366F1;
-      box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
     }
     .modal-footer {
       padding: 16px 20px;
       border-top: 1px solid var(--border-color);
-      background-color: rgba(255, 255, 255, 0.02);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .modal-footer-right {
-      display: flex;
+      justify-content: flex-end;
       gap: 10px;
     }
     .secondary-btn {
@@ -598,15 +615,10 @@
       padding: var(--padding-btn);
       font-size: 0.85rem;
       cursor: pointer;
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-    .secondary-btn:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
     }
 
-    /* 手描きスタンプ関連スタイル */
-    .stamp-nav-btn {
+    /* スタンプ・履歴関連スタイル */
+    .stamp-nav-btn, .tool-btn {
       background: var(--primary-gradient);
       color: #fff;
       border: none;
@@ -615,193 +627,19 @@
       font-weight: bold;
       font-size: 0.85rem;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-      transition: opacity 0.2s, transform 0.1s;
     }
-    .stamp-nav-btn:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    .editor-layout {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      align-items: flex-start;
-    }
-    .canvas-wrapper {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      border: 2px dashed rgba(255,255,255,0.15);
-      border-radius: 16px;
-      background-color: #0b0f19;
-      background-image: linear-gradient(45deg, #131b2e 25%, transparent 25%), linear-gradient(-45deg, #131b2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #131b2e 75%), linear-gradient(-45deg, transparent 75%, #131b2e 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-      flex-shrink: 0;
-      box-shadow: inset 0 4px 12px rgba(0,0,0,0.5);
-    }
-    .stamp-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 14px;
-      touch-action: none;
-    }
-    .ps-layers-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 110px;
-      background-color: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 10px;
-    }
-    .ps-layer-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border: 2px solid transparent;
-      border-radius: 8px;
-      cursor: grab;
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-    .ps-layer-item.active {
-      border-color: #6366F1;
-      background-color: rgba(99, 102, 241, 0.15);
-    }
-    .ps-layer-title {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-    .ps-layer-item.active .ps-layer-title {
-      color: #818cf8;
-    }
-    .ps-layer-preview {
-      width: 60px;
-      height: 60px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background-color: #0b0f19;
-      object-fit: contain;
-      pointer-events: none;
-    }
-    .stamp-tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      align-items: center;
-      margin-top: 12px;
-    }
-    .tool-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .tool-btn {
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      color: #fff;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-    .tool-btn:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-    .tool-btn.active {
-      border-color: #6366F1;
-      color: #818cf8;
-      background-color: rgba(99, 102, 241, 0.15);
-    }
-    select.tool-select {
-      background-color: var(--surface-color);
-      color: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.8rem;
-      outline: none;
-    }
-    .history-header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .history-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 12px;
-      max-height: 350px;
-      overflow-y: auto;
-      padding: 4px;
-    }
-    .history-card {
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.02);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .history-card:hover {
-      border-color: rgba(99, 102, 241, 0.4);
-      transform: translateY(-2px);
-    }
-    .history-img-wrapper {
-      width: 100%;
-      height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #0b0f19;
-      border-radius: 8px;
-    }
-    .history-img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-    .history-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      width: 100%;
-    }
-    .history-action-btn {
-      background-color: rgba(255, 255, 255, 0.05);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 6px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: background-color 0.2s;
-    }
-    .history-action-btn.send { background: var(--primary-gradient); border: none; color: #fff; font-weight: bold; }
-    .history-action-btn.del { background-color: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.3); color: #fda4af; }
-    .history-action-btn.del:hover { background-color: rgba(244, 63, 94, 0.25); }
+    .editor-layout { display: flex; gap: 16px; justify-content: center; align-items: flex-start; }
+    .canvas-wrapper { position: relative; width: 250px; height: 250px; border: 2px dashed rgba(255,255,255,0.15); border-radius: 16px; background-color: #0b0f19; }
+    .stamp-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 14px; touch-action: none; }
+    .ps-layers-panel { display: flex; flex-direction: column; gap: 10px; width: 110px; background-color: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; }
+    .ps-layer-item { display: flex; flex-direction: column; align-items: center; padding: 8px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; }
+    .ps-layer-item.active { border-color: #6366F1; background-color: rgba(99, 102, 241, 0.15); }
+    .ps-layer-preview { width: 60px; height: 60px; border: 1px solid var(--border-color); border-radius: 6px; object-fit: contain; pointer-events: none; }
+    .stamp-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin-top: 12px; }
+    .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-height: 350px; overflow-y: auto; }
+    .history-card { border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; background-color: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .history-img-wrapper { width: 100%; height: 90px; display: flex; align-items: center; justify-content: center; background-color: #0b0f19; border-radius: 8px; }
+    .history-img { max-width: 100%; max-height: 100%; object-fit: contain; }
   </style>
 </head>
 <body>
@@ -810,13 +648,60 @@
     <!-- あいことばロック画面 -->
     <div id="lock-screen">
       <h2>あいことばを入力してください</h2>
-      <input type="password" id="pass-input" placeholder="あいことば" autocomplete="off">
+      <input type="password" id="pass-input" placeholder="結婚記念日 数字４桁" autocomplete="off">
       <label class="remember-container">
         <input type="checkbox" id="remember-me-checkbox">
         次回から自動でログインする
       </label>
       <button id="pass-btn" class="send-btn-style">入室する</button>
+      <button id="admin-link-btn" class="admin-link-text">管理画面へ</button>
       <div id="pass-error">あいことばが違います</div>
+    </div>
+
+    <!-- 管理画面 -->
+    <div id="admin-screen">
+      <div class="admin-header">
+        <div class="admin-title">管理パネル（ファミリーチャット）</div>
+        <button id="admin-close-btn" class="secondary-btn">閉じる / 戻る</button>
+      </div>
+      <div class="admin-card">
+        <div style="font-weight:600; margin-bottom:10px; font-size:0.95rem;">ルーム全体の設定</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.85rem; color:var(--text-muted);">新規入室の制限（ルームロック）</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="roomLockToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="admin-card">
+        <div style="font-weight:600; margin-bottom:10px; font-size:0.95rem;">アクセスユーザー一覧 (<span id="userCountBadge">0名</span>)</div>
+        <div id="adminUserList"></div>
+      </div>
+    </div>
+
+    <!-- 管理者ログインモーダル -->
+    <div id="admin-auth-modal" class="modal-overlay">
+      <div class="modal-container" style="max-width:360px;">
+        <div class="modal-header">
+          <div class="modal-title">管理者認証</div>
+          <button id="admin-auth-close" class="modal-close-btn">✕</button>
+        </div>
+        <div class="modal-body" style="gap:12px;">
+          <div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">管理ID</div>
+            <input type="text" id="adminIdInput" class="modal-textarea" style="height:44px;" placeholder="">
+          </div>
+          <div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">マスターパスワード</div>
+            <input type="password" id="adminPassInput" class="modal-textarea" style="height:44px;" placeholder="">
+          </div>
+          <div id="authErrorMessage" style="color:var(--danger-color); font-size:0.8rem; display:none;">IDまたはパスワードが違います</div>
+        </div>
+        <div class="modal-footer">
+          <button id="admin-auth-submit" class="send-btn-style" style="width:100%; height:44px;">ログイン</button>
+        </div>
+      </div>
     </div>
 
     <!-- アプリ本体 -->
@@ -870,21 +755,21 @@
       </div>
       <div class="modal-body">
         <div>
-          <div class="section-title">ワンタップ絵文字</div>
+          <div style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">ワンタップ絵文字</div>
           <div class="palette-grid" id="emoji-palette"></div>
         </div>
         <div>
-          <div class="section-title">顔文字</div>
+          <div style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">顔文字</div>
           <div class="palette-grid" id="kaimoji-palette"></div>
         </div>
         <div>
-          <div class="section-title">コメント編集</div>
+          <div style="font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:8px;">コメント編集</div>
           <textarea id="modal-text-input" class="modal-textarea" placeholder="ここにメッセージを入力... (Enterで改行)"></textarea>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="justify-content:space-between;">
         <button id="go-to-stamp-btn" class="stamp-nav-btn">🎨 手描きスタンプ</button>
-        <div class="modal-footer-right">
+        <div style="display:flex; gap:10px;">
           <button id="modal-clear-btn" class="secondary-btn">クリア</button>
           <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
           <button id="modal-submit-btn" class="send-btn-style">送信</button>
@@ -911,42 +796,20 @@
             <canvas id="layer-top" class="stamp-canvas" width="250" height="250"></canvas>
           </div>
           <div class="ps-layers-panel" id="layers-panel-container">
-            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2">
-              <div class="ps-layer-title">Layer 2</div>
+            <div class="ps-layer-item active" id="layer-item-2" data-layer="2">
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">Layer 2</div>
               <img id="ps-preview-2" class="ps-layer-preview" alt="Layer 2">
             </div>
-            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1">
-              <div class="ps-layer-title">Layer 1</div>
+            <div class="ps-layer-item" id="layer-item-1" data-layer="1">
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">Layer 1</div>
               <img id="ps-preview-1" class="ps-layer-preview" alt="Layer 1">
             </div>
           </div>
         </div>
         <div class="stamp-tools">
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
-            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
-            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
-            <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
-          </div>
-          <div class="tool-group">
-            <select id="brush-select" class="tool-select">
-              <option value="pen">ブラシ (通常)</option>
-              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
-              <option value="calligraphy-pen">カリグラフィ ペン</option>
-              <option value="airbrush">エアブラシ</option>
-              <option value="oil">油彩ブラシ</option>
-              <option value="crayon">クレヨン</option>
-              <option value="marker">マーカー</option>
-              <option value="pencil">鉛筆</option>
-              <option value="watercolor">水彩ブラシ</option>
-            </select>
-          </div>
+          <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
+          <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
+          <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
           <button id="tool-fill" class="tool-btn">ペンキ</button>
           <button id="tool-eraser" class="tool-btn">消しゴム</button>
           <button id="tool-undo" class="tool-btn">1つ戻す</button>
@@ -954,11 +817,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <div></div>
-        <div class="modal-footer-right">
-          <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
-          <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
-        </div>
+        <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
+        <button id="stamp-submit-btn" class="send-btn-style">完成して送信</button>
       </div>
     </div>
   </div>
@@ -971,7 +831,7 @@
         <button id="history-modal-close-x" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-body">
-        <div class="history-header-bar">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <span style="font-size: 0.8rem; color: var(--text-muted);">登録済みスタンプ一覧</span>
           <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">📁 PNGを追加</label>
           <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
@@ -979,7 +839,6 @@
         <div id="history-grid" class="history-grid"></div>
       </div>
       <div class="modal-footer">
-        <div></div>
         <button id="back-to-stamp-draw-btn" class="secondary-btn">描画に戻る</button>
       </div>
     </div>
@@ -988,9 +847,8 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase設定
     const firebaseConfig = {
       apiKey: "AIzaSyCfHE4gy8EFE3TxHQkw4jtiuMD9D3BrX6M",
       authDomain: "family-chat-2-bca6e.firebaseapp.com",
@@ -1007,22 +865,124 @@
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
+    const roomConfigRef = ref(db, 'settings/roomConfig');
+    const usersRef = ref(db, 'users');
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
+    const adminScreen = document.getElementById('admin-screen');
     const passInput = document.getElementById('pass-input');
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
     const userSelect = document.getElementById('user-select');
+    const adminLinkBtn = document.getElementById('admin-link-btn');
 
-    // ① 端末ごとに固有のUID（識別キー）の管理
+    const adminAuthModal = document.getElementById('admin-auth-modal');
+    const adminAuthClose = document.getElementById('admin-auth-close');
+    const adminAuthSubmit = document.getElementById('admin-auth-submit');
+    const adminCloseBtn = document.getElementById('admin-close-btn');
+    const adminIdInput = document.getElementById('adminIdInput');
+    const adminPassInput = document.getElementById('adminPassInput');
+    const authErrorMessage = document.getElementById('authErrorMessage');
+    const roomLockToggle = document.getElementById('roomLockToggle');
+
+    // デバイス固有UIDの管理
     let deviceUID = localStorage.getItem('family_chat_device_uid');
     if (!deviceUID) {
       deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       localStorage.setItem('family_chat_device_uid', deviceUID);
     }
     const userStorageKey = 'family_chat_selected_user_' + deviceUID;
+
+    let registeredUsersList = [];
+    let roomLockedState = false;
+
+    // ユーザー情報・設定のリアルタイム同期
+    onValue(usersRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      registeredUsersList = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+      renderAdminUserList();
+    });
+
+    onValue(roomConfigRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      roomLockedState = !!data.roomLocked;
+      roomLockToggle.checked = roomLockedState;
+    });
+
+    // 管理画面への導線
+    adminLinkBtn.addEventListener('click', () => {
+      adminAuthModal.classList.add('active');
+      adminIdInput.value = '';
+      adminPassInput.value = '';
+      authErrorMessage.style.display = 'none';
+    });
+    adminAuthClose.addEventListener('click', () => adminAuthModal.classList.remove('active'));
+    adminCloseBtn.addEventListener('click', () => {
+      adminScreen.style.display = 'none';
+      lockScreen.style.display = 'flex';
+    });
+
+    // 管理者認証処理
+    adminAuthSubmit.addEventListener('click', () => {
+      const id = adminIdInput.value.trim();
+      const pass = adminPassInput.value.trim();
+      if (id === 'master' && pass === '0813') {
+        adminAuthModal.classList.remove('active');
+        lockScreen.style.display = 'none';
+        adminScreen.style.display = 'flex';
+      } else {
+        authErrorMessage.style.display = 'block';
+      }
+    });
+
+    // ルームロック切り替え
+    roomLockToggle.addEventListener('change', async () => {
+      await set(roomConfigRef, { roomLocked: roomLockToggle.checked });
+    });
+
+    // 各ユーザーのアクセス制限トグル操作
+    window.toggleUserAccess = async function(userId, isDenied) {
+      await update(ref(db, `users/${userId}`), { accessDenied: isDenied });
+    };
+
+    window.promptDeleteUser = async function(userId, nickname) {
+      if (confirm(`「${nickname}」のデータを削除しますか？`)) {
+        await remove(ref(db, `users/${userId}`));
+      }
+    };
+
+    function renderAdminUserList() {
+      const list = document.getElementById('adminUserList');
+      document.getElementById('userCountBadge').textContent = `${registeredUsersList.length}名`;
+      if (registeredUsersList.length === 0) {
+        list.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:16px;">ユーザーデータがありません</div>';
+        return;
+      }
+      list.innerHTML = '';
+      registeredUsersList.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'user-list-item';
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:600; font-size:0.9rem;">${user.nickname} <span style="font-size:0.75rem; color:var(--text-muted);">(${user.selectedRole || ''})</span></div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">UID: ${user.userId || user.id}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-muted);">
+              <span>アクセス拒否</span>
+              <label class="toggle-switch">
+                <input type="checkbox" ${user.accessDenied ? 'checked' : ''} onchange="toggleUserAccess('${user.id}', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" style="background:rgba(244,63,94,0.15); color:#fda4af; border:none; padding:6px 10px; border-radius:8px; font-size:0.75rem; cursor:pointer;">削除</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
@@ -1043,14 +1003,30 @@
 
       try {
         const snap = await get(passcodeRef);
-        const correctPass = snap.exists() ? snap.val() : '1234';
+        const correctPass = snap.exists() ? snap.val() : '0218';
 
         if (inputPass === correctPass) {
+          // UIDベースのアクセス拒否チェック
+          const foundUser = registeredUsersList.find(u => u.userId === deviceUID || u.id === deviceUID);
+          if (foundUser && foundUser.accessDenied) {
+            passError.textContent = '現在はアクセスが制限されています';
+            passError.style.display = 'block';
+            return;
+          }
+
+          // ルームロック（新規入室制限）チェック
+          if (roomLockedState && !foundUser) {
+            passError.textContent = '現在新規入室が制限されています（ルームロック中）';
+            passError.style.display = 'block';
+            return;
+          }
+
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
+          await registerCurrentDeviceUser();
           unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
@@ -1062,7 +1038,19 @@
       }
     }
 
-    // ② アプリロック解除時（ログイン時）に、前回選ばれていたユーザーを復元する処理
+    async function registerCurrentDeviceUser() {
+      const currentRole = userSelect.value;
+      const userRef = ref(db, `users/${deviceUID}`);
+      await update(userRef, {
+        userId: deviceUID,
+        nickname: currentRole,
+        selectedRole: currentRole,
+        userAgent: navigator.userAgent,
+        lastLoginAt: Date.now(),
+        accessDenied: false
+      });
+    }
+
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
@@ -1081,7 +1069,7 @@
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 画像のEXIF回転補正用関数
+    // 画像の補正処理
     function normalizeImageFile(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -1092,7 +1080,6 @@
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL('image/png'));
           };
@@ -1102,7 +1089,6 @@
       });
     }
 
-    // チャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
@@ -1132,7 +1118,6 @@
     const layerItem2 = document.getElementById('layer-item-2');
     const psPreview1 = document.getElementById('ps-preview-1');
     const psPreview2 = document.getElementById('ps-preview-2');
-    const layersPanelContainer = document.getElementById('layers-panel-container');
 
     const historyModalOverlay = document.getElementById('history-modal-overlay');
     const historyModalCloseX = document.getElementById('history-modal-close-x');
@@ -1151,7 +1136,6 @@
     const stampColorInput = document.getElementById('stamp-color');
     const stampOpacityInput = document.getElementById('stamp-opacity');
     const stampSizeInput = document.getElementById('stamp-size');
-    const brushSelect = document.getElementById('brush-select');
     const toolFill = document.getElementById('tool-fill');
     const toolEraser = document.getElementById('tool-eraser');
     const toolUndo = document.getElementById('tool-undo');
@@ -1160,7 +1144,6 @@
     let cachedMessages = {};
     let cachedStampHistory = {};
     let currentTool = 'pen';
-    let currentBrushType = 'pen';
     let historyStack = [];
     let lastPoint = null;
     let editingMessageKey = null;
@@ -1170,62 +1153,20 @@
       return { canvas: canvasB, ctx: ctxB };
     }
 
-    function getActiveLayer() {
-      return getLayerObj(activeLayerId);
-    }
+    function getActiveLayer() { return getLayerObj(activeLayerId); }
 
     function updateLayerDOMOrder() {
       if (activeLayerId === 1) {
-        canvasA.style.zIndex = 10;
-        canvasB.style.zIndex = 5;
+        canvasA.style.zIndex = 10; canvasB.style.zIndex = 5;
       } else {
-        canvasA.style.zIndex = 5;
-        canvasB.style.zIndex = 10;
+        canvasA.style.zIndex = 5; canvasB.style.zIndex = 10;
       }
-
-      layersPanelContainer.innerHTML = '';
-      [...layerOrder].reverse().forEach(id => {
-        if (id === 1) layersPanelContainer.appendChild(layerItem1);
-        if (id === 2) layersPanelContainer.appendChild(layerItem2);
-      });
-
       layerItem1.classList.toggle('active', activeLayerId === 1);
       layerItem2.classList.toggle('active', activeLayerId === 2);
     }
 
-    function setActiveLayer(id) {
-      activeLayerId = id;
-      updateLayerDOMOrder();
-    }
-
-    layerItem1.addEventListener('click', () => setActiveLayer(1));
-    layerItem2.addEventListener('click', () => setActiveLayer(2));
-
-    let draggedLayerId = null;
-    [layerItem1, layerItem2].forEach(item => {
-      item.addEventListener('dragstart', () => {
-        draggedLayerId = parseInt(item.getAttribute('data-layer'));
-        item.classList.add('dragging');
-      });
-      item.addEventListener('dragend', () => {
-        item.classList.remove('dragging');
-        draggedLayerId = null;
-      });
-      item.addEventListener('dragover', (e) => e.preventDefault());
-      item.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const targetLayerId = parseInt(item.getAttribute('data-layer'));
-        if (draggedLayerId && draggedLayerId !== targetLayerId) {
-          const indexA = layerOrder.indexOf(draggedLayerId);
-          const indexB = layerOrder.indexOf(targetLayerId);
-          if (indexA !== -1 && indexB !== -1) {
-            layerOrder[indexA] = targetLayerId;
-            layerOrder[indexB] = draggedLayerId;
-            updateLayerDOMOrder();
-          }
-        }
-      });
-    });
+    layerItem1.addEventListener('click', () => { activeLayerId = 1; updateLayerDOMOrder(); });
+    layerItem2.addEventListener('click', () => { activeLayerId = 2; updateLayerDOMOrder(); });
 
     function updateLayerPreviews() {
       psPreview1.src = canvasA.toDataURL();
@@ -1235,6 +1176,20 @@
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
     const kaimojis = ['( ﾟДﾟ)', '( *´艸｀)', '( ;∀;)', '(^^)ﾉｼ'];
 
+    emojis.forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn'; btn.textContent = emoji; btn.type = 'button';
+      btn.addEventListener('click', () => insertAtCursor(modalTextInput, emoji));
+      emojiPalette.appendChild(btn);
+    });
+
+    kaimojis.forEach(kaimoji => {
+      const btn = document.createElement('button');
+      btn.className = 'palette-btn'; btn.textContent = kaimoji; btn.type = 'button';
+      btn.addEventListener('click', () => insertAtCursor(modalTextInput, kaimoji));
+      kaimojiPalette.appendChild(btn);
+    });
+
     function insertAtCursor(field, text) {
       const startPos = field.selectionStart;
       const endPos = field.selectionEnd;
@@ -1243,34 +1198,12 @@
       field.setSelectionRange(startPos + text.length, startPos + text.length);
     }
 
-    emojis.forEach(emoji => {
-      const btn = document.createElement('button');
-      btn.className = 'palette-btn';
-      btn.textContent = emoji;
-      btn.type = 'button';
-      btn.addEventListener('click', () => insertAtCursor(modalTextInput, emoji));
-      emojiPalette.appendChild(btn);
-    });
-
-    kaimojis.forEach(kaimoji => {
-      const btn = document.createElement('button');
-      btn.className = 'palette-btn kaimoji-btn';
-      btn.textContent = kaimoji;
-      btn.type = 'button';
-      btn.addEventListener('click', () => insertAtCursor(modalTextInput, kaimoji));
-      kaimojiPalette.appendChild(btn);
-    });
-
     modalOpenBtn.addEventListener('click', () => {
       editingMessageKey = null;
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
-      setTimeout(() => modalTextInput.focus(), 50);
     });
-    const closeModal = () => {
-      commentModalOverlay.classList.remove('active');
-      editingMessageKey = null;
-    };
+    const closeModal = () => { commentModalOverlay.classList.remove('active'); editingMessageKey = null; };
     modalCloseX.addEventListener('click', closeModal);
     modalCloseBtn.addEventListener('click', closeModal);
     modalClearBtn.addEventListener('click', () => { modalTextInput.value = ''; modalTextInput.focus(); });
@@ -1287,130 +1220,28 @@
         }
         modalTextInput.value = '';
         messageInput.value = '';
-        messageInput.style.height = '44px';
       }
       closeModal();
     });
 
     footerStampOpenBtn.addEventListener('click', () => {
       stampModalOverlay.classList.add('active');
-      saveState();
       updateLayerPreviews();
-      updateLayerDOMOrder();
     });
-
     footerStampHistoryOpenBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
     });
 
-    goToStampBtn.addEventListener('click', () => {
-      closeModal();
-      stampModalOverlay.classList.add('active');
-      saveState();
-      updateLayerPreviews();
-      updateLayerDOMOrder();
-    });
-    backToCommentBtn.addEventListener('click', () => {
-      stampModalOverlay.classList.remove('active');
-      commentModalOverlay.classList.add('active');
-    });
+    goToStampBtn.addEventListener('click', () => { closeModal(); stampModalOverlay.classList.add('active'); updateLayerPreviews(); });
+    backToCommentBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); commentModalOverlay.classList.add('active'); });
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
-    toolFill.addEventListener('click', () => { 
-      currentTool = 'fill'; 
-      toolEraser.classList.remove('active'); 
-      toolFill.classList.add('active'); 
-    });
-
-    brushSelect.addEventListener('change', () => {
-      currentTool = 'pen';
-      currentBrushType = brushSelect.value;
-      toolFill.classList.remove('active');
-      toolEraser.classList.remove('active');
-    });
-
-    toolEraser.addEventListener('click', () => { 
-      currentTool = 'eraser'; 
-      toolEraser.classList.add('active');
-      toolFill.classList.remove('active'); 
-    });
-
-    function hexToRgb(hex) {
-      let c = hex.replace('#', '');
-      if (c.length === 3) c = c.split('').map(x => x + x).join('');
-      const num = parseInt(c, 16);
-      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
-    }
-
-    function floodFill(canvas, startX, startY, fillColorHex, opacity) {
-      const ctx = canvas.getContext('2d');
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      const width = canvas.width;
-      const height = canvas.height;
-
-      const targetPos = (startY * width + startX) * 4;
-      const targetR = data[targetPos];
-      const targetG = data[targetPos + 1];
-      const targetB = data[targetPos + 2];
-      const targetA = data[targetPos + 3];
-
-      const fillRgb = hexToRgb(fillColorHex);
-      const fillA = Math.round(opacity * 255);
-
-      if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
-
-      const queue = [[startX, startY]];
-      const visited = new Uint8Array(width * height);
-
-      while (queue.length > 0) {
-        const [x, y] = queue.pop();
-        const pos = (y * width + x) * 4;
-        const idx = y * width + x;
-
-        if (x < 0 || x >= width || y < 0 || y >= height) continue;
-        if (visited[idx]) continue;
-        visited[idx] = 1;
-
-        if (Math.abs(data[pos] - targetR) < 30 &&
-            Math.abs(data[pos + 1] - targetG) < 30 &&
-            Math.abs(data[pos + 2] - targetB) < 30 &&
-            Math.abs(data[pos + 3] - targetA) < 30) {
-          data[pos] = fillRgb.r;
-          data[pos + 1] = fillRgb.g;
-          data[pos + 2] = fillRgb.b;
-          data[pos + 3] = fillA;
-
-          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-    }
-
-    function saveState() {
-      if (historyStack.length >= 10) historyStack.shift();
-      historyStack.push({
-        l1: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
-        l2: ctxB.getImageData(0, 0, canvasB.width, canvasB.height),
-        order: [...layerOrder]
-      });
-    }
-
-    toolUndo.addEventListener('click', () => {
-      if (historyStack.length > 0) {
-        const prevState = historyStack.pop();
-        ctxA.putImageData(prevState.l1, 0, 0);
-        ctxB.putImageData(prevState.l2, 0, 0);
-        layerOrder = [...prevState.order];
-        updateLayerDOMOrder();
-        updateLayerPreviews();
-      }
-    });
+    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); toolFill.classList.add('active'); });
+    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolEraser.classList.add('active'); toolFill.classList.remove('active'); });
 
     toolClear.addEventListener('click', () => {
-      saveState();
       const { ctx, canvas } = getActiveLayer();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       updateLayerPreviews();
@@ -1426,171 +1257,48 @@
       };
     }
 
-    function drawBrushStroke(ctx, p1, p2) {
-      const baseSize = parseFloat(stampSizeInput.value);
-      const color = stampColorInput.value;
-      const opacity = parseFloat(stampOpacityInput.value);
-
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
-
-      if (currentBrushType === 'airbrush') {
-        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-        const steps = Math.max(1, Math.floor(dist / 2));
-        ctx.fillStyle = color;
-        for (let i = 0; i < steps; i++) {
-          const rx = p1.x + (p2.x - p1.x) * (i / steps);
-          const ry = p1.y + (p2.y - p1.y) * (i / steps);
-          const numParticles = Math.floor(baseSize * 1.5);
-          for (let j = 0; j < numParticles; j++) {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * baseSize;
-            ctx.globalAlpha = opacity * 0.12;
-            ctx.fillRect(rx + Math.cos(angle) * radius, ry + Math.sin(angle) * radius, 1.5, 1.5);
-          }
-        }
-      } else if (currentBrushType === 'crayon') {
-        const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-        const steps = Math.max(1, Math.floor(dist));
-        ctx.fillStyle = color;
-        for (let i = 0; i < steps; i++) {
-          const rx = p1.x + (p2.x - p1.x) * (i / steps);
-          const ry = p1.y + (p2.y - p1.y) * (i / steps);
-          for (let j = 0; j < Math.floor(baseSize * 2); j++) {
-            const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * (baseSize / 2);
-            ctx.globalAlpha = opacity * 0.35;
-            ctx.fillRect(rx + Math.cos(angle) * radius, ry + Math.sin(angle) * radius, 1.5, 1.5);
-          }
-        }
-      } else if (currentBrushType === 'watercolor') {
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = opacity * 0.15;
-        ctx.lineWidth = baseSize * 1.5;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      } else if (currentBrushType === 'calligraphy-brush' || currentBrushType === 'calligraphy-pen') {
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.globalAlpha = opacity;
-        const isBrush = currentBrushType === 'calligraphy-brush';
-        const angleOffset = isBrush ? Math.PI / 4 : -Math.PI / 4;
-        const w = baseSize * 0.8;
-        ctx.beginPath();
-        ctx.moveTo(p1.x - Math.cos(angleOffset) * w, p1.y - Math.sin(angleOffset) * w);
-        ctx.lineTo(p1.x + Math.cos(angleOffset) * w, p1.y + Math.sin(angleOffset) * w);
-        ctx.lineTo(p2.x + Math.cos(angleOffset) * w, p2.y + Math.sin(angleOffset) * w);
-        ctx.lineTo(p2.x - Math.cos(angleOffset) * w, p2.y - Math.sin(angleOffset) * w);
-        ctx.closePath();
-        ctx.fill();
-      } else if (currentBrushType === 'marker') {
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'square';
-        ctx.lineJoin = 'miter';
-        ctx.globalAlpha = opacity * 0.6;
-        ctx.lineWidth = baseSize * 1.2;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      } else if (currentBrushType === 'pencil') {
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = opacity * 0.7;
-        ctx.lineWidth = Math.max(1, baseSize * 0.4);
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      } else if (currentBrushType === 'oil') {
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = opacity * 0.9;
-        ctx.lineWidth = baseSize;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      } else {
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = opacity;
-        ctx.lineWidth = baseSize;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
     [canvasA, canvasB].forEach(targetCanvas => {
       let isTargetDrawing = false;
-
       function startDraw(e) {
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         const pos = getCanvasCoords(e, targetCanvas);
-        saveState();
-
-        if (currentTool === 'fill') {
-          floodFill(targetCanvas, pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
-          updateLayerPreviews();
-          return;
-        }
-
         isTargetDrawing = true;
         lastPoint = pos;
-
-        if (currentTool === 'eraser') {
-          const ctx = activeObj.ctx;
-          ctx.beginPath();
-          ctx.moveTo(pos.x, pos.y);
-        } else {
-          drawBrushStroke(activeObj.ctx, pos, pos);
-        }
       }
-
       function moveDraw(e) {
-        if (!isTargetDrawing || currentTool === 'fill') return;
+        if (!isTargetDrawing) return;
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         e.preventDefault();
         const pos = getCanvasCoords(e, targetCanvas);
         const ctx = activeObj.ctx;
 
+        ctx.strokeStyle = stampColorInput.value;
+        ctx.lineWidth = parseFloat(stampSizeInput.value);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalAlpha = parseFloat(stampOpacityInput.value);
+
         if (currentTool === 'eraser') {
-          const baseSize = parseFloat(stampSizeInput.value);
-          ctx.save();
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
           ctx.globalCompositeOperation = 'destination-out';
-          ctx.lineWidth = baseSize * 1.5;
-          ctx.lineTo(pos.x, pos.y);
-          ctx.stroke();
-          ctx.restore();
         } else {
-          drawBrushStroke(ctx, lastPoint, pos);
+          ctx.globalCompositeOperation = 'source-over';
         }
+
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
         lastPoint = pos;
       }
-
       function endDraw() {
         if (isTargetDrawing) {
-          getActiveLayer().ctx.closePath();
           isTargetDrawing = false;
           lastPoint = null;
           updateLayerPreviews();
         }
       }
-
       targetCanvas.addEventListener('mousedown', startDraw);
       targetCanvas.addEventListener('mousemove', moveDraw);
       targetCanvas.addEventListener('mouseup', endDraw);
@@ -1604,7 +1312,6 @@
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = 250; exportCanvas.height = 250;
       const expCtx = exportCanvas.getContext('2d');
-      
       layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
       
       const stampDataUrl = exportCanvas.toDataURL('image/png');
@@ -1615,7 +1322,6 @@
       
       ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
       ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
-      historyStack = [];
       updateLayerPreviews();
       stampModalOverlay.classList.remove('active');
     });
@@ -1624,8 +1330,7 @@
       const file = e.target.files[0];
       if (!file) return;
       const dataUrl = await normalizeImageFile(file);
-      const senderName = userSelect.value;
-      push(stampHistoryRef, { dataUrl: dataUrl, creator: senderName, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: dataUrl, creator: userSelect.value, timestamp: Date.now() });
       stampUploadInput.value = '';
     });
 
@@ -1647,17 +1352,16 @@
         card.className = 'history-card';
         card.innerHTML = `
           <div class="history-img-wrapper"><img src="${item.dataUrl}" class="history-img"></div>
-          <div class="history-actions">
-            <button class="history-action-btn send" data-key="${key}">💬 送信</button>
-            <button class="history-action-btn del" data-key="${key}">🗑 削除</button>
+          <div style="display:flex; gap:6px; width:100%;">
+            <button class="stamp-nav-btn send-hist" data-key="${key}" style="flex:1; padding:6px; font-size:0.75rem;">送信</button>
+            <button class="stamp-nav-btn del-hist" data-key="${key}" style="flex:1; padding:6px; font-size:0.75rem; background:rgba(244,63,94,0.2); color:#fda4af;">削除</button>
           </div>
         `;
-        card.querySelector('.send').addEventListener('click', () => {
-          const senderName = userSelect.value;
-          push(messagesRef, { sender: senderName, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+        card.querySelector('.send-hist').addEventListener('click', () => {
+          push(messagesRef, { sender: userSelect.value, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
           historyModalOverlay.classList.remove('active');
         });
-        card.querySelector('.del').addEventListener('click', () => {
+        card.querySelector('.del-hist').addEventListener('click', () => {
           if (confirm('削除しますか？')) remove(ref(db, `stamp_history/${key}`));
         });
         historyGrid.appendChild(card);
@@ -1671,51 +1375,26 @@
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
-      const senderName = userSelect.value;
-      push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
+      push(messagesRef, { sender: userSelect.value, text: text, timestamp: Date.now() });
       messageInput.value = '';
-      messageInput.style.height = '44px';
     }
 
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const isImage = file.type.startsWith('image/');
-      let fileData = '';
-
-      if (isImage) {
-        fileData = await normalizeImageFile(file);
-      } else {
-        fileData = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (evt) => resolve(evt.target.result);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      const senderName = userSelect.value;
-      push(messagesRef, { 
-        sender: senderName, 
-        text: '', 
-        fileData: fileData, 
-        fileName: file.name, 
-        fileType: file.type, 
-        isImage: isImage, 
-        timestamp: Date.now() 
+      const fileData = isImage ? await normalizeImageFile(file) : await new Promise(r => {
+        const fr = new FileReader(); fr.onload = (evt) => r(evt.target.result); fr.readAsDataURL(file);
       });
+      push(messagesRef, { sender: userSelect.value, text: '', fileData: fileData, fileName: file.name, isImage: isImage, timestamp: Date.now() });
       fileInput.value = '';
     });
 
-    function deleteMessage(key) {
-      if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
-    }
-
+    function deleteMessage(key) { if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`)); }
     function editMessage(key, currentText) {
       editingMessageKey = key;
       modalTextInput.value = currentText || '';
       commentModalOverlay.classList.add('active');
-      setTimeout(() => modalTextInput.focus(), 50);
     }
 
     function renderFormattedText(container, text) {
@@ -1732,15 +1411,12 @@
     }
 
     function scrollToBottom() {
-      requestAnimationFrame(() => {
-        chatBox.scrollTop = chatBox.scrollHeight;
-      });
+      requestAnimationFrame(() => { chatBox.scrollTop = chatBox.scrollHeight; });
     }
 
     function renderMessages() {
       chatBox.innerHTML = '';
       const activeUser = userSelect.value;
-
       Object.keys(cachedMessages).forEach(key => {
         const msg = cachedMessages[key];
         const isSent = msg.sender === activeUser;
@@ -1755,19 +1431,10 @@
         bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
 
         if (msg.fileData) {
-          if (msg.isStamp) {
-            const img = document.createElement('img'); 
-            img.src = msg.fileData; 
-            img.className = 'chat-stamp';
-            bubble.appendChild(img);
-          } else if (msg.isImage) {
-            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-image';
-            bubble.appendChild(img);
-          } else {
-            const fa = document.createElement('div'); fa.className = 'file-attachment';
-            fa.innerHTML = `📄 <span class="file-name">${msg.fileName}</span>`;
-            bubble.appendChild(fa);
-          }
+          const img = document.createElement('img');
+          img.src = msg.fileData;
+          img.className = msg.isStamp ? 'chat-stamp' : 'chat-image';
+          bubble.appendChild(img);
         }
         if (msg.text) {
           const tn = document.createElement('div');
@@ -1783,26 +1450,14 @@
         timestamp.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         metaInfo.appendChild(timestamp);
 
-        if (msg.fileData) {
-          const dlBtn = document.createElement('button');
-          dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
-          dlBtn.addEventListener('click', () => {
-            const a = document.createElement('a'); a.href = msg.fileData; a.download = msg.fileName || 'download'; a.click();
-          });
-          metaInfo.appendChild(dlBtn);
-        }
-        
         if (msg.text) {
           const editBtn = document.createElement('button');
-          editBtn.className = 'edit-btn';
-          editBtn.textContent = '編集';
+          editBtn.className = 'edit-btn'; editBtn.textContent = '編集';
           editBtn.addEventListener('click', () => editMessage(key, msg.text));
           metaInfo.appendChild(editBtn);
         }
-
         const delBtn = document.createElement('button');
-        delBtn.className = 'delete-btn';
-        delBtn.textContent = '削除';
+        delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
         delBtn.addEventListener('click', () => deleteMessage(key));
         metaInfo.appendChild(delBtn);
 
@@ -1811,36 +1466,26 @@
         msgDiv.appendChild(metaInfo);
         chatBox.appendChild(msgDiv);
       });
-
       scrollToBottom();
     }
 
-    // ③ ③ ユーザーがセレクトボックスで切り替えたときに、その端末のUIDに紐付けて保存する処理
-    function initChat() {
-      userSelect.addEventListener('change', () => {
-        localStorage.setItem(userStorageKey, userSelect.value);
-        renderMessages();
-      });
+    userSelect.addEventListener('change', () => {
+      localStorage.setItem(userStorageKey, userSelect.value);
+      renderMessages();
+    });
 
-      onValue(messagesRef, (snapshot) => {
-        cachedMessages = snapshot.val() || {};
-        renderMessages();
-      });
+    onValue(messagesRef, (snapshot) => {
+      cachedMessages = snapshot.val() || {};
+      renderMessages();
+    });
 
-      sendBtn.addEventListener('click', sendMessage);
-      messageInput.addEventListener('keydown', (e) => {
-        if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-      messageInput.addEventListener('input', () => {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
-      });
-    }
-
-    initChat();
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+      if (!e.isComposing && e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
 
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
