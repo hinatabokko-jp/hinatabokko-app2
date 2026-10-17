@@ -393,13 +393,13 @@
         <div id="stampHistoryModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
             <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold">保存済みスタンプ履歴</h3>
+                    <h3 class="text-lg font-bold">共有スタンプ履歴</h3>
                     <button onclick="closeStampHistoryModal()" class="text-subText hover:text-white cursor-pointer">✕</button>
                 </div>
                 
                 <div class="w-full">
                     <label class="w-full py-2.5 px-4 rounded-xl bg-accent/20 hover:bg-accent/30 text-accent font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors border border-accent/30">
-                        <span>📁 端末からPNG画像を取り込む</span>
+                        <span>📁 端末からPNG画像を取り込んで共有</span>
                         <input type="file" accept="image/png, image/*" class="hidden" onchange="handleImportStampImage(event)">
                     </label>
                 </div>
@@ -485,9 +485,10 @@
         let currentUser = null;
         let currentNickname = "";
         let unsubscribeMessages = null;
+        let unsubscribeStamps = null;
         let registeredUsersList = [];
         let allMessagesList = [];
-        let savedStamps = JSON.parse(localStorage.getItem('airmessage_stamps') || '[]');
+        let cachedStampHistory = {};
 
         try {
             app = initializeApp(firebaseConfig);
@@ -503,6 +504,7 @@
             initAuth();
             onAuthStateChanged(auth, (user) => { currentUser = user; });
             listenToAdminData();
+            listenToSharedStamps();
         } catch (e) {
             console.error("Firebase init error:", e);
         }
@@ -729,15 +731,20 @@
         };
         window.closeStampHistoryModal = function() { document.getElementById('stampHistoryModal').classList.add('hidden'); };
 
-        window.handleImportStampImage = function(event) {
+        window.handleImportStampImage = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const dataUrl = e.target.result;
-                savedStamps.push(dataUrl);
-                localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
-                renderStampHistory();
+                if (db) {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'stamp_history'), {
+                        dataUrl: dataUrl,
+                        creator: currentNickname || 'ゲスト',
+                        createdAt: serverTimestamp()
+                    });
+                }
+                event.target.value = '';
             };
             reader.readAsDataURL(file);
         };
@@ -809,7 +816,6 @@
 
                 saveHistory(layerNum);
 
-                // ツールが 'fill'（ペンキ）の場合の実行処理
                 if (currentTool === 'fill') {
                     floodFill(targetCanvas, Math.floor(x), Math.floor(y), document.getElementById('stampColor').value, parseInt(document.getElementById('stampOpacity').value) / 100);
                     return;
@@ -853,7 +859,6 @@
                     if (brush === 'calligraphy') {
                         renderCalligraphySegment(ws, ctx, {x: x1, y: y1}, {x: x2, y: y2});
                     } else if (brush === 'brush') {
-                        // 【改善】毛筆ブラシの描画ロジックを正しく修正（色の設定や動的太さが反映されるように適用）
                         ctx.globalAlpha = ws.opacity;
                         ctx.strokeStyle = ws.color;
                         ctx.lineCap = 'round';
@@ -1127,46 +1132,81 @@
             tCtx.drawImage(canvas2, 0, 0);
 
             const dataUrl = tempCanvas.toDataURL('image/png');
-            savedStamps.push(dataUrl);
-            localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
+
+            if (db) {
+                // 共有スタンプ履歴（Firestore）へ保存
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'stamp_history'), {
+                    dataUrl: dataUrl,
+                    creator: currentNickname || 'ゲスト',
+                    createdAt: serverTimestamp()
+                });
+            }
 
             await sendTextMessage(dataUrl, 'stamp', 'stamp.png');
             closeStampModal();
         };
 
+        function listenToSharedStamps() {
+            if (!db) return;
+            onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'stamp_history')), (snapshot) => {
+                cachedStampHistory = {};
+                snapshot.forEach(docSnap => {
+                    cachedStampHistory[docSnap.id] = docSnap.data();
+                });
+                const historyModal = document.getElementById('stampHistoryModal');
+                if (historyModal && !historyModal.classList.contains('hidden')) {
+                    renderStampHistory();
+                }
+            });
+        }
+
         function renderStampHistory() {
             const list = document.getElementById('stampHistoryList');
             list.innerHTML = '';
-            if (savedStamps.length === 0) {
-                list.innerHTML = '<div class="col-span-1 sm:col-span-2 text-center text-xs text-subText py-4">保存されたスタンプはありません</div>';
+            const keys = Object.keys(cachedStampHistory);
+            if (keys.length === 0) {
+                list.innerHTML = '<div class="col-span-1 sm:col-span-2 text-center text-xs text-subText py-4">共有されたスタンプはありません</div>';
                 return;
             }
-            savedStamps.forEach((stamp, idx) => {
+            
+            // 新しい順に並び替え
+            keys.sort((a, b) => {
+                const tA = cachedStampHistory[a].createdAt?.toMillis ? cachedStampHistory[a].createdAt.toMillis() : 0;
+                const tB = cachedStampHistory[b].createdAt?.toMillis ? cachedStampHistory[b].createdAt.toMillis() : 0;
+                return tB - tA;
+            });
+
+            keys.forEach((key, idx) => {
+                const item = cachedStampHistory[key];
                 const div = document.createElement('div');
                 div.className = 'bg-inputBg p-3 rounded-2xl flex flex-col items-center gap-3 border border-white/5';
                 div.innerHTML = `
                     <div class="w-full h-24 bg-darkBg/60 rounded-xl flex items-center justify-center checkerboard overflow-hidden p-1">
-                        <img src="${stamp}" class="max-w-full max-h-full object-contain drop-shadow-md">
+                        <img src="${item.dataUrl}" class="max-w-full max-h-full object-contain drop-shadow-md">
                     </div>
                     <div class="flex flex-col w-full gap-2">
-                        <button onclick="sendSavedStamp('${stamp}')" class="w-full py-2.5 px-4 bg-insta-gradient text-white rounded-xl text-xs font-bold text-center cursor-pointer shadow-lg hover:opacity-95 transition-opacity">送信</button>
-                        <a href="${stamp}" download="stamp_${idx+1}.png" class="w-full py-2.5 px-4 bg-cardBg hover:bg-cardBg/80 border border-white/10 text-subText hover:text-white rounded-xl text-xs font-semibold text-center transition-colors">ダウンロード</a>
-                        <button onclick="deleteSavedStamp(${idx})" class="w-full py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold text-center cursor-pointer transition-colors">削除</button>
+                        <span class="text-[10px] text-subText text-center truncate">作成者: ${item.creator || 'ゲスト'}</span>
+                        <button onclick="sendSavedStamp('${key}')" class="w-full py-2.5 px-4 bg-insta-gradient text-white rounded-xl text-xs font-bold text-center cursor-pointer shadow-lg hover:opacity-95 transition-opacity">送信</button>
+                        <a href="${item.dataUrl}" download="stamp_${idx+1}.png" class="w-full py-2.5 px-4 bg-cardBg hover:bg-cardBg/80 border border-white/10 text-subText hover:text-white rounded-xl text-xs font-semibold text-center transition-colors">ダウンロード</a>
+                        <button onclick="deleteSavedStamp('${key}')" class="w-full py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold text-center cursor-pointer transition-colors">削除</button>
                     </div>
                 `;
                 list.appendChild(div);
             });
         }
 
-        window.sendSavedStamp = async function(dataUrl) {
-            await sendTextMessage(dataUrl, 'stamp', 'stamp.png');
-            closeStampHistoryModal();
+        window.sendSavedStamp = async function(key) {
+            const item = cachedStampHistory[key];
+            if (item) {
+                await sendTextMessage(item.dataUrl, 'stamp', 'stamp.png');
+                closeStampHistoryModal();
+            }
         };
 
-        window.deleteSavedStamp = function(idx) {
-            savedStamps.splice(idx, 1);
-            localStorage.setItem('airmessage_stamps', JSON.stringify(savedStamps));
-            renderStampHistory();
+        window.deleteSavedStamp = async function(key) {
+            if (confirm("この共有スタンプを削除しますか？")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'stamp_history', key));
+            }
         };
 
         window.deleteMessage = async function(msgId) {
