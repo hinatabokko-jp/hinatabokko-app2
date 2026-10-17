@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グラデーションカラーテスター</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Custom styled range slider */
+        input[type="range"] {
+            accent-color: #6366f1;
+        }
+        /* Custom color picker styling wrapper */
+        .color-picker-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        .color-picker-wrapper input[type="color"] {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: calc(100% + 20px);
+            height: calc(100% + 20px);
+            cursor: pointer;
+            border: none;
+        }
+        /* Checkerboard background for transparency preview */
+        .bg-checkerboard {
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), linear-gradient(-45deg, #1e293b 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e293b 75%), linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-gradient-to-tr from-indigo-500 to-pink-500 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="palette" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">グラデーションカラーテスター</h1>
+                    <p class="text-xs text-slate-400">視覚的に綺麗なグラデーションを作成・確認</p>
+                </div>
+            </div>
+            <button id="reset-btn" class="flex items-center space-x-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span>リセット</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left / Top Column: Live Preview & Settings -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- Main Preview Box -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
+                        プレビュー
+                    </span>
+                    <span id="type-badge" class="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-500/20 font-mono">
+                        linear-gradient
+                    </span>
+                </div>
+
+                <!-- Gradient Display Container -->
+                <div class="relative w-full h-64 sm:h-80 rounded-xl overflow-hidden border border-slate-700/60 shadow-2xl bg-checkerboard group transition-all duration-300">
+                    <div id="gradient-preview" class="w-full h-full transition-all duration-150"></div>
+                </div>
+
+                <!-- Controls: Type & Angle -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">グラデーションの種類</label>
+                        <select id="gradient-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                            <option value="linear">線形 (Linear)</option>
+                            <option value="radial">円形 (Radial)</option>
+                            <option value="conic">扇形 (Conic)</option>
+                        </select>
+                    </div>
+
+                    <div id="angle-container">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-slate-400">角度</label>
+                            <span id="angle-value" class="text-xs font-mono text-indigo-400 font-semibold">90deg</span>
+                        </div>
+                        <input type="range" id="gradient-angle" min="0" max="360" value="90" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSS Export Container -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i data-lucide="code" class="w-4 h-4 text-emerald-400"></i>
+                        生成された CSS
+                    </span>
+                    <button id="copy-btn" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-medium px-3.5 py-2 rounded-lg transition shadow-md shadow-indigo-600/30">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span id="copy-text">CSSをコピー</span>
+                    </button>
+                </div>
+                <div class="relative">
+                    <textarea id="css-output" readonly rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-indigo-300 resize-none focus:outline-none select-all"></textarea>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-emerald-400 border border-emerald-500/30 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                <span id="toast-message" class="text-sm text-slate-200">クリップボードにコピーしました！</span>
+            </div>
+
+        </section>
+
+        <!-- Right / Bottom Column: Color Points Control & Presets -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+
+            <!-- Stop Points Panel -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-5">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-pink-400"></i>
+                            カラーポイント設定
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">真ん中のポイントを追加・調整可能</p>
+                    </div>
+                    <button id="add-point-btn" class="flex items-center space-x-1 bg-slate-800 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span>ポイント追加</span>
+                    </button>
+                </div>
+
+                <!-- Visual Bar Indicator -->
+                <div class="space-y-1">
+                    <div class="text-xs text-slate-400 flex justify-between px-1">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                    </div>
+                    <div id="visual-bar" class="w-full h-3 rounded-full border border-slate-700/80 relative bg-checkerboard overflow-hidden">
+                        <div id="visual-bar-gradient" class="w-full h-full"></div>
+                    </div>
+                </div>
+
+                <!-- Color Stops List -->
+                <div id="stops-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    <!-- Dynamic Stop Item Template Cards will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Preset Templates -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-4">
+                <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+                    プリセットサンプル
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="presets-grid">
+                    <!-- Dynamic Presets -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+        <p>Gradient Color Tester &copy; 2026 - HTML5 / Tailwind CSS</p>
+    </footer>
+
+    <!-- App Logic -->
+    <script>
+        // Preset gradients definition
+        const PRESETS = [
+            {
+                name: 'Sunset Ocean',
+                type: 'linear',
+                angle: 135,
+                stops: [
+                    { id: 1, color: '#ff7e5f', position: 0 },
+                    { id: 2, color: '#feb47b', position: 50 },
+                    { id: 3, color: '#86a8e7', position: 100 }
+                ]
+            },
+            {
+                name: 'Neon Cyber',
+                type: 'linear',
+                angle: 90,
+                stops: [
+                    { id: 1, color: '#f72585', position: 0 },
+                    { id: 2, color: '#7209b7', position: 45 },
+                    { id: 3, color: '#4cc9f0', position: 100 }
+                ]
+            },
+            {
+                name: 'Emerald City',
+                type: 'linear',
+                angle: 120,
+                stops: [
+                    { id: 1, color: '#10b981', position: 0 },
+                    { id: 2, color: '#064e3b', position: 100 }
+                ]
+            },
+            {
+                name: 'Peach Bliss',
+                type: 'linear',
+                angle: 45,
+                stops: [
+                    { id: 1, color: '#ffecd2', position: 0 },
+                    { id: 2, color: '#fcb69f', position: 100 }
+                ]
+            },
+            {
+                name: 'Cosmic Purple',
+                type: 'radial',
+                angle: 90,
+                stops: [
+                    { id: 1, color: '#2e1065', position: 0 },
+                    { id: 2, color: '#090d16', position: 100 }
+                ]
+            },
+            {
+                name: 'Aurora Borealis',
+                type: 'linear',
+                angle: 160,
+                stops: [
+                    { id: 1, color: '#00c6ff', position: 0 },
+                    { id: 2, color: '#0072ff', position: 50 },
+                    { id: 3, color: '#22c55e', position: 100 }
+                ]
+            }
+        ];
+
+        // Default App State
+        let state = {
+            type: 'linear',
+            angle: 90,
+            stops: [
+                { id: 1, color: '#6366f1', position: 0 },
+                { id: 2, color: '#a855f7', position: 50 },
+                { id: 3, color: '#ec4899', position: 100 }
+            ]
+        };
+
+        let nextStopId = 4;
+
+        // DOM Elements
+        const previewEl = document.getElementById('gradient-preview');
+        const visualBarGradientEl = document.getElementById('visual-bar-gradient');
+        const cssOutputEl = document.getElementById('css-output');
+        const gradientTypeSelect = document.getElementById('gradient-type');
+        const gradientAngleInput = document.getElementById('gradient-angle');
+        const angleValueSpan = document.getElementById('angle-value');
+        const angleContainer = document.getElementById('angle-container');
+        const typeBadge = document.getElementById('type-badge');
+        const stopsListEl = document.getElementById('stops-list');
+        const addPointBtn = document.getElementById('add-point-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyText = document.getElementById('copy-text');
+        const presetsGrid = document.getElementById('presets-grid');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Initialize Application
+        function init() {
+            lucide.createIcons();
+            renderPresets();
+            setupEventListeners();
+            updateUI();
+        }
+
+        // Render Presets Grid
+        function renderPresets() {
+            presetsGrid.innerHTML = '';
+            PRESETS.forEach(preset => {
+                const button = document.createElement('button');
+                button.className = 'group flex flex-col p-2 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/50 hover:border-indigo-500/50 rounded-xl transition text-left space-y-1.5';
+                
+                const cssGrad = generateGradientCSSString(preset.type, preset.angle, preset.stops);
+
+                button.innerHTML = `
+                    <div class="w-full h-10 rounded-lg shadow-inner" style="background: ${cssGrad}"></div>
+                    <span class="text-xs font-medium text-slate-300 group-hover:text-white truncate">${preset.name}</span>
+                `;
+
+                button.addEventListener('click', () => {
+                    state.type = preset.type;
+                    state.angle = preset.angle;
+                    state.stops = JSON.parse(JSON.stringify(preset.stops));
+                    gradientTypeSelect.value = state.type;
+                    gradientAngleInput.value = state.angle;
+                    updateUI();
+                    showToast(`「${preset.name}」を適用しました`);
+                });
+
+                presetsGrid.appendChild(button);
+            });
+        }
+
+        // Generate Gradient CSS String
+        function generateGradientCSSString(type, angle, stops) {
+            const sortedStops = [...stops].sort((a, b) => a.position - b.position);
+            const stopsString = sortedStops.map(s => `${s.color.toLowerCase()} ${s.position}%`).join(', ');
+
+            if (type === 'linear') {
+                return `linear-gradient(${angle}deg, ${stopsString})`;
+            } else if (type === 'radial') {
+                return `radial-gradient(circle at center, ${stopsString})`;
+            } else if (type === 'conic') {
+                return `conic-gradient(from ${angle}deg at 50% 50%, ${stopsString})`;
+            }
+            return '';
+        }
+
+        // Update Everything in UI
+        function updateUI() {
+            // Sort stops by position for visual consistency
+            state.stops.sort((a, b) => a.position - b.position);
+
+            const cssString = generateGradientCSSString(state.type, state.angle, state.stops);
+            const linearString = generateGradientCSSString('linear', 90, state.stops);
+
+            // Update Preview Elements
+            previewEl.style.background = cssString;
+            visualBarGradientEl.style.background = linearString;
+            cssOutputEl.value = `background: ${cssString};`;
+
+            // Update Angle Display
+            angleValueSpan.textContent = `${state.angle}deg`;
+            typeBadge.textContent = `${state.type}-gradient`;
+
+            // Angle control visibility for radial
+            if (state.type === 'radial') {
+                angleContainer.style.opacity = '0.4';
+                gradientAngleInput.disabled = true;
+            } else {
+                angleContainer.style.opacity = '1';
+                gradientAngleInput.disabled = false;
+            }
+
+            renderStopsList();
+        }
+
+        // Render List of Stop Controls
+        function renderStopsList() {
+            stopsListEl.innerHTML = '';
+
+            state.stops.forEach((stop, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center space-x-3 bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 shadow-sm hover:border-slate-600 transition';
+
+                const isMinStops = state.stops.length <= 2;
+
+                item.innerHTML = `
+                    <!-- Color Picker Box -->
+                    <div class="color-picker-wrapper w-9 h-9 border border-slate-600 shadow-md flex-shrink-0" style="background-color: ${stop.color}">
+                        <input type="color" value="${stop.color}" data-id="${stop.id}" class="color-picker-input">
+                    </div>
+
+                    <!-- HEX Code Text Input -->
+                    <div class="w-24 flex-shrink-0">
+                        <input type="text" value="${stop.color.toUpperCase()}" data-id="${stop.id}" class="hex-text-input w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono text-center text-slate-200 focus:outline-none focus:border-indigo-500 uppercase">
+                    </div>
+
+                    <!-- Position Slider -->
+                    <div class="flex-1 flex items-center space-x-2">
+                        <input type="range" min="0" max="100" value="${stop.position}" data-id="${stop.id}" class="pos-slider w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-xs font-mono text-slate-400 w-8 text-right">${stop.position}%</span>
+                    </div>
+
+                    <!-- Delete Button -->
+                    <button data-id="${stop.id}" class="delete-btn p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition ${isMinStops ? 'opacity-30 cursor-not-allowed' : ''}" ${isMinStops ? 'disabled' : ''}>
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+
+                stopsListEl.appendChild(item);
+            });
+
+            lucide.createIcons();
+            attachStopListEvents();
+        }
+
+        // Attach Events to Rendered Stop Elements
+        function attachStopListEvents() {
+            // Color picker change
+            document.querySelectorAll('.color-picker-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    const stop = state.stops.find(s => s.id === id);
+                    if (stop) {
+                        stop.color = e.target.value;
+                        updateUI();
+                    }
+                });
+            });
+
+            // HEX text change
+            document.querySelectorAll('.hex-text-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    let val = e.target.value.trim();
+                    if (!val.startsWith('#')) val = '#' + val;
+                    
+                    if (/^#[0-9A-F]{6}$/i.test(val)) {
+                        const stop = state.stops.find(s => s.id === id);
+                        if (stop) {
+                            stop.color = val;
+                            updateUI();
+                        }
+                    } else {
+                        // Revert invalid hex
+                        const stop = state.stops.find(s => s.id === id);
+                        if (stop) e.target.value = stop.color.toUpperCase();
+                    }
+                });
+            });
+
+            // Position slider change
+            document.querySelectorAll('.pos-slider').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    const stop = state.stops.find(s => s.id === id);
+                    if (stop) {
+                        stop.position = parseInt(e.target.value);
+                        updateUI();
+                    }
+                });
+            });
+
+            // Delete point
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (state.stops.length <= 2) return;
+                    const id = parseInt(btn.dataset.id);
+                    state.stops = state.stops.filter(s => s.id !== id);
+                    updateUI();
+                });
+            });
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Gradient Type
+            gradientTypeSelect.addEventListener('change', (e) => {
+                state.type = e.target.value;
+                updateUI();
+            });
+
+            // Gradient Angle
+            gradientAngleInput.addEventListener('input', (e) => {
+                state.angle = parseInt(e.target.value);
+                updateUI();
+            });
+
+            // Add Stop Point
+            addPointBtn.addEventListener('click', () => {
+                if (state.stops.length >= 8) {
+                    showToast('最大8つのポイントまで追加できます');
+                    return;
+                }
+
+                // Calculate default position & color between existing stops
+                state.stops.sort((a, b) => a.position - b.position);
+                let newPos = 50;
+
+                // Find largest gap to place new point
+                let maxGap = -1;
+                let gapIndex = 0;
+                for (let i = 0; i < state.stops.length - 1; i++) {
+                    let gap = state.stops[i+1].position - state.stops[i].position;
+                    if (gap > maxGap) {
+                        maxGap = gap;
+                        gapIndex = i;
+                    }
+                }
+
+                if (maxGap > 0) {
+                    newPos = Math.round(state.stops[gapIndex].position + maxGap / 2);
+                }
+
+                const randomColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+                const randomColor = randomColors[Math.floor(Math.random() * randomColors.length)];
+
+                state.stops.push({
+                    id: nextStopId++,
+                    color: randomColor,
+                    position: newPos
+                });
+
+                updateUI();
+                showToast('新しいポイントを追加しました');
+            });
+
+            // Reset App
+            resetBtn.addEventListener('click', () => {
+                state = {
+                    type: 'linear',
+                    angle: 90,
+                    stops: [
+                        { id: 1, color: '#6366f1', position: 0 },
+                        { id: 2, color: '#a855f7', position: 50 },
+                        { id: 3, color: '#ec4899', position: 100 }
+                    ]
+                };
+                gradientTypeSelect.value = state.type;
+                gradientAngleInput.value = state.angle;
+                updateUI();
+                showToast('初期状態にリセットしました');
+            });
+
+            // Copy CSS Button
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = cssOutputEl.value;
+                
+                // Copy fallback implementation
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('CSSコードをコピーしました！');
+                    
+                    // Button UI feedback
+                    copyText.textContent = 'コピー完了！';
+                    copyBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+                    copyBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                    
+                    setTimeout(() => {
+                        copyText.textContent = 'CSSをコピー';
+                        copyBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                        copyBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-500');
+                    }, 2000);
+                } catch (err) {
+                    showToast('コピーに失敗しました');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Show Toast Message
+        function showToast(msg) {
+            toastMessage.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Run on Page Load
+        window.onload = init;
+    </script>
+</body>
+</html>
