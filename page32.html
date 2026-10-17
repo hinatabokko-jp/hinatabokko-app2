@@ -9,14 +9,42 @@
     <!-- Google Fonts for rich font selection -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&family=Noto+Sans+JP:wght@700;900&family=Zen+Maru+Gothic:wght@700;900&family=Potta+One&family=Dela+Gothic+One&family=Yuji+Boku&family=Hina+Mincho&family=Kiwi+Maru:wght@500;700&family=Shrikhand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&family=Noto+Sans+JP:wght@700;900&family=Potta+One&family=Dela+Gothic+One&family=Yuji+Boku&family=Hina+Mincho&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Custom Font Definitions */
         @font-face {
-            font-family: 'BananaSlip';
-            src: url('YDWbananaslipplus.otf') format('opentype');
+            font-family: 'JK Maru Gothic Medium';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/jk丸ゴシック_medium.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Yu Gothic';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/yu_gothic.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Arphic Koin-Tai Bold JIS';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/arphic_koin-tai_bold_jis.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'YDW bananaslip plus plus';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/ydw_bananaslip_plus_plus.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'HonyaJi-Re';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/honyaji-re.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -28,16 +56,13 @@
             font-style: normal;
             font-display: swap;
         }
-
-
-        
         @font-face {
-            font-family: "AR浪漫明朝体U";
-            src: url('jrmm00u.ttf') format('truetype');
+            font-family: 'Arphic Roman-Mincho Ultra JIS';
+            src: url('https://hinatabokko-jp.github.io/hinatabokko-app2/arphic_roman-mincho_ultra_jis.woff2') format('woff2');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
-        }        
+        }
         @font-face {
             font-family: 'YomogiFont';
             src: url('yomogifont.otf') format('opentype');
@@ -120,18 +145,19 @@
                         <i class="fa-solid fa-font text-indigo-400 mr-1"></i> フォント
                     </label>
                     <select id="fontFamily" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                        <option value="'JrmmFont', sans-serif" style="font-family: 'JrmmFont';">jrmm00uフォント</option>
+                        <option value="'M PLUS Rounded 1c', sans-serif" style="font-family: 'M PLUS Rounded 1c';" selected>M PLUS Rounded 1c (丸ゴシック)</option>
+                        <option value="'JK Maru Gothic Medium', sans-serif" style="font-family: 'JK Maru Gothic Medium';">JK丸ゴシック</option>
+                        <option value="'Yu Gothic', sans-serif" style="font-family: 'Yu Gothic';">游ゴシック</option>
+                        <option value="'Arphic Koin-Tai Bold JIS', serif" style="font-family: 'Arphic Koin-Tai Bold JIS';">AR古印体B</option>
+                        <option value="'YDW bananaslip plus plus', sans-serif" style="font-family: 'YDW bananaslip plus plus';">バナナスリップ</option>
+                        <option value="'HonyaJi-Re', sans-serif" style="font-family: 'HonyaJi-Re';">ほにゃ字</option>
+                        <option value="'Arphic Roman-Mincho Ultra JIS', serif" style="font-family: 'Arphic Roman-Mincho Ultra JIS';">AR浪漫明朝体U</option>
                         <option value="'YomogiFont', sans-serif" style="font-family: 'YomogiFont';">よもぎフォント</option>
-                        <option value="'BananaSlip', sans-serif" style="font-family: 'BananaSlip';">バナナスリップフォント</option>
                         <option value="'KeiFont', sans-serif" style="font-family: 'KeiFont';">けいフォント</option>
                         <option value="'Dela Gothic One', sans-serif" style="font-family: 'Dela Gothic One';">Dela Gothic One (極太ゴシック)</option>
                         <option value="'Potta One', cursive" style="font-family: 'Potta One';">Potta One (ポップ)</option>
-                        <option value="'M PLUS Rounded 1c', sans-serif" style="font-family: 'M PLUS Rounded 1c';" selected>M PLUS Rounded 1c (丸ゴシック)</option>
                         <option value="'Noto Sans JP', sans-serif" style="font-family: 'Noto Sans JP';">Noto Sans JP (標準ゴシック)</option>
-                        <option value="'Zen Maru Gothic', sans-serif" style="font-family: 'Zen Maru Gothic';">Zen Maru Gothic (綺麗丸文字)</option>
-                        <option value="'Kiwi Maru', serif" style="font-family: 'Kiwi Maru';">Kiwi Maru (手書き風)</option>
                         <option value="'Hina Mincho', serif" style="font-family: 'Hina Mincho';">Hina Mincho (明朝体)</option>
-                        <option value="'Shrikhand', cursive" style="font-family: 'Shrikhand';">Shrikhand (洋風レトロ)</option>
                     </select>
                 </div>
                 <div class="space-y-1.5">
