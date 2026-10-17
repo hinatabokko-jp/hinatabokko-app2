@@ -297,7 +297,7 @@
       border: 1px solid var(--border-color);
     }
     
-    /* スタンプ用の吹き出しスタイル（背景・枠線・パディングを排除）[cite: 1] */
+    /* スタンプ用の吹き出しスタイル */
     .bubble.stamp-bubble {
       background: transparent !important;
       padding: 6px;
@@ -343,7 +343,6 @@
       display: block;
       object-fit: contain;
     }
-    /* LINEスタンプ風に表示させる画像・スタンプのスタイル[cite: 1] */
     .chat-stamp {
       max-width: 170px;
       max-height: 170px;
@@ -1015,6 +1014,15 @@
     const passBtn = document.getElementById('pass-btn');
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
+    const userSelect = document.getElementById('user-select');
+
+    // ① 端末ごとに固有のUID（識別キー）の管理
+    let deviceUID = localStorage.getItem('family_chat_device_uid');
+    if (!deviceUID) {
+      deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('family_chat_device_uid', deviceUID);
+    }
+    const userStorageKey = 'family_chat_selected_user_' + deviceUID;
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
@@ -1054,9 +1062,16 @@
       }
     }
 
+    // ② アプリロック解除時（ログイン時）に、前回選ばれていたユーザーを復元する処理
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
+
+      const savedUser = localStorage.getItem(userStorageKey);
+      if (savedUser && (savedUser === 'おかあさん' || savedUser === 'おとうさん' || savedUser === 'むすめ')) {
+        userSelect.value = savedUser;
+      }
+
       renderMessages();
       scrollToBottom();
     }
@@ -1066,7 +1081,7 @@
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 画像のEXIF回転補正用関数（iOS端末の向き誤判定を防止・PNG透過を維持）
+    // 画像のEXIF回転補正用関数
     function normalizeImageFile(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -1091,7 +1106,6 @@
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
-    const userSelect = document.getElementById('user-select');
     const fileInput = document.getElementById('file-input');
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
@@ -1149,7 +1163,6 @@
     let currentBrushType = 'pen';
     let historyStack = [];
     let lastPoint = null;
-    
     let editingMessageKey = null;
 
     function getLayerObj(id) {
@@ -1587,20 +1600,16 @@
       targetCanvas.addEventListener('touchend', endDraw);
     });
 
-    // 手描きスタンプ作成・エクスポート時の透過処理（Canvas）[cite: 1]
     stampSubmitBtn.addEventListener('click', () => {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = 250; exportCanvas.height = 250;
       const expCtx = exportCanvas.getContext('2d');
       
-      // 各レイヤーの描画内容を透過を維持したまま結合[cite: 1]
       layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
       
-      // PNG形式としてDataURLに変換（背景が透明な状態を保持）[cite: 1]
       const stampDataUrl = exportCanvas.toDataURL('image/png');
       const senderName = userSelect.value;
       
-      // データベースにスタンプとして送信・保存[cite: 1]
       push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
       push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
       
@@ -1728,7 +1737,6 @@
       });
     }
 
-    // JavaScript（スタンプ送受信時のHTML描画処理）[cite: 1]
     function renderMessages() {
       chatBox.innerHTML = '';
       const activeUser = userSelect.value;
@@ -1743,13 +1751,11 @@
         senderName.className = 'sender-name';
         senderName.textContent = msg.sender;
 
-        // isStampが有効な場合は stamp-bubble クラスを付与[cite: 1]
         const bubble = document.createElement('div');
         bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
 
         if (msg.fileData) {
           if (msg.isStamp) {
-            // 透過PNG（スタンプ）として<img>タグを生成[cite: 1]
             const img = document.createElement('img'); 
             img.src = msg.fileData; 
             img.className = 'chat-stamp';
@@ -1809,8 +1815,10 @@
       scrollToBottom();
     }
 
+    // ③ ③ ユーザーがセレクトボックスで切り替えたときに、その端末のUIDに紐付けて保存する処理
     function initChat() {
       userSelect.addEventListener('change', () => {
+        localStorage.setItem(userStorageKey, userSelect.value);
         renderMessages();
       });
 
