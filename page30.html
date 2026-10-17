@@ -328,7 +328,7 @@
       scroll-behavior: smooth;
     }
 
-    /* メモカード（自分の入力配置スタイル） */
+    /* メモカード（メッセージ配置スタイル：自分・他者共通で美しいグラデーション） */
     .message {
       max-width: 82%;
       display: flex;
@@ -476,13 +476,13 @@
       filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
     }
     .chat-link {
-      color: #93c5fd;
+      color: #ffffff;
       text-decoration: underline;
       word-break: break-all;
       font-weight: 500;
     }
     .chat-link:hover {
-      color: #bfdbfe;
+      color: #e2e8f0;
     }
     .file-attachment {
       display: flex;
@@ -1875,16 +1875,24 @@
     }
 
     function renderFormattedText(container, text) {
-      const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
+      // http:// または https:// から始まり、スペースや制御文字以外の文字が続く部分をURLとして認識
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
       let lastIndex = 0, match;
       while ((match = urlRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+        if (match.index > lastIndex) {
+          container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+        }
         const link = document.createElement('a');
-        link.href = match[0]; link.textContent = match[0]; link.className = 'chat-link'; link.target = '_blank';
+        link.href = match[0];
+        link.textContent = match[0];
+        link.className = 'chat-link';
+        link.target = '_blank';
         container.appendChild(link);
         lastIndex = urlRegex.lastIndex;
       }
-      if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
+      if (lastIndex < text.length) {
+        container.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
     }
 
     function scrollToBottom() {
