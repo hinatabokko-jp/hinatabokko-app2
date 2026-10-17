@@ -1132,6 +1132,15 @@
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 
+    // === 端末固有のUID（識別キー）の管理 ===
+    let deviceUID = localStorage.getItem('family_chat_device_uid');
+    if (!deviceUID) {
+      // 端末ごとに固有のランダムなIDを生成して保存
+      deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('family_chat_device_uid', deviceUID);
+    }
+    const userStorageKey = 'family_chat_selected_user_' + deviceUID;
+
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
       sessionStorage.removeItem('family_chat_unlocked');
@@ -1173,6 +1182,13 @@
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
+
+      // ログイン成功時に、この端末で前回選ばれていたユーザーを復元する
+      const savedUser = localStorage.getItem(userStorageKey);
+      if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
+        userSelect.value = savedUser;
+      }
+
       renderMessages();
       scrollToBottom();
     }
@@ -1877,7 +1893,9 @@
     }
 
     function initChat() {
+      // ユーザーがセレクトボックスで変更したときに、その端末のUIDに紐付けて保存する
       userSelect.addEventListener('change', () => {
+        localStorage.setItem(userStorageKey, userSelect.value);
         renderMessages();
       });
 
