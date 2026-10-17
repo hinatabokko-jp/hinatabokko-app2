@@ -6,16 +6,21 @@
   <title>family chat</title>
   <style>
     :root {
-      --bg-color: #121212;
-      --surface-color: #1e1e1e;
-      --primary-color: #10b981; /* 鮮やかなエメラルドグリーン */
-      --primary-hover: #059669;
-      --danger-color: #cf6679;
-      --text-color: #e0e0e0;
-      --text-muted: #aaa;
-      --border-color: #2d2d2d;
-      --chat-bg: #121212;
-      --my-msg-bg: #065f46; /* 深みのあるグリーン */
+      --bg-color: #0b0f19;
+      --surface-color: #131b2e;
+      --surface-glass: rgba(19, 27, 46, 0.75);
+      --primary-gradient: linear-gradient(135deg, #8B5CF6, #6366F1, #06B6D4);
+      --primary-color: #6366F1;
+      --primary-hover: #4f46e5;
+      --danger-color: #f43f5e;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --chat-bg: #0b0f19;
+      --my-msg-gradient: linear-gradient(135deg, #8B5CF6, #6366F1, #06B6D4);
+      --other-msg-bg: #1e293b;
+      --border-radius-btn: 14px;
+      --padding-btn: 12px 20px;
     }
 
     * {
@@ -23,6 +28,7 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg-color);
@@ -55,51 +61,70 @@
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      gap: 16px;
+      gap: 20px;
       padding: 20px;
+      backdrop-filter: blur(20px);
     }
     #lock-screen h2 {
-      font-size: 1.2rem;
-      color: var(--primary-color);
+      font-size: 1.3rem;
+      font-weight: 600;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     #pass-input {
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px 16px;
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-btn);
+      padding: var(--padding-btn);
       color: #fff;
       font-size: 1rem;
       text-align: center;
       outline: none;
-      width: 220px;
+      width: 260px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #pass-input:focus {
+      border-color: #6366F1;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
     }
     .remember-container {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 0.9rem;
-      color: var(--text-color);
+      color: var(--text-muted);
       cursor: pointer;
       user-select: none;
     }
     .remember-container input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--primary-color);
+      width: 18px;
+      height: 18px;
+      accent-color: #6366F1;
       cursor: pointer;
     }
     #pass-btn {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 10px 24px;
+      border-radius: var(--border-radius-btn);
+      padding: var(--padding-btn);
       font-weight: bold;
-      font-size: 0.95rem;
+      font-size: 1rem;
       cursor: pointer;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    #pass-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    #pass-btn:active {
+      transform: scale(0.98);
     }
     #pass-error {
-      color: #ff5252;
+      color: var(--danger-color);
       font-size: 0.85rem;
       display: none;
     }
@@ -115,7 +140,7 @@
     .chat-main-area {
       display: flex;
       flex: 1;
-      height: calc(100% - 61px);
+      height: calc(100% - 69px);
       overflow: hidden;
     }
 
@@ -129,8 +154,9 @@
 
     /* ヘッダー */
     header {
-      background-color: var(--surface-color);
-      padding: 10px 16px;
+      background-color: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      padding: 12px 20px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
@@ -148,24 +174,27 @@
       flex-direction: column;
     }
     .header-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: var(--primary-color);
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       line-height: 1.2;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .status-badge {
-      font-size: 0.65rem;
-      padding: 2px 8px;
-      border-radius: 12px;
-      background-color: #064e3b;
-      color: #a7f3d0;
-      border: 1px solid #047857;
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 500;
     }
     .header-subtitle {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       margin-top: 2px;
       line-height: 1.2;
@@ -173,48 +202,56 @@
     .header-right-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
     .user-select-container {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
     }
     .user-select-label {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
     }
     select {
-      background-color: #2a2a2a;
+      background-color: var(--surface-color);
       color: #fff;
-      border: 1px solid #444;
-      padding: 4px 8px;
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 10px;
       font-size: 0.85rem;
       outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    select:focus {
+      border-color: #6366F1;
     }
     .btn-logout {
       background: transparent;
       border: 1px solid var(--border-color);
-      color: var(--text-color);
-      padding: 5px 10px;
-      border-radius: 6px;
+      color: var(--text-muted);
+      padding: var(--padding-btn);
+      border-radius: var(--border-radius-btn);
       cursor: pointer;
       font-size: 0.8rem;
+      transition: background-color 0.2s, color 0.2s;
     }
     .btn-logout:hover {
-      background-color: rgba(255,255,255,0.1);
+      background-color: rgba(255,255,255,0.05);
+      color: var(--text-color);
     }
 
     /* チャット表示エリア */
     #chat-box {
       flex: 1;
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
+      background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.03), transparent 40%);
     }
 
     /* メッセージバルーン */
@@ -231,41 +268,48 @@
     }
     .sender-name {
       font-size: 0.75rem;
-      color: #888;
-      margin-bottom: 3px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
       padding: 0 4px;
+      font-weight: 500;
     }
     .message.sent .sender-name {
       text-align: right;
     }
     .bubble {
-      padding: 10px 14px;
-      border-radius: 16px;
+      padding: 12px 16px;
+      border-radius: 18px;
       font-size: 0.95rem;
-      line-height: 1.4;
+      line-height: 1.5;
       word-break: break-word;
       white-space: pre-wrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     .message.sent .bubble {
-      background-color: var(--my-msg-bg);
+      background: var(--my-msg-gradient);
       color: #ffffff;
-      border-bottom-right-radius: 2px;
+      border-bottom-right-radius: 4px;
     }
     .message.received .bubble {
-      background-color: #2a2a2a;
+      background-color: var(--other-msg-bg);
       color: var(--text-color);
-      border-bottom-left-radius: 2px;
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border-color);
     }
+    
+    /* スタンプ用の吹き出しスタイル（背景・枠線・パディングを排除）[cite: 1] */
     .bubble.stamp-bubble {
-      background-color: transparent !important;
-      padding: 4px;
+      background: transparent !important;
+      padding: 6px;
+      box-shadow: none !important;
+      border: none !important;
     }
 
     .meta-info {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 3px;
+      gap: 10px;
+      margin-top: 4px;
       padding: 0 4px;
     }
     .message.sent .meta-info {
@@ -273,7 +317,7 @@
     }
     .timestamp {
       font-size: 0.65rem;
-      color: #666;
+      color: var(--text-muted);
     }
     .delete-btn, .edit-btn {
       background: none;
@@ -282,47 +326,51 @@
       font-size: 0.7rem;
       cursor: pointer;
       padding: 0;
-      text-decoration: underline;
       opacity: 0.8;
+      transition: opacity 0.2s, color 0.2s;
     }
     .delete-btn:hover, .edit-btn:hover {
       opacity: 1;
-      color: #fff;
+      color: var(--text-color);
     }
 
     /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
       max-height: 250px;
-      border-radius: 8px;
+      border-radius: 12px;
       margin-bottom: 6px;
       display: block;
       object-fit: contain;
     }
+    /* LINEスタンプ風に表示させる画像・スタンプのスタイル[cite: 1] */
     .chat-stamp {
-      max-width: 180px;
-      max-height: 180px;
+      max-width: 170px;
+      max-height: 170px;
       display: block;
       user-select: none;
       pointer-events: none;
       object-fit: contain;
+      image-orientation: none;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
     }
     .chat-link {
-      color: #6ee7b7;
+      color: #38bdf8;
       text-decoration: underline;
       word-break: break-all;
     }
     .message.received .chat-link {
-      color: var(--primary-color);
+      color: #818cf8;
     }
     .file-attachment {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background-color: rgba(0, 0, 0, 0.2);
-      padding: 8px 12px;
-      border-radius: 8px;
+      gap: 10px;
+      background-color: rgba(0, 0, 0, 0.25);
+      padding: 10px 14px;
+      border-radius: 10px;
       margin-bottom: 6px;
+      border: 1px solid rgba(255,255,255,0.05);
     }
     .file-name {
       font-size: 0.85rem;
@@ -334,65 +382,79 @@
 
     /* 入力エリア */
     footer {
-      background-color: var(--surface-color);
-      padding: 12px 16px;
+      background-color: var(--surface-glass);
+      backdrop-filter: blur(12px);
+      padding: 14px 20px;
       border-top: 1px solid var(--border-color);
       display: flex;
       align-items: flex-end;
-      gap: 8px;
+      gap: 10px;
     }
     textarea {
       flex: 1;
-      background-color: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 18px;
-      padding: 8px 14px;
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 10px 16px;
       color: #fff;
       font-size: 0.95rem;
       outline: none;
       resize: none;
-      height: 40px;
+      height: 44px;
       max-height: 120px;
       font-family: inherit;
       line-height: 1.4;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     textarea:focus {
-      border-color: var(--primary-color);
+      border-color: #6366F1;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
     }
     button.send-btn-style {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 20px;
-      padding: 0 18px;
-      height: 40px;
+      border-radius: var(--border-radius-btn);
+      padding: var(--padding-btn);
+      height: 44px;
       font-weight: bold;
       font-size: 0.95rem;
       cursor: pointer;
-      transition: background-color 0.2s;
-      flex-shrink: 0;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      transition: opacity 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button.send-btn-style:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
     button.send-btn-style:active {
-      background-color: var(--primary-hover);
+      transform: scale(0.97);
     }
     button.icon-btn-style, label.icon-btn-style {
-      background-color: #2a2a2a;
-      color: var(--primary-color);
-      border: 1px solid #444;
-      border-radius: 20px;
-      width: 40px;
-      height: 40px;
+      background-color: var(--surface-color);
+      color: #818cf8;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-btn);
+      width: 44px;
+      height: 44px;
       font-size: 1.1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: background-color 0.2s, border-color 0.2s;
+      transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+    }
+    button.icon-btn-style:hover, label.icon-btn-style:hover {
+      background-color: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-1px);
     }
     button.icon-btn-style:active, label.icon-btn-style:active {
-      background-color: #3a3a3a;
-      border-color: var(--primary-color);
+      transform: scale(0.95);
     }
 
     /* モーダル表示スタイル */
@@ -402,7 +464,8 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(5, 7, 12, 0.8);
+      backdrop-filter: blur(8px);
       z-index: 10000;
       display: flex;
       justify-content: center;
@@ -418,28 +481,30 @@
     }
     .modal-container {
       background-color: var(--surface-color);
-      border: 1px solid #333;
-      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
       width: 100%;
       max-width: 580px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
       overflow: hidden;
     }
     .modal-header {
-      padding: 14px 16px;
-      background-color: #252525;
-      border-bottom: 1px solid #333;
+      padding: 16px 20px;
+      background-color: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .modal-title {
-      font-size: 1.05rem;
-      font-weight: bold;
-      color: var(--primary-color);
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .modal-close-btn {
       background: none;
@@ -447,24 +512,25 @@
       color: var(--text-muted);
       font-size: 1.3rem;
       cursor: pointer;
-      padding: 0 4px;
+      padding: 4px;
       line-height: 1;
+      transition: color 0.2s;
     }
     .modal-close-btn:hover {
       color: #fff;
     }
     .modal-body {
-      padding: 16px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
     .section-title {
       font-size: 0.85rem;
-      font-weight: bold;
-      color: var(--text-color);
-      margin-bottom: 4px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
     }
     .palette-grid {
       display: flex;
@@ -472,21 +538,22 @@
       gap: 8px;
     }
     .palette-btn {
-      background-color: #2a2a2a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      height: 38px;
-      padding: 0 10px;
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      height: 40px;
+      padding: 0 12px;
       font-size: 1.1rem;
       color: var(--text-color);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
+      transition: background-color 0.2s, transform 0.1s, border-color 0.2s;
     }
     .palette-btn:hover {
-      background-color: #3a3a3a;
+      background-color: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
       transform: scale(1.03);
     }
     .kaimoji-btn {
@@ -495,24 +562,26 @@
     .modal-textarea {
       width: 100%;
       height: 120px;
-      background-color: #2a2a2a;
+      background-color: rgba(0, 0, 0, 0.2);
       color: #fff;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
       line-height: 1.4;
       font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .modal-textarea:focus {
-      border-color: var(--primary-color);
+      border-color: #6366F1;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
     }
     .modal-footer {
-      padding: 12px 16px;
+      padding: 16px 20px;
       border-top: 1px solid var(--border-color);
-      background-color: var(--surface-color);
+      background-color: rgba(255, 255, 255, 0.02);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -520,38 +589,46 @@
     }
     .modal-footer-right {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
     .secondary-btn {
-      background-color: #2a2a2a;
+      background-color: rgba(255, 255, 255, 0.05);
       color: var(--text-color);
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 8px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-btn);
+      padding: var(--padding-btn);
       font-size: 0.85rem;
       cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
     }
     .secondary-btn:hover {
-      background-color: #3a3a3a;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     /* 手描きスタンプ関連スタイル */
     .stamp-nav-btn {
-      background-color: var(--primary-color);
-      color: #121212;
+      background: var(--primary-gradient);
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
+      border-radius: 10px;
+      padding: 8px 14px;
       font-weight: bold;
       font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .stamp-nav-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
     .editor-layout {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       justify-content: center;
       align-items: flex-start;
     }
@@ -559,13 +636,14 @@
       position: relative;
       width: 250px;
       height: 250px;
-      border: 2px dashed #444;
-      border-radius: 12px;
-      background-color: #1a1a1a;
-      background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
+      border: 2px dashed rgba(255,255,255,0.15);
+      border-radius: 16px;
+      background-color: #0b0f19;
+      background-image: linear-gradient(45deg, #131b2e 25%, transparent 25%), linear-gradient(-45deg, #131b2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #131b2e 75%), linear-gradient(-45deg, transparent 75%, #131b2e 75%);
       background-size: 20px 20px;
       background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
       flex-shrink: 0;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.5);
     }
     .stamp-canvas {
       position: absolute;
@@ -573,85 +651,89 @@
       left: 0;
       width: 100%;
       height: 100%;
-      border-radius: 10px;
+      border-radius: 14px;
       touch-action: none;
     }
     .ps-layers-panel {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      width: 100px;
-      background-color: #181818;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 8px;
+      gap: 10px;
+      width: 110px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
     }
     .ps-layer-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 6px;
-      background-color: #262626;
+      padding: 8px;
+      background-color: rgba(255, 255, 255, 0.03);
       border: 2px solid transparent;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: grab;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, border-color 0.2s;
     }
     .ps-layer-item.active {
-      border-color: var(--primary-color);
-      background-color: #064e3b;
+      border-color: #6366F1;
+      background-color: rgba(99, 102, 241, 0.15);
     }
     .ps-layer-title {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       font-weight: bold;
     }
     .ps-layer-item.active .ps-layer-title {
-      color: var(--primary-color);
+      color: #818cf8;
     }
     .ps-layer-preview {
       width: 60px;
       height: 60px;
-      border: 1px solid #444;
-      border-radius: 4px;
-      background-color: #111;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: #0b0f19;
       object-fit: contain;
       pointer-events: none;
     }
     .stamp-tools {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       justify-content: center;
       align-items: center;
-      margin-top: 8px;
+      margin-top: 12px;
     }
     .tool-group {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
     .tool-btn {
-      background-color: #2a2a2a;
-      border: 1px solid #444;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
       color: #fff;
-      border-radius: 6px;
-      padding: 6px 10px;
+      border-radius: 8px;
+      padding: 8px 12px;
       font-size: 0.8rem;
       cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .tool-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
     }
     .tool-btn.active {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-      background-color: #333;
+      border-color: #6366F1;
+      color: #818cf8;
+      background-color: rgba(99, 102, 241, 0.15);
     }
     select.tool-select {
-      background-color: #2a2a2a;
+      background-color: var(--surface-color);
       color: #fff;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 10px;
       font-size: 0.8rem;
       outline: none;
     }
@@ -659,7 +741,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
     .history-grid {
       display: grid;
@@ -670,23 +752,28 @@
       padding: 4px;
     }
     .history-card {
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 8px;
-      background-color: #2a2a2a;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.02);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .history-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
     }
     .history-img-wrapper {
       width: 100%;
-      height: 80px;
+      height: 90px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #1a1a1a;
-      border-radius: 6px;
+      background-color: #0b0f19;
+      border-radius: 8px;
     }
     .history-img {
       max-width: 100%;
@@ -696,24 +783,26 @@
     .history-actions {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       width: 100%;
     }
     .history-action-btn {
-      background-color: #333;
+      background-color: rgba(255, 255, 255, 0.05);
       color: var(--text-color);
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 4px 6px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px;
       font-size: 0.75rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
+      transition: background-color 0.2s;
     }
-    .history-action-btn.send { background-color: #065f46; border-color: #059669; color: #fff; }
-    .history-action-btn.del { background-color: #8c2a2a; border-color: #a83232; color: #fff; }
+    .history-action-btn.send { background: var(--primary-gradient); border: none; color: #fff; font-weight: bold; }
+    .history-action-btn.del { background-color: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.3); color: #fda4af; }
+    .history-action-btn.del:hover { background-color: rgba(244, 63, 94, 0.25); }
   </style>
 </head>
 <body>
@@ -765,7 +854,7 @@
             <textarea id="message-input" placeholder="メッセージを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-open-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
-            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">✨</button>
+            <button id="modal-open-btn" class="icon-btn-style" title="絵文字・改行作成">⏎</button>
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
@@ -977,7 +1066,7 @@
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 画像のEXIF回転補正用関数（iOS端末の向き誤判定を防止）
+    // 画像のEXIF回転補正用関数（iOS端末の向き誤判定を防止・PNG透過を維持）
     function normalizeImageFile(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -988,6 +1077,7 @@
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
             resolve(canvas.toDataURL('image/png'));
           };
@@ -1060,7 +1150,6 @@
     let historyStack = [];
     let lastPoint = null;
     
-    // 編集中のメッセージIDを保持する変数
     let editingMessageKey = null;
 
     function getLayerObj(id) {
@@ -1160,7 +1249,7 @@
     });
 
     modalOpenBtn.addEventListener('click', () => {
-      editingMessageKey = null; // 新規作成モード
+      editingMessageKey = null;
       modalTextInput.value = messageInput.value;
       commentModalOverlay.classList.add('active');
       setTimeout(() => modalTextInput.focus(), 50);
@@ -1178,16 +1267,14 @@
       const senderName = userSelect.value;
       if (text) {
         if (editingMessageKey) {
-          // 既存メッセージの編集更新
           update(ref(db, `messages/${editingMessageKey}`), { text: text });
           editingMessageKey = null;
         } else {
-          // 新規送信
           push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
         }
         modalTextInput.value = '';
         messageInput.value = '';
-        messageInput.style.height = '40px';
+        messageInput.style.height = '44px';
       }
       closeModal();
     });
@@ -1199,7 +1286,6 @@
       updateLayerDOMOrder();
     });
 
-    // フッターの「スタンプ履歴」ボタン押下時の処理
     footerStampHistoryOpenBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
@@ -1219,22 +1305,76 @@
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
+    toolFill.addEventListener('click', () => { 
+      currentTool = 'fill'; 
+      toolEraser.classList.remove('active'); 
+      toolFill.classList.add('active'); 
+    });
+
     brushSelect.addEventListener('change', () => {
       currentTool = 'pen';
       currentBrushType = brushSelect.value;
       toolFill.classList.remove('active');
       toolEraser.classList.remove('active');
     });
-    toolFill.addEventListener('click', () => { 
-      currentTool = 'fill'; 
-      toolFill.classList.add('active');
-      toolEraser.classList.remove('active'); 
-    });
+
     toolEraser.addEventListener('click', () => { 
       currentTool = 'eraser'; 
       toolEraser.classList.add('active');
       toolFill.classList.remove('active'); 
     });
+
+    function hexToRgb(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function floodFill(canvas, startX, startY, fillColorHex, opacity) {
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const targetPos = (startY * width + startX) * 4;
+      const targetR = data[targetPos];
+      const targetG = data[targetPos + 1];
+      const targetB = data[targetPos + 2];
+      const targetA = data[targetPos + 3];
+
+      const fillRgb = hexToRgb(fillColorHex);
+      const fillA = Math.round(opacity * 255);
+
+      if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
+
+      const queue = [[startX, startY]];
+      const visited = new Uint8Array(width * height);
+
+      while (queue.length > 0) {
+        const [x, y] = queue.pop();
+        const pos = (y * width + x) * 4;
+        const idx = y * width + x;
+
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+
+        if (Math.abs(data[pos] - targetR) < 30 &&
+            Math.abs(data[pos + 1] - targetG) < 30 &&
+            Math.abs(data[pos + 2] - targetB) < 30 &&
+            Math.abs(data[pos + 3] - targetA) < 30) {
+          data[pos] = fillRgb.r;
+          data[pos + 1] = fillRgb.g;
+          data[pos + 2] = fillRgb.b;
+          data[pos + 3] = fillA;
+
+          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
 
     function saveState() {
       if (historyStack.length >= 10) historyStack.shift();
@@ -1273,7 +1413,6 @@
       };
     }
 
-    // 各種ペン（ブラシタイプ）に応じた描画機能の実装
     function drawBrushStroke(ctx, p1, p2) {
       const baseSize = parseFloat(stampSizeInput.value);
       const color = stampColorInput.value;
@@ -1366,7 +1505,6 @@
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
       } else {
-        // 通常ペン
         ctx.strokeStyle = color;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1388,15 +1526,13 @@
         if (targetCanvas !== activeObj.canvas) return;
         const pos = getCanvasCoords(e, targetCanvas);
         saveState();
+
         if (currentTool === 'fill') {
-          activeObj.ctx.save();
-          activeObj.ctx.fillStyle = stampColorInput.value;
-          activeObj.ctx.globalAlpha = parseFloat(stampOpacityInput.value);
-          activeObj.ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
-          activeObj.ctx.restore();
+          floodFill(targetCanvas, pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
           updateLayerPreviews();
           return;
         }
+
         isTargetDrawing = true;
         lastPoint = pos;
 
@@ -1451,15 +1587,23 @@
       targetCanvas.addEventListener('touchend', endDraw);
     });
 
+    // 手描きスタンプ作成・エクスポート時の透過処理（Canvas）[cite: 1]
     stampSubmitBtn.addEventListener('click', () => {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = 250; exportCanvas.height = 250;
       const expCtx = exportCanvas.getContext('2d');
+      
+      // 各レイヤーの描画内容を透過を維持したまま結合[cite: 1]
       layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
+      
+      // PNG形式としてDataURLに変換（背景が透明な状態を保持）[cite: 1]
       const stampDataUrl = exportCanvas.toDataURL('image/png');
       const senderName = userSelect.value;
+      
+      // データベースにスタンプとして送信・保存[cite: 1]
       push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
       push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
+      
       ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
       ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
       historyStack = [];
@@ -1521,7 +1665,7 @@
       const senderName = userSelect.value;
       push(messagesRef, { sender: senderName, text: text, timestamp: Date.now() });
       messageInput.value = '';
-      messageInput.style.height = '40px';
+      messageInput.style.height = '44px';
     }
 
     fileInput.addEventListener('change', async (e) => {
@@ -1558,7 +1702,6 @@
       if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
     }
 
-    // メッセージ編集モーダルを開く関数
     function editMessage(key, currentText) {
       editingMessageKey = key;
       modalTextInput.value = currentText || '';
@@ -1579,13 +1722,13 @@
       if (lastIndex < text.length) container.appendChild(document.createTextNode(text.substring(lastIndex)));
     }
 
-    // チャット画面の一番下（最新メッセージ）へスクロールさせる関数
     function scrollToBottom() {
       requestAnimationFrame(() => {
         chatBox.scrollTop = chatBox.scrollHeight;
       });
     }
 
+    // JavaScript（スタンプ送受信時のHTML描画処理）[cite: 1]
     function renderMessages() {
       chatBox.innerHTML = '';
       const activeUser = userSelect.value;
@@ -1600,12 +1743,16 @@
         senderName.className = 'sender-name';
         senderName.textContent = msg.sender;
 
+        // isStampが有効な場合は stamp-bubble クラスを付与[cite: 1]
         const bubble = document.createElement('div');
         bubble.className = `bubble ${msg.isStamp ? 'stamp-bubble' : ''}`;
 
         if (msg.fileData) {
           if (msg.isStamp) {
-            const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-stamp';
+            // 透過PNG（スタンプ）として<img>タグを生成[cite: 1]
+            const img = document.createElement('img'); 
+            img.src = msg.fileData; 
+            img.className = 'chat-stamp';
             bubble.appendChild(img);
           } else if (msg.isImage) {
             const img = document.createElement('img'); img.src = msg.fileData; img.className = 'chat-image';
@@ -1639,7 +1786,6 @@
           metaInfo.appendChild(dlBtn);
         }
         
-        // テキストメッセージが存在する場合、削除リンクの隣に同じフォント・スタイルで「編集」リンクを配置
         if (msg.text) {
           const editBtn = document.createElement('button');
           editBtn.className = 'edit-btn';
@@ -1649,7 +1795,8 @@
         }
 
         const delBtn = document.createElement('button');
-        delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
+        delBtn.className = 'delete-btn';
+        delBtn.textContent = '削除';
         delBtn.addEventListener('click', () => deleteMessage(key));
         metaInfo.appendChild(delBtn);
 
@@ -1667,7 +1814,6 @@
         renderMessages();
       });
 
-      // Firebaseメッセージ監視（リアルタイム更新＆過去ログ取得）
       onValue(messagesRef, (snapshot) => {
         cachedMessages = snapshot.val() || {};
         renderMessages();
@@ -1686,10 +1832,8 @@
       });
     }
 
-    // アプリ起動時の全体初期化
     initChat();
 
-    // 自動ログイン判定（localStorage または sessionStorage をチェック）
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
