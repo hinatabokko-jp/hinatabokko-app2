@@ -1486,7 +1486,7 @@
         const correctPass = snap.exists() ? snap.val() : '1234';
 
         if (inputPass === correctPass) {
-          await checkAndRegisterUser(myUid);
+          await verifyAndUnlock();
         } else {
           passError.textContent = 'あいことばが違います';
           passError.style.display = 'block';
@@ -1494,7 +1494,7 @@
       } catch (e) {
         const correctPass = '1234';
         if (inputPass === correctPass) {
-          await checkAndRegisterUser(myUid);
+          await verifyAndUnlock();
         } else {
           passError.textContent = 'あいことばが違います';
           passError.style.display = 'block';
@@ -1502,7 +1502,17 @@
       }
     }
 
-    async function checkAndRegisterUser(uid) {
+    async function verifyAndUnlock() {
+      if (rememberMeCheckbox.checked) {
+        localStorage.setItem('memo_app_unlocked', 'true');
+      } else {
+        sessionStorage.setItem('memo_app_unlocked', 'true');
+      }
+      unlockApp();
+    }
+
+    // チャット入室時（アンロック時）にUIDを登録・更新する関数
+    async function registerCurrentDeviceUser() {
       try {
         const configSnap = await getDoc(doc(firestore, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'));
         const roomConfig = configSnap.exists() ? configSnap.data() : {};
@@ -1514,7 +1524,7 @@
           registeredUsersList.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        const foundUserByUid = registeredUsersList.find(u => (u.userId === uid || u.id === uid));
+        const foundUserByUid = registeredUsersList.find(u => (u.userId === myUid || u.id === myUid));
 
         if (foundUserByUid && foundUserByUid.accessDenied) {
           showModal("アクセス制限", "今は入室できません。");
@@ -1526,35 +1536,26 @@
           return;
         }
 
-        const userRef = doc(firestore, 'artifacts', appId, 'public', 'data', 'users', uid);
+        const userRef = doc(firestore, 'artifacts', appId, 'public', 'data', 'users', myUid);
         await setDoc(userRef, { 
-          userId: uid, 
+          userId: myUid, 
           userAgent: navigator.userAgent, 
           lastLoginAt: new Date().toISOString(), 
           accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false) 
         }, { merge: true });
 
-        if (rememberMeCheckbox.checked) {
-          localStorage.setItem('memo_app_unlocked', 'true');
-        } else {
-          sessionStorage.setItem('memo_app_unlocked', 'true');
-        }
-        unlockApp();
-
       } catch (err) {
-        console.error("Auth error:", err);
-        if (rememberMeCheckbox.checked) {
-          localStorage.setItem('memo_app_unlocked', 'true');
-        } else {
-          sessionStorage.setItem('memo_app_unlocked', 'true');
-        }
-        unlockApp();
+        console.error("User registration error:", err);
       }
     }
 
     function unlockApp() {
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
+
+      // メッセージ送受信画面に入室したタイミングでUIDを登録・更新
+      registerCurrentDeviceUser();
+
       renderMessages();
       scrollToBottom();
     }
@@ -2003,7 +2004,6 @@
 
       ctx.globalCompositeOperation = 'source-over';
 
-      // 改善されたブラシ質感ロジック
       switch (currentBrushType) {
         case 'calligraphy-brush':
           ctx.globalAlpha = opacity;
