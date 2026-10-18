@@ -11,15 +11,17 @@
       theme: {
         extend: {
           colors: {
-            bg: '#0b0f19',
-            surface: '#131c2e',
-            surfaceHover: '#1b263b',
-            inputBg: 'rgba(0, 0, 0, 0.25)',
-            mainText: '#f1f5f9',
-            subText: '#94a3b8',
+            darkBg: '#0D0D0F',
+            cardBg: '#1C1C20',
+            inputBg: '#292930',
+            mainText: '#FFFFFF',
+            subText: '#A1A1AA',
             border: '#1e293b',
-            accent: '#00B4D8',
+            accent: '#C13584',
             danger: '#ff5c75'
+          },
+          backgroundImage: {
+            'insta-gradient': 'linear-gradient(135deg, #00C9A7 0%, #00B4D8 50%, #007CF0 75%, #F77737 100%)',
           }
         }
       }
@@ -27,17 +29,17 @@
   </script>
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --surface-color: #131c2e;
-      --surface-hover: #1b263b;
-      --primary-gradient: linear-gradient(135deg, #00C9A7, #00B4D8, #007CF0);
+      --bg-color: #0D0D0F;
+      --surface-color: #1C1C20;
+      --surface-hover: #292930;
+      --primary-gradient: linear-gradient(135deg, #00C9A7 0%, #00B4D8 50%, #007CF0 75%, #F77737 100%);
       --primary-color: #00B4D8;
       --primary-hover: #0096b4;
       --danger-color: #ff5c75;
-      --text-color: #f1f5f9;
-      --text-muted: #94a3b8;
-      --border-color: #1e293b;
-      --chat-bg: #0b0f19;
+      --text-color: #FFFFFF;
+      --text-muted: #A1A1AA;
+      --border-color: rgba(255, 255, 255, 0.05);
+      --chat-bg: #0D0D0F;
       --my-msg-bg: linear-gradient(135deg, #00C9A7, #007CF0);
       --radius-sm: 10px;
       --radius-md: 16px;
@@ -69,7 +71,7 @@
       width: 100%;
     }
 
-    /* あいことばロック画面 */
+    /* Instagram風 あいことばロック画面 */
     #lock-screen {
       position: fixed;
       top: 0;
@@ -82,33 +84,75 @@
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      gap: 20px;
-      padding: 20px;
-      background-image: radial-gradient(circle at 50% 20%, rgba(0, 180, 216, 0.08) 0%, transparent 50%);
+      padding: 24px;
+      overflow-y: auto;
     }
-    #lock-screen h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background-color: var(--surface-color);
+      border-radius: 1.5rem;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .insta-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      border-radius: 1.5rem;
       background: var(--primary-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      padding: 2px;
+      box-shadow: 0 10px 25px rgba(0, 180, 216, 0.3);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+    }
+    .insta-icon-wrapper:hover {
+      transform: scale(1.05);
+    }
+    .insta-icon-inner {
+      width: 100%;
+      height: 100%;
+      background-color: var(--surface-color);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      text-align: center;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .login-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      text-align: center;
+      margin-bottom: 32px;
     }
     #pass-input {
-      background-color: var(--surface-color);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 12px 18px;
+      background-color: #292930;
+      border: 1px solid transparent;
+      border-radius: 1rem;
+      padding: 16px 20px;
       color: #fff;
       font-size: 1rem;
-      text-align: center;
       outline: none;
-      width: 240px;
+      width: 100%;
       transition: all 0.2s ease;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     }
     #pass-input:focus {
       border-color: #00B4D8;
-      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15), inset 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
     }
     .remember-container {
       display: flex;
@@ -118,6 +162,9 @@
       color: var(--text-muted);
       cursor: pointer;
       user-select: none;
+      width: 100%;
+      margin-top: 16px;
+      padding-left: 4px;
     }
     .remember-container input[type="checkbox"] {
       width: 18px;
@@ -130,40 +177,49 @@
       background: var(--primary-gradient);
       color: #fff;
       border: none;
-      border-radius: var(--radius-md);
-      padding: 12px 28px;
-      font-weight: 600;
-      font-size: 0.95rem;
+      border-radius: 1rem;
+      padding: 16px;
+      font-weight: 700;
+      font-size: 1rem;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+      width: 100%;
+      margin-top: 20px;
+      box-shadow: 0 10px 20px rgba(0, 180, 216, 0.25);
       transition: transform 0.15s ease, opacity 0.15s ease;
     }
     #pass-btn:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
+      opacity: 0.95;
     }
     #pass-btn:active {
-      transform: translateY(1px);
+      transform: scale(0.98);
     }
     #pass-error {
       color: var(--danger-color);
       font-size: 0.85rem;
+      margin-top: 12px;
       display: none;
     }
-
-    /* 管理者ログインボタンのスタイル */
+    .login-footer {
+      width: 100%;
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: rgba(161, 161, 170, 0.6);
+    }
     .admin-login-trigger {
-      margin-top: 10px;
       background: none;
       border: none;
-      color: var(--text-muted);
-      font-size: 0.8rem;
+      color: rgba(161, 161, 170, 0.6);
+      font-size: 0.75rem;
       cursor: pointer;
       text-decoration: underline;
+      text-underline-offset: 4px;
       transition: color 0.2s;
     }
     .admin-login-trigger:hover {
-      color: var(--accent);
+      color: #fff;
     }
 
     /* アプリ本体・管理者画面 */
@@ -213,7 +269,6 @@
       align-items: center;
       gap: 12px;
       z-index: 10;
-      backdrop-filter: blur(10px);
     }
     .header-left {
       display: flex;
@@ -291,7 +346,6 @@
     .btn-logout:hover {
       background-color: var(--surface-hover);
       color: var(--text-color);
-      border-color: rgba(255,255,255,0.1);
     }
 
     /* ハンバーガーボタン & サイドバーUI */
@@ -308,10 +362,6 @@
       justify-content: center;
       border-radius: var(--radius-sm);
       transition: all 0.2s ease;
-    }
-    .hamburger-btn:hover {
-      background-color: rgba(0, 180, 216, 0.1);
-      border-color: rgba(0, 180, 216, 0.3);
     }
     .overlay {
       position: fixed;
@@ -372,8 +422,7 @@
       border-left: 3px solid transparent;
       transition: all 0.2s ease;
     }
-    .sidebar-menu li a:hover,
-    .sidebar-menu li a:active {
+    .sidebar-menu li a:hover {
       background-color: var(--surface-hover);
       color: var(--text-color);
     }
@@ -424,7 +473,6 @@
       line-height: 1.5;
       word-break: break-word;
       white-space: pre-wrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .message.sent .bubble {
       background: var(--my-msg-bg);
@@ -441,7 +489,6 @@
       background: transparent !important;
       padding: 4px;
       border: none !important;
-      box-shadow: none !important;
     }
 
     .meta-info {
@@ -467,14 +514,12 @@
       cursor: pointer;
       padding: 0;
       opacity: 0.7;
-      transition: opacity 0.2s ease;
     }
     .delete-btn:hover {
       opacity: 1;
       color: var(--text-color);
     }
 
-    /* メディア・ファイル関連スタイル */
     .chat-image {
       max-width: 100%;
       max-height: 260px;
@@ -482,26 +527,17 @@
       margin-bottom: 6px;
       display: block;
       object-fit: contain;
-      image-orientation: none;
-      border: 1px solid rgba(255,255,255,0.1);
     }
     .chat-stamp {
       max-width: 180px;
       max-height: 180px;
       display: block;
-      user-select: none;
-      pointer-events: none;
       object-fit: contain;
-      image-orientation: none;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
     }
     .chat-link {
       color: #70d6ff;
       text-decoration: underline;
       word-break: break-all;
-    }
-    .message.received .chat-link {
-      color: #00B4D8;
     }
     .file-attachment {
       display: flex;
@@ -511,7 +547,6 @@
       padding: 10px 14px;
       border-radius: var(--radius-sm);
       margin-bottom: 6px;
-      border: 1px solid rgba(255,255,255,0.05);
     }
     .file-name {
       font-size: 0.85rem;
@@ -529,7 +564,6 @@
       display: flex;
       align-items: flex-end;
       gap: 10px;
-      backdrop-filter: blur(10px);
     }
     textarea {
       flex: 1;
@@ -545,11 +579,9 @@
       max-height: 120px;
       font-family: inherit;
       line-height: 1.4;
-      transition: all 0.2s ease;
     }
     textarea:focus {
       border-color: #00B4D8;
-      background-color: rgba(0, 0, 0, 0.4);
       box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
     }
     button.send-btn-style {
@@ -562,17 +594,7 @@
       font-weight: 600;
       font-size: 0.95rem;
       cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease;
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.25);
-    }
-    button.send-btn-style:hover {
-      opacity: 0.9;
-    }
-    button.send-btn-style:active,
-    button.icon-btn-style:active,
-    label.icon-btn-style:active {
-      transform: scale(0.96);
     }
     button.icon-btn-style, label.icon-btn-style {
       background-color: var(--surface-hover);
@@ -587,12 +609,6 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: all 0.2s ease;
-    }
-    button.icon-btn-style:hover, label.icon-btn-style:hover {
-      background-color: rgba(0, 180, 216, 0.12);
-      border-color: rgba(0, 180, 216, 0.3);
-      transform: translateY(-1px);
     }
 
     /* モーダル表示スタイル */
@@ -650,13 +666,6 @@
       color: var(--text-muted);
       font-size: 1.2rem;
       cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-      border-radius: 4px;
-      transition: color 0.2s ease;
-    }
-    .modal-close-btn:hover {
-      color: #fff;
     }
     .modal-body {
       padding: 20px;
@@ -688,12 +697,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .palette-btn:hover {
-      background-color: var(--surface-hover);
-      border-color: rgba(0, 180, 216, 0.4);
-      transform: translateY(-1px);
     }
     .kaimoji-btn {
       font-size: 0.85rem;
@@ -709,12 +712,6 @@
       font-size: 0.95rem;
       resize: vertical;
       outline: none;
-      line-height: 1.4;
-      font-family: inherit;
-    }
-    .modal-textarea:focus {
-      border-color: #00B4D8;
-      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
     }
     .modal-footer {
       padding: 16px 20px;
@@ -737,14 +734,9 @@
       padding: 8px 16px;
       font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .secondary-btn:hover {
-      background-color: rgba(255,255,255,0.08);
-      border-color: rgba(255,255,255,0.15);
     }
 
-    /* 手描きスタンプ関連スタイル */
+    /* スタンプツール・エディタ関連 */
     .stamp-nav-btn {
       background: var(--primary-gradient);
       color: #fff;
@@ -757,11 +749,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 2px 10px rgba(0, 180, 216, 0.2);
-      transition: opacity 0.2s ease;
-    }
-    .stamp-nav-btn:hover {
-      opacity: 0.9;
     }
     .editor-layout {
       display: flex;
@@ -776,9 +763,6 @@
       border: 2px dashed var(--border-color);
       border-radius: var(--radius-md);
       background-color: #0b0f19;
-      background-image: linear-gradient(45deg, #131c2e 25%, transparent 25%), linear-gradient(-45deg, #131c2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #131c2e 75%), linear-gradient(-45deg, transparent 75%, #131c2e 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
       flex-shrink: 0;
     }
     .stamp-canvas {
@@ -809,7 +793,6 @@
       border: 2px solid transparent;
       border-radius: var(--radius-sm);
       cursor: grab;
-      transition: all 0.2s ease;
     }
     .ps-layer-item.active {
       border-color: #00B4D8;
@@ -821,9 +804,6 @@
       margin-bottom: 4px;
       font-weight: 600;
     }
-    .ps-layer-item.active .ps-layer-title {
-      color: #00B4D8;
-    }
     .ps-layer-preview {
       width: 60px;
       height: 60px;
@@ -831,7 +811,6 @@
       border-radius: 4px;
       background-color: #0b0f19;
       object-fit: contain;
-      pointer-events: none;
     }
     .stamp-tools {
       display: flex;
@@ -858,10 +837,6 @@
       padding: 6px 12px;
       font-size: 0.8rem;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .tool-btn:hover {
-      background-color: rgba(255,255,255,0.08);
     }
     .tool-btn.active {
       border-color: #00B4D8;
@@ -901,11 +876,6 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      transition: transform 0.2s ease;
-    }
-    .history-card:hover {
-      border-color: rgba(0, 180, 216, 0.3);
-      transform: translateY(-2px);
     }
     .history-img-wrapper {
       width: 100%;
@@ -940,11 +910,9 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
-      transition: all 0.2s ease;
     }
     .history-action-btn.send { background: var(--primary-gradient); border: none; color: #fff; font-weight: 600; }
     .history-action-btn.del { background-color: rgba(255, 92, 117, 0.15); border-color: rgba(255, 92, 117, 0.3); color: var(--danger-color); }
-    .history-action-btn:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -968,17 +936,45 @@
       </ul>
     </aside>
 
-    <!-- あいことばロック画面 -->
+    <!-- Instagram風あいくとばロック画面 -->
     <div id="lock-screen">
-      <h2>あいことばを入力してください</h2>
-      <input type="password" id="pass-input" placeholder="あいことば" autocomplete="off">
-      <label class="remember-container">
-        <input type="checkbox" id="remember-me-checkbox">
-        次回から自動でログインする
-      </label>
-      <button id="pass-btn" class="send-btn-style">入室する</button>
-      <div id="pass-error">あいことばが違います</div>
-      <button id="adminLoginTriggerBtn" class="admin-login-trigger">管理者ログインはこちら</button>
+      <div class="login-card">
+        <div class="insta-icon-wrapper">
+          <div class="insta-icon-inner">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="stroke: url(#primary-grad); width: 36px; height: 36px;">
+              <svg width="0" height="0">
+                <linearGradient id="primary-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00C9A7" />
+                  <stop offset="50%" stop-color="#00B4D8" />
+                  <stop offset="75%" stop-color="#007CF0" />
+                  <stop offset="100%" stop-color="#F77737" />
+                </linearGradient>
+              </svg>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+          </div>
+        </div>
+        <h1 class="login-title">Family Chat</h1>
+        <p class="login-subtitle">家族同士で連絡をとりあうためのアプリ</p>
+        
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+          <label for="pass-input" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding-left: 4px;">あいことば</label>
+          <input type="password" id="pass-input" placeholder="あいことばを入力" autocomplete="off">
+        </div>
+
+        <label class="remember-container">
+          <input type="checkbox" id="remember-me-checkbox">
+          次回から自動でログインする
+        </label>
+        
+        <button id="pass-btn">入室する</button>
+        <div id="pass-error">あいことばが違います</div>
+
+        <div class="login-footer">
+          <span>安心・安全なコミュニケーション</span>
+          <button id="adminLoginTriggerBtn" class="admin-login-trigger">管理画面</button>
+        </div>
+      </div>
     </div>
 
     <!-- 管理者ログインモーダル -->
@@ -991,11 +987,11 @@
         <div class="modal-body" style="gap: 12px;">
           <div>
             <div class="section-title">管理ID</div>
-            <input type="text" id="adminIdInput" class="modal-textarea" style="height: 42px;" placeholder="">
+            <input type="text" id="adminIdInput" class="modal-textarea" style="height: 42px;">
           </div>
           <div>
             <div class="section-title">マスターパスワード</div>
-            <input type="password" id="adminPassInput" class="modal-textarea" style="height: 42px;" placeholder="">
+            <input type="password" id="adminPassInput" class="modal-textarea" style="height: 42px;">
           </div>
           <div id="authErrorMessage" class="text-danger text-xs hidden">IDまたはパスワードが違います</div>
         </div>
@@ -1022,8 +1018,7 @@
         </div>
       </header>
       <div class="p-6 max-w-4xl mx-auto w-full flex flex-col gap-6 overflow-y-auto flex-1">
-        <!-- 新規入室制限（ルームロック）設定パネル -->
-        <div class="bg-surface border border-border p-6 rounded-2xl flex items-center justify-between">
+        <div class="bg-surface border border-border p-6 rounded-2xl flex items-center justify-between" style="background-color: var(--surface-color);">
           <div class="flex flex-col gap-1">
             <h3 class="font-bold text-mainText text-base">新規入室の制限（ルームロック）</h3>
             <p class="text-xs text-subText">有効にすると、既存登録済みの端末以外からの新規入室を拒否します。</p>
@@ -1034,14 +1029,12 @@
           </label>
         </div>
 
-        <div class="bg-surface border border-border p-6 rounded-2xl flex flex-col gap-4">
+        <div class="bg-surface border border-border p-6 rounded-2xl flex flex-col gap-4" style="background-color: var(--surface-color);">
           <div class="flex justify-between items-center">
             <h3 class="font-bold text-mainText text-lg">アクセスユーザー管理</h3>
             <span id="userCountBadge" class="text-xs bg-accent/20 text-accent px-3 py-1 rounded-full font-semibold">0名</span>
           </div>
-          <div id="adminUserList" class="flex flex-col gap-3">
-            <!-- ユーザーリストが動的に挿入されます -->
-          </div>
+          <div id="adminUserList" class="flex flex-col gap-3"></div>
         </div>
       </div>
     </div>
@@ -1230,7 +1223,6 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const appId = "family-chat-okasan";
     const messagesRef = ref(db, 'messages');
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
@@ -1245,7 +1237,6 @@
     const passError = document.getElementById('pass-error');
     const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
 
-    // 管理者認証関連要素
     const adminLoginTriggerBtn = document.getElementById('adminLoginTriggerBtn');
     const adminAuthModal = document.getElementById('adminAuthModal');
     const adminAuthCloseBtn = document.getElementById('adminAuthCloseBtn');
@@ -1256,7 +1247,6 @@
     const authErrorMessage = document.getElementById('authErrorMessage');
     const exitAdminBtn = document.getElementById('exitAdminBtn');
 
-    // === 端末固有のUID（識別キー）の管理 ===
     let deviceUID = localStorage.getItem('family_chat_device_uid');
     if (!deviceUID) {
       deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -1267,33 +1257,29 @@
     let registeredUsersList = [];
     let roomSettings = { roomLocked: false };
 
-    // ルーム設定・ユーザー情報のリアルタイム同期（AirMessage仕様に準拠）
     function listenToAdminData() {
       if (!db) return;
-      onSnapshotUsers();
-      onSnapshotRoomConfig();
-    }
-
-    onValue(usersRef, (snapshot) => {
-      const val = snapshot.val() || {};
-      registeredUsersList = Object.keys(val).map(key => ({
-        id: key,
-        ...val[key]
-      }));
-      if (adminScreen.style.display === 'flex') {
-        renderAdminUserList();
-      }
-    });
-
-    onValue(roomConfigRef, (docSnap) => {
-      if (docSnap.exists()) {
-        roomSettings = docSnap.val();
-        const toggleEl = document.getElementById('roomLockToggle');
-        if (toggleEl) {
-          toggleEl.checked = !!roomSettings.roomLocked;
+      onValue(usersRef, (snapshot) => {
+        const val = snapshot.val() || {};
+        registeredUsersList = Object.keys(val).map(key => ({
+          id: key,
+          ...val[key]
+        }));
+        if (adminScreen.style.display === 'flex') {
+          renderAdminUserList();
         }
-      }
-    });
+      });
+
+      onValue(roomConfigRef, (docSnap) => {
+        if (docSnap.exists()) {
+          roomSettings = docSnap.val();
+          const toggleEl = document.getElementById('roomLockToggle');
+          if (toggleEl) {
+            toggleEl.checked = !!roomSettings.roomLocked;
+          }
+        }
+      });
+    }
 
     const changeUserBtn = document.getElementById('changeUserBtn');
     changeUserBtn.addEventListener('click', () => {
@@ -1304,7 +1290,6 @@
       passInput.value = '';
     });
 
-    // 1. 新規入室制限（ルームロック）設定の切り替え関数
     window.toggleRoomLock = async function(isLocked) {
       await set(roomConfigRef, { roomLocked: isLocked });
     };
@@ -1322,7 +1307,6 @@
         const correctPass = snap.exists() ? snap.val() : '1234';
 
         if (inputPass === correctPass) {
-          // 2. ログイン（入室）時のアクセス拒否・ルームロック判定コード
           const foundUserByUid = registeredUsersList.find(u => (u.userId === deviceUID || u.id === deviceUID));
           
           if (foundUserByUid && foundUserByUid.accessDenied) {
@@ -1387,7 +1371,6 @@
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 管理者認証モーダルの開閉
     adminLoginTriggerBtn.addEventListener('click', () => {
       adminAuthModal.classList.add('active');
       adminIdInput.value = '';
@@ -1416,20 +1399,17 @@
       lockScreen.style.display = 'flex';
     });
 
-    // 3. 個別ユーザーごとのアクセス拒否（制限）の切り替えコード
     window.toggleUserAccess = async function(userId, isDenied) {
       const userRef = ref(db, `users/${userId}`);
       await set(userRef, { accessDenied: isDenied }, { merge: true });
     };
 
-    // ユーザー削除
     window.promptDeleteUser = async function(userId, nickname) {
       if (confirm(`ユーザー「${nickname}」を削除しますか？`)) {
         await remove(ref(db, `users/${userId}`));
       }
     };
 
-    // 名前変更
     window.promptChangeNickname = async function(userId, currentName) {
       const newName = prompt("新しい名前を入力してください:", currentName);
       if (newName && newName.trim() !== '') {
@@ -1448,6 +1428,7 @@
       registeredUsersList.forEach(user => {
         const item = document.createElement('div');
         item.className = 'bg-inputBg border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
+        item.style.backgroundColor = '#292930';
         item.innerHTML = `
           <div class="min-w-0 flex-1 flex flex-col gap-1">
             <div class="flex items-center gap-2">
@@ -1471,7 +1452,6 @@
       });
     }
 
-    // チャット・スタンプ関連変数・ロジック
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
@@ -1578,11 +1558,6 @@
     [layerItem1, layerItem2].forEach(item => {
       item.addEventListener('dragstart', () => {
         draggedLayerId = parseInt(item.getAttribute('data-layer'));
-        item.classList.add('dragging');
-      });
-      item.addEventListener('dragend', () => {
-        item.classList.remove('dragging');
-        draggedLayerId = null;
       });
       item.addEventListener('dragover', (e) => e.preventDefault());
       item.addEventListener('drop', (e) => {
@@ -1682,13 +1657,18 @@
     stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
     stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
+    toolFill.addEventListener('click', () => { 
+      currentTool = 'fill'; 
+      toolEraser.classList.remove('active'); 
+      toolFill.classList.add('active'); 
+    });
+
     brushSelect.addEventListener('change', () => {
       currentTool = 'pen';
       currentBrushType = brushSelect.value;
       toolFill.classList.remove('active');
       toolEraser.classList.remove('active');
     });
-    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); toolFill.classList.add('active'); });
     toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); toolEraser.classList.add('active'); });
 
     function saveState() {
@@ -1717,6 +1697,16 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       updateLayerPreviews();
     });
+
+    function getCanvasCoords(e, canvasEl) {
+      const rect = canvasEl.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: Math.floor((clientX - rect.left) * (canvasEl.width / rect.width)),
+        y: Math.floor((clientY - rect.top) * (canvasEl.height / rect.height))
+      };
+    }
 
     function hexToRgb(hex) {
       let c = hex.replace('#', '');
@@ -1770,20 +1760,11 @@
       ctx.putImageData(imgData, 0, 0);
     }
 
-    function getCanvasCoords(e, canvasEl) {
-      const rect = canvasEl.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: Math.floor((clientX - rect.left) * (canvasEl.width / rect.width)),
-        y: Math.floor((clientY - rect.top) * (canvasEl.height / rect.height))
-      };
-    }
-
     function drawStroke(ctx, p1, p2) {
       const baseSize = parseFloat(stampSizeInput.value);
       const opacity = parseFloat(stampOpacityInput.value);
       const color = stampColorInput.value;
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
 
       ctx.save();
       if (currentTool === 'eraser') {
@@ -1802,7 +1783,6 @@
       }
 
       ctx.globalCompositeOperation = 'source-over';
-      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
 
       switch (currentBrushType) {
         case 'calligraphy-brush':
@@ -1853,13 +1833,6 @@
           ctx.beginPath();
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-          ctx.globalAlpha = opacity * 0.3;
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(p1.x + 2, p1.y + 2);
-          ctx.lineTo(p2.x + 2, p2.y + 2);
           ctx.stroke();
           break;
 
@@ -1958,7 +1931,7 @@
       }
 
       function moveDraw(e) {
-        if (!isTargetDrawing || currentTool === 'fill') return;
+        if (!isTargetDrawing) return;
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
         e.preventDefault();
