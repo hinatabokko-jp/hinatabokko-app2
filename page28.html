@@ -1076,7 +1076,6 @@
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
-          await registerCurrentDeviceUser();
           unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
@@ -1110,7 +1109,9 @@
         userSelect.value = savedUser;
       }
 
+      // チャット（メッセージ送受信画面）に入室したタイミングでUIDを登録・更新
       registerCurrentDeviceUser();
+
       renderMessages();
       scrollToBottom();
     }
@@ -1773,4 +1774,3 @@
   </script>
 </body>
 </html>
-```[cite: 1, 2]
