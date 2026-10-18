@@ -936,13 +936,14 @@
     const authErrorMessage = document.getElementById('authErrorMessage');
     const roomLockToggle = document.getElementById('roomLockToggle');
 
-    // デバイス固有UIDの管理
-    let deviceUID = localStorage.getItem('family_chat_device_uid');
-    if (!deviceUID) {
-      deviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('family_chat_device_uid', deviceUID);
+    // デバイス固有UIDの管理 (サニタイズしてキーとして安全に使用)
+    let rawDeviceUID = localStorage.getItem('family_chat_device_uid');
+    if (!rawDeviceUID) {
+      rawDeviceUID = 'uid_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('family_chat_device_uid', rawDeviceUID);
     }
-    const userStorageKey = 'family_chat_selected_user_' + deviceUID;
+    const safeDeviceUID = rawDeviceUID.replace(/[.#$[\]]/g, '_');
+    const userStorageKey = 'family_chat_selected_user_' + safeDeviceUID;
 
     let registeredUsersList = [];
     let roomLockedState = false;
@@ -1056,7 +1057,7 @@
 
         if (inputPass === correctPass) {
           // UIDベースのアクセス拒否チェック
-          const foundUser = registeredUsersList.find(u => u.userId === deviceUID || u.id === deviceUID);
+          const foundUser = registeredUsersList.find(u => u.userId === safeDeviceUID || u.id === safeDeviceUID);
           if (foundUser && foundUser.accessDenied) {
             passError.textContent = '現在はアクセスが制限されています';
             passError.style.display = 'block';
@@ -1089,9 +1090,9 @@
 
     async function registerCurrentDeviceUser() {
       const currentRole = userSelect.value;
-      const userRef = ref(db, `users/${deviceUID}`);
+      const userRef = ref(db, `users/${safeDeviceUID}`);
       await update(userRef, {
-        userId: deviceUID,
+        userId: safeDeviceUID,
         nickname: currentRole,
         selectedRole: currentRole,
         userAgent: navigator.userAgent,
@@ -1109,6 +1110,7 @@
         userSelect.value = savedUser;
       }
 
+      registerCurrentDeviceUser();
       renderMessages();
       scrollToBottom();
     }
@@ -1720,7 +1722,6 @@
           metaInfo.appendChild(editBtn);
         }
 
-        // ▼ 画像やファイルなどのデータ（msg.fileData）がある場合にダウンロードボタンを追加
         if (msg.fileData) {
           const dlBtn = document.createElement('button');
           dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
@@ -1748,6 +1749,7 @@
 
     userSelect.addEventListener('change', () => {
       localStorage.setItem(userStorageKey, userSelect.value);
+      registerCurrentDeviceUser();
       renderMessages();
     });
 
@@ -1764,7 +1766,7 @@
       }
     });
 
-    // 起動時の自動ログイン判定処理（修正版キー名に対応）
+    // 起動時の自動ログイン判定処理
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
     }
