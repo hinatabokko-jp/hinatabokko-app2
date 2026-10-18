@@ -1109,7 +1109,7 @@
         userSelect.value = savedUser;
       }
 
-      // チャット（メッセージ送受信画面）に入室したタイミングでUIDを登録・更新
+      // チャット画面に入室したタイミングでUIDを登録・更新
       registerCurrentDeviceUser();
 
       renderMessages();
@@ -1750,7 +1750,6 @@
 
     userSelect.addEventListener('change', () => {
       localStorage.setItem(userStorageKey, userSelect.value);
-      registerCurrentDeviceUser();
       renderMessages();
     });
 
@@ -1774,3 +1773,4 @@
   </script>
 </body>
 </html>
+<FollowUp>他にご不明な点や調整したい動作はございますか？</FollowUp>
