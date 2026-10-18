@@ -1719,6 +1719,20 @@
           editBtn.addEventListener('click', () => editMessage(key, msg.text));
           metaInfo.appendChild(editBtn);
         }
+
+        // ▼ 画像やファイルなどのデータ（msg.fileData）がある場合にダウンロードボタンを追加
+        if (msg.fileData) {
+          const dlBtn = document.createElement('button');
+          dlBtn.className = 'delete-btn'; dlBtn.textContent = 'ダウンロード';
+          dlBtn.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = msg.fileData;
+            a.download = msg.fileName || 'download';
+            a.click();
+          });
+          metaInfo.appendChild(dlBtn);
+        }
+
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
         delBtn.addEventListener('click', () => deleteMessage(key));
@@ -1757,3 +1771,4 @@
   </script>
 </body>
 </html>
+```[cite: 1, 2]
