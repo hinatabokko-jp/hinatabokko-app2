@@ -139,7 +139,7 @@
       text-align: center;
       margin-bottom: 32px;
     }
-    #pass-input {
+    #pass-input, #user-select {
       background-color: #292930;
       border: 1px solid transparent;
       border-radius: 1rem;
@@ -149,10 +149,16 @@
       outline: none;
       width: 100%;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
-    #pass-input:focus {
+    #pass-input:focus, #user-select:focus {
       border-color: #00B4D8;
       box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
+    }
+    #user-select option {
+      background-color: #292930;
+      color: #fff;
+      padding: 12px;
     }
     .remember-container {
       display: flex;
@@ -304,34 +310,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    .user-select-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 4px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-color);
-    }
-    .user-select-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    select {
-      background-color: transparent;
-      color: #fff;
-      border: none;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      outline: none;
-      cursor: pointer;
-    }
-    select option {
-      background-color: var(--surface-color);
-      color: #fff;
     }
     .btn-logout {
       background: transparent;
@@ -955,8 +933,15 @@
           </div>
         </div>
         <h1 class="login-title">Family Chat</h1>
-        <p class="login-subtitle">家族同士で連絡をとりあうためのアプリ</p>
-        
+                
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          <label for="user-select" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding-left: 4px;">ユーザー</label>
+          <select id="user-select">
+            <option value="おかあさん">おかあさん</option>
+            <option value="むすめ">むすめ</option>
+          </select>
+        </div>
+
         <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
           <label for="pass-input" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding-left: 4px;">あいことば</label>
           <input type="password" id="pass-input" placeholder="あいことばを入力" autocomplete="off">
@@ -1065,14 +1050,7 @@
           </div>
         </div>
         <div class="header-right-actions">
-          <div class="user-select-container" id="userSelectContainer">
-            <span class="user-select-label">私は:</span>
-            <select id="user-select">
-              <option value="おかあさん">おかあさん</option>
-              <option value="むすめ">むすめ</option>
-            </select>
-          </div>
-          <button id="changeUserBtn" class="btn-logout">➡</button>
+          <button id="changeUserBtn" class="btn-logout">ログアウト</button>
         </div>
       </header>
 
@@ -1357,6 +1335,10 @@
             return;
           }
 
+          // ログイン成功時に選択されたユーザー名を保存
+          localStorage.setItem(userStorageKey, userSelect.value);
+          await registerCurrentDeviceUser();
+
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
@@ -1396,9 +1378,6 @@
       if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
         userSelect.value = savedUser;
       }
-
-      // チャット（メッセージ送受信画面）に入室したタイミングでUIDを登録・更新
-      registerCurrentDeviceUser();
 
       renderMessages();
       scrollToBottom();
@@ -1467,6 +1446,10 @@
         const item = document.createElement('div');
         item.className = 'bg-inputBg border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
         item.style.backgroundColor = '#292930';
+
+        const loginDate = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+        const timeStr = loginDate ? `${loginDate.getFullYear()}/${String(loginDate.getMonth() + 1).padStart(2, '0')}/${String(loginDate.getDate()).padStart(2, '0')} ${String(loginDate.getHours()).padStart(2, '0')}:${String(loginDate.getMinutes()).padStart(2, '0')}` : '不明';
+
         item.innerHTML = `
           <div class="min-w-0 flex-1 flex flex-col gap-1">
             <div class="flex items-center gap-2">
@@ -1474,6 +1457,7 @@
               <button onclick="promptChangeNickname('${user.id}', '${user.nickname}')" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-accent text-[10px] font-semibold cursor-pointer transition-colors">名前変更</button>
             </div>
             <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
+            <div class="text-[11px] text-subText/70">入室時刻: ${timeStr}</div>
           </div>
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5 text-xs text-subText">
@@ -2177,12 +2161,6 @@
     }
 
     function initChat() {
-      userSelect.addEventListener('change', () => {
-        localStorage.setItem(userStorageKey, userSelect.value);
-        registerCurrentDeviceUser(); // ユーザー選択変更時にもUIDを登録・更新
-        renderMessages();
-      });
-
       onValue(messagesRef, (snapshot) => {
         cachedMessages = snapshot.val() || {};
         renderMessages();
@@ -2203,6 +2181,12 @@
 
     initChat();
     listenToAdminData();
+
+    // 起動時に保存されたユーザー名を適用
+    const savedUser = localStorage.getItem(userStorageKey);
+    if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
+      userSelect.value = savedUser;
+    }
 
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       unlockApp();
