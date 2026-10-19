@@ -1046,34 +1046,18 @@
         const correctPass = snap.exists() ? snap.val() : '0218';
 
         if (inputPass === correctPass) {
-          // UIDベースのアクセス拒否チェック
-          const foundUser = registeredUsersList.find(u => u.userId === safeDeviceUID || u.id === safeDeviceUID);
-          if (foundUser && foundUser.accessDenied) {
-            passError.textContent = '現在はアクセスが制限されています';
-            passError.style.display = 'block';
-            return;
-          }
+          // 選択されたユーザー名を保存
+          localStorage.setItem(userStorageKey, userSelect.value);
 
-          // ルームロック（新規入室制限）チェック
-          if (roomLockedState && !foundUser) {
-            passError.textContent = '現在新規入室が制限されています（ルームロック中）';
-            passError.style.display = 'block';
-            return;
-          }
+          // 認証成功後、アクセス権チェックがOKの時だけアンロック（内部で registerCurrentDeviceUser を非同期で待つ）
+          const success = await unlockApp();
+          if (!success) return;
 
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
-
-          // 選択されたユーザー名を保存
-          localStorage.setItem(userStorageKey, userSelect.value);
-
-          // 入室時にUIDとユーザー名を登録・更新
-          await registerCurrentDeviceUser();
-
-          unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
           passError.style.display = 'block';
@@ -1084,30 +1068,70 @@
       }
     }
 
+    // サーバーのアクセス権チェックを行い、結果に応じて true/false を返す
     async function registerCurrentDeviceUser() {
-      const currentRole = userSelect.value;
-      const userRef = ref(db, `users/${safeDeviceUID}`);
-      await update(userRef, {
-        userId: safeDeviceUID,
-        nickname: currentRole,
-        selectedRole: currentRole,
-        userAgent: navigator.userAgent,
-        lastLoginAt: Date.now(),
-        accessDenied: false
-      });
+      try {
+        const configSnap = await get(roomConfigRef);
+        const roomConfig = configSnap.exists() ? configSnap.val() : {};
+        const isLocked = roomConfig.roomLocked || false;
+
+        const usersSnap = await get(usersRef);
+        let currentUsersList = [];
+        const usersData = usersSnap.val() || {};
+        Object.keys(usersData).forEach(k => {
+          currentUsersList.push({ id: k, ...usersData[k] });
+        });
+
+        const foundUserByUid = currentUsersList.find(u => (u.userId === safeDeviceUID || u.id === safeDeviceUID));
+
+        if (foundUserByUid && foundUserByUid.accessDenied) {
+          passError.textContent = '現在はアクセスが制限されています';
+          passError.style.display = 'block';
+          return false;
+        }
+
+        if (isLocked && !foundUserByUid) {
+          passError.textContent = '現在新規入室が制限されています（ルームロック中）';
+          passError.style.display = 'block';
+          return false;
+        }
+
+        const currentRole = userSelect.value;
+        const userRef = ref(db, `users/${safeDeviceUID}`);
+        await update(userRef, {
+          userId: safeDeviceUID,
+          nickname: currentRole,
+          selectedRole: currentRole,
+          userAgent: navigator.userAgent,
+          lastLoginAt: Date.now(),
+          accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false)
+        });
+
+        return true;
+      } catch (err) {
+        console.error("User registration error:", err);
+        return true; // エラー時は通す（安全側に倒す）
+      }
     }
 
-    function unlockApp() {
-      lockScreen.style.display = 'none';
-      appContent.style.display = 'flex';
+    // サーバーのチェック完了を待ってから画面のロックを解除する
+    async function unlockApp() {
+      const canAccess = await registerCurrentDeviceUser();
 
-      const savedUser = localStorage.getItem(userStorageKey);
-      if (savedUser && (savedUser === 'おかあさん' || savedUser === 'おとうさん' || savedUser === 'むすめ')) {
-        userSelect.value = savedUser;
+      if (canAccess) {
+        lockScreen.style.display = 'none';
+        appContent.style.display = 'flex';
+
+        const savedUser = localStorage.getItem(userStorageKey);
+        if (savedUser && (savedUser === 'おかあさん' || savedUser === 'おとうさん' || savedUser === 'むすめ')) {
+          userSelect.value = savedUser;
+        }
+
+        renderMessages();
+        scrollToBottom();
+        return true;
       }
-
-      renderMessages();
-      scrollToBottom();
+      return false;
     }
 
     passBtn.addEventListener('click', handleAuth);
@@ -1755,7 +1779,7 @@
       }
     });
 
-    // 起動時の自動ログイン判定処理
+    // 起動時の自動ログイン判定処理（非同期のアクセスチェックを待機させる）
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       const savedUser = localStorage.getItem(userStorageKey);
       if (savedUser) {
