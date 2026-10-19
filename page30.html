@@ -1102,6 +1102,43 @@
     .toggle-switch-input:checked + .toggle-switch-slider::after {
       transform: translateX(18px);
     }
+
+    /* 月ごとの予定テーブル用スタイル */
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .schedule-table th, .schedule-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      vertical-align: middle;
+    }
+    .schedule-table th {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .schedule-row-current {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(168, 85, 247, 0.08);
+    }
+    .schedule-row-other {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .schedule-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-purple);
+      cursor: pointer;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -1189,6 +1226,7 @@
           </div>
         </div>
         <div class="header-right-actions">
+          <button id="footer-schedule-open-btn" class="btn-logout" title="月ごとの予定" style="background: rgba(168,85,247,0.15); border-color: var(--border-glow); color: var(--accent-purple);">📅 予定</button>
           <button id="changeUserBtn" class="btn-logout">ロックに戻る</button>
         </div>
       </header>
@@ -1207,6 +1245,37 @@
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 月ごとの予定モーダル -->
+  <div id="schedule-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">月ごとの予定一覧</div>
+        <button id="schedule-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
+          <button id="schedule-uncheck-all-btn" class="secondary-btn" style="font-size: 0.78rem; padding: 6px 12px;">すべて一気にFalseにする</button>
+        </div>
+        <table class="schedule-table">
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;">状態</th>
+              <th style="width: 90px;">月</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-table-body">
+            <!-- JavaScriptで動的に挿入 -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <button id="schedule-modal-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
   </div>
@@ -1511,7 +1580,6 @@
       unlockApp();
     }
 
-    // チャット入室時（アンロック時）にUIDを登録・更新する関数
     async function registerCurrentDeviceUser() {
       try {
         const configSnap = await getDoc(doc(firestore, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'));
@@ -1553,7 +1621,6 @@
       lockScreen.style.display = 'none';
       appContent.style.display = 'flex';
 
-      // メッセージ送受信画面に入室したタイミングでUIDを登録・更新
       registerCurrentDeviceUser();
 
       renderMessages();
@@ -1610,7 +1677,6 @@
       await setDoc(doc(firestore, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'), { roomLocked: isLocked }, { merge: true });
     };
 
-    // あいことば変更ボタンの処理
     const updatePasscodeBtn = document.getElementById('update-passcode-btn');
     updatePasscodeBtn.addEventListener('click', async () => {
       const newPass = document.getElementById('new-passcode-input').value.trim();
@@ -1684,6 +1750,126 @@
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+
+    // 月ごとの予定モーダル関連要素
+    const footerScheduleOpenBtn = document.getElementById('footer-schedule-open-btn');
+    const scheduleModalOverlay = document.getElementById('schedule-modal-overlay');
+    const scheduleModalCloseX = document.getElementById('schedule-modal-close-x');
+    const scheduleModalCloseBtn = document.getElementById('schedule-modal-close-btn');
+    const scheduleTableBody = document.getElementById('schedule-table-body');
+    const scheduleUncheckAllBtn = document.getElementById('schedule-uncheck-all-btn');
+
+    const scheduleData = [
+      { month: "1月", content: "元旦の食事、お雑煮を作る" },
+      { month: "1月", content: "15日、お善哉を作る" },
+      { month: "1月", content: "15日、正月飾りを片付ける" },
+      { month: "1月", content: "31日、Amazonプライム年払い5900円" },
+      { month: "1月", content: "恵方巻の予約をする(7-11)" },
+      { month: "2月", content: "恵方巻を食べる" },
+      { month: "2月", content: "利道さん誕生日" },
+      { month: "2月", content: "バレンタインデー" },
+      { month: "2月", content: "15日までに眼科で処方してもらう" },
+      { month: "2月", content: "下旬から花粉対策、上着は玄関で脱ぐ" },
+      { month: "2月", content: "花粉きつくなったら二重マスクにする" },
+      { month: "3月", content: "ピアノの調律をお願いする（湯浅楽器さん）" },
+      { month: "4月", content: "学校の年間行事予定を見てカレンダーに記入" },
+      { month: "4月", content: "OTTADEの電池交換をする" },
+      { month: "4月", content: "タイヤ交換をする" },
+      { month: "4月", content: "スクリレ、毎年登録が必要" },
+      { month: "5月", content: "ふとん乾燥機かける 毛布は洗濯する" },
+      { month: "5月", content: "苗箱作り、田植え" },
+      { month: "5月", content: "GW前に払い戻し、車の税金支払う" },
+      { month: "6月", content: "4年に1回製氷フィルター交換(R8年購入）" },
+      { month: "6月", content: "第3日曜日 父の日" },
+      { month: "6月", content: "学校で美化活動" },
+      { month: "6月", content: "川東ステージ祭（体育祭）" },
+      { month: "7月", content: "ひなたちゃんの誕生日ケーキを予約する" },
+      { month: "7月", content: "7月28日までに、ポポに誕生日パフェの予約をする" },
+      { month: "7月", content: "納涼大会 文房具と首掛けファンなど必要" },
+      { month: "8月", content: "ひなたちゃんの自転車のTSマーク点検3600円くらい" },
+      { month: "9月", content: "蚊に注意 秋服出しておく" },
+      { month: "9月", content: "イオンでおせちの予約" },
+      { month: "10月", content: "インフルエンザ予防接種予約する" },
+      { month: "10月", content: "年末調整、アフラックの紙、記入見本、印鑑" },
+      { month: "10月", content: "課税支給額の合計を夫に報告" },
+      { month: "10月", content: "町民運動会" },
+      { month: "10月", content: "クリスマスケーキの予約をする(iAEON)KFCケーキでじゅうぶんかも" },
+      { month: "11月", content: "ソフトバレー大会、小銭、半袖Tシャツと上着、上履き" },
+      { month: "11月", content: "自分の自転車のTSマークの点検3600円くらい" },
+      { month: "11月", content: "ケンタッキー予約" },
+      { month: "11月", content: "クリスマスプレゼント考える" },
+      { month: "11月", content: "TOYOTA点検でタイヤ交換してもらう" },
+      { month: "12月", content: "1月にO'zHairDesign予約する HIROさんで" },
+      { month: "12月", content: "お年玉用のピン札を用意する" },
+      { month: "12月", content: "元旦の食事用の材料を買う" },
+      { month: "12月", content: "お正月のお坊さん用のお菓子を用意する(7品)" }
+    ];
+
+    function renderScheduleTable() {
+      scheduleTableBody.innerHTML = '';
+      
+      // 現在の月を取得し、現在月・翌月が一番上にくるように順序を並び替え（1〜12月の順序を維持、12月の次は1月）
+      const now = new Date();
+      const currentMonthNum = now.getMonth() + 1; // 1〜12
+
+      // 並び順の基準配列を生成（現在の月からスタートして12ヶ月分）
+      const sortedMonths = [];
+      for (let i = 0; i < 12; i++) {
+        const m = ((currentMonthNum - 1 + i) % 12) + 1;
+        sortedMonths.push(m + '月');
+      }
+
+      // scheduleDataをsortedMonthsの順番に従って並び替え
+      const sortedScheduleData = [...scheduleData].sort((a, b) => {
+        const indexA = sortedMonths.indexOf(a.month);
+        const indexB = sortedMonths.indexOf(b.month);
+        return indexA - indexB;
+      });
+
+      const nextMonthNum = (currentMonthNum % 12) + 1;
+
+      sortedScheduleData.forEach((item, index) => {
+        const monthNum = parseInt(item.month.replace('月', ''), 10);
+        const isCurrentOrNext = (monthNum === currentMonthNum || monthNum === nextMonthNum);
+
+        const tr = document.createElement('tr');
+        tr.className = isCurrentOrNext ? 'schedule-row-current' : 'schedule-row-other';
+
+        const tdCheck = document.createElement('td');
+        tdCheck.style.textAlign = 'center';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'schedule-checkbox';
+        checkbox.id = `sched-chk-${index}`;
+        tdCheck.appendChild(checkbox);
+
+        const tdMonth = document.createElement('td');
+        tdMonth.textContent = item.month;
+
+        const tdContent = document.createElement('td');
+        tdContent.textContent = item.content;
+
+        tr.appendChild(tdCheck);
+        tr.appendChild(tdMonth);
+        tr.appendChild(tdContent);
+        scheduleTableBody.appendChild(tr);
+      });
+    }
+
+    footerScheduleOpenBtn.addEventListener('click', () => {
+      renderScheduleTable();
+      scheduleModalOverlay.classList.add('active');
+    });
+    const closeScheduleModal = () => scheduleModalOverlay.classList.remove('active');
+    scheduleModalCloseX.addEventListener('click', closeScheduleModal);
+    scheduleModalCloseBtn.addEventListener('click', closeScheduleModal);
+
+    scheduleUncheckAllBtn.addEventListener('click', () => {
+      const checkboxes = scheduleTableBody.querySelectorAll('.schedule-checkbox');
+      checkboxes.forEach(chk => {
+        chk.checked = false;
+      });
+    });
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
@@ -2252,15 +2438,69 @@
       messageInput.style.height = '42px';
     }
 
+    // 画像縮小・軽量化処理を伴うファイル添付の変更
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        push(messagesRef, { text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: file.type.startsWith('image/'), timestamp: Date.now() });
-        fileInput.value = '';
-      };
-      reader.readAsDataURL(file);
+
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
+            push(messagesRef, { 
+              text: '', 
+              fileData: resizedDataUrl, 
+              fileName: file.name, 
+              fileType: 'image/jpeg', 
+              isImage: true, 
+              timestamp: Date.now() 
+            });
+            fileInput.value = '';
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          push(messagesRef, { 
+            text: '', 
+            fileData: event.target.result, 
+            fileName: file.name, 
+            fileType: file.type, 
+            isImage: false, 
+            timestamp: Date.now() 
+          });
+          fileInput.value = '';
+        };
+        reader.readAsDataURL(file);
+      }
     });
 
     function deleteMessage(key) {
