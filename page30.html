@@ -1580,6 +1580,7 @@
       unlockApp();
     }
 
+    // [修正1] registerCurrentDeviceUser がアクセス制限やルームロックの判定結果（true / false）を返すように変更
     async function registerCurrentDeviceUser() {
       try {
         const configSnap = await getDoc(doc(firestore, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'));
@@ -1596,12 +1597,12 @@
 
         if (foundUserByUid && foundUserByUid.accessDenied) {
           showModal("アクセス制限", "今は入室できません。");
-          return;
+          return false;
         }
 
         if (isLocked && !foundUserByUid) {
           showModal("入室制限", "現在ルームがロックされており、未登録ユーザーは入室できません。");
-          return;
+          return false;
         }
 
         const userRef = doc(firestore, 'artifacts', appId, 'public', 'data', 'users', myUid);
@@ -1612,19 +1613,24 @@
           accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false) 
         }, { merge: true });
 
+        return true;
       } catch (err) {
         console.error("User registration error:", err);
+        return true;
       }
     }
 
-    function unlockApp() {
-      lockScreen.style.display = 'none';
-      appContent.style.display = 'flex';
+    // [修正2] unlockApp を async にし、サーバーのチェックが終わるのを待ってから画面を表示するように変更
+    async function unlockApp() {
+      const canAccess = await registerCurrentDeviceUser();
 
-      registerCurrentDeviceUser();
+      if (canAccess) {
+        lockScreen.style.display = 'none';
+        appContent.style.display = 'flex';
 
-      renderMessages();
-      scrollToBottom();
+        renderMessages();
+        scrollToBottom();
+      }
     }
 
     passBtn.addEventListener('click', handleAuth);
@@ -1808,18 +1814,15 @@
     function renderScheduleTable() {
       scheduleTableBody.innerHTML = '';
       
-      // 現在の月を取得し、現在月・翌月が一番上にくるように順序を並び替え（1〜12月の順序を維持、12月の次は1月）
       const now = new Date();
-      const currentMonthNum = now.getMonth() + 1; // 1〜12
+      const currentMonthNum = now.getMonth() + 1;
 
-      // 並び順の基準配列を生成（現在の月からスタートして12ヶ月分）
       const sortedMonths = [];
       for (let i = 0; i < 12; i++) {
         const m = ((currentMonthNum - 1 + i) % 12) + 1;
         sortedMonths.push(m + '月');
       }
 
-      // scheduleDataをsortedMonthsの順番に従って並び替え
       const sortedScheduleData = [...scheduleData].sort((a, b) => {
         const indexA = sortedMonths.indexOf(a.month);
         const indexB = sortedMonths.indexOf(b.month);
@@ -2438,7 +2441,6 @@
       messageInput.style.height = '42px';
     }
 
-    // 画像縮小・軽量化処理を伴うファイル添付の変更
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
