@@ -70,12 +70,29 @@
       font-weight: 700;
       color: #fff;
     }
-    .lock-subtitle {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      text-align: center;
-      margin-bottom: 10px;
+    
+    #user-select {
+      background-color: #292930;
+      border: 1px solid transparent;
+      border-radius: 1rem;
+      padding: 16px 20px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      width: 260px;
+      transition: all 0.2s ease;
+      cursor: pointer;
     }
+    #user-select:focus {
+      border-color: #6366F1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    #user-select option {
+      background-color: #292930;
+      color: #fff;
+      padding: 12px;
+    }
+
     #pass-input {
       background-color: var(--surface-color);
       border: 1px solid var(--border-color);
@@ -305,30 +322,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    .user-select-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .user-select-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-    select {
-      background-color: var(--surface-color);
-      color: #fff;
-      border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-    select:focus {
-      border-color: #6366F1;
     }
     .btn-logout {
       background: transparent;
@@ -682,7 +675,12 @@
       </div>
 
       <h2 style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Family Chat</h2>
-      <div class="lock-subtitle">家族同士で連絡をとりあうためのアプリです</div>
+
+      <select id="user-select">
+        <option value="おかあさん">おかあさん</option>
+        <option value="おとうさん">おとうさん</option>
+        <option value="むすめ">むすめ</option>
+      </select>
 
       <input type="password" id="pass-input" placeholder="結婚記念日 数字４桁" autocomplete="off">
       <label class="remember-container">
@@ -752,15 +750,7 @@
           </div>
         </div>
         <div class="header-right-actions">
-          <div class="user-select-container" id="userSelectContainer">
-            <span class="user-select-label">私は:</span>
-            <select id="user-select">
-              <option value="おかあさん">おかあさん</option>
-              <option value="おとうさん">おとうさん</option>
-              <option value="むすめ">むすめ</option>
-            </select>
-          </div>
-          <button id="changeUserBtn" class="btn-logout">➡</button>
+          <button id="changeUserBtn" class="btn-logout" title="ユーザー切り替え・ログアウト">➡</button>
         </div>
       </header>
 
@@ -1076,6 +1066,13 @@
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
+
+          // 選択されたユーザー名を保存
+          localStorage.setItem(userStorageKey, userSelect.value);
+
+          // 入室時にUIDとユーザー名を登録・更新
+          await registerCurrentDeviceUser();
+
           unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
@@ -1108,9 +1105,6 @@
       if (savedUser && (savedUser === 'おかあさん' || savedUser === 'おとうさん' || savedUser === 'むすめ')) {
         userSelect.value = savedUser;
       }
-
-      // チャット画面に入室したタイミングでUIDを登録・更新
-      registerCurrentDeviceUser();
 
       renderMessages();
       scrollToBottom();
@@ -1748,11 +1742,6 @@
       scrollToBottom();
     }
 
-    userSelect.addEventListener('change', () => {
-      localStorage.setItem(userStorageKey, userSelect.value);
-      renderMessages();
-    });
-
     onValue(messagesRef, (snapshot) => {
       cachedMessages = snapshot.val() || {};
       renderMessages();
@@ -1768,9 +1757,12 @@
 
     // 起動時の自動ログイン判定処理
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
+      const savedUser = localStorage.getItem(userStorageKey);
+      if (savedUser) {
+        userSelect.value = savedUser;
+      }
       unlockApp();
     }
   </script>
 </body>
 </html>
-<FollowUp>他にご不明な点や調整したい動作はございますか？</FollowUp>
