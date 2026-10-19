@@ -951,6 +951,18 @@
       roomLockToggle.checked = roomLockedState;
     });
 
+    // 管理画面を開いた瞬間（または定期的）に現在時刻のタイムスタンプを自身のレコードに更新してリアルタイム性を反映
+    async function updateAdminOpenedPresence() {
+      try {
+        const userRef = ref(db, `users/${safeDeviceUID}`);
+        await update(userRef, {
+          lastAdminOpenAt: Date.now()
+        });
+      } catch (e) {
+        console.error("Presence update error:", e);
+      }
+    }
+
     // 管理画面への導線
     adminLinkBtn.addEventListener('click', () => {
       adminAuthModal.classList.add('active');
@@ -965,13 +977,15 @@
     });
 
     // 管理者認証処理
-    adminAuthSubmit.addEventListener('click', () => {
+    adminAuthSubmit.addEventListener('click', async () => {
       const id = adminIdInput.value.trim();
       const pass = adminPassInput.value.trim();
       if (id === 'master' && pass === '0813') {
         adminAuthModal.classList.remove('active');
         lockScreen.style.display = 'none';
         adminScreen.style.display = 'flex';
+        // 管理画面を開いた瞬間のリアルタイム状態を記録
+        await updateAdminOpenedPresence();
       } else {
         authErrorMessage.style.display = 'block';
       }
@@ -1001,13 +1015,21 @@
         return;
       }
       list.innerHTML = '';
+      const now = Date.now();
       registeredUsersList.forEach(user => {
+        // 直近3分以内（180,000ミリ秒）にログインまたはアクティビティがある場合は「アクセス中」と判定
+        const lastActivity = Math.max(user.lastLoginAt || 0, user.lastAdminOpenAt || 0);
+        const isOnline = (now - lastActivity) < 180000;
+
         const item = document.createElement('div');
         item.className = 'user-list-item';
         item.innerHTML = `
           <div>
-            <div style="font-weight:600; font-size:0.9rem;">${user.nickname} <span style="font-size:0.75rem; color:var(--text-muted);">(${user.selectedRole || ''})</span></div>
-            <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">UID: ${user.userId || user.id}</div>
+            <div style="font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:8px;">
+              ${user.nickname} <span style="font-size:0.75rem; color:var(--text-muted);">(${user.selectedRole || ''})</span>
+              ${isOnline ? '<span style="font-size:0.65rem; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); padding:1px 8px; border-radius:10px; font-weight:500;">アクセス中</span>' : ''}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace; margin-top:2px;">UID: ${user.userId || user.id}</div>
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <div style="display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-muted);">
@@ -1046,10 +1068,8 @@
         const correctPass = snap.exists() ? snap.val() : '0218';
 
         if (inputPass === correctPass) {
-          // 選択されたユーザー名を保存
           localStorage.setItem(userStorageKey, userSelect.value);
 
-          // 認証成功後、アクセス権チェックがOKの時だけアンロック（内部で registerCurrentDeviceUser を非同期で待つ）
           const success = await unlockApp();
           if (!success) return;
 
@@ -1068,7 +1088,6 @@
       }
     }
 
-    // サーバーのアクセス権チェックを行い、結果に応じて true/false を返す
     async function registerCurrentDeviceUser() {
       try {
         const configSnap = await get(roomConfigRef);
@@ -1110,11 +1129,10 @@
         return true;
       } catch (err) {
         console.error("User registration error:", err);
-        return true; // エラー時は通す（安全側に倒す）
+        return true;
       }
     }
 
-    // サーバーのチェック完了を待ってから画面のロックを解除する
     async function unlockApp() {
       const canAccess = await registerCurrentDeviceUser();
 
@@ -1139,7 +1157,6 @@
       if (e.key === 'Enter') handleAuth();
     });
 
-    // 画像の補正処理
     function normalizeImageFile(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -1779,7 +1796,6 @@
       }
     });
 
-    // 起動時の自動ログイン判定処理（非同期のアクセスチェックを待機させる）
     if (localStorage.getItem('family_chat_unlocked') === 'true' || sessionStorage.getItem('family_chat_unlocked') === 'true') {
       const savedUser = localStorage.getItem(userStorageKey);
       if (savedUser) {
