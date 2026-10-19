@@ -1308,6 +1308,69 @@
       }
     });
 
+    // サーバーのアクセス権チェックを終えてから真偽値を返すように修正
+    async function registerCurrentDeviceUser() {
+      try {
+        const configSnap = await get(roomConfigRef);
+        const currentRoomConfig = configSnap.exists() ? configSnap.val() : {};
+        const isLocked = currentRoomConfig.roomLocked || false;
+
+        const usersSnap = await get(usersRef);
+        let currentRegisteredUsers = [];
+        const usersVal = usersSnap.val() || {};
+        Object.keys(usersVal).forEach(key => {
+          currentRegisteredUsers.push({ id: key, ...usersVal[key] });
+        });
+
+        const foundUserByUid = currentRegisteredUsers.find(u => (u.userId === deviceUID || u.id === deviceUID));
+
+        if (foundUserByUid && foundUserByUid.accessDenied) {
+          passError.textContent = '今は入室できません。';
+          passError.style.display = 'block';
+          return false;
+        }
+
+        if (isLocked && !foundUserByUid) {
+          passError.textContent = '新規入室が制限されています。';
+          passError.style.display = 'block';
+          return false;
+        }
+
+        const currentNickname = userSelect.value;
+        const userRef = ref(db, `users/${deviceUID}`);
+        await set(userRef, {
+          userId: deviceUID,
+          nickname: currentNickname,
+          userAgent: navigator.userAgent,
+          lastLoginAt: Date.now(),
+          accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false)
+        });
+
+        return true;
+      } catch (err) {
+        console.error("User registration error:", err);
+        return true;
+      }
+    }
+
+    // サーバーチェック結果（true）を待ってから画面を表示するように修正
+    async function unlockApp() {
+      const canAccess = await registerCurrentDeviceUser();
+
+      if (canAccess) {
+        lockScreen.style.display = 'none';
+        appContent.style.display = 'flex';
+
+        const savedUser = localStorage.getItem(userStorageKey);
+        if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
+          userSelect.value = savedUser;
+        }
+
+        renderMessages();
+        scrollToBottom();
+      }
+    }
+
     async function handleAuth() {
       const inputPass = passInput.value;
       if (!inputPass) {
@@ -1321,30 +1384,14 @@
         const correctPass = snap.exists() ? snap.val() : '1234';
 
         if (inputPass === correctPass) {
-          const foundUserByUid = registeredUsersList.find(u => (u.userId === deviceUID || u.id === deviceUID));
-          
-          if (foundUserByUid && foundUserByUid.accessDenied) {
-            passError.textContent = '今は入室できません。';
-            passError.style.display = 'block';
-            return;
-          }
-
-          if (roomSettings.roomLocked && !foundUserByUid) {
-            passError.textContent = '新規入室が制限されています。';
-            passError.style.display = 'block';
-            return;
-          }
-
-          // ログイン成功時に選択されたユーザー名を保存
           localStorage.setItem(userStorageKey, userSelect.value);
-          await registerCurrentDeviceUser();
 
           if (rememberMeCheckbox.checked) {
             localStorage.setItem('family_chat_unlocked', 'true');
           } else {
             sessionStorage.setItem('family_chat_unlocked', 'true');
           }
-          unlockApp();
+          await unlockApp();
         } else {
           passError.textContent = 'あいことばが違います';
           passError.style.display = 'block';
@@ -1353,34 +1400,6 @@
         passError.textContent = '認証に失敗しました';
         passError.style.display = 'block';
       }
-    }
-
-    async function registerCurrentDeviceUser() {
-      const currentNickname = userSelect.value;
-      const userRef = ref(db, `users/${deviceUID}`);
-      const snap = await get(userRef);
-      const existing = snap.exists() ? snap.val() : {};
-
-      await set(userRef, {
-        userId: deviceUID,
-        nickname: currentNickname,
-        userAgent: navigator.userAgent,
-        lastLoginAt: Date.now(),
-        accessDenied: existing.accessDenied || false
-      });
-    }
-
-    function unlockApp() {
-      lockScreen.style.display = 'none';
-      appContent.style.display = 'flex';
-
-      const savedUser = localStorage.getItem(userStorageKey);
-      if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
-        userSelect.value = savedUser;
-      }
-
-      renderMessages();
-      scrollToBottom();
     }
 
     passBtn.addEventListener('click', handleAuth);
