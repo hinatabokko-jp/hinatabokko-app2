@@ -353,6 +353,9 @@
 
         // Dictionary Database
         const dictionaryData = [
+            // 追加項目: 体外式ペースメーカー設定
+            { id: "hr70_sen3_output3", term: "HR70 SEN3 Output3", reading: "エイチアールナナジュウ エスイーエヌサン アウトプットサン / たいがいしきぺーすめーかーせってい", fullName: "体外式ペースメーカー設定 (Temporary Pacemaker Settings)", category: "TL", initial: "H", meaning: "体外式ペースメーカー（テンポラリーペースメーカー）の稼働設定および出力パラメータの記録。<br>・HR70（Heart Rate / 設定心拍数）：70 bpm。最低心拍数を70回/分に維持。<br>・SEN3（Sensitivity / 感度）：3 mV。自己心拍の電気信号を感知する閾値。<br>・Output3（Output / 出力）：3 mA。ペーシング刺激の電気量。<br><span class='text-xs text-cyan-400 mt-1 block'>※算定・レセプト上のポイント: 体外ペースメーキング（J043等）や関連材料の算定時、適切な設定で稼働していたことの臨床経過の裏付けとして参照される。</span>" },
+
             // 追加された用語
             { id: "smi", term: "#SMI", reading: "エスエムアイ / えいえんし・こえだ", fullName: "Small Marginal Branch", category: "PCI", initial: "S", meaning: "鋭縁枝・小枝。心臓を包む「右冠動脈（RCA）」から分岐する細い枝（血管）のことです。" },
             { id: "rca_new", term: "RCA", reading: "アールシーエー / うかんどうみゃく", fullName: "Right Coronary Artery", category: "PCI", initial: "R", meaning: "右冠動脈。心臓に酸素や栄養を運ぶ3本の主要な血管（冠動脈）のうち、右側を走る血管です。" },
@@ -400,7 +403,7 @@
             // D
             { id: "dc", term: "DC", reading: "ディーシー / じょさいどう", fullName: "Direct Current Countershock", category: "TL", initial: "D", meaning: "直流除細動（カウンターショック）。致死的不整脈の発生時に電気ショックを与えて心拍を正常に戻す緊急処置。" },
             { id: "dc_chart", term: "d/c / DC", reading: "ディーシー / ちゅうし", fullName: "discontinue", category: "CHART", initial: "D", meaning: "中止する。治療や処方、点滴などを途中で取りやめることを指すカルテ指示。" },
-            { id: "dca", term: "DCA", reading: "ディーシーエー", fullName: "Directional Coronary Atherectomy", category: "PCI", initial: "D", meaning: "方向性冠動脈アテローム切除術。カッターを用いてプラーク（アテローム）を直接削り取る治療装置。" },
+            { id: "dca", term: "DCA", reading: "ディーシーエー", fullName: "Directional Coronary Atherectomy", category: "PCI", initial: "D", meaning: "方向性冠動脈アテローム切除術。カッターを用いてプラーク（アテローム）を直接削り取る治療装置。<br><span class='text-xs text-cyan-400 mt-1 block'>※K547 経皮的冠動脈粥腫切除術（28,280点）</span>" },
             { id: "dcb", term: "DCB / DEB", reading: "ディーシービー / デブ", fullName: "Drug-Coated / Eluting Balloon", category: "PCI", initial: "D", meaning: "薬剤塗布型バルーン。再狭窄を抑える薬剤が塗られた風船。ステントを留置せずに治療可能。" },
             { id: "dcm", term: "DCM", reading: "ディーシーエム / かくちょうがかしんきんしょう", fullName: "Dilated Cardiomyopathy", category: "CARD", initial: "D", meaning: "拡張型心筋症。心筋の収縮力が低下し、心室（特に左心室）の内腔が拡張する原因不明の心筋疾患。" },
             { id: "deflate", term: "deflate", reading: "デフレート / じゅあつ", fullName: "Deflate Balloon", category: "TL", initial: "D", meaning: "しぼませる。バルーンの圧を抜いて収縮させること。" },
@@ -489,7 +492,7 @@
             { id: "po", term: "p.o. / PO", reading: "ピーオー / けいこうとうよ", fullName: "per os (by mouth)", category: "CHART", initial: "P", meaning: "経口投与・内服。薬剤をお口から服用させる指示。" },
             { id: "poba", term: "POBA", reading: "ポバ", fullName: "Plain Old Balloon Angioplasty", category: "PCI", initial: "P", meaning: "通常バルーン血管形成術。ステントを使わずバルーン（風船）拡張のみを行う手技。" },
             { id: "position", term: "position", reading: "ポジション / はいち", fullName: "Position Device", category: "TL", initial: "P", meaning: "位置を合わせる・配置する。カテーテルやデバイスを目的病変位置に正しく置くこと。" },
-            { id: "postba", term: "Post-BA / Post-dil", reading: "ポストディーアイエル / こうかくちょう", fullName: "Post-Dilation Balloon Angioplasty", category: "TL", initial: "P", meaning: "後拡張。ステント留置後、さらに硬いバルーン（NCバルーン）等で高圧をかけステントを圧着させる作業。" },
+            { id: "postba", term: "Post-BA / Post-dil", reading: "ポストディーアイエル / こうかくちょう", fullName: "Post-Dilation Balloon Angioplasty", category: "TL", initial: "P", meaning: "後拡張。ステント留置後、さらに硬いバルーン（NCバルーン）等で高圧をかけてステントを圧着させる作業。" },
             { id: "postdilate", term: "postdilate", reading: "ポストダイレート / こうかくちょう", fullName: "Post-dilate Stent", category: "TL", initial: "P", meaning: "後拡張する。ステント留置後にバルーンを用いてさらに高圧で圧着拡張すること。" },
             { id: "predilate", term: "predilate", reading: "プレダイレート / ぜんかくちょう", fullName: "Pre-dilate Lesion", category: "TL", initial: "P", meaning: "前拡張する。ステント留置などの前にバルーンで病変をあらかじめ拡張すること。" },
             { id: "proximal", term: "proximal", reading: "プロキシマル / きんいぶ", fullName: "Proximal Site", category: "TL", initial: "P", meaning: "近位部。心臓に近い側・血管の根元側（病変より手前）を指す。" },
