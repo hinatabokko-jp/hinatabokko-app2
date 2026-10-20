@@ -26,8 +26,9 @@
             }
         }
     </script>
-    <!-- Inter Font -->
+    <!-- Inter Font & Lucide Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -95,6 +96,14 @@
                         />
                     </div>
 
+                    <!-- 要望対応：次回から自動ログインチェックボックス -->
+                    <div class="flex items-center gap-2 pl-1">
+                        <label class="relative flex items-center gap-2.5 cursor-pointer text-xs text-subText select-none">
+                            <input type="checkbox" id="remember-me-checkbox" class="w-4 h-4 rounded bg-inputBg border-white/10 text-accent focus:ring-accent/20 accent-[#C13584]">
+                            次回から自動でログインする
+                        </label>
+                    </div>
+
                     <div id="loginMessageContainer" class="hidden p-4 rounded-2xl text-sm flex items-start gap-3 transition-all">
                         <svg id="messageIcon" class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
                         <span id="loginMessageText" class="font-medium leading-relaxed"></span>
@@ -139,6 +148,10 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
+                    <button onclick="openScheduleModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-accent text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="日程調整">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">日程調整</span>
+                    </button>
                     <button onclick="openNicknameModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer" title="ニックネーム変更">
                         変更
                     </button>
@@ -244,7 +257,7 @@
                     </div>
                 </div>
 
-                <!-- 登録ユーザー一覧 ＆ アクセス拒否機能 -->
+                <!-- 登録ユーザー一覧 ＆ アクセス制限機能 -->
                 <div class="bg-cardBg border border-white/5 rounded-3xl p-5 shadow-lg flex-1 flex flex-col min-h-[380px]">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-bold text-sm sm:text-base">入室中・登録ユーザー一覧（アクセス制限）</h3>
@@ -252,6 +265,117 @@
                     </div>
                     <div id="adminUserList" class="flex-1 overflow-y-auto flex flex-col gap-3 pr-1 max-h-[320px]">
                         <div class="text-center text-subText/50 text-sm py-8">ユーザーデータがありません</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: 日程調整モーダル -->
+        <div id="scheduleModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-4xl w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                <div class="flex items-center justify-between pb-4 border-b border-white/5 mb-4 flex-shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-insta-gradient p-0.5 flex items-center justify-center text-white">
+                            <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-mainText">日程調整ボード</h3>
+                            <span class="text-xs text-subText">ご都合の良い日時に〇×△で回答してください</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openCandidatesEditModal()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <i data-lucide="settings" class="w-4 h-4 text-accent"></i>
+                            <span>候補日時変更</span>
+                        </button>
+                        <button onclick="exportScheduleCsv()" class="px-3 py-2 rounded-xl bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>CSV出力</span>
+                        </button>
+                        <button onclick="closeScheduleModal()" class="p-2 text-subText hover:text-white rounded-xl transition-colors cursor-pointer">✕</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto space-y-6 pr-1">
+                    <div class="bg-darkBg/60 border border-white/5 rounded-2xl p-4 sm:p-5">
+                        <h4 class="font-bold text-sm text-mainText mb-3 flex items-center gap-2">
+                            <i data-lucide="pen-tool" class="w-4 h-4 text-accent"></i>
+                            <span id="scheduleFormTitle">あなたの都合を入力する</span>
+                        </h4>
+                        <form id="airScheduleForm" onsubmit="handleScheduleSubmit(event)" class="space-y-4">
+                            <input type="hidden" id="editScheduleId" value="">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-subText uppercase mb-1">お名前（自動反映）</label>
+                                    <input type="text" id="scheduleMemberName" required readonly class="w-full bg-inputBg text-mainText rounded-xl px-3.5 py-3 text-sm opacity-80 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-subText uppercase mb-1">コメント・条件など（任意）</label>
+                                    <input type="text" id="scheduleMemberComment" placeholder="例: 遅れて参加可能です 等" class="w-full bg-inputBg text-mainText rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:border-accent border border-transparent">
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-semibold text-subText uppercase">各候補日時の可否を選択</label>
+                                <div id="airCandidatesFormContainer" class="space-y-2"></div>
+                            </div>
+                            <div class="flex justify-end gap-2 pt-2">
+                                <button type="button" id="cancelScheduleEditBtn" onclick="resetScheduleForm()" class="hidden px-4 py-2.5 rounded-xl bg-inputBg text-subText text-xs font-semibold cursor-pointer">キャンセル</button>
+                                <button type="submit" id="submitScheduleBtn" class="px-5 py-2.5 rounded-xl bg-insta-gradient text-white text-xs font-bold shadow-lg cursor-pointer flex items-center gap-1.5">
+                                    <i data-lucide="send" class="w-4 h-4"></i> 回答を保存する
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bg-darkBg/60 border border-white/5 rounded-2xl p-4 sm:p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-bold text-sm text-mainText flex items-center gap-2">
+                                <i data-lucide="table" class="w-4 h-4 text-accent"></i> 集計一覧表
+                            </h4>
+                            <span id="airTotalRespondents" class="text-xs bg-inputBg px-3 py-1 rounded-full text-subText">回答数: <strong class="text-accent">0</strong> 人</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[550px] text-xs">
+                                <thead>
+                                    <tr class="bg-inputBg/60 text-subText border-b border-white/5">
+                                        <th class="p-2.5 w-44">候補日時</th>
+                                        <th class="p-2.5 text-center w-20 text-emerald-400">〇</th>
+                                        <th class="p-2.5 text-center w-20 text-amber-400">△</th>
+                                        <th class="p-2.5 text-center w-20 text-rose-400">×</th>
+                                        <th class="p-2.5">回答者一覧</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="airMatrixTableBody" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-darkBg/60 border border-white/5 rounded-2xl p-4 sm:p-5">
+                        <h4 class="font-bold text-sm text-mainText mb-3 flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4 text-accent"></i> 回答者ごとの詳細
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="airIndividualListContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: 候補日時変更モーダル -->
+        <div id="candidatesEditModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+            <div class="bg-cardBg border border-white/10 rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh]">
+                <div class="flex items-center justify-between pb-3 border-b border-white/5 mb-4">
+                    <h3 class="text-base font-bold text-mainText">投票の候補日時を編集</h3>
+                    <button onclick="closeCandidatesEditModal()" class="text-subText hover:text-white">✕</button>
+                </div>
+                <p class="text-xs text-subText mb-4">ボードに表示する候補日時を追加・編集・削除できます。</p>
+                <div id="modalCandidatesInputsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
+                <div class="pt-4 mt-3 border-t border-white/5 flex items-center justify-between">
+                    <button type="button" onclick="addCandidateRowInput()" class="px-3.5 py-2 bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer">
+                        ＋ 候補日時を追加
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeCandidatesEditModal()" class="px-4 py-2 text-xs text-subText cursor-pointer">キャンセル</button>
+                        <button type="button" onclick="saveCandidatesEdits()" class="px-5 py-2 bg-insta-gradient text-white text-xs font-bold rounded-xl shadow-lg cursor-pointer">保存する</button>
                     </div>
                 </div>
             </div>
@@ -355,7 +479,6 @@
                             <input type="range" id="stampSize" min="1" max="40" value="3" class="w-20 accent-accent">
                         </div>
                     </div>
-                    <!--色の透過度調整スライダー -->
                     <div class="flex items-center justify-between text-xs">
                         <div class="flex items-center gap-2">
                             <span>透明度:</span>
@@ -468,6 +591,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-message-app-default';
         const firebaseConfig = {
@@ -481,18 +605,29 @@
         };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        let app, db, auth;
+        let app, db, auth, rtdb;
         let currentUser = null;
         let currentNickname = "";
         let unsubscribeMessages = null;
-        let unsubscribeStamps = null;
         let registeredUsersList = [];
         let allMessagesList = [];
         let cachedStampHistory = {};
 
+        // 日程調整用の設定・変数
+        const DEFAULT_DATE_CANDIDATES = [
+            "10月15日(木) 19:00〜",
+            "10月16日(金) 19:00〜",
+            "10月17日(土) 14:00〜",
+            "10月17日(土) 18:00〜",
+            "10月18日(日) 14:00〜"
+        ];
+        let dateCandidates = [...DEFAULT_DATE_CANDIDATES];
+        let scheduleVoteData = [];
+
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
+            rtdb = getDatabase(app);
             auth = getAuth(app);
             const initAuth = async () => {
                 if (initialAuthToken) {
@@ -502,9 +637,58 @@
                 }
             };
             initAuth();
-            onAuthStateChanged(auth, (user) => { currentUser = user; });
+            onAuthStateChanged(auth, async (user) => { 
+                currentUser = user; 
+                if (user) {
+                    // UIDが取得できたら、前回アクセス時のユーザー名を自動入力
+                    const savedNickname = localStorage.getItem('air_message_saved_nickname_' + user.uid);
+                    if (savedNickname) {
+                        const nickInput = document.getElementById('nicknameInput');
+                        if (nickInput && !nickInput.value) {
+                            nickInput.value = savedNickname;
+                        }
+                    }
+
+                    // ページ読み込み時の自動ログイン判定
+                    if (localStorage.getItem('air_message_unlocked_' + user.uid) === 'true' || sessionStorage.getItem('air_message_unlocked') === 'true') {
+                        // ユーザー一覧等のデータ取得を待ってから自動ログインを実行するため少し待機、またはユーザーデータが存在するか確認
+                        setTimeout(async () => {
+                            const found = registeredUsersList.find(u => u.userId === user.uid || u.id === user.uid);
+                            const nameToUse = found ? found.nickname : (savedNickname || '');
+                            if (nameToUse) {
+                                currentNickname = nameToUse;
+                                document.getElementById('displayNickname').textContent = currentNickname;
+                                document.getElementById('userAvatarInitial').textContent = currentNickname.charAt(0).toUpperCase();
+
+                                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+                                await setDoc(userRef, { 
+                                    userId: user.uid, 
+                                    nickname: currentNickname, 
+                                    userAgent: navigator.userAgent, 
+                                    lastLoginAt: serverTimestamp(), 
+                                    accessDenied: (found ? found.accessDenied : false) 
+                                }, { merge: true });
+
+                                document.getElementById('loginScreen').classList.add('hidden');
+                                document.getElementById('chatScreen').classList.remove('hidden');
+                                if (db) subscribeToMessages();
+                            }
+                        }, 600);
+                    }
+                }
+            });
             listenToAdminData();
             listenToSharedStamps();
+            subscribeScheduleData();
+
+            // 定期的なプレゼンス（現在アクセス中）のハートビート更新
+            setInterval(() => {
+                if (db && currentUser && !document.getElementById('chatScreen').classList.contains('hidden')) {
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+                    setDoc(userRef, { lastHeartbeatAt: serverTimestamp() }, { merge: true });
+                }
+            }, 10000);
+
         } catch (e) {
             console.error("Firebase init error:", e);
         }
@@ -555,7 +739,8 @@
 
             if (db && currentUser) {
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, lastLoginAt: serverTimestamp(), accessDenied: false }, { merge: true });
+                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, lastLoginAt: serverTimestamp(), lastHeartbeatAt: serverTimestamp(), accessDenied: false }, { merge: true });
+                localStorage.setItem('air_message_saved_nickname_' + currentUser.uid, currentNickname);
             }
             closeNicknameModal();
         };
@@ -601,9 +786,20 @@
             document.getElementById('displayNickname').textContent = currentNickname;
             document.getElementById('userAvatarInitial').textContent = currentNickname.charAt(0).toUpperCase();
 
+            // 自動ログイン設定の保存処理
+            const rememberCheckbox = document.getElementById('remember-me-checkbox');
+            if (currentUser) {
+                localStorage.setItem('air_message_saved_nickname_' + currentUser.uid, currentNickname);
+                if (rememberCheckbox && rememberCheckbox.checked) {
+                    localStorage.setItem('air_message_unlocked_' + currentUser.uid, 'true');
+                } else {
+                    sessionStorage.setItem('air_message_unlocked', 'true');
+                }
+            }
+
             if (db && currentUser) {
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp(), accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false) }, { merge: true });
+                await setDoc(userRef, { userId: currentUser.uid, nickname: currentNickname, userAgent: navigator.userAgent, lastLoginAt: serverTimestamp(), lastHeartbeatAt: serverTimestamp(), accessDenied: (foundUserByUid ? foundUserByUid.accessDenied : false) }, { merge: true });
             }
 
             document.getElementById('loginScreen').classList.add('hidden');
@@ -612,10 +808,24 @@
         };
 
         window.handleLogout = function() {
+            if (currentUser) {
+                localStorage.removeItem('air_message_unlocked_' + currentUser.uid);
+            }
+            sessionStorage.removeItem('air_message_unlocked');
             if (unsubscribeMessages) unsubscribeMessages();
             document.getElementById('chatScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('nicknameInput').value = "";
+            // ログアウト時もUIDに基づいた保存済みニックネームがあれば再設定しておく
+            if (currentUser) {
+                const savedNickname = localStorage.getItem('air_message_saved_nickname_' + currentUser.uid);
+                if (savedNickname) {
+                    document.getElementById('nicknameInput').value = savedNickname;
+                } else {
+                    document.getElementById('nicknameInput').value = "";
+                }
+            } else {
+                document.getElementById('nicknameInput').value = "";
+            }
         };
 
         window.handleSendMessage = async function(event) {
@@ -629,7 +839,6 @@
         };
 
         function renderFormattedText(container, text) {
-            // http:// または https:// から始まり、スペースや制御文字以外の文字が続く部分をURLとして認識
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             let lastIndex = 0, match;
             while ((match = urlRegex.exec(text)) !== null) {
@@ -725,11 +934,299 @@
             }
         };
 
+        // --- 日程調整機能関連スクリプト ---
+        window.openScheduleModal = function() {
+            document.getElementById('scheduleMemberName').value = currentNickname;
+            document.getElementById('scheduleModal').classList.remove('hidden', 'opacity-0');
+            renderAirCandidatesForm();
+            renderAirMatrixTable();
+            renderAirIndividualList();
+            lucide.createIcons();
+        };
+        window.closeScheduleModal = function() {
+            document.getElementById('scheduleModal').classList.add('hidden');
+        };
+
+        function subscribeScheduleData() {
+            if (!rtdb) return;
+            const candRef = ref(rtdb, 'artifacts/' + appId + '/settings/dateCandidates');
+            onValue(candRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    dateCandidates = data;
+                } else {
+                    set(candRef, DEFAULT_DATE_CANDIDATES);
+                    dateCandidates = [...DEFAULT_DATE_CANDIDATES];
+                }
+                renderAirCandidatesForm();
+                renderAirMatrixTable();
+                renderAirIndividualList();
+            });
+
+            const votesRef = ref(rtdb, 'artifacts/' + appId + '/schedule_votes');
+            onValue(votesRef, (snapshot) => {
+                const data = snapshot.val();
+                scheduleVoteData = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        scheduleVoteData.push({ id: key, ...data[key] });
+                    });
+                }
+                scheduleVoteData.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                renderAirMatrixTable();
+                renderAirIndividualList();
+            });
+        }
+
+        function renderAirCandidatesForm() {
+            const container = document.getElementById('airCandidatesFormContainer');
+            if (!container) return;
+            container.innerHTML = dateCandidates.map((date, idx) => `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-inputBg rounded-xl border border-white/5 gap-2">
+                    <span class="text-xs font-semibold text-mainText">${escapeHtml(date)}</span>
+                    <div class="grid grid-cols-3 gap-1.5 w-full sm:w-auto">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="air_candidate_${idx}" value="〇" checked class="peer sr-only">
+                            <div class="px-3 py-1.5 text-center rounded-lg border border-white/10 text-subText text-xs font-bold peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500 peer-checked:text-emerald-300 hover:bg-inputBg/80 transition-all">〇 可能</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="air_candidate_${idx}" value="△" class="peer sr-only">
+                            <div class="px-3 py-1.5 text-center rounded-lg border border-white/10 text-subText text-xs font-bold peer-checked:bg-amber-500/20 peer-checked:border-amber-500 peer-checked:text-amber-300 hover:bg-inputBg/80 transition-all">△ 微妙</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="air_candidate_${idx}" value="×" class="peer sr-only">
+                            <div class="px-3 py-1.5 text-center rounded-lg border border-white/10 text-subText text-xs font-bold peer-checked:bg-rose-500/20 peer-checked:border-rose-500 peer-checked:text-rose-300 hover:bg-inputBg/80 transition-all">× 不可</div>
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAirMatrixTable() {
+            const totalEl = document.querySelector('#airTotalRespondents strong');
+            if (totalEl) totalEl.textContent = scheduleVoteData.length;
+            const tbody = document.getElementById('airMatrixTableBody');
+            if (!tbody) return;
+
+            if (dateCandidates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-subText text-xs">候補日時がありません。</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = dateCandidates.map((date) => {
+                let countOk = 0, countMaybe = 0, countNg = 0;
+                let membersOk = [];
+                scheduleVoteData.forEach(item => {
+                    const status = (item.votes && item.votes[date]) || '未回答';
+                    if (status === '〇') { countOk++; membersOk.push(item.name); }
+                    else if (status === '△') countMaybe++;
+                    else if (status === '×') countNg++;
+                });
+                const memberTags = membersOk.length > 0 
+                    ? membersOk.map(m => `<span class="inline-block bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded mr-1 mb-1">${escapeHtml(m)}</span>`).join('')
+                    : `<span class="text-[10px] text-subText">〇なし</span>`;
+
+                return `
+                    <tr class="hover:bg-inputBg/40 transition-colors">
+                        <td class="p-2.5 font-semibold text-mainText">${escapeHtml(date)}</td>
+                        <td class="p-2.5 text-center font-bold text-emerald-400">${countOk}</td>
+                        <td class="p-2.5 text-center font-bold text-amber-400">${countMaybe}</td>
+                        <td class="p-2.5 text-center font-bold text-rose-400">${countNg}</td>
+                        <td class="p-2.5">${memberTags}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAirIndividualList() {
+            const container = document.getElementById('airIndividualListContainer');
+            if (!container) return;
+            if (scheduleVoteData.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-6 text-subText text-xs">まだ回答がありません。</div>`;
+                return;
+            }
+
+            container.innerHTML = scheduleVoteData.map(item => {
+                const updatedTime = item.updatedAt ? new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                const votesSummary = dateCandidates.map(date => {
+                    const status = (item.votes && item.votes[date]) || '-';
+                    const badgeClass = status === '〇' ? 'text-emerald-400 font-bold' : status === '△' ? 'text-amber-400 font-bold' : status === '×' ? 'text-rose-400 font-bold' : 'text-subText';
+                    return `<div class="flex justify-between text-[11px] py-1 border-b border-white/5"><span class="text-subText truncate pr-2">${escapeHtml(date)}</span><span class="${badgeClass}">${status}</span></div>`;
+                }).join('');
+
+                return `
+                    <div class="bg-inputBg/60 border border-white/5 rounded-2xl p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-xl bg-cardBg border border-white/10 flex items-center justify-center font-bold text-xs text-accent">
+                                        ${escapeHtml((item.name || '').substring(0, 1))}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-mainText text-xs">${escapeHtml(item.name)}</div>
+                                        <div class="text-[9px] text-subText">${updatedTime} 更新</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-darkBg/60 rounded-xl p-2.5 my-2">${votesSummary}</div>
+                            ${item.comment ? `<p class="text-[11px] text-subText italic bg-darkBg/40 p-2 rounded-xl">"${escapeHtml(item.comment)}"</p>` : ''}
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-white/5">
+                            <button onclick="editScheduleVote('${item.id}')" class="text-[11px] text-accent hover:underline font-medium cursor-pointer">編集</button>
+                            <button onclick="deleteScheduleVote('${item.id}')" class="text-[11px] text-rose-400 hover:underline font-medium cursor-pointer">削除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.handleScheduleSubmit = async function(event) {
+            event.preventDefault();
+            const name = document.getElementById('scheduleMemberName').value.trim();
+            const comment = document.getElementById('scheduleMemberComment').value.trim();
+            const editId = document.getElementById('editScheduleId').value;
+            if (!name) return;
+
+            const votes = {};
+            dateCandidates.forEach((date, idx) => {
+                const checked = document.querySelector(`input[name="air_candidate_${idx}"]:checked`);
+                votes[date] = checked ? checked.value : '〇';
+            });
+
+            try {
+                if (editId) {
+                    await update(ref(rtdb, 'artifacts/' + appId + '/schedule_votes/' + editId), { name, comment, votes, updatedAt: Date.now() });
+                    showModal("成功", "回答を更新しました。");
+                } else {
+                    const newRef = push(ref(rtdb, 'artifacts/' + appId + '/schedule_votes'));
+                    await set(newRef, { name, comment, votes, updatedAt: Date.now() });
+                    showModal("成功", "回答を送信しました！");
+                }
+                resetScheduleForm();
+            } catch (err) {
+                showModal("エラー", "保存に失敗しました。");
+            }
+        };
+
+        window.editScheduleVote = function(id) {
+            const target = scheduleVoteData.find(v => v.id === id);
+            if (!target) return;
+            document.getElementById('editScheduleId').value = id;
+            document.getElementById('scheduleMemberName').value = target.name;
+            document.getElementById('scheduleMemberComment').value = target.comment || '';
+            document.getElementById('scheduleFormTitle').textContent = "回答を変更する";
+
+            dateCandidates.forEach((date, idx) => {
+                const val = (target.votes && target.votes[date]) || '〇';
+                const radio = document.querySelector(`input[name="air_candidate_${idx}"][value="${val}"]`);
+                if (radio) radio.checked = true;
+            });
+            document.getElementById('cancelScheduleEditBtn').classList.remove('hidden');
+            document.getElementById('submitScheduleBtn').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> 変更を更新する`;
+            lucide.createIcons();
+        };
+
+        window.deleteScheduleVote = async function(id) {
+            if (confirm("この回答を削除しますか？")) {
+                await remove(ref(rtdb, 'artifacts/' + appId + '/schedule_votes/' + id));
+                resetScheduleForm();
+            }
+        };
+
+        window.resetScheduleForm = function() {
+            document.getElementById('editScheduleId').value = '';
+            document.getElementById('scheduleMemberName').value = currentNickname;
+            document.getElementById('scheduleMemberComment').value = '';
+            document.getElementById('scheduleFormTitle').textContent = "あなたの都合を入力する";
+            dateCandidates.forEach((_, idx) => {
+                const r = document.querySelector(`input[name="air_candidate_${idx}"][value="〇"]`);
+                if (r) r.checked = true;
+            });
+            document.getElementById('cancelScheduleEditBtn').classList.add('hidden');
+            document.getElementById('submitScheduleBtn').innerHTML = `<i data-lucide="send" class="w-4 h-4"></i> 回答を保存する`;
+            lucide.createIcons();
+        };
+
+        window.openCandidatesEditModal = function() {
+            renderModalCandidatesInputs();
+            document.getElementById('candidatesEditModal').classList.remove('hidden', 'opacity-0');
+        };
+        window.closeCandidatesEditModal = function() {
+            document.getElementById('candidatesEditModal').classList.add('hidden');
+        };
+
+        function renderModalCandidatesInputs(listToRender = dateCandidates) {
+            const listContainer = document.getElementById('modalCandidatesInputsList');
+            if (!listContainer) return;
+            listContainer.innerHTML = listToRender.map((date, idx) => `
+                <div class="flex items-center gap-2 cand-row">
+                    <input type="text" value="${escapeHtml(date)}" class="cand-input-field w-full bg-inputBg text-mainText rounded-xl px-3.5 py-2.5 text-sm border border-white/10 focus:border-accent focus:outline-none">
+                    <button type="button" onclick="this.closest('.cand-row').remove()" class="p-2.5 bg-inputBg hover:bg-rose-500/20 text-subText hover:text-rose-400 rounded-xl transition-colors">✕</button>
+                </div>
+            `).join('');
+        }
+
+        window.addCandidateRowInput = function() {
+            const listContainer = document.getElementById('modalCandidatesInputsList');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 cand-row';
+            div.innerHTML = `
+                <input type="text" placeholder="例: 10月20日(火) 19:00〜" class="cand-input-field w-full bg-inputBg text-mainText rounded-xl px-3.5 py-2.5 text-sm border border-white/10 focus:border-accent focus:outline-none">
+                <button type="button" onclick="this.closest('.cand-row').remove()" class="p-2.5 bg-inputBg hover:bg-rose-500/20 text-subText hover:text-rose-400 rounded-xl transition-colors">✕</button>
+            `;
+            listContainer.appendChild(div);
+        };
+
+        window.saveCandidatesEdits = async function() {
+            const inputs = document.querySelectorAll('.cand-input-field');
+            const newCand = [];
+            inputs.forEach(inp => {
+                if (inp.value.trim()) newCand.push(inp.value.trim());
+            });
+            if (newCand.length === 0) {
+                alert("候補日時は最低1つ必要です。");
+                return;
+            }
+            await set(ref(rtdb, 'artifacts/' + appId + '/settings/dateCandidates'), newCand);
+            closeCandidatesEditModal();
+            showModal("成功", "候補日時を更新しました！");
+        };
+
+        window.exportScheduleCsv = function() {
+            if (scheduleVoteData.length === 0) {
+                alert("出力するデータがありません。");
+                return;
+            }
+            let csv = "\uFEFFお名前," + dateCandidates.map(d => `"${d}"`).join(',') + ",コメント,更新日時\n";
+            scheduleVoteData.forEach(item => {
+                const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString('ja-JP') : '';
+                const row = [
+                    `"${(item.name || '').replace(/"/g, '""')}"`,
+                    ...dateCandidates.map(d => `"${((item.votes && item.votes[d]) || '').replace(/"/g, '""')}"`),
+                    `"${(item.comment || '').replace(/"/g, '""')}"`,
+                    `"${timeStr}"`
+                ].join(',');
+                csv += row + "\n";
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '日程調整結果.csv';
+            a.click();
+        };
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            })[m]);
+        }
+
         let activeLayer = 2;
         let canvas1, ctx1, canvas2, ctx2;
         let history1 = [], history2 = [];
         let isDrawing = false;
-        let currentTool = 'pen'; // 'pen', 'eraser', 'fill'
+        let currentTool = 'pen';
         let lastX = 0, lastY = 0;
 
         window.openStampModal = function() {
@@ -1286,13 +1783,34 @@
             registeredUsersList.forEach(user => {
                 const item = document.createElement('div');
                 item.className = 'bg-inputBg/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
+                
+                // 最終アクセス日時および現在アクセス中（15秒以内のハートビート/ログイン）の判定
+                const now = Date.now();
+                const lastLoginMillis = user.lastLoginAt?.toMillis ? user.lastLoginAt.toMillis() : 0;
+                const lastHeartbeatMillis = user.lastHeartbeatAt?.toMillis ? user.lastHeartbeatAt.toMillis() : 0;
+                const latestActivityMillis = Math.max(lastLoginMillis, lastHeartbeatMillis);
+                
+                let timeStr = '不明';
+                if (latestActivityMillis > 0) {
+                    const d = new Date(latestActivityMillis);
+                    timeStr = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
+
+                // 15秒以内にハートビートやアクセスがあれば「アクセス中」と判定
+                const isOnline = (now - latestActivityMillis) < 15000;
+
                 item.innerHTML = `
                     <div class="min-w-0 flex-1 flex flex-col gap-1">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm text-mainText truncate">${user.nickname}</span>
-                            <button onclick="promptChangeNickname('${user.id}', '${user.nickname}')" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-accent text-[10px] font-semibold cursor-pointer transition-colors">名前変更</button>
+                            <span class="font-bold text-sm text-mainText truncate">${escapeHtml(user.nickname)}</span>
+                            <button onclick="promptChangeNickname('${user.id}', '${escapeHtml(user.nickname)}')" class="px-2 py-0.5 rounded-lg bg-inputBg hover:bg-inputBg/80 text-accent text-[10px] font-semibold cursor-pointer transition-colors">名前変更</button>
                         </div>
-                        <div class="text-xs text-subText truncate">UID: <span class="font-mono text-accent/80">${user.userId || user.id}</span></div>
+                        <div class="text-xs text-subText truncate flex items-center gap-2 flex-wrap">
+                            <span>UID: <span class="font-mono text-accent/80">${escapeHtml(user.userId || user.id)}</span></span>
+                            <span>•</span>
+                            <span>最終アクセス: <span class="text-mainText">${timeStr}</span></span>
+                            ${isOnline ? '<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">🟢 アクセス中</span>' : ''}
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5 text-xs text-subText">
@@ -1302,7 +1820,7 @@
                                 <div class="w-9 h-5 bg-inputBg peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
                             </label>
                         </div>
-                        <button onclick="promptDeleteUser('${user.id}', '${user.nickname}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer">削除</button>
+                        <button onclick="promptDeleteUser('${user.id}', '${escapeHtml(user.nickname)}')" class="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-xs font-semibold cursor-pointer">削除</button>
                     </div>
                 `;
                 list.appendChild(item);
@@ -1327,9 +1845,9 @@
                         <img src="${msg.text}" class="w-full h-full object-cover">
                     </div>
                     <div class="flex flex-col gap-2 text-[10px] text-subText">
-                        <span class="truncate font-bold text-accent">投稿者: ${msg.nickname || 'ゲスト'}</span>
+                        <span class="truncate font-bold text-accent">投稿者: ${escapeHtml(msg.nickname || 'ゲスト')}</span>
                         <div class="flex gap-2 w-full">
-                            <a href="${msg.text}" download="${msg.fileName || 'image.png'}" class="flex-1 text-center px-2 py-1 rounded-lg bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white font-semibold cursor-pointer transition-colors">ダウンロード</a>
+                            <a href="${msg.text}" download="${escapeHtml(msg.fileName || 'image.png')}" class="flex-1 text-center px-2 py-1 rounded-lg bg-inputBg hover:bg-inputBg/80 text-subText hover:text-white font-semibold cursor-pointer transition-colors">ダウンロード</a>
                             <button onclick="deleteMessage('${msg.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold cursor-pointer transition-colors">削除</button>
                         </div>
                     </div>
@@ -1390,14 +1908,13 @@
                 const fileContainer = document.createElement('div');
                 fileContainer.className = 'bg-bubble-gradient text-white px-4 py-3 rounded-2xl text-sm shadow-md flex flex-col gap-1 max-w-xs ' + (isMe ? 'rounded-br-sm' : 'rounded-bl-sm');
                 
-                fileContainer.innerHTML = `<span class="text-xs">📎 ${msg.fileName || '添付ファイル'}</span>`;
+                fileContainer.innerHTML = `<span class="text-xs">📎 ${escapeHtml(msg.fileName || '添付ファイル')}</span>`;
                 wrapper.appendChild(fileContainer);
             } else {
                 const bubble = document.createElement('div');
                 const bubbleStyle = 'bg-bubble-gradient text-white px-4 py-3 rounded-2xl text-sm shadow-md break-words max-w-xs sm:max-w-md whitespace-pre-wrap ' + (isMe ? 'rounded-br-sm' : 'rounded-bl-sm');
                 bubble.className = bubbleStyle;
                 
-                // URLリンク化関数の適用
                 renderFormattedText(bubble, msg.text);
 
                 wrapper.appendChild(bubble);
@@ -1457,6 +1974,10 @@
             feed.appendChild(wrapper);
             feed.scrollTop = feed.scrollHeight;
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>
