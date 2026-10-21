@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>将棋学習アプリ - 初心者向け将棋ガイド＆対局</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0b0f17',
+                        cardbg: '#161d2a',
+                        cardborder: '#263147',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Modern Sleek Gothic Look & Round Gothic for Pieces -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Sleek Modern Gothic Font Setup */
+        body {
+            font-family: 'Zen Kaku Gothic New', 'Inter', 'Yu Gothic', 'YuGothic', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            background-color: #080c14;
+            color: #f1f5f9;
+        }
+
+        /* Gradient Theme Tokens */
+        .gradient-theme {
+            background: linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-border-wrap {
+            position: relative;
+            background: #111827;
+            border-radius: 0.75rem;
+            z-index: 0;
+        }
+
+        .gradient-border-wrap::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 0.8rem;
+            background: linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            z-index: -1;
+        }
+
+        /* Stylish Black Shogi Board with Thin Gradient Border */
+        .shogi-board-container {
+            position: relative;
+            background: #0f141d;
+            border-radius: 1rem;
+            padding: 2px;
+            background-image: linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            box-shadow: 0 20px 40px -15px rgba(0, 114, 255, 0.25), 0 0 30px 0 rgba(34, 197, 94, 0.15);
+        }
+
+        .shogi-board-inner {
+            background: #121620;
+            border-radius: 0.9rem;
+        }
+
+        /* Fixed Square Layout so Cells Never Resize */
+        .shogi-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            gap: 1px;
+            background-color: #232d3f;
+            border: 1px solid #232d3f;
+            width: 100%;
+            aspect-ratio: 9 / 10;
+        }
+
+        .shogi-cell {
+            background-color: #121722;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Komadai Area Style */
+        .komadai-box {
+            background: #121824;
+            border: 1px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: border-box;
+            background-image: linear-gradient(#121824, #121824), linear-gradient(160deg, rgba(0,198,255,0.4) 0%, rgba(0,114,255,0.4) 50%, rgba(34,197,94,0.4) 100%);
+            border-radius: 0.75rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Shogi Piece Styling */
+        .shogi-piece {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            clip-path: polygon(50% 0%, 86% 14%, 93% 100%, 7% 100%, 14% 14%);
+            position: absolute;
+            inset: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            cursor: pointer;
+            color: #f8fafc;
+            border: 1px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: border-box;
+            background-image: linear-gradient(#262a36, #1c202b), linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s ease-in-out, filter 0.15s ease;
+        }
+
+        .shogi-piece:hover {
+            filter: brightness(1.2);
+        }
+
+        .shogi-piece.gote {
+            transform: rotate(180deg);
+        }
+
+        .shogi-piece.promoted {
+            color: #ff5277;
+            text-shadow: 0 0 8px rgba(255, 82, 119, 0.5);
+        }
+
+        .shogi-piece-standalone {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            clip-path: polygon(50% 0%, 86% 14%, 93% 100%, 7% 100%, 14% 14%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            cursor: pointer;
+            color: #f8fafc;
+            border: 1px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: border-box;
+            background-image: linear-gradient(#262a36, #1c202b), linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .cell-selected {
+            background-color: rgba(0, 198, 255, 0.25) !important;
+            box-shadow: inset 0 0 12px rgba(0, 114, 255, 0.5);
+        }
+
+        .cell-movable::after {
+            content: '';
+            position: absolute;
+            width: 28%;
+            height: 28%;
+            background: linear-gradient(160deg, #00c6ff, #0072ff);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00c6ff;
+            pointer-events: none;
+        }
+
+        .cell-capture::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 2px solid #ff5277;
+            border-radius: 20%;
+            background-color: rgba(255, 82, 119, 0.2);
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 82, 119, 0.4);
+        }
+
+        .insta-card {
+            background: #111722;
+            border: 1px solid #1e293b;
+            border-radius: 1rem;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(160deg, #00c6ff 0%, #0072ff 50%, #22c55e 100%);
+            color: #080c14;
+            font-weight: 700;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-gradient:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0072ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between">
+
+    <!-- Header / Navigation -->
+    <header class="bg-slate-950/80 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl gradient-theme flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-cyan-500/20">
+                    将
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-bold tracking-wider gradient-text">将棋入門アカデミー</h1>
+                    <p class="text-[10px] text-slate-400 hidden sm:block tracking-widest uppercase">Shogi Master Academy</p>
+                </div>
+            </div>
+
+            <nav class="flex items-center gap-1.5 sm:gap-2">
+                <button id="nav-play" onclick="switchMode('play')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition btn-gradient shadow-md">
+                    <i class="fa-solid fa-gamepad mr-1.5"></i><span class="hidden sm:inline">自由対局・</span>AI戦
+                </button>
+                <button id="nav-tsume" onclick="switchMode('tsume')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-slate-800 text-slate-300">
+                    <i class="fa-solid fa-puzzle-piece mr-1.5 text-cyan-400"></i>詰将棋
+                </button>
+                <button id="nav-guide" onclick="switchMode('guide')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-slate-800 text-slate-300">
+                    <i class="fa-solid fa-book-open mr-1.5 text-purple-400"></i>駒図鑑
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 w-full flex-grow">
+
+        <!-- MODE 1: Free Play & AI Match -->
+        <div id="mode-play" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <div class="lg:col-span-4 xl:col-span-3 space-y-4 order-2 lg:order-1">
+                <div class="insta-card p-4 shadow-xl">
+                    <h2 class="text-base font-bold mb-3 pb-2 border-b border-slate-800 flex items-center gap-2 gradient-text">
+                        <i class="fa-solid fa-sliders text-cyan-400"></i> 対局設定
+                    </h2>
+                    
+                    <div class="space-y-3 text-xs sm:text-sm">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">対局モード</label>
+                            <select id="game-mode-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-semibold text-slate-200 focus:outline-none focus:border-cyan-500">
+                                <option value="ai-easy">VS 初級AI (ひよこ級)</option>
+                                <option value="ai-medium">VS 中級AI (いぬ級)</option>
+                                <option value="pvp">2人対局 (自由入力/検討)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">手番 (AI戦のみ)</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-side-sente" onclick="setSide('sente')" class="py-1.5 px-3 rounded-lg border font-bold text-center bg-cyan-500/20 text-cyan-300 border-cyan-500/50">先手 (先攻)</button>
+                                <button id="btn-side-gote" onclick="setSide('gote')" class="py-1.5 px-3 rounded-lg border font-bold text-center bg-slate-900 text-slate-400 border-slate-800">後手 (後攻)</button>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex gap-2">
+                            <button onclick="resetGame()" class="flex-1 btn-gradient py-2 rounded-lg text-xs font-bold shadow flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-rotate-right"></i> 新しい対局
+                            </button>
+                            <button onclick="undoMove()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-lg transition border border-slate-700 text-xs" title="待った (1手戻す)">
+                                <i class="fa-solid fa-rotate-left"></i> 待った
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="insta-card p-4 shadow-xl">
+                    <h2 class="text-base font-bold mb-2 flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span class="gradient-text"><i class="fa-solid fa-list-ol text-purple-400"></i> 対局情報</span>
+                        <span id="turn-indicator" class="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-bold border border-cyan-800">
+                            ▲先手の手番
+                        </span>
+                    </h2>
+                    
+                    <div id="status-message" class="text-xs p-3 my-2 rounded-lg bg-slate-900/90 text-slate-300 border border-slate-800">
+                        対局開始です。自分の駒を選択してください。
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="block text-[11px] text-slate-400 mb-1">棋譜 (履歴)</label>
+                        <div id="move-history" class="h-28 overflow-y-auto font-mono text-[11px] p-2 bg-slate-950 rounded-lg border border-slate-800 space-y-1 text-slate-400"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 xl:col-span-9 flex flex-col items-center order-1 lg:order-2">
+                <div class="w-full max-w-[480px] sm:max-w-[520px] mb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-xs bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700">
+                            ☖ 後手 (相手)
+                        </span>
+                        <span id="gote-ai-label" class="text-[11px] text-slate-400"></span>
+                    </div>
+                    <div id="komadai-gote" class="komadai-box min-h-[46px] flex-1 ml-3 p-1.5 flex items-center gap-1.5 overflow-x-auto"></div>
+                </div>
+
+                <div class="shogi-board-container w-full max-w-[480px] sm:max-w-[520px]">
+                    <div class="shogi-board-inner p-2 sm:p-3">
+                        <div class="grid grid-cols-9 text-center font-bold text-slate-400 text-[11px] sm:text-xs mb-1">
+                            <div class="text-center">９</div><div class="text-center">８</div><div class="text-center">７</div><div class="text-center">６</div><div class="text-center">５</div><div class="text-center">４</div><div class="text-center">３</div><div class="text-center">２</div><div class="text-center">１</div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <div id="shogi-board" class="shogi-grid rounded overflow-hidden flex-grow"></div>
+                            <div class="grid grid-rows-9 text-center font-bold text-slate-400 text-[11px] sm:text-xs ml-1.5 w-4 h-full" style="height: 100%; aspect-ratio: 1 / 9;">
+                                <div class="flex items-center justify-center">一</div>
+                                <div class="flex items-center justify-center">二</div>
+                                <div class="flex items-center justify-center">三</div>
+                                <div class="flex items-center justify-center">四</div>
+                                <div class="flex items-center justify-center">五</div>
+                                <div class="flex items-center justify-center">六</div>
+                                <div class="flex items-center justify-center">七</div>
+                                <div class="flex items-center justify-center">八</div>
+                                <div class="flex items-center justify-center">九</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-[480px] sm:max-w-[520px] mt-2 flex items-center justify-between">
+                    <div id="komadai-sente" class="komadai-box min-h-[46px] flex-1 mr-3 p-1.5 flex items-center gap-1.5 overflow-x-auto"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-xs bg-slate-800 text-cyan-300 px-2.5 py-1 rounded-md border border-cyan-900">
+                            ▲ 先手 (あなた)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- MODE 2: Tsume Shogi Puzzles -->
+        <div id="mode-tsume" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-4 space-y-4">
+                <div class="insta-card p-5 shadow-xl">
+                    <h2 class="text-lg font-bold mb-3 flex items-center gap-2 gradient-text">
+                        <i class="fa-solid fa-puzzle-piece text-cyan-400"></i> 詰将棋問題集
+                    </h2>
+                    <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+                        王手を続け相手の玉を詰ます(逃げられなくする)パズルです。王手の連続で詰ませましょう！
+                    </p>
+
+                    <div class="space-y-2">
+                        <button onclick="loadTsumeProblem(0)" class="tsume-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 transition flex justify-between items-center font-bold text-xs">
+                            <span class="text-slate-200">第1問: 1手詰 (頭金)</span>
+                            <span class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded">初級</span>
+                        </button>
+                        <button onclick="loadTsumeProblem(1)" class="tsume-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 transition flex justify-between items-center text-xs">
+                            <span class="text-slate-200">第2問: 1手詰 (飛車活用)</span>
+                            <span class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded">初級</span>
+                        </button>
+                        <button onclick="loadTsumeProblem(2)" class="tsume-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 transition flex justify-between items-center text-xs">
+                            <span class="text-slate-200">第3問: 3手詰 (銀の捨て駒)</span>
+                            <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded">中級</span>
+                        </button>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-800 space-y-2">
+                        <button onclick="showTsumeHint()" class="w-full bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold py-2 rounded-lg text-xs transition border border-slate-700">
+                            <i class="fa-regular fa-lightbulb text-yellow-300 mr-1"></i> ヒントを見る
+                        </button>
+                        <button onclick="resetTsume()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-2 rounded-lg text-xs transition border border-slate-800">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> 盤面をリセット
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tsume-info-box" class="insta-card p-4 text-xs space-y-2">
+                    <h3 id="tsume-title" class="font-bold text-cyan-300 text-sm">問題 1</h3>
+                    <p id="tsume-desc" class="text-slate-300">金を使って王手をかけましょう。</p>
+                    <div id="tsume-status" class="font-bold text-cyan-400 mt-2"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 flex flex-col items-center">
+                <div id="tsume-board-container" class="w-full max-w-[480px] sm:max-w-[520px]"></div>
+                <div class="w-full max-w-[480px] sm:max-w-[520px] mt-3 flex items-center justify-between">
+                    <span class="font-bold text-xs bg-slate-800 text-cyan-300 px-2.5 py-1 rounded-md border border-slate-700">持ち駒</span>
+                    <div id="tsume-komadai" class="komadai-box min-h-[46px] flex-1 ml-3 p-1.5 flex items-center gap-1.5"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODE 3: Piece Movement Reference Guide -->
+        <div id="mode-guide" class="hidden">
+            <div class="insta-card p-6 shadow-xl max-w-5xl mx-auto">
+                <h2 class="text-xl font-bold mb-2 flex items-center gap-2 gradient-text">
+                    <i class="fa-solid fa-book-open text-purple-400"></i> 駒の動き・規則ガイド
+                </h2>
+                <p class="text-xs text-slate-400 mb-6">
+                    将棋の8種類の基本駒と、裏返してパワーアップする「成駒(なりごま)」の動きをマスターしましょう！
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">王</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">王将・玉将 (おう・ぎょく)</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">全方位（全隣接8マス）に1マス進めます。取られると負けになる一番大切な駒です。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">飛</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">飛車 (ひしゃ)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: 龍 (竜王)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">縦横にどこまでも進めます。成ると「龍」になり、斜め1マスにも進める最強の駒になります。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">角</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">角行 (かくぎょう)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: 馬 (竜馬)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">斜め4方向にどこまでも進めます。成ると「馬」になり、縦横1マスにも進める強力な駒になります。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">金</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">金将 (きんしょう)</h3>
+                                <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">成れない</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">前・斜め前・左右・後ろの6方向に1マス進めます（斜め後ろには進めません）。守りの要です。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">銀</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">銀将 (ぎんしょう)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: 成銀 (金の動き)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">前および斜め4方向の計5方向に1マス進めます。攻めにも守りにも使いやすい万能駒です。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">桂</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">桂馬 (けいま)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: 成桂 (金の動き)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">前方に2マス進んで左右どちらかに1マスの位置へ飛び越えて進めます。他を飛び越せる唯一の駒です。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">香</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">香車 (きょうしゃ)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: 成香 (金の動き)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">前方まっすぐにどこまでも進めます（後ろや横には進めません）。「ヤリ」とも呼ばれます。</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex gap-4 items-center">
+                        <div class="w-14 h-16 shogi-piece-standalone text-2xl shrink-0">歩</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold text-sm text-slate-100">歩兵 (ふひょう)</h3>
+                                <span class="text-[10px] bg-red-950 text-red-400 px-1.5 py-0.5 rounded border border-red-800 font-bold">成: と金 (金の動き)</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">まっすぐ前に1マスだけ進めます。敵陣に入ると「と金」になり金と同じ強力な動きになります！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 将棋入門アカデミー All Rights Reserved.
+    </footer>
+
+    <!-- Promotion Modal -->
+    <div id="promotion-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl border border-slate-800">
+            <h3 class="text-lg font-bold mb-2 text-slate-100">駒を成りますか？</h3>
+            <p class="text-xs text-slate-400 mb-6">敵陣に入ったため、駒を裏返して強化できます。</p>
+            
+            <div class="flex gap-3 justify-center">
+                <button onclick="handlePromotionChoice(true)" class="flex-1 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold py-2.5 rounded-xl shadow-lg transition text-xs">
+                    成る (強化)
+                </button>
+                <button onclick="handlePromotionChoice(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition text-xs border border-slate-700">
+                    成らない
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert / Message Dialog -->
+    <div id="custom-dialog" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border border-slate-800">
+            <div id="dialog-icon" class="text-3xl text-cyan-400 mb-3"><i class="fa-solid fa-circle-info"></i></div>
+            <h3 id="dialog-title" class="text-base font-bold mb-2 text-slate-100">お知らせ</h3>
+            <p id="dialog-message" class="text-xs text-slate-300 mb-5 whitespace-pre-line leading-relaxed"></p>
+            <button onclick="closeDialog()" class="w-full btn-gradient py-2.5 rounded-xl transition text-xs font-bold">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Logic Script -->
+    <script>
+        const PIECE_TYPES = {
+            K: { name: '王将', kanji: '王', promoted: null },
+            G: { name: '金将', kanji: '金', promoted: null },
+            S: { name: '銀将', kanji: '銀', promoted: '+S' },
+            N: { name: '桂馬', kanji: '桂', promoted: '+N' },
+            L: { name: '香車', kanji: '香', promoted: '+L' },
+            R: { name: '飛車', kanji: '飛', promoted: '+R' },
+            B: { name: '角行', kanji: '角', promoted: '+B' },
+            P: { name: '歩兵', kanji: '歩', promoted: '+P' },
+            '+S': { name: '成銀', kanji: '全', isPromoted: true },
+            '+N': { name: '成桂', kanji: '圭', isPromoted: true },
+            '+L': { name: '成香', kanji: '杏', isPromoted: true },
+            '+R': { name: '竜王', kanji: '龍', isPromoted: true },
+            '+B': { name: '竜馬', kanji: '馬', isPromoted: true },
+            '+P': { name: 'と金', kanji: 'と', isPromoted: true }
+        };
+
+        const INITIAL_BOARD = [
+            ['gL','gN','gS','gG','gK','gG','gS','gN','gL'],
+            [ null,'gR', null, null, null, null, null,'gB', null],
+            ['gP','gP','gP','gP','gP','gP','gP','gP','gP'],
+            [ null, null, null, null, null, null, null, null, null],
+            [ null, null, null, null, null, null, null, null, null],
+            [ null, null, null, null, null, null, null, null, null],
+            ['sP','sP','sP','sP','sP','sP','sP','sP','sP'],
+            [ null,'sB', null, null, null, null, null,'sR', null],
+            ['sL','sN','sS','sG','sK','sG','sS','sN','sL']
+        ];
+
+        let gameState = {
+            board: JSON.parse(JSON.stringify(INITIAL_BOARD)),
+            turn: 'sente',
+            playerSide: 'sente',
+            selectedSquare: null,
+            selectedKomadaiPiece: null,
+            validMoves: [],
+            komadai: { sente: [], gote: [] },
+            history: [],
+            mode: 'ai-easy',
+            pendingPromotion: null,
+            isTsumeMode: false,
+            currentTsumeIdx: 0
+        };
+
+        const TSUME_PROBLEMS = [
+            {
+                title: '第1問: 1手詰 (頭金)',
+                desc: '相手の玉の頭上(前)に「金」を打つ基本の詰み「頭金(あたまきん)」です。',
+                board: [
+                    [ null, null, null, null,'gK', null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null,'sK', null, null, null, null]
+                ],
+                komadai: ['G'],
+                hint: '玉の真前のマスに「金」を打ちましょう。玉は金を取ることができません。',
+                checkWin: (board) => board[1][4] === 'sG'
+            },
+            {
+                title: '第2問: 1手詰 (飛車活用)',
+                desc: '王手をかけて玉を詰ませましょう。飛車の王手を防ぐすべがありません。',
+                board: [
+                    [ null,'gK', null, null, null, null, null, null, null],
+                    ['gP','gP', null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null,'sK', null, null, null, null]
+                ],
+                komadai: ['R'],
+                hint: '飛車を1行目(一番上の段)に打って横から王手をかけましょう。',
+                checkWin: (board) => board[0][2] === 'sR' || board[0][3] === 'sR' || board[0][4] === 'sR'
+            },
+            {
+                title: '第3問: 3手詰 (銀の王手と金)',
+                desc: '1手目で銀を成って王手し、逃げた玉に金でトドメを刺します。',
+                board: [
+                    [ null,'gK', null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    ['sS', null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null, null, null, null, null, null],
+                    [ null, null, null, null,'sK', null, null, null, null]
+                ],
+                komadai: ['G'],
+                hint: '1. 銀を2一(玉の右隣)に進めて成りましょう。2. 玉が逃げたら金を打ちます。',
+                checkWin: (board) => (board[0][0] === 'sG' || board[1][1] === 'sG') && board[0][1] === 'gK'
+            }
+        ];
+
+        window.onload = function() {
+            initDOM();
+            renderBoard();
+            renderKomadai();
+        };
+
+        function initDOM() {
+            const boardEl = document.getElementById('shogi-board');
+            boardEl.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'shogi-cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.onclick = () => handleSquareClick(r, c);
+                    boardEl.appendChild(cell);
+                }
+            }
+
+            document.getElementById('game-mode-select').addEventListener('change', (e) => {
+                gameState.mode = e.target.value;
+                resetGame();
+            });
+        }
+
+        function switchMode(mode) {
+            document.getElementById('mode-play').classList.add('hidden');
+            document.getElementById('mode-tsume').classList.add('hidden');
+            document.getElementById('mode-guide').classList.add('hidden');
+
+            document.getElementById('nav-play').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+            document.getElementById('nav-tsume').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+            document.getElementById('nav-guide').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+
+            if (mode === 'play') {
+                document.getElementById('mode-play').classList.remove('hidden');
+                document.getElementById('nav-play').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition btn-gradient shadow-md";
+                gameState.isTsumeMode = false;
+                renderBoard();
+            } else if (mode === 'tsume') {
+                document.getElementById('mode-tsume').classList.remove('hidden');
+                document.getElementById('nav-tsume').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition btn-gradient shadow-md";
+                gameState.isTsumeMode = true;
+                loadTsumeProblem(0);
+            } else if (mode === 'guide') {
+                document.getElementById('mode-guide').classList.remove('hidden');
+                document.getElementById('nav-guide').className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition btn-gradient shadow-md";
+            }
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('shogi-board');
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const idx = r * 9 + c;
+                    const cell = boardEl.children[idx];
+                    cell.innerHTML = '';
+                    
+                    cell.classList.remove('cell-selected', 'cell-movable', 'cell-capture');
+
+                    const pieceCode = gameState.board[r][c];
+
+                    if (gameState.selectedSquare && gameState.selectedSquare.row === r && gameState.selectedSquare.col === c) {
+                        cell.classList.add('cell-selected');
+                    }
+
+                    const isMovable = gameState.validMoves.some(m => m.row === r && m.col === c);
+                    if (isMovable) {
+                        if (pieceCode) {
+                            cell.classList.add('cell-capture');
+                        } else {
+                            cell.classList.add('cell-movable');
+                        }
+                    }
+
+                    if (pieceCode) {
+                        const owner = pieceCode[0] === 's' ? 'sente' : 'gote';
+                        const type = pieceCode.slice(1);
+                        const pInfo = PIECE_TYPES[type];
+
+                        const pieceEl = document.createElement('div');
+                        pieceEl.className = `shogi-piece text-xs sm:text-lg md:text-xl ${owner === 'gote' ? 'gote' : ''} ${pInfo.isPromoted ? 'promoted' : ''}`;
+                        pieceEl.innerText = pInfo.kanji;
+                        cell.appendChild(pieceEl);
+                    }
+                }
+            }
+
+            if (gameState.isTsumeMode) {
+                const tsumeContainer = document.getElementById('tsume-board-container');
+                tsumeContainer.innerHTML = '';
+                
+                const frame = document.createElement('div');
+                frame.className = 'shogi-board-container w-full max-w-[480px] sm:max-w-[520px] mx-auto';
+                const inner = document.createElement('div');
+                inner.className = 'shogi-board-inner p-2 sm:p-3';
+                
+                const header = document.createElement('div');
+                header.className = 'grid grid-cols-9 text-center font-bold text-slate-400 text-[11px] sm:text-xs mb-1';
+                header.innerHTML = '<div class="text-center">９</div><div class="text-center">８</div><div class="text-center">７</div><div class="text-center">６</div><div class="text-center">５</div><div class="text-center">４</div><div class="text-center">３</div><div class="text-center">２</div><div class="text-center">１</div>';
+                
+                const flex = document.createElement('div');
+                flex.className = 'flex items-center';
+                
+                const clonedBoard = boardEl.cloneNode(true);
+                for (let r = 0; r < 9; r++) {
+                    for (let c = 0; c < 9; c++) {
+                        const idx = r * 9 + c;
+                        clonedBoard.children[idx].onclick = () => handleSquareClick(r, c);
+                    }
+                }
+                clonedBoard.className = 'shogi-grid rounded overflow-hidden flex-grow';
+                
+                const ranks = document.createElement('div');
+                ranks.className = 'grid grid-rows-9 text-center font-bold text-slate-400 text-[11px] sm:text-xs ml-1.5 w-4 h-full';
+                ranks.style.cssText = 'height: 100%; aspect-ratio: 1 / 9;';
+                ranks.innerHTML = '<div class="flex items-center justify-center">一</div><div class="flex items-center justify-center">二</div><div class="flex items-center justify-center">三</div><div class="flex items-center justify-center">四</div><div class="flex items-center justify-center">五</div><div class="flex items-center justify-center">六</div><div class="flex items-center justify-center">七</div><div class="flex items-center justify-center">八</div><div class="flex items-center justify-center">九</div>';
+                
+                flex.appendChild(clonedBoard);
+                flex.appendChild(ranks);
+                inner.appendChild(header);
+                inner.appendChild(flex);
+                frame.appendChild(inner);
+                tsumeContainer.appendChild(frame);
+            }
+        }
+
+        function renderKomadai() {
+            ['sente', 'gote'].forEach(owner => {
+                const komadaiId = gameState.isTsumeMode ? 'tsume-komadai' : `komadai-${owner}`;
+                if (gameState.isTsumeMode && owner === 'gote') return;
+
+                const el = document.getElementById(komadaiId);
+                if (!el) return;
+                el.innerHTML = '';
+
+                const counts = {};
+                gameState.komadai[owner].forEach(type => {
+                    counts[type] = (counts[type] || 0) + 1;
+                });
+
+                Object.keys(counts).forEach(type => {
+                    const pieceWrap = document.createElement('div');
+                    pieceWrap.className = 'relative shrink-0';
+
+                    const isSelected = gameState.selectedKomadaiPiece && 
+                                       gameState.selectedKomadaiPiece.type === type && 
+                                       gameState.selectedKomadaiPiece.owner === owner;
+
+                    const pieceBtn = document.createElement('div');
+                    pieceBtn.className = `shogi-piece-standalone w-8 h-9 text-sm font-bold relative ${isSelected ? 'ring-2 ring-cyan-400 scale-105' : ''}`;
+                    pieceBtn.innerText = PIECE_TYPES[type].kanji;
+
+                    pieceWrap.appendChild(pieceBtn);
+
+                    if (counts[type] > 1) {
+                        const badge = document.createElement('span');
+                        badge.className = 'absolute -top-1 -right-1 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 rounded-full w-4 h-4 text-[10px] font-black flex items-center justify-center shadow';
+                        badge.innerText = counts[type];
+                        pieceWrap.appendChild(badge);
+                    }
+
+                    pieceWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        handleKomadaiClick(type, owner);
+                    };
+
+                    el.appendChild(pieceWrap);
+                });
+            });
+        }
+
+        function handleSquareClick(row, col) {
+            if (gameState.turn !== gameState.playerSide && gameState.mode.startsWith('ai') && !gameState.isTsumeMode) {
+                return;
+            }
+
+            const clickedPiece = gameState.board[row][col];
+            const currentOwner = gameState.turn;
+
+            if (gameState.selectedKomadaiPiece) {
+                const isValidDrop = gameState.validMoves.some(m => m.row === row && m.col === col);
+                if (isValidDrop) {
+                    executeDrop(row, col);
+                } else {
+                    gameState.selectedKomadaiPiece = null;
+                    gameState.validMoves = [];
+                    renderBoard();
+                    renderKomadai();
+                }
+                return;
+            }
+
+            if (gameState.selectedSquare) {
+                const isTarget = gameState.validMoves.some(m => m.row === row && m.col === col);
+                if (isTarget) {
+                    executeMove(gameState.selectedSquare.row, gameState.selectedSquare.col, row, col);
+                    return;
+                }
+            }
+
+            if (clickedPiece && isOwner(clickedPiece, currentOwner)) {
+                gameState.selectedSquare = { row, col };
+                gameState.selectedKomadaiPiece = null;
+                gameState.validMoves = calculateValidMoves(row, col, gameState.board);
+                renderBoard();
+                renderKomadai();
+            } else {
+                gameState.selectedSquare = null;
+                gameState.selectedKomadaiPiece = null;
+                gameState.validMoves = [];
+                renderBoard();
+                renderKomadai();
+            }
+        }
+
+        function handleKomadaiClick(type, owner) {
+            if (owner !== gameState.turn) return;
+
+            if (gameState.selectedKomadaiPiece && gameState.selectedKomadaiPiece.type === type) {
+                gameState.selectedKomadaiPiece = null;
+                gameState.validMoves = [];
+            } else {
+                gameState.selectedSquare = null;
+                gameState.selectedKomadaiPiece = { type, owner };
+                gameState.validMoves = calculateDropMoves(type, owner, gameState.board);
+            }
+            renderBoard();
+            renderKomadai();
+        }
+
+        function isOwner(pieceCode, owner) {
+            if (!pieceCode) return false;
+            return owner === 'sente' ? pieceCode.startsWith('s') : pieceCode.startsWith('g');
+        }
+
+        function calculateValidMoves(r, c, board) {
+            const pieceCode = board[r][c];
+            if (!pieceCode) return [];
+
+            const owner = pieceCode[0] === 's' ? 'sente' : 'gote';
+            const type = pieceCode.slice(1);
+            const moves = [];
+
+            const dir = owner === 'sente' ? -1 : 1;
+
+            const addMove = (nr, nc) => {
+                if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+                    const target = board[nr][nc];
+                    if (!target || !isOwner(target, owner)) {
+                        moves.push({ row: nr, col: nc });
+                        return !target;
+                    }
+                }
+                return false;
+            };
+
+            if (type === 'P') {
+                addMove(r + dir, c);
+            } else if (type === 'L') {
+                let nr = r + dir;
+                while (addMove(nr, c)) { nr += dir; }
+            } else if (type === 'N') {
+                addMove(r + dir * 2, c - 1);
+                addMove(r + dir * 2, c + 1);
+            } else if (type === 'S') {
+                addMove(r + dir, c - 1);
+                addMove(r + dir, c);
+                addMove(r + dir, c + 1);
+                addMove(r - dir, c - 1);
+                addMove(r - dir, c + 1);
+            } else if (type === 'G' || type === '+P' || type === '+L' || type === '+N' || type === '+S') {
+                addMove(r + dir, c - 1);
+                addMove(r + dir, c);
+                addMove(r + dir, c + 1);
+                addMove(r, c - 1);
+                addMove(r, c + 1);
+                addMove(r - dir, c);
+            } else if (type === 'K') {
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr !== 0 || dc !== 0) addMove(r + dr, c + dc);
+                    }
+                }
+            } else if (type === 'R' || type === '+R') {
+                [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+                    let nr = r + dr, nc = c + dc;
+                    while (addMove(nr, nc)) { nr += dr; nc += dc; }
+                });
+                if (type === '+R') {
+                    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr, dc]) => addMove(r + dr, c + dc));
+                }
+            } else if (type === 'B' || type === '+B') {
+                [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr, dc]) => {
+                    let nr = r + dr, nc = c + dc;
+                    while (addMove(nr, nc)) { nr += dr; nc += dc; }
+                });
+                if (type === '+B') {
+                    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => addMove(r + dr, c + dc));
+                }
+            }
+
+            return moves;
+        }
+
+        function calculateDropMoves(type, owner, board) {
+            const moves = [];
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (!board[r][c]) {
+                        if (type === 'P') {
+                            let hasPawnInCol = false;
+                            for (let row = 0; row < 9; row++) {
+                                if (board[row][c] === (owner === 'sente' ? 'sP' : 'gP')) {
+                                    hasPawnInCol = true;
+                                    break;
+                                }
+                            }
+                            if (hasPawnInCol) continue;
+                            if ((owner === 'sente' && r === 0) || (owner === 'gote' && r === 8)) continue;
+                        }
+
+                        if (type === 'L') {
+                            if ((owner === 'sente' && r === 0) || (owner === 'gote' && r === 8)) continue;
+                        }
+                        if (type === 'N') {
+                            if ((owner === 'sente' && r <= 1) || (owner === 'gote' && r >= 7)) continue;
+                        }
+
+                        moves.push({ row: r, col: c });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function executeMove(fromR, fromC, toR, toC) {
+            const pieceCode = gameState.board[fromR][fromC];
+            const owner = pieceCode[0] === 's' ? 'sente' : 'gote';
+            const rawType = pieceCode.slice(1);
+            const targetPiece = gameState.board[toR][toC];
+
+            gameState.history.push(JSON.stringify({ board: gameState.board, komadai: gameState.komadai, turn: gameState.turn }));
+
+            if (targetPiece) {
+                let capturedType = targetPiece.slice(1);
+                if (capturedType.startsWith('+')) {
+                    capturedType = capturedType.slice(1);
+                }
+                gameState.komadai[owner].push(capturedType);
+            }
+
+            const isPromotionZone = (owner === 'sente' && (fromR <= 2 || toR <= 2)) ||
+                                    (owner === 'gote' && (fromR >= 6 || toR >= 6));
+            
+            const canPromote = isPromotionZone && PIECE_TYPES[rawType].promoted;
+
+            if (canPromote) {
+                const mustPromote = (rawType === 'P' || rawType === 'L') && ((owner === 'sente' && toR === 0) || (owner === 'gote' && toR === 8)) ||
+                                    (rawType === 'N') && ((owner === 'sente' && toR <= 1) || (owner === 'gote' && toR >= 7));
+
+                if (mustPromote) {
+                    finalizeMove(fromR, fromC, toR, toC, PIECE_TYPES[rawType].promoted);
+                } else {
+                    gameState.pendingPromotion = { fromR, fromC, toR, toC, promotedType: PIECE_TYPES[rawType].promoted };
+                    document.getElementById('promotion-modal').classList.remove('hidden');
+                    return;
+                }
+            } else {
+                finalizeMove(fromR, fromC, toR, toC, rawType);
+            }
+        }
+
+        function handlePromotionChoice(doPromote) {
+            document.getElementById('promotion-modal').classList.add('hidden');
+            if (!gameState.pendingPromotion) return;
+
+            const { fromR, fromC, toR, toC, promotedType } = gameState.pendingPromotion;
+            const rawType = gameState.board[fromR][fromC].slice(1);
+
+            finalizeMove(fromR, fromC, toR, toC, doPromote ? promotedType : rawType);
+            gameState.pendingPromotion = null;
+        }
+
+        function executeDrop(toR, toC) {
+            const { type, owner } = gameState.selectedKomadaiPiece;
+
+            gameState.history.push(JSON.stringify({ board: gameState.board, komadai: gameState.komadai, turn: gameState.turn }));
+
+            const idx = gameState.komadai[owner].indexOf(type);
+            if (idx > -1) gameState.komadai[owner].splice(idx, 1);
+
+            const pieceCode = (owner === 'sente' ? 's' : 'g') + type;
+            gameState.board[toR][toC] = pieceCode;
+
+            logMove(`${owner === 'sente' ? '▲' : '☖'}${9 - toC}${toR + 1}${PIECE_TYPES[type].kanji}打`);
+
+            completeTurn();
+        }
+
+        function finalizeMove(fromR, fromC, toR, toC, finalType) {
+            const pieceCode = gameState.board[fromR][fromC];
+            const owner = pieceCode[0] === 's' ? 'sente' : 'gote';
+
+            gameState.board[fromR][fromC] = null;
+            gameState.board[toR][toC] = (owner === 'sente' ? 's' : 'g') + finalType;
+
+            const isPromotedAction = finalType.startsWith('+');
+            logMove(`${owner === 'sente' ? '▲' : '☖'}${9 - toC}${toR + 1}${PIECE_TYPES[finalType].kanji}${isPromotedAction ? '成' : ''}`);
+
+            completeTurn();
+        }
+
+        function completeTurn() {
+            gameState.selectedSquare = null;
+            gameState.selectedKomadaiPiece = null;
+            gameState.validMoves = [];
+
+            if (gameState.isTsumeMode) {
+                renderBoard();
+                renderKomadai();
+                checkTsumeResult();
+                return;
+            }
+
+            gameState.turn = gameState.turn === 'sente' ? 'gote' : 'sente';
+            updateTurnIndicator();
+
+            renderBoard();
+            renderKomadai();
+
+            if (gameState.mode.startsWith('ai') && gameState.turn !== gameState.playerSide) {
+                setTimeout(makeAIMove, 400);
+            }
+        }
+
+        function makeAIMove() {
+            const aiOwner = gameState.turn;
+            const possibleMoves = [];
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (gameState.board[r][c] && isOwner(gameState.board[r][c], aiOwner)) {
+                        const moves = calculateValidMoves(r, c, gameState.board);
+                        moves.forEach(m => {
+                            possibleMoves.push({
+                                type: 'move',
+                                fromR: r, fromC: c,
+                                toR: m.row, toC: m.col,
+                                target: gameState.board[m.row][m.col]
+                            });
+                        });
+                    }
+                }
+            }
+
+            const uniqueKomadai = [...new Set(gameState.komadai[aiOwner])];
+            uniqueKomadai.forEach(type => {
+                const drops = calculateDropMoves(type, aiOwner, gameState.board);
+                drops.forEach(d => {
+                    possibleMoves.push({
+                        type: 'drop',
+                        pieceType: type,
+                        toR: d.row, toC: d.col
+                    });
+                });
+            });
+
+            if (possibleMoves.length === 0) {
+                showDialog("詰みです！あなたの勝利です！🎉");
+                return;
+            }
+
+            let chosenMove = null;
+            if (gameState.mode === 'ai-medium') {
+                const captures = possibleMoves.filter(m => m.type === 'move' && m.target);
+                if (captures.length > 0) {
+                    chosenMove = captures[Math.floor(Math.random() * captures.length)];
+                }
+            }
+
+            if (!chosenMove) {
+                chosenMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            }
+
+            if (chosenMove.type === 'move') {
+                const pieceCode = gameState.board[chosenMove.fromR][chosenMove.fromC];
+                const rawType = pieceCode.slice(1);
+                const isPromotionZone = chosenMove.toR >= 6;
+                const canPromote = isPromotionZone && PIECE_TYPES[rawType].promoted;
+
+                executeMove(chosenMove.fromR, chosenMove.fromC, chosenMove.toR, chosenMove.toC);
+                if (canPromote && gameState.pendingPromotion) {
+                    handlePromotionChoice(Math.random() < 0.7);
+                }
+            } else {
+                gameState.selectedKomadaiPiece = { type: chosenMove.pieceType, owner: aiOwner };
+                executeDrop(chosenMove.toR, chosenMove.toC);
+            }
+        }
+
+        function loadTsumeProblem(index) {
+            gameState.currentTsumeIdx = index;
+            const prob = TSUME_PROBLEMS[index];
+
+            document.getElementById('tsume-title').innerText = prob.title;
+            document.getElementById('tsume-desc').innerText = prob.desc;
+            document.getElementById('tsume-status').innerText = "";
+
+            gameState.board = JSON.parse(JSON.stringify(prob.board));
+            gameState.komadai = { sente: [...prob.komadai], gote: [] };
+            gameState.turn = 'sente';
+            gameState.selectedSquare = null;
+            gameState.selectedKomadaiPiece = null;
+            gameState.validMoves = [];
+
+            renderBoard();
+            renderKomadai();
+        }
+
+        function checkTsumeResult() {
+            const prob = TSUME_PROBLEMS[gameState.currentTsumeIdx];
+            if (prob.checkWin(gameState.board)) {
+                document.getElementById('tsume-status').innerText = "🎉 正解です！見事に詰みました！";
+                showDialog("正解です！お見事！ 👏");
+            }
+        }
+
+        function showTsumeHint() {
+            const prob = TSUME_PROBLEMS[gameState.currentTsumeIdx];
+            showDialog(`【ヒント】\n${prob.hint}`);
+        }
+
+        function resetTsume() {
+            loadTsumeProblem(gameState.currentTsumeIdx);
+        }
+
+        function setSide(side) {
+            gameState.playerSide = side;
+            document.getElementById('btn-side-sente').className = side === 'sente' 
+                ? 'py-1.5 px-3 rounded-lg border font-bold text-center bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                : 'py-1.5 px-3 rounded-lg border font-bold text-center bg-slate-900 text-slate-400 border-slate-800';
+            
+            document.getElementById('btn-side-gote').className = side === 'gote' 
+                ? 'py-1.5 px-3 rounded-lg border font-bold text-center bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
+                : 'py-1.5 px-3 rounded-lg border font-bold text-center bg-slate-900 text-slate-400 border-slate-800';
+            
+            resetGame();
+        }
+
+        function resetGame() {
+            gameState.board = JSON.parse(JSON.stringify(INITIAL_BOARD));
+            gameState.turn = 'sente';
+            gameState.komadai = { sente: [], gote: [] };
+            gameState.history = [];
+            gameState.selectedSquare = null;
+            gameState.selectedKomadaiPiece = null;
+            gameState.validMoves = [];
+
+            document.getElementById('move-history').innerHTML = '';
+            document.getElementById('status-message').innerText = "対局開始です。自分の駒を選択してください。";
+
+            updateTurnIndicator();
+            renderBoard();
+            renderKomadai();
+
+            if (gameState.mode.startsWith('ai') && gameState.playerSide === 'gote') {
+                setTimeout(makeAIMove, 400);
+            }
+        }
+
+        function undoMove() {
+            if (gameState.history.length === 0) return;
+            const lastState = JSON.parse(gameState.history.pop());
+            gameState.board = lastState.board;
+            gameState.komadai = lastState.komadai;
+            gameState.turn = lastState.turn;
+            gameState.selectedSquare = null;
+            gameState.selectedKomadaiPiece = null;
+            gameState.validMoves = [];
+
+            renderBoard();
+            renderKomadai();
+            updateTurnIndicator();
+        }
+
+        function logMove(text) {
+            const historyEl = document.getElementById('move-history');
+            const item = document.createElement('div');
+            item.innerText = `${historyEl.children.length + 1}. ${text}`;
+            historyEl.appendChild(item);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turn-indicator');
+            const status = document.getElementById('status-message');
+            
+            if (gameState.turn === 'sente') {
+                indicator.innerText = '▲先手の手番';
+                indicator.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-bold border border-cyan-800';
+                status.innerText = "先手(あなた)の手番です。";
+            } else {
+                indicator.innerText = '☖後手の手番';
+                indicator.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-400 font-bold border border-slate-800';
+                status.innerText = gameState.mode.startsWith('ai') ? "相手(AI)が考え中..." : "後手の手番です。";
+            }
+        }
+
+        function showDialog(message) {
+            document.getElementById('dialog-message').innerText = message;
+            document.getElementById('custom-dialog').classList.remove('hidden');
+        }
+
+        function closeDialog() {
+            document.getElementById('custom-dialog').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
