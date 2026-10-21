@@ -1510,6 +1510,7 @@
     const messagesRef = ref(db, 'memos');
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
+    const scheduleStateRef = ref(db, 'schedule_states'); // スケジュールのチェック状態保存用
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
@@ -1581,7 +1582,6 @@
       unlockApp();
     }
 
-    // [修正1] registerCurrentDeviceUser がアクセス制限やルームロックの判定結果（true / false）を返すように変更
     async function registerCurrentDeviceUser() {
       try {
         const configSnap = await getDoc(doc(firestore, 'artifacts', appId, 'public', 'data', 'settings', 'roomConfig'));
@@ -1621,7 +1621,6 @@
       }
     }
 
-    // [修正2] unlockApp を async にし、サーバーのチェックが終わるのを待ってから画面を表示するように変更
     async function unlockApp() {
       const canAccess = await registerCurrentDeviceUser();
 
@@ -1812,6 +1811,16 @@
       { month: "12月", content: "お正月のお坊さん用のお菓子を用意する(7品)" }
     ];
 
+    let cachedScheduleStates = {};
+
+    // 予定のチェック状態をリアルタイム監視
+    onValue(scheduleStateRef, (snapshot) => {
+      cachedScheduleStates = snapshot.val() || {};
+      if (scheduleModalOverlay.classList.contains('active')) {
+        renderScheduleTable();
+      }
+    });
+
     function renderScheduleTable() {
       scheduleTableBody.innerHTML = '';
       
@@ -1824,7 +1833,10 @@
         sortedMonths.push(m + '月');
       }
 
-      const sortedScheduleData = [...scheduleData].sort((a, b) => {
+      const sortedScheduleData = scheduleData.map((item, originalIndex) => ({
+        ...item,
+        originalIndex
+      })).sort((a, b) => {
         const indexA = sortedMonths.indexOf(a.month);
         const indexB = sortedMonths.indexOf(b.month);
         return indexA - indexB;
@@ -1832,7 +1844,8 @@
 
       const nextMonthNum = (currentMonthNum % 12) + 1;
 
-      sortedScheduleData.forEach((item, index) => {
+      sortedScheduleData.forEach((item) => {
+        const index = item.originalIndex;
         const monthNum = parseInt(item.month.replace('月', ''), 10);
         const isCurrentOrNext = (monthNum === currentMonthNum || monthNum === nextMonthNum);
 
@@ -1845,6 +1858,17 @@
         checkbox.type = 'checkbox';
         checkbox.className = 'schedule-checkbox';
         checkbox.id = `sched-chk-${index}`;
+        
+        // 保存された状態を反映
+        checkbox.checked = !!cachedScheduleStates[index];
+
+        // チェック状態が変わったらFirebaseに保存
+        checkbox.addEventListener('change', (e) => {
+          const updates = {};
+          updates[index] = e.target.checked;
+          update(scheduleStateRef, updates);
+        });
+
         tdCheck.appendChild(checkbox);
 
         const tdMonth = document.createElement('td');
@@ -1869,10 +1893,11 @@
     scheduleModalCloseBtn.addEventListener('click', closeScheduleModal);
 
     scheduleUncheckAllBtn.addEventListener('click', () => {
-      const checkboxes = scheduleTableBody.querySelectorAll('.schedule-checkbox');
-      checkboxes.forEach(chk => {
-        chk.checked = false;
+      const updates = {};
+      scheduleData.forEach((_, index) => {
+        updates[index] = false;
       });
+      update(scheduleStateRef, updates);
     });
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
