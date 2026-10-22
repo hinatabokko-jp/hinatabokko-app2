@@ -723,19 +723,19 @@
     .input-field-cal { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s; width: 100%; }
     .input-field-cal:focus { border-color: #6366F1; box-shadow: 0 0 12px rgba(99, 102, 241, 0.3); }
 
-/* 追加: input[type="date"]のどこをクリックしてもカレンダーが開きやすくする調整 */
-  .input-field-cal::-webkit-calendar-picker-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .input-field-cal {
-    position: relative;
-  }
+    /* input[type="date"]のどこをクリックしてもカレンダーが開きやすくする調整 */
+    .input-field-cal::-webkit-calendar-picker-indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .input-field-cal {
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -835,7 +835,6 @@
           </div>
         </div>
         <div class="header-right-actions">
-          <!-- 戻るボタンの左に配置されたカレンダーボタン（絵文字 📅 キャプション） -->
           <button id="calendar-modal-open-btn" class="btn-logout" title="カレンダーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">📅</button>
           <button id="changeUserBtn" class="btn-logout" title="ユーザー切り替え・ログアウト">➡</button>
         </div>
@@ -1002,7 +1001,6 @@
             <button class="view-btn" data-view="week">週</button>
             <button class="view-btn" data-view="day">日</button>
           </div>
-          <!-- 修正：「予定を追加」ボタンを一回り小さく変更 -->
           <button id="cal-addEventBtn" class="send-btn-style text-[11px] py-1 px-2.5">
             <i class="fa-solid fa-plus"></i> 予定を追加
           </button>
@@ -1124,7 +1122,7 @@
     const passcodeRef = ref(db, 'settings/passcode');
     const roomConfigRef = ref(db, 'settings/roomConfig');
     const usersRef = ref(db, 'users');
-    const calendarEventsRef = ref(db, 'calendar_events'); // Firebaseによるカレンダー予定保存用
+    const calendarEventsRef = ref(db, 'calendar_events');
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
@@ -2028,7 +2026,6 @@
     const calEventDescriptionInput = document.getElementById('cal-eventDescription');
 
     calendarModalOpenBtn.addEventListener('click', () => {
-      // 修正：カレンダーモーダルを開いたとき、常に「今日の日付（現在の日にち）」を基準として表示する
       calCurrentDate = new Date();
       calendarModalOverlay.classList.add('active');
       renderCalendarApp();
@@ -2038,7 +2035,6 @@
       if (e.target === calendarModalOverlay) calendarModalOverlay.classList.remove('active');
     });
 
-    // Firebaseからのカレンダー予定のリアルタイム同期
     onValue(calendarEventsRef, (snapshot) => {
       const data = snapshot.val() || {};
       calendarEvents = Object.keys(data).map(k => ({ id: k, ...data[k] }));
@@ -2110,7 +2106,6 @@
       return !!currentYearHolidays[dateStr];
     }
 
-    // カレンダー操作用イベントリスナー
     calPrevBtn.addEventListener('click', () => {
       if (calSelectedView === 'month') calCurrentDate.setMonth(calCurrentDate.getMonth() - 1);
       else if (calSelectedView === 'week') calCurrentDate.setDate(calCurrentDate.getDate() - 7);
@@ -2247,16 +2242,15 @@
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
 
-      // 修正：現在表示している日付（calCurrentDate）が含まれる週の最初の日（日曜日）を起点にして42マス分を生成する
-      const currentDateCopy = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth(), calCurrentDate.getDate());
-      const startDayOfWeek = currentDateCopy.getDay();
+      // 修正：月初の1日を起点にしつつ、カレンダーの最初の日曜日を正しく割り出す
+      const firstDayOfMonth = new Date(year, month, 1);
+      const startDayOfWeek = firstDayOfMonth.getDay();
       
-      // calCurrentDateが含まれる週の日曜日を算出
-      const startDate = new Date(currentDateCopy);
-      startDate.setDate(currentDateCopy.getDate() - startDayOfWeek);
+      const startDate = new Date(firstDayOfMonth);
+      startDate.setDate(firstDayOfMonth.getDate() - startDayOfWeek);
 
       const today = new Date();
-      const totalCells = 42; // 6週間分 (7日 × 6行 = 42マス)
+      const totalCells = 42; // 6週間分
 
       for (let i = 0; i < totalCells; i++) {
         const cellDate = new Date(startDate);
