@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>family chat</title>
+  <title>Family Chat</title>
   <!-- Tailwind CSS CDN (管理画面のUIコンポーネント用) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -45,6 +45,7 @@
       --radius-md: 16px;
       --radius-lg: 20px;
       --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --transition: all 0.2s ease;
     }
 
     * {
@@ -69,6 +70,72 @@
       flex-direction: column;
       height: 100%;
       width: 100%;
+    }
+
+    /* ファミリーマート風フォントを意識したタイトルスタイル */
+    .family-mart-font {
+      font-family: "Arial Black", "Trebuchet MS", "Helvetica Neue", sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    /* 編集機能用スタイル */
+    .edit-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      min-width: 240px;
+    }
+    .edit-textarea {
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.4;
+      min-height: 70px;
+      transition: var(--transition);
+    }
+    .edit-textarea:focus {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    }
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .edit-save-btn {
+      background: #ffffff;
+      color: #0b0f19;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .edit-save-btn:hover {
+      background: #f1f5f9;
+      transform: translateY(-1px);
+    }
+    .edit-cancel-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .edit-cancel-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
 
     /* Instagram風 あいことばロック画面 */
@@ -484,7 +551,7 @@
       color: var(--text-muted);
       opacity: 0.8;
     }
-    .delete-btn {
+    .delete-btn, .edit-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -493,7 +560,7 @@
       padding: 0;
       opacity: 0.7;
     }
-    .delete-btn:hover {
+    .delete-btn:hover, .edit-btn:hover {
       opacity: 1;
       color: var(--text-color);
     }
@@ -905,13 +972,13 @@
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app/page2">計算トレーニング</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page33.html">Air Messaage</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html">Canvas Share</a></li>
-        <li><a href="#" class="sidebar-link current">FamilyChat おかあさん</a></li>
+        <li><a href="#" class="sidebar-link current">Family Chat おかあさん</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page28.html">FamilyChat おとうさん</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page13.html">エフェクト・効果音</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page4.html">UI用語</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page23.html">QRcode</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page30.html">MEMO</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page34.html">将棋</a></li>
+        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page34.html">將棋</a></li>
       </ul>
     </aside>
 
@@ -933,7 +1000,7 @@
             </svg>
           </div>
         </div>
-        <h1 class="login-title">Family Chat</h1>
+        <h1 class="login-title family-mart-font">Family Chat</h1>
                 
         <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
           <label for="user-select" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding-left: 4px;">ユーザー</label>
@@ -993,8 +1060,8 @@
       <header>
         <div class="header-left">
           <div class="header-title-container">
-            <div class="header-title">
-              family chat 管理画面
+            <div class="header-title family-mart-font">
+              Family Chat 管理画面
               <span class="status-badge">管理者</span>
             </div>
           </div>
@@ -1015,7 +1082,7 @@
           </label>
         </div>
 
-        <!-- あいことば変更セクションの追加 -->
+        <!-- あいことば変更セクション -->
         <div class="bg-surface border border-border p-6 rounded-2xl flex flex-col gap-4" style="background-color: var(--surface-color);">
           <div class="flex flex-col gap-1">
             <h3 class="font-bold text-mainText text-base">あいことばの変更</h3>
@@ -1044,8 +1111,8 @@
         <div class="header-left">
           <button id="hamburger-btn" class="hamburger-btn" aria-label="メニューを開く">☰</button>
           <div class="header-title-container">
-            <div class="header-title">
-              family chat
+            <div class="header-title family-mart-font">
+              Family Chat
               <span id="statusBadge" class="status-badge">ファミリー</span>
             </div>
           </div>
@@ -1200,7 +1267,7 @@
   <!-- Firebase SDK (v10) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove, get, set, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCR0rsl3c8LdY2t0F95qZXrr3fr_iMFg74",
@@ -1309,7 +1376,6 @@
       }
     });
 
-    // サーバーのアクセス権チェックを終えてから真偽値を返すように修正
     async function registerCurrentDeviceUser() {
       try {
         const configSnap = await get(roomConfigRef);
@@ -1354,7 +1420,6 @@
       }
     }
 
-    // サーバーチェック結果（true）を待ってから画面を表示するように修正
     async function unlockApp() {
       const canAccess = await registerCurrentDeviceUser();
 
@@ -2094,6 +2159,12 @@
       if (confirm('削除しますか？')) remove(ref(db, `messages/${key}`));
     }
 
+    // メッセージ更新関数
+    function updateMessage(key, newText) {
+      if (!newText.trim()) return;
+      update(ref(db, `messages/${key}`), { text: newText.trim() });
+    }
+
     function renderFormattedText(container, text) {
       const urlRegex = /(https?:\/\/[a-zA-Z0-9\-\._~:\/\?#\[\]@!\$&'\(\)\*\+,;=]+\.html)/g;
       let lastIndex = 0, match;
@@ -2165,6 +2236,38 @@
           });
           metaInfo.appendChild(dlBtn);
         }
+
+        // 自分のテキストメッセージの場合に「編集」ボタンを表示
+        if (isSent && msg.text && !msg.isStamp) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-btn'; editBtn.textContent = '編集';
+          editBtn.addEventListener('click', () => {
+            bubble.innerHTML = '';
+            const editContainer = document.createElement('div');
+            editContainer.className = 'edit-container';
+            const editTextArea = document.createElement('textarea');
+            editTextArea.className = 'edit-textarea';
+            editTextArea.value = msg.text;
+            editContainer.appendChild(editTextArea);
+
+            const editActions = document.createElement('div');
+            editActions.className = 'edit-actions';
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'edit-save-btn'; saveBtn.textContent = '保存';
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'edit-cancel-btn'; cancelBtn.textContent = 'キャンセル';
+
+            editActions.appendChild(cancelBtn);
+            editActions.appendChild(saveBtn);
+            editContainer.appendChild(editActions);
+            bubble.appendChild(editContainer);
+            editTextArea.focus();
+
+            saveBtn.addEventListener('click', () => updateMessage(key, editTextArea.value));
+            cancelBtn.addEventListener('click', () => renderMessages());
+          });
+          metaInfo.appendChild(editBtn);
+        }
         
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn'; delBtn.textContent = '削除';
@@ -2202,7 +2305,6 @@
     initChat();
     listenToAdminData();
 
-    // 起動時に保存されたユーザー名を適用
     const savedUser = localStorage.getItem(userStorageKey);
     if (savedUser && (savedUser === 'おかあさん' || savedUser === 'むすめ')) {
       userSelect.value = savedUser;
