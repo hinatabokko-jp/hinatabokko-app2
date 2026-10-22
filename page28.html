@@ -970,8 +970,8 @@
   </div>
 
   <!-- カレンダーモーダル -->
-  <div id="calendar-modal-overlay" class="modal-overlay">
-    <div class="modal-container" style="max-width: 900px; height: 85vh;">
+  <div id="calendar-modal-overlay" class="modal-overlay" style="padding: 16px;">
+    <div class="modal-container" style="max-width: 900px; height: 85vh; width: calc(100% - 32px); margin: 0 auto;">
       <div class="px-6 py-3.5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl p-[2px]" style="background: var(--primary-gradient);">
@@ -1049,8 +1049,32 @@
     </div>
   </div>
 
+  <!-- カレンダー予定閲覧用モーダル -->
+  <div id="cal-viewModal" class="modal-overlay" style="z-index: 10001;">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="px-6 py-4 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
+        <h2 class="text-lg font-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">予定の確認</h2>
+        <button id="cal-closeViewModalBtn" class="text-slate-400 hover:text-white text-xl transition">✕</button>
+      </div>
+      <div class="p-6 flex flex-col gap-4 overflow-y-auto">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">日付</label>
+          <div id="cal-viewDate" class="text-sm font-bold text-slate-200"></div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">予定</label>
+          <div id="cal-viewDescription" class="p-3 rounded-xl text-sm whitespace-pre-wrap break-all"></div>
+        </div>
+        <div class="flex items-center justify-end pt-3 border-t border-white/10 mt-2 gap-2">
+          <button type="button" id="cal-viewEditBtn" class="send-btn-style text-xs">編集する</button>
+          <button type="button" id="cal-viewCloseBtn" class="secondary-btn text-xs">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- カレンダー個別予定編集モーダル -->
-  <div id="cal-eventModal" class="modal-overlay" style="z-index: 10001;">
+  <div id="cal-eventModal" class="modal-overlay" style="z-index: 10002;">
     <div class="modal-container" style="max-width: 480px;">
       <div class="px-6 py-4 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
         <h2 id="cal-modalTitle" class="text-lg font-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">予定の新規追加</h2>
@@ -1083,7 +1107,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">予定</label>
-          <textarea id="cal-eventDescription" rows="8" placeholder="予定の詳細・メモを入力（改行可能）..." class="input-field-cal resize-y"></textarea>
+          <textarea id="cal-eventDescription" rows="5" placeholder="予定の詳細・メモを入力（改行可能）..." class="input-field-cal resize-y" style="height: 140px;"></textarea>
         </div>
 
         <div class="flex items-center justify-between pt-3 border-t border-white/10 mt-2">
@@ -1999,6 +2023,7 @@
     let calSelectedView = 'month';
     let calendarEvents = [];
     let calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
+    let currentViewingEvent = null;
 
     const calendarModalOverlay = document.getElementById('calendar-modal-overlay');
     const calendarModalOpenBtn = document.getElementById('calendar-modal-open-btn');
@@ -2012,6 +2037,14 @@
     const calAddEventBtn = document.getElementById('cal-addEventBtn');
     const calUpcomingEventsList = document.getElementById('cal-upcomingEventsList');
     const calClearFilterBtn = document.getElementById('cal-clearFilterBtn');
+
+    // 予定閲覧用モーダル
+    const calViewModal = document.getElementById('cal-viewModal');
+    const calCloseViewModalBtn = document.getElementById('cal-closeViewModalBtn');
+    const calViewCloseBtn = document.getElementById('cal-viewCloseBtn');
+    const calViewEditBtn = document.getElementById('cal-viewEditBtn');
+    const calViewDate = document.getElementById('cal-viewDate');
+    const calViewDescription = document.getElementById('cal-viewDescription');
 
     const calEventModal = document.getElementById('cal-eventModal');
     const calModalTitle = document.getElementById('cal-modalTitle');
@@ -2174,6 +2207,20 @@
       if (e.target === calEventModal) closeCalModal();
     });
 
+    // 予定閲覧用モーダルのイベントリスナー
+    const closeCalViewModal = () => { calViewModal.classList.remove('active'); };
+    calCloseViewModalBtn.addEventListener('click', closeCalViewModal);
+    calViewCloseBtn.addEventListener('click', closeCalViewModal);
+    calViewModal.addEventListener('click', (e) => {
+      if (e.target === calViewModal) closeCalViewModal();
+    });
+    calViewEditBtn.addEventListener('click', () => {
+      closeCalViewModal();
+      if (currentViewingEvent) {
+        openCalModal(currentViewingEvent);
+      }
+    });
+
     calEventForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = calEventIdInput.value;
@@ -2242,7 +2289,6 @@
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
 
-      // 修正：月初の1日を起点にしつつ、カレンダーの最初の日曜日を正しく割り出す
       const firstDayOfMonth = new Date(year, month, 1);
       const startDayOfWeek = firstDayOfMonth.getDay();
       
@@ -2250,7 +2296,7 @@
       startDate.setDate(firstDayOfMonth.getDate() - startDayOfWeek);
 
       const today = new Date();
-      const totalCells = 42; // 6週間分
+      const totalCells = 42;
 
       for (let i = 0; i < totalCells; i++) {
         const cellDate = new Date(startDate);
@@ -2298,7 +2344,7 @@
         elem.textContent = evt.description;
         elem.addEventListener('click', (e) => {
           e.stopPropagation();
-          openCalModal(evt);
+          openCalViewModal(evt);
         });
         cell.appendChild(elem);
       });
@@ -2349,9 +2395,17 @@
           </div>
           <div class="text-[10px] text-slate-300 truncate whitespace-pre-wrap">${evt.description}</div>
         `;
-        card.addEventListener('click', () => openCalModal(evt));
+        card.addEventListener('click', () => openCalViewModal(evt));
         calUpcomingEventsList.appendChild(card);
       });
+    }
+
+    function openCalViewModal(eventObj) {
+      currentViewingEvent = eventObj;
+      calViewDate.textContent = eventObj.date;
+      calViewDescription.textContent = eventObj.description || '';
+      calViewDescription.className = `p-3 rounded-xl text-sm whitespace-pre-wrap break-all ${eventObj.color}`;
+      calViewModal.classList.add('active');
     }
 
     function openCalModal(eventToEdit = null, defaultDateStr = null) {
