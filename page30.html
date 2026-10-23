@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MEMO</title>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --bg-color: #0b0f19;
@@ -90,7 +92,7 @@
       width: 80px;
       height: 80px;
       border-radius: 24px;
-      background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
+      background: var(--primary-gradient);
       padding: 2px;
       box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2);
       margin-bottom: 24px;
@@ -200,7 +202,7 @@
       margin-top: 8px;
       padding: 16px 24px;
       border-radius: 16px;
-      background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
+      background: var(--primary-gradient);
       color: #ffffff;
       border: none;
       font-weight: 700;
@@ -1103,41 +1105,80 @@
       transform: translateX(18px);
     }
 
-    /* 月ごとの予定テーブル用スタイル */
-    .schedule-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
+    /* カレンダー拡張用配色・スタイル (MEMOテーマカラー) - 要望1対応: 固定サイズ化 */
+    .calendar-cell {
+      background-color: rgba(19, 27, 46, 0.4);
+      border: 1px solid var(--border-color);
+      transition: all 0.15s ease;
+      position: relative;
+      overflow-y: auto;
+      min-height: 135px;
+      height: 135px;
     }
-    .schedule-table th, .schedule-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border-color);
-      text-align: left;
-      vertical-align: middle;
+    .calendar-cell:hover {
+      background-color: rgba(30, 41, 59, 0.6);
+      border-color: rgba(168, 85, 247, 0.3);
     }
-    .schedule-table th {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: rgba(255, 255, 255, 0.02);
+    .calendar-cell.other-month {
+      opacity: 0.35;
+      background-color: rgba(11, 15, 25, 0.6);
     }
-    .schedule-row-current {
-      font-size: 1.05rem;
-      font-weight: 700;
+    .calendar-cell.today {
+      background-color: rgba(168, 85, 247, 0.08);
+      border: 1.5px solid rgba(168, 85, 247, 0.6);
+    }
+    .calendar-cell.today .day-number {
+      background: var(--primary-gradient);
       color: #fff;
-      background: rgba(168, 85, 247, 0.08);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
     }
-    .schedule-row-other {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-    .schedule-checkbox {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--accent-purple);
+    .event-pill {
+      font-size: 0.72rem;
+      padding: 3px 6px;
+      border-radius: 6px;
+      margin-bottom: 2px;
       cursor: pointer;
-      border-radius: 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      transition: transform 0.15s, opacity 0.15s;
+      line-height: 1.2;
+    }
+    .event-pill:hover { opacity: 0.9; }
+    
+    /* 要望2対応: 予定表示用カードの書式（フォント小さく、余白・角丸調整） */
+    .event-card-full {
+      font-size: 0.78rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      white-space: pre-wrap;
+      word-break: break-all;
+      transition: transform 0.15s, opacity 0.15s;
+      line-height: 1.3;
+    }
+    .event-card-full:hover { opacity: 0.9; }
+
+    .color-blue { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border-left: 3px solid #3b82f6; }
+    .color-yellow { background: rgba(234, 179, 8, 0.25); color: #fde047; border-left: 3px solid #eab308; }
+    .color-red { background: rgba(244, 63, 94, 0.25); color: #fecdd3; border-left: 3px solid #f43f5e; }
+    .color-filter-btn { transition: all 0.2s; opacity: 0.4; border: 1px solid transparent; border-radius: 14px; }
+    .color-filter-btn.active { opacity: 1; border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 10px rgba(168, 85, 247, 0.25); transform: translateY(-1px); }
+    .color-select-btn { transition: all 0.2s; opacity: 0.5; border: 2px solid transparent; }
+    .color-select-btn.selected { opacity: 1; border-color: #ffffff; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4); transform: scale(1.05); }
+    .view-btn { padding: 6px 14px; font-size: 0.85rem; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: transparent; border: none; }
+    .view-btn.active { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); font-weight: 600; }
+    .input-field-cal { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s; width: 100%; position: relative; }
+    .input-field-cal:focus { border-color: var(--accent-purple); box-shadow: 0 0 12px rgba(168, 85, 247, 0.3); }
+    .input-field-cal::-webkit-calendar-picker-indicator {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
     }
   </style>
 </head>
@@ -1227,7 +1268,7 @@
           </div>
         </div>
         <div class="header-right-actions">
-          <button id="footer-schedule-open-btn" class="btn-logout" title="月ごとの予定" style="background: rgba(168,85,247,0.15); border-color: var(--border-glow); color: var(--accent-purple);">📅 予定</button>
+          <button id="calendar-modal-open-btn" class="btn-logout" title="カレンダーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">📅</button>
           <button id="changeUserBtn" class="btn-logout">ロックに戻る</button>
         </div>
       </header>
@@ -1246,37 +1287,6 @@
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 月ごとの予定モーダル -->
-  <div id="schedule-modal-overlay" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title">月ごとの予定一覧</div>
-        <button id="schedule-modal-close-x" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
-          <button id="schedule-uncheck-all-btn" class="secondary-btn" style="font-size: 0.78rem; padding: 6px 12px;">すべて一気にFalseにする</button>
-        </div>
-        <table class="schedule-table">
-          <thead>
-            <tr>
-              <th style="width: 40px; text-align: center;">状態</th>
-              <th style="width: 90px;">月</th>
-              <th>内容</th>
-            </tr>
-          </thead>
-          <tbody id="schedule-table-body">
-            <!-- JavaScriptで動的に挿入 -->
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-footer">
-        <div></div>
-        <button id="schedule-modal-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
   </div>
@@ -1405,6 +1415,140 @@
     </div>
   </div>
 
+  <!-- カレンダーモーダル -->
+  <div id="calendar-modal-overlay" class="modal-overlay" style="padding: 16px;">
+    <div class="modal-container" style="max-width: 900px; height: 85vh; width: calc(100% - 32px); margin: 0 auto;">
+      <div style="padding: 16px 24px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+          <div style="width: 32px; height: 32px; border-radius: 12px; padding: 2px; background: var(--primary-gradient);">
+            <div style="width: 100%; height: 100%; background: #131b2e; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-calendar-days" style="color: #c084fc; font-size: 0.85rem;"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.1rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Calendar</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="cal-todayBtn" class="btn-logout" style="font-size: 0.75rem; padding: 6px 12px;">今日</button>
+          <div style="display: flex; align-items: center; background: #131b2e; border-radius: 10px; border: 1px solid var(--border-color); padding: 2px;">
+            <button id="cal-prevBtn" style="padding: 6px 10px; background: none; border: none; color: var(--text-muted); cursor: pointer;" title="前へ"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <button id="cal-nextBtn" style="padding: 6px 10px; background: none; border: none; color: var(--text-muted); cursor: pointer;" title="次へ"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          </div>
+          <span id="cal-currentDateDisplay" style="font-size: 0.9rem; font-weight: 700; margin-left: 4px; color: #f1f5f9;">----年 --月</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+          <div style="display: flex; background: #0b0f19; padding: 2px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <button class="view-btn active" data-view="month">月</button>
+            <button class="view-btn" data-view="week">週</button>
+            <button class="view-btn" data-view="day">日</button>
+          </div>
+          <button id="cal-addEventBtn" class="secondary-btn" style="font-size: 0.75rem;"><i class="fa-solid fa-plus"></i> 予定を追加</button>
+          <button id="calendar-modal-close-btn" class="modal-close-btn" style="margin-left: 8px;">✕</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex: 1; overflow: hidden;">
+        <aside style="width: 220px; border-right: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; background: rgba(11, 15, 25, 0.4); flex-shrink: 0;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <h3 style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">カラーフィルター</h3>
+              <button id="cal-clearFilterBtn" style="font-size: 0.65rem; color: var(--text-muted); background: none; border: none; cursor: pointer; text-decoration: underline;">解除</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;" id="cal-colorFiltersContainer">
+              <button type="button" data-color="color-blue" class="color-filter-btn active p-2 rounded-xl color-blue font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">blue</span></button>
+              <button type="button" data-color="color-yellow" class="color-filter-btn active p-2 rounded-xl color-yellow font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">yellow</span></button>
+              <button type="button" data-color="color-red" class="color-filter-btn active p-2 rounded-xl color-red font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">red</span></button>
+            </div>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <h3 style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">直近の予定</h3>
+            <div id="cal-upcomingEventsList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto;"></div>
+          </div>
+        </aside>
+
+        <main style="flex: 1; display: flex; flex-direction: column; background: rgba(11, 15, 25, 0.2); overflow: hidden;">
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border-color); text-align: center; padding: 6px 0; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); background: rgba(19, 27, 46, 0.5); flex-shrink: 0;">
+            <div style="color: #f43f5e;">日</div>
+            <div>月</div>
+            <div>火</div>
+            <div>水</div>
+            <div>木</div>
+            <div>金</div>
+            <div>土</div>
+          </div>
+          <div id="cal-calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); flex: 1; overflow-y: auto;"></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- カレンダー予定閲覧用モーダル -->
+  <div id="cal-viewModal" class="modal-overlay" style="z-index: 10001;">
+    <div class="modal-container" style="max-width: 480px;">
+      <div style="padding: 16px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">予定の確認</h2>
+        <button id="cal-closeViewModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">✕</button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">日付</label>
+          <div id="cal-viewDate" style="font-weight: 700; color: #f1f5f9; font-size: 1rem;"></div>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">予定</label>
+          <div id="cal-viewDescriptionList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--border-color); margin-top: 8px; gap: 8px;">
+          <button type="button" id="cal-viewEditBtn" class="secondary-btn" style="font-size: 0.75rem;">追加</button>
+          <button type="button" id="cal-viewCloseBtn" class="secondary-btn" style="font-size: 0.75rem;">閉じる</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- カレンダー個別予定編集モーダル -->
+  <div id="cal-eventModal" class="modal-overlay" style="z-index: 10002;">
+    <div class="modal-container" style="max-width: 480px;">
+      <div style="padding: 16px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <h2 id="cal-modalTitle" style="font-size: 1.1rem; font-weight: 700; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">予定の新規追加</h2>
+        <button id="cal-closeModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">✕</button>
+      </div>
+
+      <form id="cal-eventForm" style="padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;">
+        <input type="hidden" id="cal-eventId">
+
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">日付 <span style="color: var(--danger-color);">*</span></label>
+          <input type="date" id="cal-eventDate" required class="input-field-cal">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">カラー選択</label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;" id="cal-colorSelectContainer">
+            <button type="button" data-color="color-blue" class="color-select-btn selected p-2.5 rounded-xl color-blue font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">blue</span></button>
+            <button type="button" data-color="color-yellow" class="color-select-btn p-2.5 rounded-xl color-yellow font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">yellow</span></button>
+            <button type="button" data-color="color-red" class="color-select-btn p-2.5 rounded-xl color-red font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">red</span></button>
+          </div>
+          <input type="hidden" id="cal-eventColor" value="color-blue">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;">予定</label>
+          <textarea id="cal-eventDescription" rows="5" placeholder="予定の詳細・メモを入力（改行可能）..." class="input-field-cal resize-y" style="height: 120px;"></textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-color); margin-top: 8px;">
+          <button type="button" id="cal-deleteEventBtn" style="padding: 8px 16px; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 12px; font-size: 0.75rem; font-weight: 600; cursor: pointer;" class="hidden">
+            <i class="fa-solid fa-trash mr-1"></i> 削除
+          </button>
+          <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+            <button type="button" id="cal-cancelModalBtn" class="secondary-btn" style="font-size: 0.75rem;">キャンセル</button>
+            <button type="submit" class="send-btn-style" style="font-size: 0.75rem; height: 38px; padding: 0 16px;">保存する</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- 管理ID確認用モーダル -->
   <div id="admin-login-modal" class="modal-overlay">
     <div class="modal-container" style="max-width: 380px;">
@@ -1489,9 +1633,10 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, get, update, set as dbSet } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
+    // 1. MEMO専用のFirebase設定 (メッセージ・スタンプ・管理用)
+    const memoFirebaseConfig = {
       apiKey: "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
       authDomain: "memo-32979.firebaseapp.com",
       databaseURL: "https://memo-32979-default-rtdb.firebaseio.com",
@@ -1502,15 +1647,32 @@
       measurementId: "G-7ZFJFTTHNW"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const firestore = getFirestore(app);
+    // 2. FamilyChat（カレンダー同期専用）のFirebase設定
+    const familyChatFirebaseConfig = {
+      apiKey: "AIzaSyCfHE4gy8EFE3TxHQkw4jtiuMD9D3BrX6M",
+      authDomain: "family-chat-2-bca6e.firebaseapp.com",
+      projectId: "family-chat-2-bca6e",
+      storageBucket: "family-chat-2-bca6e.firebasestorage.app",
+      messagingSenderId: "542935840264",
+      appId: "1:542935840264:web:055d64fbf310b537f403bd",
+      measurementId: "G-FGVQ3784EN",
+      databaseURL: "https://family-chat-2-bca6e-default-rtdb.firebaseio.com/"
+    };
+
+    // それぞれのアプリインスタンスを初期化
+    const memoApp = initializeApp(memoFirebaseConfig, "memoApp");
+    const familyChatApp = initializeApp(familyChatFirebaseConfig, "familyChatApp");
+
+    // データベース参照の振り分け
+    const db = getDatabase(memoApp); // MEMO用DB
+    const calendarDb = getDatabase(familyChatApp); // カレンダー共有用DB
+    const firestore = getFirestore(memoApp);
     const appId = "memo_app_v2";
 
     const messagesRef = ref(db, 'memos');
     const stampHistoryRef = ref(db, 'stamp_history');
     const passcodeRef = ref(db, 'settings/passcode');
-    const scheduleStateRef = ref(db, 'schedule_states'); // スケジュールのチェック状態保存用
+    const calendarEventsRef = ref(calendarDb, 'calendar_events'); // FamilyChatのDBに繋がる
 
     const lockScreen = document.getElementById('lock-screen');
     const appContent = document.getElementById('app-content');
@@ -1756,149 +1918,6 @@
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-
-    // 月ごとの予定モーダル関連要素
-    const footerScheduleOpenBtn = document.getElementById('footer-schedule-open-btn');
-    const scheduleModalOverlay = document.getElementById('schedule-modal-overlay');
-    const scheduleModalCloseX = document.getElementById('schedule-modal-close-x');
-    const scheduleModalCloseBtn = document.getElementById('schedule-modal-close-btn');
-    const scheduleTableBody = document.getElementById('schedule-table-body');
-    const scheduleUncheckAllBtn = document.getElementById('schedule-uncheck-all-btn');
-
-    const scheduleData = [
-      { month: "1月", content: "元旦の食事、お雑煮を作る" },
-      { month: "1月", content: "15日、お善哉を作る" },
-      { month: "1月", content: "15日、正月飾りを片付ける" },
-      { month: "1月", content: "31日、Amazonプライム年払い5900円" },
-      { month: "1月", content: "恵方巻の予約をする(7-11)" },
-      { month: "2月", content: "恵方巻を食べる" },
-      { month: "2月", content: "利道さん誕生日" },
-      { month: "2月", content: "バレンタインデー" },
-      { month: "2月", content: "15日までに眼科で処方してもらう" },
-      { month: "2月", content: "下旬から花粉対策、上着は玄関で脱ぐ" },
-      { month: "2月", content: "花粉きつくなったら二重マスクにする" },
-      { month: "3月", content: "ピアノの調律をお願いする（湯浅楽器さん）" },
-      { month: "4月", content: "学校の年間行事予定を見てカレンダーに記入" },
-      { month: "4月", content: "OTTADEの電池交換をする" },
-      { month: "4月", content: "タイヤ交換をする" },
-      { month: "4月", content: "スクリレ、毎年登録が必要" },
-      { month: "5月", content: "ふとん乾燥機かける 毛布は洗濯する" },
-      { month: "5月", content: "苗箱作り、田植え" },
-      { month: "5月", content: "GW前に払い戻し、車の税金支払う" },
-      { month: "6月", content: "4年に1回製氷フィルター交換(R8年購入）" },
-      { month: "6月", content: "第3日曜日 父の日" },
-      { month: "6月", content: "学校で美化活動" },
-      { month: "6月", content: "川東ステージ祭（体育祭）" },
-      { month: "7月", content: "ひなたちゃんの誕生日ケーキを予約する" },
-      { month: "7月", content: "7月28日までに、ポポに誕生日パフェの予約をする" },
-      { month: "7月", content: "納涼大会 文房具と首掛けファンなど必要" },
-      { month: "8月", content: "ひなたちゃんの自転車のTSマーク点検3600円くらい" },
-      { month: "9月", content: "蚊に注意 秋服出しておく" },
-      { month: "9月", content: "イオンでおせちの予約" },
-      { month: "10月", content: "インフルエンザ予防接種予約する" },
-      { month: "10月", content: "年末調整、アフラックの紙、記入見本、印鑑" },
-      { month: "10月", content: "課税支給額の合計を夫に報告" },
-      { month: "10月", content: "町民運動会" },
-      { month: "10月", content: "クリスマスケーキの予約をする(iAEON)KFCケーキでじゅうぶんかも" },
-      { month: "11月", content: "ソフトバレー大会、小銭、半袖Tシャツと上着、上履き" },
-      { month: "11月", content: "自分の自転車のTSマークの点検3600円くらい" },
-      { month: "11月", content: "ケンタッキー予約" },
-      { month: "11月", content: "クリスマスプレゼント考える" },
-      { month: "11月", content: "TOYOTA点検でタイヤ交換してもらう" },
-      { month: "12月", content: "1月にO'zHairDesign予約する HIROさんで" },
-      { month: "12月", content: "お年玉用のピン札を用意する" },
-      { month: "12月", content: "元旦の食事用の材料を買う" },
-      { month: "12月", content: "お正月のお坊さん用のお菓子を用意する(7品)" }
-    ];
-
-    let cachedScheduleStates = {};
-
-    // 予定のチェック状態をリアルタイム監視
-    onValue(scheduleStateRef, (snapshot) => {
-      cachedScheduleStates = snapshot.val() || {};
-      if (scheduleModalOverlay.classList.contains('active')) {
-        renderScheduleTable();
-      }
-    });
-
-    function renderScheduleTable() {
-      scheduleTableBody.innerHTML = '';
-      
-      const now = new Date();
-      const currentMonthNum = now.getMonth() + 1;
-
-      const sortedMonths = [];
-      for (let i = 0; i < 12; i++) {
-        const m = ((currentMonthNum - 1 + i) % 12) + 1;
-        sortedMonths.push(m + '月');
-      }
-
-      const sortedScheduleData = scheduleData.map((item, originalIndex) => ({
-        ...item,
-        originalIndex
-      })).sort((a, b) => {
-        const indexA = sortedMonths.indexOf(a.month);
-        const indexB = sortedMonths.indexOf(b.month);
-        return indexA - indexB;
-      });
-
-      const nextMonthNum = (currentMonthNum % 12) + 1;
-
-      sortedScheduleData.forEach((item) => {
-        const index = item.originalIndex;
-        const monthNum = parseInt(item.month.replace('月', ''), 10);
-        const isCurrentOrNext = (monthNum === currentMonthNum || monthNum === nextMonthNum);
-
-        const tr = document.createElement('tr');
-        tr.className = isCurrentOrNext ? 'schedule-row-current' : 'schedule-row-other';
-
-        const tdCheck = document.createElement('td');
-        tdCheck.style.textAlign = 'center';
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'schedule-checkbox';
-        checkbox.id = `sched-chk-${index}`;
-        
-        // 保存された状態を反映
-        checkbox.checked = !!cachedScheduleStates[index];
-
-        // チェック状態が変わったらFirebaseに保存
-        checkbox.addEventListener('change', (e) => {
-          const updates = {};
-          updates[index] = e.target.checked;
-          update(scheduleStateRef, updates);
-        });
-
-        tdCheck.appendChild(checkbox);
-
-        const tdMonth = document.createElement('td');
-        tdMonth.textContent = item.month;
-
-        const tdContent = document.createElement('td');
-        tdContent.textContent = item.content;
-
-        tr.appendChild(tdCheck);
-        tr.appendChild(tdMonth);
-        tr.appendChild(tdContent);
-        scheduleTableBody.appendChild(tr);
-      });
-    }
-
-    footerScheduleOpenBtn.addEventListener('click', () => {
-      renderScheduleTable();
-      scheduleModalOverlay.classList.add('active');
-    });
-    const closeScheduleModal = () => scheduleModalOverlay.classList.remove('active');
-    scheduleModalCloseX.addEventListener('click', closeScheduleModal);
-    scheduleModalCloseBtn.addEventListener('click', closeScheduleModal);
-
-    scheduleUncheckAllBtn.addEventListener('click', () => {
-      const updates = {};
-      scheduleData.forEach((_, index) => {
-        updates[index] = false;
-      });
-      update(scheduleStateRef, updates);
-    });
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
     const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
@@ -2218,117 +2237,7 @@
       }
 
       ctx.globalCompositeOperation = 'source-over';
-
       switch (currentBrushType) {
-        case 'calligraphy-brush':
-          ctx.globalAlpha = opacity;
-          ctx.strokeStyle = color;
-          ctx.lineCap = 'round';
-          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-          break;
-
-        case 'calligraphy-pen':
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = color;
-          const stepsCallig = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= stepsCallig; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
-            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
-            ctx.beginPath();
-            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
-        case 'airbrush':
-          ctx.globalAlpha = opacity * 0.15;
-          ctx.fillStyle = color;
-          const airSteps = Math.max(1, Math.floor(dist / 2));
-          for (let i = 0; i <= airSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
-            const numParticles = Math.floor(baseSize * 2);
-            for (let p = 0; p < numParticles; p++) {
-              const r = Math.random() * baseSize * 1.2;
-              const a = Math.random() * Math.PI * 2;
-              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
-            }
-          }
-          break;
-
-        case 'oil':
-          ctx.globalAlpha = opacity * 0.7;
-          ctx.strokeStyle = color;
-          ctx.lineCap = 'butt';
-          ctx.lineWidth = baseSize;
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-          break;
-
-        case 'crayon':
-          ctx.globalAlpha = opacity * 0.6;
-          ctx.fillStyle = color;
-          const craySteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= craySteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
-            for (let j = 0; j < baseSize * 1.5; j++) {
-              const rx = (Math.random() - 0.5) * baseSize;
-              const ry = (Math.random() - 0.5) * baseSize;
-              if (Math.hypot(rx, ry) <= baseSize / 2) {
-                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
-              }
-            }
-          }
-          break;
-
-        case 'marker':
-          ctx.globalAlpha = opacity * 0.4;
-          ctx.fillStyle = color;
-          const markSteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= markSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
-            ctx.beginPath();
-            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
-        case 'pencil':
-          ctx.globalAlpha = opacity * 0.8;
-          ctx.fillStyle = color;
-          const pSteps = Math.max(1, Math.floor(dist));
-          for (let i = 0; i <= pSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
-            for (let j = 0; j < baseSize; j++) {
-              const rx = (Math.random() - 0.5) * (baseSize / 2);
-              const ry = (Math.random() - 0.5) * (baseSize / 2);
-              ctx.fillRect(curX + rx, curY + ry, 1, 1);
-            }
-          }
-          break;
-
-        case 'watercolor':
-          ctx.globalAlpha = opacity * 0.12;
-          ctx.fillStyle = color;
-          const wcSteps = Math.max(1, Math.floor(dist / 2));
-          for (let i = 0; i <= wcSteps; i++) {
-            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
-            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
-            ctx.beginPath();
-            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
-            ctx.fill();
-          }
-          break;
-
         case 'pen':
         default:
           ctx.globalAlpha = opacity;
@@ -2347,7 +2256,6 @@
 
     [canvasA, canvasB].forEach(targetCanvas => {
       let isTargetDrawing = false;
-
       function startDraw(e) {
         const activeObj = getActiveLayer();
         if (targetCanvas !== activeObj.canvas) return;
@@ -2479,36 +2387,17 @@
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
+            const MAX_WIDTH = 800, MAX_HEIGHT = 800;
             if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
+              if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
             } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
+              if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
             }
-            
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            
             const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            
-            push(messagesRef, { 
-              text: '', 
-              fileData: resizedDataUrl, 
-              fileName: file.name, 
-              fileType: 'image/jpeg', 
-              isImage: true, 
-              timestamp: Date.now() 
-            });
+            push(messagesRef, { text: '', fileData: resizedDataUrl, fileName: file.name, fileType: 'image/jpeg', isImage: true, timestamp: Date.now() });
             fileInput.value = '';
           };
           img.src = event.target.result;
@@ -2517,14 +2406,7 @@
       } else {
         const reader = new FileReader();
         reader.onload = (event) => {
-          push(messagesRef, { 
-            text: '', 
-            fileData: event.target.result, 
-            fileName: file.name, 
-            fileType: file.type, 
-            isImage: false, 
-            timestamp: Date.now() 
-          });
+          push(messagesRef, { text: '', fileData: event.target.result, fileName: file.name, fileType: file.type, isImage: false, timestamp: Date.now() });
           fileInput.value = '';
         };
         reader.readAsDataURL(file);
@@ -2688,6 +2570,483 @@
     }
 
     initChat();
+
+    // --- カレンダー機能のロジック (FamilyChatのDBに完全同期) ---
+    let calCurrentDate = new Date();
+    let calSelectedView = 'month';
+    let calendarEvents = [];
+    let calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
+    let currentViewingDateStr = null;
+
+    const calendarModalOverlay = document.getElementById('calendar-modal-overlay');
+    const calendarModalOpenBtn = document.getElementById('calendar-modal-open-btn');
+    const calendarModalCloseBtn = document.getElementById('calendar-modal-close-btn');
+
+    const calCalendarGrid = document.getElementById('cal-calendarGrid');
+    const calCurrentDateDisplay = document.getElementById('cal-currentDateDisplay');
+    const calPrevBtn = document.getElementById('cal-prevBtn');
+    const calNextBtn = document.getElementById('cal-nextBtn');
+    const calTodayBtn = document.getElementById('cal-todayBtn');
+    const calAddEventBtn = document.getElementById('cal-addEventBtn');
+    const calUpcomingEventsList = document.getElementById('cal-upcomingEventsList');
+    const calClearFilterBtn = document.getElementById('cal-clearFilterBtn');
+
+    const calViewModal = document.getElementById('cal-viewModal');
+    const calCloseViewModalBtn = document.getElementById('cal-closeViewModalBtn');
+    const calViewCloseBtn = document.getElementById('cal-viewCloseBtn');
+    const calViewEditBtn = document.getElementById('cal-viewEditBtn');
+    const calViewDate = document.getElementById('cal-viewDate');
+    const calViewDescriptionList = document.getElementById('cal-viewDescriptionList');
+
+    const calEventModal = document.getElementById('cal-eventModal');
+    const calModalTitle = document.getElementById('cal-modalTitle');
+    const calCloseModalBtn = document.getElementById('cal-closeModalBtn');
+    const calCancelModalBtn = document.getElementById('cal-cancelModalBtn');
+    const calEventForm = document.getElementById('cal-eventForm');
+    const calDeleteEventBtn = document.getElementById('cal-deleteEventBtn');
+
+    const calEventIdInput = document.getElementById('cal-eventId');
+    const calEventDateInput = document.getElementById('cal-eventDate');
+    const calEventColorInput = document.getElementById('cal-eventColor');
+    const calEventDescriptionInput = document.getElementById('cal-eventDescription');
+
+    calendarModalOpenBtn.addEventListener('click', () => {
+      calCurrentDate = new Date();
+      calendarModalOverlay.classList.add('active');
+      renderCalendarApp();
+    });
+    calendarModalCloseBtn.addEventListener('click', () => calendarModalOverlay.classList.remove('active'));
+    calendarModalOverlay.addEventListener('click', (e) => {
+      if (e.target === calendarModalOverlay) calendarModalOverlay.classList.remove('active');
+    });
+
+    // FamilyChatの `calendar_events` をリアルタイム受信
+    onValue(calendarEventsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      calendarEvents = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+      if (calendarModalOverlay.classList.contains('active')) {
+        renderCalendarApp();
+      }
+    });
+
+    function isJapaneseHoliday(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth() + 1;
+      const d = dateObj.getDate();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = `${y}-${pad(m)}-${pad(d)}`;
+
+      function getHolidays(year) {
+        let holidays = {};
+        holidays[`${year}-01-01`] = "元日";
+        holidays[`${year}-02-11`] = "建国記念の日";
+        holidays[`${year}-02-23`] = "天皇誕生日";
+        holidays[`${year}-04-29`] = "昭和の日";
+        holidays[`${year}-05-03`] = "憲法記念日";
+        holidays[`${year}-05-04`] = "みどりの日";
+        holidays[`${year}-05-05`] = "こどもの日";
+        holidays[`${year}-08-11`] = "山の日";
+        holidays[`${year}-11-03`] = "文化の日";
+        holidays[`${year}-11-23`] = "勤労感謝の日";
+
+        let vernalDay = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+        let autumnDay = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+        holidays[`${year}-03-${pad(vernalDay)}`] = "春分の日";
+        holidays[`${year}-09-${pad(autumnDay)}`] = "秋分の日";
+
+        let jan1 = new Date(year, 0, 1).getDay();
+        let adultDay = 1 + (1 - jan1 + 7) % 7 + 7;
+        holidays[`${year}-01-${pad(adultDay)}`] = "成人の日";
+
+        let jul1 = new Date(year, 6, 1).getDay();
+        let marineDay = 1 + (1 - jul1 + 7) % 7 + 14;
+        holidays[`${year}-07-${pad(marineDay)}`] = "海の日";
+
+        let sep1 = new Date(year, 8, 1).getDay();
+        let respectDay = 1 + (1 - sep1 + 7) % 7 + 14;
+        holidays[`${year}-09-${pad(respectDay)}`] = "敬老の日";
+
+        let oct1 = new Date(year, 9, 1).getDay();
+        let sportsDay = 1 + (1 - oct1 + 7) % 7 + 7;
+        holidays[`${year}-10-${pad(sportsDay)}`] = "スポーツの日";
+
+        let baseDates = Object.keys(holidays).sort();
+        let addedSubstitutes = {};
+        baseDates.forEach(dateStr => {
+          let dt = new Date(dateStr);
+          if (dt.getDay() === 0) {
+            let subDt = new Date(dt);
+            subDt.setDate(subDt.getDate() + 1);
+            while (holidays[`${subDt.getFullYear()}-${pad(subDt.getMonth()+1)}-${pad(subDt.getDate())}`]) {
+              subDt.setDate(subDt.getDate() + 1);
+            }
+            let subStr = `${subDt.getFullYear()}-${pad(subDt.getMonth()+1)}-${pad(subDt.getDate())}`;
+            addedSubstitutes[subStr] = "振替休日";
+          }
+        });
+        Object.assign(holidays, addedSubstitutes);
+        return holidays;
+      }
+
+      const currentYearHolidays = getHolidays(y);
+      return !!currentYearHolidays[dateStr];
+    }
+
+    calPrevBtn.addEventListener('click', () => {
+      if (calSelectedView === 'month') calCurrentDate.setMonth(calCurrentDate.getMonth() - 1);
+      else if (calSelectedView === 'week') calCurrentDate.setDate(calCurrentDate.getDate() - 7);
+      else calCurrentDate.setDate(calCurrentDate.getDate() - 1);
+      renderCalendarApp();
+    });
+
+    calNextBtn.addEventListener('click', () => {
+      if (calSelectedView === 'month') calCurrentDate.setMonth(calCurrentDate.getMonth() + 1);
+      else if (calSelectedView === 'week') calCurrentDate.setDate(calCurrentDate.getDate() + 7);
+      else calCurrentDate.setDate(calCurrentDate.getDate() + 1);
+      renderCalendarApp();
+    });
+
+    calTodayBtn.addEventListener('click', () => {
+      calCurrentDate = new Date();
+      renderCalendarApp();
+    });
+
+    calendarModalOverlay.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        calendarModalOverlay.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        calSelectedView = e.target.dataset.view;
+        renderCalendarApp();
+      });
+    });
+
+    document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.dataset.color;
+        if (calActiveColors.includes(color)) {
+          if (calActiveColors.length > 1) {
+            calActiveColors = calActiveColors.filter(c => c !== color);
+            btn.classList.remove('active');
+          } else {
+            calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
+            document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(b => b.classList.add('active'));
+          }
+        } else {
+          calActiveColors.push(color);
+          btn.classList.add('active');
+        }
+        renderCalendarApp();
+      });
+    });
+
+    calClearFilterBtn.addEventListener('click', () => {
+      calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
+      document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(b => b.classList.add('active'));
+      renderCalendarApp();
+    });
+
+    document.querySelectorAll('#cal-colorSelectContainer .color-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#cal-colorSelectContainer .color-select-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        calEventColorInput.value = btn.dataset.color;
+      });
+    });
+
+    calAddEventBtn.addEventListener('click', () => openCalModal());
+    calCloseModalBtn.addEventListener('click', closeCalModal);
+    calCancelModalBtn.addEventListener('click', closeCalModal);
+    calEventModal.addEventListener('click', (e) => {
+      if (e.target === calEventModal) closeCalModal();
+    });
+
+    const closeCalViewModal = () => { calViewModal.classList.remove('active'); };
+    calCloseViewModalBtn.addEventListener('click', closeCalViewModal);
+    calViewCloseBtn.addEventListener('click', closeCalViewModal);
+    calViewModal.addEventListener('click', (e) => {
+      if (e.target === calViewModal) closeCalViewModal();
+    });
+    calViewEditBtn.addEventListener('click', () => {
+      closeCalViewModal();
+      openCalModal(null, currentViewingDateStr);
+    });
+
+    calEventForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = calEventIdInput.value;
+      const newEvent = {
+        date: calEventDateInput.value,
+        color: calEventColorInput.value,
+        description: calEventDescriptionInput.value.trim()
+      };
+
+      if (id) {
+        await update(ref(calendarDb, `calendar_events/${id}`), newEvent);
+      } else {
+        await push(calendarEventsRef, newEvent);
+      }
+      closeCalModal();
+      renderCalendarApp();
+    });
+
+    calDeleteEventBtn.addEventListener('click', async () => {
+      const id = calEventIdInput.value;
+      if (!id) return;
+      if (confirm('この予定が削除されます。よろしいですか？')) {
+        await remove(ref(calendarDb, `calendar_events/${id}`));
+        closeCalModal();
+        renderCalendarApp();
+      }
+    });
+
+    function renderCalendarApp() {
+      renderCalHeaderDate();
+      renderCalCalendarGrid();
+      renderCalUpcomingEvents();
+    }
+
+    function renderCalHeaderDate() {
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth() + 1;
+      const day = calCurrentDate.getDate();
+
+      if (calSelectedView === 'month') {
+        calCurrentDateDisplay.textContent = `${year}年 ${month}月`;
+      } else if (calSelectedView === 'week') {
+        const startOfWeek = new Date(calCurrentDate);
+        startOfWeek.setDate(calCurrentDate.getDate() - calCurrentDate.getDay());
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        calCurrentDateDisplay.textContent = `${startOfWeek.getFullYear()}年 ${startOfWeek.getMonth() + 1}月${startOfWeek.getDate()}日 ～ ${endOfWeek.getMonth() + 1}月${endOfWeek.getDate()}日`;
+      } else {
+        calCurrentDateDisplay.textContent = `${year}年 ${month}月 ${day}日`;
+      }
+    }
+
+    function renderCalCalendarGrid() {
+      calCalendarGrid.innerHTML = '';
+      if (calSelectedView === 'month') {
+        renderCalMonthView();
+      } else if (calSelectedView === 'week') {
+        renderCalWeekView();
+      } else {
+        renderCalDayView();
+      }
+    }
+
+    function renderCalMonthView() {
+      calCalendarGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth();
+      const firstDayOfMonth = new Date(year, month, 1);
+      const startDayOfWeek = firstDayOfMonth.getDay();
+      const startDate = new Date(firstDayOfMonth);
+      startDate.setDate(firstDayOfMonth.getDate() - startDayOfWeek);
+
+      const today = new Date();
+      const totalCells = 42;
+
+      for (let i = 0; i < totalCells; i++) {
+        const cellDate = new Date(startDate);
+        cellDate.setDate(startDate.getDate() + i);
+        const isOtherMonth = cellDate.getMonth() !== month;
+        const isToday = cellDate.toDateString() === today.toDateString();
+        calCalendarGrid.appendChild(createCalDayCell(cellDate, isOtherMonth, isToday));
+      }
+    }
+
+    function createCalDayCell(dateObj, isOtherMonth = false, isToday = false) {
+      const cell = document.createElement('div');
+      // 要望1対応: 日にちの枠線サイズ（高さ・最小高さ）を固定
+      if (calSelectedView === 'month') {
+        cell.className = `calendar-cell p-1.5 flex flex-col gap-1 min-h-[135px] h-[135px] ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
+      } else {
+        cell.className = `calendar-cell p-3 flex flex-col gap-2 min-h-[150px] h-auto flex-1 ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
+      }
+
+      const dateStr = formatDate(dateObj);
+      const dayOfWeek = dateObj.getDay();
+      const isSundayOrHoliday = (dayOfWeek === 0) || isJapaneseHoliday(dateObj);
+
+      const dayHeader = document.createElement('div');
+      dayHeader.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 0 4px; margin-bottom: 2px; flex-shrink: 0;";
+      
+      const dayNumSpan = document.createElement('span');
+      dayNumSpan.className = `day-number text-xs font-bold ${isSundayOrHoliday ? 'text-rose-400' : 'text-slate-200'}`;
+      dayNumSpan.textContent = dateObj.getDate();
+
+      dayHeader.appendChild(dayNumSpan);
+      cell.appendChild(dayHeader);
+
+      cell.addEventListener('click', () => {
+        openCalViewModalForDate(dateStr);
+      });
+
+      const dayEvents = calendarEvents.filter(evt => calActiveColors.includes(evt.color) && evt.date === dateStr);
+      dayEvents.forEach(evt => {
+        const elem = document.createElement('div');
+        // 要望2対応: 予定表示用カードのクラス適用（フォントサイズ小さめ、角丸・余白調整）
+        elem.className = calSelectedView === 'month' ? `event-pill ${evt.color}` : `event-card-full ${evt.color}`;
+        elem.textContent = evt.description;
+        elem.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openCalViewModalForDate(dateStr);
+        });
+        cell.appendChild(elem);
+      });
+
+      return cell;
+    }
+
+    function renderCalWeekView() {
+      calCalendarGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+      const startOfWeek = new Date(calCurrentDate);
+      startOfWeek.setDate(calCurrentDate.getDate() - calCurrentDate.getDay());
+      const today = new Date();
+
+      for (let i = 0; i < 7; i++) {
+        const cellDate = new Date(startOfWeek);
+        cellDate.setDate(startOfWeek.getDate() + i);
+        const isToday = cellDate.toDateString() === today.toDateString();
+        calCalendarGrid.appendChild(createCalDayCell(cellDate, false, isToday));
+      }
+    }
+
+    function renderCalDayView() {
+      calCalendarGrid.style.gridTemplateColumns = '1fr';
+      const today = new Date();
+      const isToday = calCurrentDate.toDateString() === today.toDateString();
+      const cell = createCalDayCell(calCurrentDate, false, isToday);
+      cell.style.minHeight = '350px';
+      cell.style.padding = '16px';
+      calCalendarGrid.appendChild(cell);
+    }
+
+    function renderCalUpcomingEvents() {
+      calUpcomingEventsList.innerHTML = '';
+      const sortedEvents = [...calendarEvents]
+        .filter(e => calActiveColors.includes(e.color))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      if (sortedEvents.length === 0) {
+        calUpcomingEventsList.innerHTML = '<div style="font-size: 0.7rem; color: var(--text-muted); text-align: center; padding: 16px;">予定はありません</div>';
+        return;
+      }
+
+      sortedEvents.slice(0, 5).forEach(evt => {
+        const card = document.createElement('div');
+        card.className = `p-2 cursor-pointer transition ${evt.color}`;
+        card.style.cssText = "border-radius: 8px; margin-bottom: 4px;";
+        card.innerHTML = `
+          <div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 2px;"><i class="fa-regular fa-calendar"></i> ${evt.date}</div>
+          <div style="font-size: 0.65rem; white-space: pre-wrap; overflow: hidden; text-overflow: ellipsis;">${evt.description}</div>
+        `;
+        card.addEventListener('click', () => openCalViewModalForDate(evt.date));
+        calUpcomingEventsList.appendChild(card);
+      });
+    }
+
+    function openCalViewModalForDate(dateStr) {
+      currentViewingDateStr = dateStr;
+      const [y, m, d] = dateStr.split('-');
+      const dateObj = new Date(y, m - 1, d);
+      const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+      calViewDate.textContent = `${y}年${parseInt(m, 10)}月${parseInt(d, 10)}日(${weekDays[dateObj.getDay()]})`;
+      
+      const dayEvents = calendarEvents.filter(evt => evt.date === dateStr);
+      calViewDescriptionList.innerHTML = '';
+
+      if (dayEvents.length === 0) {
+        calViewDescriptionList.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); padding: 8px;">この日の予定はありません</div>';
+      } else {
+        dayEvents.forEach(evt => {
+          // 要望2対応: 予定表示モーダル内の各予定アイテムのフォントサイズを小さく (text-xs)
+          const itemDiv = document.createElement('div');
+          itemDiv.className = `p-2.5 rounded-xl text-xs whitespace-pre-wrap break-all flex justify-between items-start gap-2 ${evt.color}`;
+          
+          const textSpan = document.createElement('div');
+          textSpan.style.flex = "1";
+          textSpan.textContent = evt.description || '(詳細なし)';
+          itemDiv.appendChild(textSpan);
+
+          // 要望3対応: 編集・削除ボタンを右寄せでグループ化して配置 (flexレイアウト・shrink固定)
+          const actionsDiv = document.createElement('div');
+          actionsDiv.style.cssText = "display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; margin-left: auto;";
+
+          const editSingleBtn = document.createElement('button');
+          editSingleBtn.type = 'button';
+          editSingleBtn.className = 'secondary-btn';
+          editSingleBtn.style.cssText = "font-size: 0.7rem; padding: 3px 7px; color: #CDCDCD;";
+          editSingleBtn.textContent = '編集';
+          editSingleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeCalViewModal();
+            openCalModal(evt);
+          });
+          actionsDiv.appendChild(editSingleBtn);
+
+          const deleteSingleBtn = document.createElement('button');
+          deleteSingleBtn.type = 'button';
+          deleteSingleBtn.style.cssText = "padding: 3px 7px; background: rgba(244,63,94,0.2); border: 1px solid rgba(244,63,94,0.3); border-radius: 8px; font-size: 0.7rem; color: #CDCDCD; cursor: pointer;";
+          deleteSingleBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+          deleteSingleBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('この予定を削除しますか？')) {
+              await remove(ref(calendarDb, `calendar_events/${evt.id}`));
+              openCalViewModalForDate(dateStr);
+              renderCalendarApp();
+            }
+          });
+          actionsDiv.appendChild(deleteSingleBtn);
+
+          itemDiv.appendChild(actionsDiv);
+          calViewDescriptionList.appendChild(itemDiv);
+        });
+      }
+
+      calViewModal.classList.add('active');
+    }
+
+    function openCalModal(eventToEdit = null, defaultDateStr = null) {
+      if (eventToEdit) {
+        calModalTitle.textContent = "予定の編集";
+        calEventIdInput.value = eventToEdit.id;
+        calEventDateInput.value = eventToEdit.date;
+        setCalModalSelectedColor(eventToEdit.color);
+        calEventDescriptionInput.value = eventToEdit.description || '';
+        calDeleteEventBtn.classList.remove('hidden');
+      } else {
+        calModalTitle.textContent = "予定の新規追加";
+        calEventForm.reset();
+        calEventIdInput.value = '';
+        calEventDateInput.value = defaultDateStr || formatDate(calCurrentDate);
+        setCalModalSelectedColor('color-blue');
+        calDeleteEventBtn.classList.add('hidden');
+      }
+      calEventModal.classList.add('active');
+    }
+
+    function setCalModalSelectedColor(colorClass) {
+      calEventColorInput.value = colorClass;
+      document.querySelectorAll('#cal-colorSelectContainer .color-select-btn').forEach(btn => {
+        if (btn.dataset.color === colorClass) {
+          btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      });
+    }
+
+    function closeCalModal() {
+      calEventModal.classList.remove('active');
+    }
+
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
 
     if (localStorage.getItem('memo_app_unlocked') === 'true' || sessionStorage.getItem('memo_app_unlocked') === 'true') {
       unlockApp();
