@@ -1105,7 +1105,7 @@
       transform: translateX(18px);
     }
 
-    /* カレンダー拡張用配色・スタイル (MEMOテーマカラー) - 要望1対応: 固定サイズ化 */
+    /* カレンダー拡張用配色・スタイル */
     .calendar-cell {
       background-color: rgba(19, 27, 46, 0.4);
       border: 1px solid var(--border-color);
@@ -1152,7 +1152,6 @@
     }
     .event-pill:hover { opacity: 0.9; }
     
-    /* 要望2対応: 予定表示用カードの書式（フォント小さく、余白・角丸調整） */
     .event-card-full {
       font-size: 0.78rem;
       padding: 6px 10px;
@@ -1447,7 +1446,8 @@
       </div>
 
       <div style="display: flex; flex: 1; overflow: hidden;">
-        <aside style="width: 220px; border-right: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; background: rgba(11, 15, 25, 0.4); flex-shrink: 0;">
+        <!-- スマホでは非表示、md（768px）以上でflex表示 (hidden md:flex) -->
+        <aside class="w-56 border-r border-white/10 p-3 hidden md:flex flex-col gap-4 overflow-y-auto bg-[#0b0f19]/40 shrink-0" style="width: 220px;">
           <div>
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
               <h3 style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">カラーフィルター</h3>
@@ -2238,6 +2238,115 @@
 
       ctx.globalCompositeOperation = 'source-over';
       switch (currentBrushType) {
+        case 'calligraphy-brush':
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+
+        case 'calligraphy-pen':
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          const stepsCallig = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= stepsCallig; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
+            const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
+            ctx.beginPath();
+            ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'airbrush':
+          ctx.globalAlpha = opacity * 0.15;
+          ctx.fillStyle = color;
+          const airSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= airSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / airSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / airSteps);
+            const numParticles = Math.floor(baseSize * 2);
+            for (let p = 0; p < numParticles; p++) {
+              const r = Math.random() * baseSize * 1.2;
+              const a = Math.random() * Math.PI * 2;
+              ctx.fillRect(curX + r * Math.cos(a), curY + r * Math.sin(a), 1, 1);
+            }
+          }
+          break;
+
+        case 'oil':
+          ctx.globalAlpha = opacity * 0.7;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'butt';
+          ctx.lineWidth = baseSize;
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+          break;
+
+        case 'crayon':
+          ctx.globalAlpha = opacity * 0.6;
+          ctx.fillStyle = color;
+          const craySteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= craySteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
+            for (let j = 0; j < baseSize * 1.5; j++) {
+              const rx = (Math.random() - 0.5) * baseSize;
+              const ry = (Math.random() - 0.5) * baseSize;
+              if (Math.hypot(rx, ry) <= baseSize / 2) {
+                ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
+              }
+            }
+          }
+          break;
+
+        case 'marker':
+          ctx.globalAlpha = opacity * 0.4;
+          ctx.fillStyle = color;
+          const markSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= markSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
+        case 'pencil':
+          ctx.globalAlpha = opacity * 0.8;
+          ctx.fillStyle = color;
+          const pSteps = Math.max(1, Math.floor(dist));
+          for (let i = 0; i <= pSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
+            for (let j = 0; j < baseSize; j++) {
+              const rx = (Math.random() - 0.5) * (baseSize / 2);
+              const ry = (Math.random() - 0.5) * (baseSize / 2);
+              ctx.fillRect(curX + rx, curY + ry, 1, 1);
+            }
+          }
+          break;
+
+        case 'watercolor':
+          ctx.globalAlpha = opacity * 0.12;
+          ctx.fillStyle = color;
+          const wcSteps = Math.max(1, Math.floor(dist / 2));
+          for (let i = 0; i <= wcSteps; i++) {
+            const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+            const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+            ctx.beginPath();
+            ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+
         case 'pen':
         default:
           ctx.globalAlpha = opacity;
@@ -2857,7 +2966,6 @@
 
     function createCalDayCell(dateObj, isOtherMonth = false, isToday = false) {
       const cell = document.createElement('div');
-      // 要望1対応: 日にちの枠線サイズ（高さ・最小高さ）を固定
       if (calSelectedView === 'month') {
         cell.className = `calendar-cell p-1.5 flex flex-col gap-1 min-h-[135px] h-[135px] ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
       } else {
@@ -2885,7 +2993,6 @@
       const dayEvents = calendarEvents.filter(evt => calActiveColors.includes(evt.color) && evt.date === dateStr);
       dayEvents.forEach(evt => {
         const elem = document.createElement('div');
-        // 要望2対応: 予定表示用カードのクラス適用（フォントサイズ小さめ、角丸・余白調整）
         elem.className = calSelectedView === 'month' ? `event-pill ${evt.color}` : `event-card-full ${evt.color}`;
         elem.textContent = evt.description;
         elem.addEventListener('click', (e) => {
@@ -2960,7 +3067,6 @@
         calViewDescriptionList.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); padding: 8px;">この日の予定はありません</div>';
       } else {
         dayEvents.forEach(evt => {
-          // 要望2対応: 予定表示モーダル内の各予定アイテムのフォントサイズを小さく (text-xs)
           const itemDiv = document.createElement('div');
           itemDiv.className = `p-2.5 rounded-xl text-xs whitespace-pre-wrap break-all flex justify-between items-start gap-2 ${evt.color}`;
           
@@ -2969,7 +3075,6 @@
           textSpan.textContent = evt.description || '(詳細なし)';
           itemDiv.appendChild(textSpan);
 
-          // 要望3対応: 編集・削除ボタンを右寄せでグループ化して配置 (flexレイアウト・shrink固定)
           const actionsDiv = document.createElement('div');
           actionsDiv.style.cssText = "display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-shrink: 0; margin-left: auto;";
 
