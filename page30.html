@@ -1167,8 +1167,6 @@
     .color-blue { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border-left: 3px solid #3b82f6; }
     .color-yellow { background: rgba(234, 179, 8, 0.25); color: #fde047; border-left: 3px solid #eab308; }
     .color-red { background: rgba(244, 63, 94, 0.25); color: #fecdd3; border-left: 3px solid #f43f5e; }
-    .color-filter-btn { transition: all 0.2s; opacity: 0.4; border: 1px solid transparent; border-radius: 14px; }
-    .color-filter-btn.active { opacity: 1; border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 10px rgba(168, 85, 247, 0.25); transform: translateY(-1px); }
     .color-select-btn { transition: all 0.2s; opacity: 0.5; border: 2px solid transparent; }
     .color-select-btn.selected { opacity: 1; border-color: #ffffff; box-shadow: 0 0 12px rgba(168, 85, 247, 0.4); transform: scale(1.05); }
     .view-btn { padding: 6px 14px; font-size: 0.85rem; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: transparent; border: none; }
@@ -1445,24 +1443,6 @@
       </div>
 
       <div style="display: flex; flex: 1; overflow: hidden;">
-        <aside style="width: 220px; border-right: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; background: rgba(11, 15, 25, 0.4); flex-shrink: 0;">
-          <div>
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-              <h3 style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">カラーフィルター</h3>
-              <button id="cal-clearFilterBtn" style="font-size: 0.65rem; color: var(--text-muted); background: none; border: none; cursor: pointer; text-decoration: underline;">解除</button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;" id="cal-colorFiltersContainer">
-              <button type="button" data-color="color-blue" class="color-filter-btn active p-2 rounded-xl color-blue font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">blue</span></button>
-              <button type="button" data-color="color-yellow" class="color-filter-btn active p-2 rounded-xl color-yellow font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">yellow</span></button>
-              <button type="button" data-color="color-red" class="color-filter-btn active p-2 rounded-xl color-red font-semibold text-xs flex flex-col items-center justify-center gap-0.5"><span class="text-[9px] text-slate-400 font-normal">red</span></button>
-            </div>
-          </div>
-          <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-            <h3 style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">直近の予定</h3>
-            <div id="cal-upcomingEventsList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto;"></div>
-          </div>
-        </aside>
-
         <main style="flex: 1; display: flex; flex-direction: column; background: rgba(11, 15, 25, 0.2); overflow: hidden;">
           <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border-color); text-align: center; padding: 6px 0; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); background: rgba(19, 27, 46, 0.5); flex-shrink: 0;">
             <div style="color: #f43f5e;">日</div>
@@ -2595,8 +2575,6 @@
     const calNextBtn = document.getElementById('cal-nextBtn');
     const calTodayBtn = document.getElementById('cal-todayBtn');
     const calAddEventBtn = document.getElementById('cal-addEventBtn');
-    const calUpcomingEventsList = document.getElementById('cal-upcomingEventsList');
-    const calClearFilterBtn = document.getElementById('cal-clearFilterBtn');
 
     const calViewModal = document.getElementById('cal-viewModal');
     const calCloseViewModalBtn = document.getElementById('cal-closeViewModalBtn');
@@ -2726,31 +2704,6 @@
       });
     });
 
-    document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const color = btn.dataset.color;
-        if (calActiveColors.includes(color)) {
-          if (calActiveColors.length > 1) {
-            calActiveColors = calActiveColors.filter(c => c !== color);
-            btn.classList.remove('active');
-          } else {
-            calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
-            document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(b => b.classList.add('active'));
-          }
-        } else {
-          calActiveColors.push(color);
-          btn.classList.add('active');
-        }
-        renderCalendarApp();
-      });
-    });
-
-    calClearFilterBtn.addEventListener('click', () => {
-      calActiveColors = ['color-blue', 'color-yellow', 'color-red'];
-      document.querySelectorAll('#cal-colorFiltersContainer .color-filter-btn').forEach(b => b.classList.add('active'));
-      renderCalendarApp();
-    });
-
     document.querySelectorAll('#cal-colorSelectContainer .color-select-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#cal-colorSelectContainer .color-select-btn').forEach(b => b.classList.remove('selected'));
@@ -2808,7 +2761,6 @@
     function renderCalendarApp() {
       renderCalHeaderDate();
       renderCalCalendarGrid();
-      renderCalUpcomingEvents();
     }
 
     function renderCalHeaderDate() {
@@ -2924,30 +2876,6 @@
       cell.style.minHeight = '350px';
       cell.style.padding = '16px';
       calCalendarGrid.appendChild(cell);
-    }
-
-    function renderCalUpcomingEvents() {
-      calUpcomingEventsList.innerHTML = '';
-      const sortedEvents = [...calendarEvents]
-        .filter(e => calActiveColors.includes(e.color))
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      if (sortedEvents.length === 0) {
-        calUpcomingEventsList.innerHTML = '<div style="font-size: 0.7rem; color: var(--text-muted); text-align: center; padding: 16px;">予定はありません</div>';
-        return;
-      }
-
-      sortedEvents.slice(0, 5).forEach(evt => {
-        const card = document.createElement('div');
-        card.className = `p-2 cursor-pointer transition ${evt.color}`;
-        card.style.cssText = "border-radius: 8px; margin-bottom: 4px;";
-        card.innerHTML = `
-          <div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 2px;"><i class="fa-regular fa-calendar"></i> ${evt.date}</div>
-          <div style="font-size: 0.65rem; white-space: pre-wrap; overflow: hidden; text-overflow: ellipsis;">${evt.description}</div>
-        `;
-        card.addEventListener('click', () => openCalViewModalForDate(evt.date));
-        calUpcomingEventsList.appendChild(card);
-      });
     }
 
     function openCalViewModalForDate(dateStr) {
