@@ -1632,8 +1632,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, get, update, set as dbSet } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // 1. MEMO専用のFirebase設定 (セキュリティ向上のため、データベース側のルールで保護されています)
+    // 1. MEMO専用のFirebase設定
     const memoFirebaseConfig = {
       apiKey: "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
       authDomain: "memo-32979.firebaseapp.com",
@@ -1665,6 +1666,7 @@
     const db = getDatabase(memoApp); // MEMO用DB
     const calendarDb = getDatabase(familyChatApp); // カレンダー共有用DB
     const firestore = getFirestore(memoApp);
+    const auth = getAuth(memoApp); // 認証機能の初期化
     const appId = "memo_app_v2";
 
     const messagesRef = ref(db, 'memos');
@@ -1734,6 +1736,13 @@
     }
 
     async function verifyAndUnlock() {
+      try {
+        // メアド不要の匿名認証を実行
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("認証エラー:", error);
+      }
+
       if (rememberMeCheckbox.checked) {
         localStorage.setItem('memo_app_unlocked', 'true');
       } else {
