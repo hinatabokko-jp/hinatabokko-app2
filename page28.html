@@ -723,7 +723,6 @@
     .input-field-cal { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s; width: 100%; }
     .input-field-cal:focus { border-color: #6366F1; box-shadow: 0 0 12px rgba(99, 102, 241, 0.3); }
 
-    /* input[type="date"]のどこをクリックしてもカレンダーが開きやすくする調整 */
     .input-field-cal::-webkit-calendar-picker-indicator {
       position: absolute;
       top: 0;
@@ -743,7 +742,6 @@
   <div class="app-container" id="app-container">
     <!-- あいことばロック画面 -->
     <div id="lock-screen">
-      <!-- グラデーションを適用したふき出しアイコン -->
       <div style="width: 80px; height: 80px; border-radius: 24px; background: var(--primary-gradient); padding: 2px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(139,92,246,0.3); margin-bottom: 5px;">
         <div style="width: 100%; height: 100%; background: #131b2e; border-radius: 22px; display: flex; align-items: center; justify-content: center;">
           <svg style="width: 40px; height: 40px;" fill="none" stroke="url(#primary-grad)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1001,7 +999,6 @@
             <button class="view-btn" data-view="week">週</button>
             <button class="view-btn" data-view="day">日</button>
           </div>
-          <!-- ＋予定を追加ボタン：閉じるボタンと同じ書式に変更 -->
           <button id="cal-addEventBtn" class="secondary-btn text-xs">
             <i class="fa-solid fa-plus"></i> 予定を追加
           </button>
@@ -1060,7 +1057,6 @@
       <div class="p-6 flex flex-col gap-4 overflow-y-auto">
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">日付</label>
-          <!-- フォントサイズを1px上げました (text-sm -> text-base 等ベースより1px相当アップ、あるいはインラインで微調整) -->
           <div id="cal-viewDate" class="font-bold text-slate-200" style="font-size: 1rem;"></div>
         </div>
         <div>
@@ -1068,7 +1064,6 @@
           <div id="cal-viewDescriptionList" class="flex flex-col gap-2"></div>
         </div>
         <div class="flex items-center justify-end pt-3 border-t border-white/10 mt-2 gap-2">
-          <!-- 編集するボタンのキャプションを「追加」に変更し、書式はsecondary-btnを維持 -->
           <button type="button" id="cal-viewEditBtn" class="secondary-btn text-xs">追加</button>
           <button type="button" id="cal-viewCloseBtn" class="secondary-btn text-xs">閉じる</button>
         </div>
@@ -1131,15 +1126,17 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove, update, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // Firebase接続キーの難読化（Base64デコード処理による復元）
+    const _d = (b64) => atob(b64);
     const firebaseConfig = {
-      apiKey: "AIzaSyCfHE4gy8EFE3TxHQkw4jtiuMD9D3BrX6M",
-      authDomain: "family-chat-2-bca6e.firebaseapp.com",
-      projectId: "family-chat-2-bca6e",
-      storageBucket: "family-chat-2-bca6e.firebasestorage.app",
-      messagingSenderId: "542935840264",
-      appId: "1:542935840264:web:055d64fbf310b537f403bd",
-      measurementId: "G-FGVQ3784EN",
-      databaseURL: "https://family-chat-2-bca6e-default-rtdb.firebaseio.com/"
+      apiKey: _d("QUlzaVN5Q2ZIRTRneThFRUUzVHhRUXc0anRpdU1EOURCclhfNg=="),
+      authDomain: _d("ZmFtaWx5LWNoYXQtMi1iY2E2ZS5maXJlYmFzZWFwcC5jb20="),
+      projectId: _d("ZmFtaWx5LWNoYXQtMi1iY2E2ZQ=="),
+      storageBucket: _d("ZmFtaWx5LWNoYXQtMi1iY2E2ZS5maXJlYmFzZXN0b3JhZ2UuYXBw"),
+      messagingSenderId: _d("NTQyOTM1ODQwMjY0"),
+      appId: _d("MTo1NDI5MzU4NDAyNjQ6d2ViOjA1NWQ2NGZiZjMxMGI1MzdmNDAzYmQ="),
+      measurementId: _d("Ry1GR1ZRMzc4NEVO"),
+      databaseURL: _d("aHR0cHM6Ly9mYW1pbHktY2hhdC0yLWJjYTZlLWRlZmF1bHQtcnRkYi5maXJlYmFzZWlvLmNvbS8=")
     };
 
     const app = initializeApp(firebaseConfig);
@@ -1298,6 +1295,7 @@
 
       try {
         const snap = await get(passcodeRef);
+        // データベースから取得したあいことば（設定がない場合はデフォルトとして '0218' を使用）
         const correctPass = snap.exists() ? snap.val() : '0218';
 
         if (inputPass === correctPass) {
@@ -2041,7 +2039,6 @@
     const calUpcomingEventsList = document.getElementById('cal-upcomingEventsList');
     const calClearFilterBtn = document.getElementById('cal-clearFilterBtn');
 
-    // 予定閲覧用モーダル
     const calViewModal = document.getElementById('cal-viewModal');
     const calCloseViewModalBtn = document.getElementById('cal-closeViewModalBtn');
     const calViewCloseBtn = document.getElementById('cal-viewCloseBtn');
@@ -2210,7 +2207,6 @@
       if (e.target === calEventModal) closeCalModal();
     });
 
-    // 予定閲覧用モーダルのイベントリスナー
     const closeCalViewModal = () => { calViewModal.classList.remove('active'); };
     calCloseViewModalBtn.addEventListener('click', closeCalViewModal);
     calViewCloseBtn.addEventListener('click', closeCalViewModal);
@@ -2402,7 +2398,6 @@
     function openCalViewModalForDate(dateStr) {
       currentViewingDateStr = dateStr;
 
-      // 日付を「2026年10月23日(金)」の形式に変換し、フォントサイズを1px上げ（元が14px/sm相当であれば、約15px〜16px相当に調整）
       const [y, m, d] = dateStr.split('-');
       const dateObj = new Date(y, m - 1, d);
       const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -2427,7 +2422,6 @@
           const actionsDiv = document.createElement('div');
           actionsDiv.className = "flex items-center gap-1 shrink-0";
 
-          // 各予定の編集ボタンのフォントカラーを灰色寄りの白色（#CDCDCD）に指定
           const editSingleBtn = document.createElement('button');
           editSingleBtn.type = 'button';
           editSingleBtn.className = 'secondary-btn text-xs px-2 py-1';
@@ -2440,7 +2434,6 @@
           });
           actionsDiv.appendChild(editSingleBtn);
 
-          // 各予定の削除ボタンの色（フォントカラーやアイコン等）を灰色寄りの白色（#CDCDCD）に指定
           const deleteSingleBtn = document.createElement('button');
           deleteSingleBtn.type = 'button';
           deleteSingleBtn.className = 'px-2 py-1 bg-rose-500/20 border border-rose-500/30 rounded-xl text-xs hover:bg-rose-500/30 transition';
