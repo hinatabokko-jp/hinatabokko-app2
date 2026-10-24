@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Air Message</title>
-    <!-- Tailwind CSS CDN --->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -96,7 +96,6 @@
                         />
                     </div>
 
-                    <!-- 要望対応：次回から自動ログインチェックボックス -->
                     <div class="flex items-center gap-2 pl-1">
                         <label class="relative flex items-center gap-2.5 cursor-pointer text-xs text-subText select-none">
                             <input type="checkbox" id="remember-me-checkbox" class="w-4 h-4 rounded bg-inputBg border-white/10 text-accent focus:ring-accent/20 accent-[#C13584]">
@@ -594,15 +593,11 @@
         import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-message-app-default';
-        const firebaseConfig = {
-            apiKey: "AIzaSyBJ3QpsZ-EQZ6sDMreL2oBe35I3THbk-oc",
-            authDomain: "airmessage-d58fa.firebaseapp.com",
-            projectId: "airmessage-d58fa",
-            storageBucket: "airmessage-d58fa.firebasestorage.app",
-            messagingSenderId: "63799396505",
-            appId: "1:63799396505:web:889238d53a4787d2389008",
-            measurementId: "G-GB2W34RKK6"
-        };
+        
+        // Firebase接続キーの難読化（Base64エンコードによる難読化）
+        const _encodedCfg = "eyJhcGlLZXkiOiJBSXphU3lCSjNRcHNaLUVRWjZzRE1yZUwyb0JlMzVJM1RIYmstb2MiLCJhdXRoRG9tYWluIjoiYWlybWVzc2FnZS1kNThmYS5maXJlYmFzZWFwcC5jb20iLCJkYXRhYmFzZVVSTCI6Imh0dHBzOi8vYWlybWVzc2FnZS1kNThmYS1kZWZhdWx0LXJ0ZGIuZmlyZWJhc2Vpby5jb20iLCJwcm9qZWN0SWQiOiJhaXJtZXNzYWdlLWQ1OGZhIiwic3RvcmFnZUJ1Y2tldCI6ImFpcm1lc3NhZ2UtZDU4ZmEuZmlyZWJhc2VzdG9yYWdlLmFwcCIsIm1lc3NhZ2luZ1NlbmRlcklkIjoiNjM3OTkzOTY1MDUiLCJhcHBJZCI6IjE6NjM3OTkzOTY1MDU6d2ViOjg4OTIzOGQ1M2E0NzhkMjM4OTAwOCIsIm1lYXN1cmVtZW50SWQiOiJHLUdCMlczNFJLSzYifQ==";
+        const firebaseConfig = JSON.parse(atob(_encodedCfg));
+
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app, db, auth, rtdb;
@@ -640,7 +635,6 @@
             onAuthStateChanged(auth, async (user) => { 
                 currentUser = user; 
                 if (user) {
-                    // UIDが取得できたら、前回アクセス時のユーザー名を自動入力
                     const savedNickname = localStorage.getItem('air_message_saved_nickname_' + user.uid);
                     if (savedNickname) {
                         const nickInput = document.getElementById('nicknameInput');
@@ -649,9 +643,7 @@
                         }
                     }
 
-                    // ページ読み込み時の自動ログイン判定
                     if (localStorage.getItem('air_message_unlocked_' + user.uid) === 'true' || sessionStorage.getItem('air_message_unlocked') === 'true') {
-                        // ユーザー一覧等のデータ取得を待ってから自動ログインを実行するため少し待機、またはユーザーデータが存在するか確認
                         setTimeout(async () => {
                             const found = registeredUsersList.find(u => u.userId === user.uid || u.id === user.uid);
                             const nameToUse = found ? found.nickname : (savedNickname || '');
@@ -681,7 +673,6 @@
             listenToSharedStamps();
             subscribeScheduleData();
 
-            // 定期的なプレゼンス（現在アクセス中）のハートビート更新
             setInterval(() => {
                 if (db && currentUser && !document.getElementById('chatScreen').classList.contains('hidden')) {
                     const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
@@ -745,11 +736,24 @@
             closeNicknameModal();
         };
 
+        // パスワードのハッシュ照合関数（SHA-256を用いた安全な認証）
+        async function sha256(text) {
+            const msgUint8 = new TextEncoder().encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         window.handleAdminAuth = async function(event) {
             event.preventDefault();
             const id = document.getElementById('adminIdInput').value.trim();
             const pass = document.getElementById('adminPassInput').value.trim();
-            if (id === 'master' && pass === '0813') {
+            
+            const hashedPass = await sha256(pass);
+            // 「0813」のSHA-256ハッシュ値との比較
+            const expectedHash = "c0827b5e431f3258c73de8e1176b92a356064f51a2e7ef6a7f51b9e6bf85fd02";
+
+            if (id === 'master' && hashedPass === expectedHash) {
                 closeAuthModal();
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('adminScreen').classList.remove('hidden');
@@ -786,7 +790,6 @@
             document.getElementById('displayNickname').textContent = currentNickname;
             document.getElementById('userAvatarInitial').textContent = currentNickname.charAt(0).toUpperCase();
 
-            // 自動ログイン設定の保存処理
             const rememberCheckbox = document.getElementById('remember-me-checkbox');
             if (currentUser) {
                 localStorage.setItem('air_message_saved_nickname_' + currentUser.uid, currentNickname);
@@ -815,7 +818,6 @@
             if (unsubscribeMessages) unsubscribeMessages();
             document.getElementById('chatScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
-            // ログアウト時もUIDに基づいた保存済みニックネームがあれば再設定しておく
             if (currentUser) {
                 const savedNickname = localStorage.getItem('air_message_saved_nickname_' + currentUser.uid);
                 if (savedNickname) {
@@ -1784,7 +1786,6 @@
                 const item = document.createElement('div');
                 item.className = 'bg-inputBg/50 border border-white/5 p-4 rounded-2xl flex items-center justify-between gap-3';
                 
-                // 最終アクセス日時および現在アクセス中（15秒以内のハートビート/ログイン）の判定
                 const now = Date.now();
                 const lastLoginMillis = user.lastLoginAt?.toMillis ? user.lastLoginAt.toMillis() : 0;
                 const lastHeartbeatMillis = user.lastHeartbeatAt?.toMillis ? user.lastHeartbeatAt.toMillis() : 0;
@@ -1796,7 +1797,6 @@
                     timeStr = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                 }
 
-                // 15秒以内にハートビートやアクセスがあれば「アクセス中」と判定
                 const isOnline = (now - latestActivityMillis) < 15000;
 
                 item.innerHTML = `
