@@ -71,14 +71,14 @@
           </svg>
           サイズ・変形モード
         </h2>
- <div class="grid grid-cols-2 gap-2">
-  <button type="button" data-mode="fit" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-600 flex items-center justify-center transition-all">
-    余白追加
-  </button>
-  <button type="button" data-mode="crop" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border bg-emerald-500/20 border-emerald-500 text-emerald-300 flex items-center justify-center transition-all">
-    クロップ
-  </button>
-</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" data-mode="fit" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-slate-600 flex items-center justify-center transition-all">
+            余白追加
+          </button>
+          <button type="button" data-mode="crop" class="mode-btn px-3 py-2 rounded-xl text-xs font-medium border bg-emerald-500/20 border-emerald-500 text-emerald-300 flex items-center justify-center transition-all">
+            クロップ
+          </button>
+        </div>
         <select id="resolution-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500">
           <option value="512">512 x 512 px (スタンプ最適・推奨)</option>
           <option value="line-370x320" selected>370 x 320 px (LINEスタンプ規定サイズ)</option>
@@ -88,41 +88,105 @@
       </div>
 
       <!-- Stamp Border Feature -->
-      <div id="border-tools-panel" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3 opacity-40 pointer-events-none transition-all">
+      <div id="border-tools-panel" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-4 opacity-40 pointer-events-none transition-all max-h-[600px] overflow-y-auto">
         <h2 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
           <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
           </svg>
-          スタンプ枠・縁取り
+          スタンプ枠・縁取り設定
         </h2>
         
-        <!-- 白フチ一括追加ボタン -->
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" id="add-white-border-10-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            10px白フチ
-          </button>
-          <button type="button" id="add-white-border-btn" class="w-full bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            20px白フチ
-          </button>
+        <!-- 1つ目の縁取り設定 -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-200">1つ目の縁取り</span>
+            <span id="border1-size-val" class="text-xs text-emerald-400 font-semibold">10px</span>
+          </div>
+
+          <!-- 太さ選択ボタン: 5px, 10px, 20px -->
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" data-b1-size="5" class="b1-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">5px</button>
+            <button type="button" data-b1-size="10" class="b1-preset-btn bg-emerald-500/20 border border-emerald-500 text-emerald-300 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">10px</button>
+            <button type="button" data-b1-size="20" class="b1-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">20px</button>
+          </div>
+
+          <!-- 1つ目の縁取りスライダー -->
+          <input type="range" id="border1-size-range" min="0" max="50" value="10" class="w-full accent-emerald-500">
+
+          <!-- 1つ目の縁取りカラー選択 -->
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-[11px] text-slate-400">縁取りの色:</span>
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="border1-color" value="#ffffff" class="w-6 h-6 rounded cursor-pointer bg-transparent border border-slate-700 p-0.5">
+              <button type="button" class="b1-color-preset w-4 h-4 rounded-full bg-white border border-slate-600" data-color="#ffffff"></button>
+              <button type="button" class="b1-color-preset w-4 h-4 rounded-full bg-black border border-slate-600" data-color="#000000"></button>
+              <button type="button" class="b1-color-preset w-4 h-4 rounded-full bg-yellow-400 border border-slate-600" data-color="#facc15"></button>
+              <button type="button" class="b1-color-preset w-4 h-4 rounded-full bg-pink-500 border border-slate-600" data-color="#ec4899"></button>
+            </div>
+          </div>
         </div>
 
-        <!-- 白フチの太さ調整スライダー -->
-        <div class="space-y-1.5 pt-1">
-          <div class="flex justify-between text-[11px] text-slate-400">
-            <span>白フチの太さ調整:</span>
-            <span id="border-radius-val" class="text-emerald-400 font-semibold">20px</span>
+        <!-- 2つ目の縁取り設定 -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="border2-enable" class="w-4 h-4 rounded accent-emerald-500 bg-slate-800 border-slate-700">
+              <span class="text-xs font-semibold text-slate-200">2つ目の縁取り（外側）</span>
+            </label>
+            <span id="border2-size-val" class="text-xs text-emerald-400 font-semibold opacity-40">0px</span>
           </div>
-          <input type="range" id="border-radius-range" min="1" max="50" value="20" class="w-full accent-emerald-500">
-          <button type="button" id="apply-custom-border-btn" class="w-full mt-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/50 text-emerald-300 py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5">
-            指定サイズで白フチを適用
-          </button>
+
+          <div id="border2-controls" class="space-y-2.5 opacity-40 pointer-events-none transition-all">
+            <!-- 太さ選択ボタン: 5px, 10px, 20px -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" data-b2-size="5" class="b2-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">5px</button>
+              <button type="button" data-b2-size="10" class="b2-preset-btn bg-emerald-500/20 border border-emerald-500 text-emerald-300 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">10px</button>
+              <button type="button" data-b2-size="20" class="b2-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all">20px</button>
+            </div>
+
+            <!-- 2つ目の縁取りスライダー -->
+            <input type="range" id="border2-size-range" min="1" max="50" value="10" class="w-full accent-emerald-500">
+
+            <!-- 2つ目の縁取りカラー選択 -->
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-[11px] text-slate-400">2つ目の色:</span>
+              <div class="flex items-center gap-1.5">
+                <input type="color" id="border2-color" value="#000000" class="w-6 h-6 rounded cursor-pointer bg-transparent border border-slate-700 p-0.5">
+                <button type="button" class="b2-color-preset w-4 h-4 rounded-full bg-black border border-slate-600" data-color="#000000"></button>
+                <button type="button" class="b2-color-preset w-4 h-4 rounded-full bg-white border border-slate-600" data-color="#ffffff"></button>
+                <button type="button" class="b2-color-preset w-4 h-4 rounded-full bg-blue-500 border border-slate-600" data-color="#3b82f6"></button>
+                <button type="button" class="b2-color-preset w-4 h-4 rounded-full bg-red-500 border border-slate-600" data-color="#ef4444"></button>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- シャドウ設定 -->
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="shadow-enable" class="w-4 h-4 rounded accent-emerald-500 bg-slate-800 border-slate-700">
+              <span class="text-xs font-semibold text-slate-200">外側にシャドウ（影）</span>
+            </label>
+          </div>
+
+          <div id="shadow-controls" class="space-y-2 opacity-40 pointer-events-none transition-all">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>ぼかし量: <span id="shadow-blur-val" class="text-emerald-400">8px</span></span>
+              <span>影の距離: <span id="shadow-offset-val" class="text-emerald-400">4px</span></span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="range" id="shadow-blur-range" min="1" max="40" value="8" class="w-full accent-emerald-500">
+              <input type="range" id="shadow-offset-range" min="0" max="30" value="4" class="w-full accent-emerald-500">
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-[11px] text-slate-400">影の色:</span>
+              <input type="color" id="shadow-color" value="#000000" class="w-6 h-6 rounded cursor-pointer bg-transparent border border-slate-700 p-0.5">
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Drawing Tools -->
@@ -134,9 +198,21 @@
           描画ツール (選択中のレイヤーに反映)
         </h2>
 
-        <div class="flex items-center gap-2">
-          <button type="button" id="tool-pen" class="flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all">ペン</button>
-          <button type="button" id="tool-eraser" class="flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all">消しゴム</button>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="flex flex-col gap-1">
+            <button type="button" id="tool-pen" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all">ペン</button>
+            <button type="button" id="undo-pen-btn" class="px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center justify-center gap-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+              ペンの元に戻す
+            </button>
+          </div>
+          <div class="flex flex-col gap-1">
+            <button type="button" id="tool-eraser" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all">消しゴム</button>
+            <button type="button" id="undo-eraser-btn" class="px-2 py-1 rounded-lg text-[11px] font-medium bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center justify-center gap-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+              消しゴムの元に戻す
+            </button>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -242,8 +318,8 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
               </button>
-              <div class="w-7 h-7 rounded border border-slate-700 bg-slate-800 flex items-center justify-center text-[10px] text-slate-400 font-bold">描</div>
-              <span class="text-xs font-medium text-slate-200">レイヤー 2 (描き込み)</span>
+              <div class="w-7 h-7 rounded border border-slate-700 bg-slate-800 flex items-center justify-center text-[10px] text-slate-400 font-bold">縁</div>
+              <span class="text-xs font-medium text-slate-200">レイヤー 2 (縁取り/装飾)</span>
             </div>
             <span class="text-[10px] text-slate-500">中層</span>
           </div>
@@ -295,6 +371,21 @@
     let brushSize = 8;
     let isDrawing = false;
 
+    // Undo 履歴スタック (ペンと消しゴム用)
+    let penHistory = [];
+    let eraserHistory = [];
+
+    // 縁取り・シャドウ状態パラメータ
+    let b1Size = 10;
+    let b1Color = '#ffffff';
+    let b2Enabled = false;
+    let b2Size = 10;
+    let b2Color = '#000000';
+    let shadowEnabled = false;
+    let shadowBlur = 8;
+    let shadowOffset = 4;
+    let shadowColor = '#000000';
+
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const emptyState = document.getElementById('empty-state');
@@ -309,13 +400,31 @@
     const downloadBtn = document.getElementById('download-btn');
     const copyBtn = document.getElementById('copy-btn');
     const resolutionSelect = document.getElementById('resolution-select');
-    
-    const addWhiteBorder10Btn = document.getElementById('add-white-border-10-btn');
-    const addWhiteBorderBtn = document.getElementById('add-white-border-btn');
-    const borderRadiusRange = document.getElementById('border-radius-range');
-    const borderRadiusVal = document.getElementById('border-radius-val');
-    const applyCustomBorderBtn = document.getElementById('apply-custom-border-btn');
 
+    // UI Elements for Border & Shadow
+    const border1SizeRange = document.getElementById('border1-size-range');
+    const border1SizeVal = document.getElementById('border1-size-val');
+    const border1ColorPicker = document.getElementById('border1-color');
+
+    const border2Enable = document.getElementById('border2-enable');
+    const border2Controls = document.getElementById('border2-controls');
+    const border2SizeRange = document.getElementById('border2-size-range');
+    const border2SizeVal = document.getElementById('border2-size-val');
+    const border2ColorPicker = document.getElementById('border2-color');
+
+    const shadowEnable = document.getElementById('shadow-enable');
+    const shadowControls = document.getElementById('shadow-controls');
+    const shadowBlurRange = document.getElementById('shadow-blur-range');
+    const shadowBlurVal = document.getElementById('shadow-blur-val');
+    const shadowOffsetRange = document.getElementById('shadow-offset-range');
+    const shadowOffsetVal = document.getElementById('shadow-offset-val');
+    const shadowColorPicker = document.getElementById('shadow-color');
+
+    // Undo ボタン UI
+    const undoPenBtn = document.getElementById('undo-pen-btn');
+    const undoEraserBtn = document.getElementById('undo-eraser-btn');
+
+    // モード切り替え
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.mode-btn').forEach(b => {
@@ -333,10 +442,131 @@
       if (originalImage) processAndSetupLayers();
     });
 
-    borderRadiusRange.addEventListener('input', (e) => {
-      borderRadiusVal.textContent = e.target.value + 'px';
+    // 1つ目の縁取り イベント
+    function updateB1ButtonsUI(val) {
+      document.querySelectorAll('.b1-preset-btn').forEach(btn => {
+        if (parseInt(btn.dataset.b1Size) === val) {
+          btn.className = 'b1-preset-btn bg-emerald-500/20 border border-emerald-500 text-emerald-300 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all';
+        } else {
+          btn.className = 'b1-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all';
+        }
+      });
+    }
+
+    border1SizeRange.addEventListener('input', (e) => {
+      b1Size = parseInt(e.target.value, 10);
+      border1SizeVal.textContent = b1Size + 'px';
+      updateB1ButtonsUI(b1Size);
+      if (originalImage) processAndSetupLayers();
     });
 
+    document.querySelectorAll('.b1-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        b1Size = parseInt(btn.dataset.b1Size, 10);
+        border1SizeRange.value = b1Size;
+        border1SizeVal.textContent = b1Size + 'px';
+        updateB1ButtonsUI(b1Size);
+        if (originalImage) processAndSetupLayers();
+      });
+    });
+
+    border1ColorPicker.addEventListener('input', (e) => {
+      b1Color = e.target.value;
+      if (originalImage) generateBorders();
+    });
+
+    document.querySelectorAll('.b1-color-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        b1Color = btn.dataset.color;
+        border1ColorPicker.value = b1Color;
+        if (originalImage) generateBorders();
+      });
+    });
+
+    // 2つ目の縁取り イベント
+    function updateB2ButtonsUI(val) {
+      document.querySelectorAll('.b2-preset-btn').forEach(btn => {
+        if (parseInt(btn.dataset.b2Size) === val) {
+          btn.className = 'b2-preset-btn bg-emerald-500/20 border border-emerald-500 text-emerald-300 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all';
+        } else {
+          btn.className = 'b2-preset-btn bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all';
+        }
+      });
+    }
+
+    border2Enable.addEventListener('change', (e) => {
+      b2Enabled = e.target.checked;
+      if (b2Enabled) {
+        border2Controls.classList.remove('opacity-40', 'pointer-events-none');
+        border2SizeVal.classList.remove('opacity-40');
+        border2SizeVal.textContent = b2Size + 'px';
+      } else {
+        border2Controls.classList.add('opacity-40', 'pointer-events-none');
+        border2SizeVal.classList.add('opacity-40');
+        border2SizeVal.textContent = '0px';
+      }
+      if (originalImage) processAndSetupLayers();
+    });
+
+    border2SizeRange.addEventListener('input', (e) => {
+      b2Size = parseInt(e.target.value, 10);
+      border2SizeVal.textContent = b2Size + 'px';
+      updateB2ButtonsUI(b2Size);
+      if (originalImage) processAndSetupLayers();
+    });
+
+    document.querySelectorAll('.b2-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        b2Size = parseInt(btn.dataset.b2Size, 10);
+        border2SizeRange.value = b2Size;
+        border2SizeVal.textContent = b2Size + 'px';
+        updateB2ButtonsUI(b2Size);
+        if (originalImage) processAndSetupLayers();
+      });
+    });
+
+    border2ColorPicker.addEventListener('input', (e) => {
+      b2Color = e.target.value;
+      if (originalImage) generateBorders();
+    });
+
+    document.querySelectorAll('.b2-color-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        b2Color = btn.dataset.color;
+        border2ColorPicker.value = b2Color;
+        if (originalImage) generateBorders();
+      });
+    });
+
+    // シャドウ イベント
+    shadowEnable.addEventListener('change', (e) => {
+      shadowEnabled = e.target.checked;
+      if (shadowEnabled) {
+        shadowControls.classList.remove('opacity-40', 'pointer-events-none');
+      } else {
+        shadowControls.classList.add('opacity-40', 'pointer-events-none');
+      }
+      if (originalImage) processAndSetupLayers();
+    });
+
+    shadowBlurRange.addEventListener('input', (e) => {
+      shadowBlur = parseInt(e.target.value, 10);
+      shadowBlurVal.textContent = shadowBlur + 'px';
+      if (originalImage) processAndSetupLayers();
+    });
+
+    shadowOffsetRange.addEventListener('input', (e) => {
+      shadowOffset = parseInt(e.target.value, 10);
+      shadowOffsetVal.textContent = shadowOffset + 'px';
+      if (originalImage) processAndSetupLayers();
+    });
+
+    shadowColorPicker.addEventListener('input', (e) => {
+      shadowColor = e.target.value;
+      if (originalImage) generateBorders();
+    });
+
+    // レイヤーパネル操作
     document.querySelectorAll('.layer-item').forEach(item => {
       const layerId = parseInt(item.dataset.layer);
       
@@ -377,19 +607,20 @@
       });
     }
 
+    // 描画ツール関連
     const toolPen = document.getElementById('tool-pen');
     const toolEraser = document.getElementById('tool-eraser');
 
     toolPen.addEventListener('click', () => {
       currentTool = 'pen';
-      toolPen.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
-      toolEraser.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
+      toolPen.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
+      toolEraser.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
     });
 
     toolEraser.addEventListener('click', () => {
       currentTool = 'eraser';
-      toolEraser.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
-      toolPen.className = 'flex-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
+      toolEraser.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500 text-slate-950 flex items-center justify-center transition-all';
+      toolPen.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 flex items-center justify-center transition-all';
     });
 
     const penColorPicker = document.getElementById('pen-color');
@@ -408,6 +639,33 @@
       brushSizeVal.textContent = brushSize + 'px';
     });
 
+    // Undo ボタン更新処理
+    function updateUndoButtonsUI() {
+      undoPenBtn.disabled = penHistory.length === 0;
+      undoEraserBtn.disabled = eraserHistory.length === 0;
+    }
+
+    undoPenBtn.addEventListener('click', () => {
+      if (penHistory.length === 0) return;
+      const lastState = penHistory.pop();
+      const targetCtx = (activeLayer === 3) ? topCtx : middleCtx;
+      targetCtx.putImageData(lastState, 0, 0);
+      if (activeLayer === 3) generateBorders();
+      redrawLayers();
+      updateUndoButtonsUI();
+    });
+
+    undoEraserBtn.addEventListener('click', () => {
+      if (eraserHistory.length === 0) return;
+      const lastState = eraserHistory.pop();
+      const targetCtx = (activeLayer === 3) ? topCtx : middleCtx;
+      targetCtx.putImageData(lastState, 0, 0);
+      if (activeLayer === 3) generateBorders();
+      redrawLayers();
+      updateUndoButtonsUI();
+    });
+
+    // ファイル受け入れ
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10'));
     dropZone.addEventListener('drop', (e) => {
@@ -431,6 +689,9 @@
         const img = new Image();
         img.onload = () => {
           originalImage = img;
+          penHistory = [];
+          eraserHistory = [];
+          updateUndoButtonsUI();
           processAndSetupLayers();
           emptyState.classList.add('hidden');
           workspaceCard.classList.remove('hidden');
@@ -442,6 +703,7 @@
       reader.readAsDataURL(file);
     }
 
+    // 画像処理とレイヤー初期配置
     function processAndSetupLayers() {
       const img = originalImage;
       const resVal = resolutionSelect.value;
@@ -465,6 +727,14 @@
         canvasTitleLabel.textContent = `キャンバス (1:1 正方形)`;
       }
 
+      // 縁取りとシャドウの合計マージン計算（上下左右の余白確保・画像はみ出し防止）
+      let totalBorderPadding = b1Size;
+      if (b2Enabled) totalBorderPadding += b2Size;
+      if (shadowEnabled) totalBorderPadding += (shadowBlur + shadowOffset);
+
+      const paddedWidth = Math.max(1, targetWidth - totalBorderPadding * 2);
+      const paddedHeight = Math.max(1, targetHeight - totalBorderPadding * 2);
+
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = targetWidth;
       tempCanvas.height = targetHeight;
@@ -472,16 +742,16 @@
       tempCtx.clearRect(0, 0, targetWidth, targetHeight);
 
       if (resVal === 'line-370x320') {
-        // LINEスタンプ用の非正方形（370x320）フィットまたはクロップ処理
         if (currentMode === 'fit') {
-          const scale = Math.min(targetWidth / img.width, targetHeight / img.height);
+          const scale = Math.min(paddedWidth / img.width, paddedHeight / img.height);
           const dw = img.width * scale;
           const dh = img.height * scale;
           const dx = (targetWidth - dw) / 2;
           const dy = (targetHeight - dh) / 2;
           tempCtx.drawImage(img, dx, dy, dw, dh);
         } else {
-          const targetAspect = targetWidth / targetHeight;
+          // クロップモードでもマージン分を縮小して中央配置
+          const targetAspect = paddedWidth / paddedHeight;
           const imgAspect = img.width / img.height;
           let sx = 0, sy = 0, sw = img.width, sh = img.height;
           if (imgAspect > targetAspect) {
@@ -491,12 +761,12 @@
             sh = img.width / targetAspect;
             sy = (img.height - sh) / 2;
           }
-          tempCtx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+          tempCtx.drawImage(img, sx, sy, sw, sh, totalBorderPadding, totalBorderPadding, paddedWidth, paddedHeight);
         }
       } else {
         const maxDim = Math.max(img.width, img.height);
         if (currentMode === 'fit') {
-          const scale = targetWidth / maxDim;
+          const scale = paddedWidth / maxDim;
           const dw = img.width * scale;
           const dh = img.height * scale;
           const dx = (targetWidth - dw) / 2;
@@ -506,7 +776,7 @@
           const minDim = Math.min(img.width, img.height);
           const sx = (img.width - minDim) / 2;
           const sy = (img.height - minDim) / 2;
-          tempCtx.drawImage(img, sx, sy, minDim, minDim, 0, 0, targetWidth, targetHeight);
+          tempCtx.drawImage(img, sx, sy, minDim, minDim, totalBorderPadding, totalBorderPadding, paddedWidth, paddedHeight);
         }
       }
 
@@ -526,11 +796,37 @@
       dimensionBadge.textContent = `${targetWidth} x ${targetHeight} px`;
       fileNameLabel.textContent = originalFileName;
 
-      redrawLayers();
+      generateBorders();
     }
 
-    // 共通の白フチ生成関数
-    function applyWhiteBorder(radius) {
+    // 膨張（Dilation）マスク計算関数
+    function createDilatedMask(alphaMap, w, h, radius) {
+      if (radius <= 0) return alphaMap;
+      const dilatedMap = new Uint8Array(w * h);
+      const r2 = radius * radius;
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          if (alphaMap[y * w + x] === 1) {
+            for (let dy = -radius; dy <= radius; dy++) {
+              const ny = y + dy;
+              if (ny < 0 || ny >= h) continue;
+              for (let dx = -radius; dx <= radius; dx++) {
+                const nx = x + dx;
+                if (nx < 0 || nx >= w) continue;
+                if (dx * dx + dy * dy <= r2) {
+                  dilatedMap[ny * w + nx] = 1;
+                }
+              }
+            }
+          }
+        }
+      }
+      return dilatedMap;
+    }
+
+    // 縁取り＆シャドウの再生成処理
+    function generateBorders() {
       if (!originalImage) return;
 
       const w = targetWidth;
@@ -539,65 +835,110 @@
       const imgData = topCtx.getImageData(0, 0, w, h);
       const data = imgData.data;
 
-      const alphaMap = new Uint8Array(w * h);
+      // 元画像のアルファ値マップ取得
+      const originalAlpha = new Uint8Array(w * h);
       for (let i = 0; i < w * h; i++) {
-        alphaMap[i] = data[i * 4 + 3] > 10 ? 1 : 0;
+        originalAlpha[i] = data[i * 4 + 3] > 10 ? 1 : 0;
       }
 
-      const dilatedMap = new Uint8Array(w * h);
+      // 1つ目の縁取りマスク
+      const border1Alpha = (b1Size > 0) ? createDilatedMask(originalAlpha, w, h, b1Size) : originalAlpha;
 
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          let found = false;
-          for (let dy = -radius; dy <= radius && !found; dy++) {
-            const ny = y + dy;
-            if (ny < 0 || ny >= h) continue;
-            for (let dx = -radius; dx <= radius && !found; dx++) {
-              const nx = x + dx;
-              if (nx < 0 || nx >= w) continue;
-              if (dx * dx + dy * dy <= radius * radius) {
-                if (alphaMap[ny * w + nx] === 1) {
-                  found = true;
-                }
-              }
-            }
-          }
-          if (found) {
-            dilatedMap[y * w + x] = 1;
-          }
-        }
-      }
-
-      const borderCanvas = document.createElement('canvas');
-      borderCanvas.width = w;
-      borderCanvas.height = h;
-      const borderCtx = borderCanvas.getContext('2d', { willReadFrequently: true });
-      const borderImgData = borderCtx.createImageData(w, h);
-      const bData = borderImgData.data;
-
-      for (let i = 0; i < w * h; i++) {
-        if (dilatedMap[i] === 1 && alphaMap[i] === 0) {
-          bData[i * 4] = 255;
-          bData[i * 4 + 1] = 255;
-          bData[i * 4 + 2] = 255;
-          bData[i * 4 + 3] = 255;
-        }
-      }
-      borderCtx.putImageData(borderImgData, 0, 0);
+      // 2つ目の縁取りマスク
+      const border2Alpha = (b2Enabled && b2Size > 0) ? createDilatedMask(border1Alpha, w, h, b2Size) : border1Alpha;
 
       middleCtx.clearRect(0, 0, w, h);
-      middleCtx.drawImage(borderCanvas, 0, 0);
 
-      layerVisibility[2] = true;
+      // HEXカラーをRGBに変換
+      function hexToRgb(hex) {
+        let c = hex.replace('#', '');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        return [ (num >> 16) & 255, (num >> 8) & 255, num & 255 ];
+      }
+
+      const rgb1 = hexToRgb(b1Color);
+      const rgb2 = hexToRgb(b2Color);
+
+      // 外側（2つ目）の縁取り描画
+      if (b2Enabled && b2Size > 0) {
+        const b2Canvas = document.createElement('canvas');
+        b2Canvas.width = w;
+        b2Canvas.height = h;
+        const b2Ctx = b2Canvas.getContext('2d');
+        const b2ImgData = b2Ctx.createImageData(w, h);
+        const b2Data = b2ImgData.data;
+
+        for (let i = 0; i < w * h; i++) {
+          if (border2Alpha[i] === 1 && border1Alpha[i] === 0) {
+            b2Data[i * 4] = rgb2[0];
+            b2Data[i * 4 + 1] = rgb2[1];
+            b2Data[i * 4 + 2] = rgb2[2];
+            b2Data[i * 4 + 3] = 255;
+          }
+        }
+        b2Ctx.putImageData(b2ImgData, 0, 0);
+
+        // 2つ目の縁取りが存在するため、シャドウは2つ目の縁取りに付与
+        if (shadowEnabled) {
+          middleCtx.save();
+          middleCtx.shadowColor = shadowColor;
+          middleCtx.shadowBlur = shadowBlur;
+          middleCtx.shadowOffsetX = 0;
+          middleCtx.shadowOffsetY = shadowOffset;
+          middleCtx.drawImage(b2Canvas, 0, 0);
+          middleCtx.restore();
+        } else {
+          middleCtx.drawImage(b2Canvas, 0, 0);
+        }
+      }
+
+      // 1つ目の縁取り描画
+      if (b1Size > 0) {
+        const b1Canvas = document.createElement('canvas');
+        b1Canvas.width = w;
+        b1Canvas.height = h;
+        const b1Ctx = b1Canvas.getContext('2d');
+        const b1ImgData = b1Ctx.createImageData(w, h);
+        const b1Data = b1ImgData.data;
+
+        for (let i = 0; i < w * h; i++) {
+          if (border1Alpha[i] === 1 && originalAlpha[i] === 0) {
+            b1Data[i * 4] = rgb1[0];
+            b1Data[i * 4 + 1] = rgb1[1];
+            b1Data[i * 4 + 2] = rgb1[2];
+            b1Data[i * 4 + 3] = 255;
+          }
+        }
+        b1Ctx.putImageData(b1ImgData, 0, 0);
+
+        // 2つ目の縁取りが無い場合で、シャドウが有効なら1つ目の縁取りにシャドウを付与
+        if (shadowEnabled && (!b2Enabled || b2Size <= 0)) {
+          middleCtx.save();
+          middleCtx.shadowColor = shadowColor;
+          middleCtx.shadowBlur = shadowBlur;
+          middleCtx.shadowOffsetX = 0;
+          middleCtx.shadowOffsetY = shadowOffset;
+          middleCtx.drawImage(b1Canvas, 0, 0);
+          middleCtx.restore();
+        } else {
+          middleCtx.drawImage(b1Canvas, 0, 0);
+        }
+      }
+
+      // 1つ目・2つ目の縁取りが両方無く、シャドウが有効な場合は画像本体（topCanvas）にシャドウを背景に描画
+      if (shadowEnabled && b1Size <= 0 && (!b2Enabled || b2Size <= 0)) {
+        middleCtx.save();
+        middleCtx.shadowColor = shadowColor;
+        middleCtx.shadowBlur = shadowBlur;
+        middleCtx.shadowOffsetX = 0;
+        middleCtx.shadowOffsetY = shadowOffset;
+        middleCtx.drawImage(topCanvas, 0, 0);
+        middleCtx.restore();
+      }
+
       redrawLayers();
     }
-
-    addWhiteBorder10Btn.addEventListener('click', () => applyWhiteBorder(10));
-    addWhiteBorderBtn.addEventListener('click', () => applyWhiteBorder(20));
-    applyCustomBorderBtn.addEventListener('click', () => {
-      const customRadius = parseInt(borderRadiusRange.value, 10);
-      applyWhiteBorder(customRadius);
-    });
 
     function redrawLayers() {
       editCtx.clearRect(0, 0, targetWidth, targetHeight);
@@ -609,6 +950,7 @@
       }
     }
 
+    // 描画イベント処理
     function getPointerPos(e) {
       const rect = editCanvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -624,6 +966,20 @@
     function startDrawing(e) {
       if (activeLayer !== 2 && activeLayer !== 3) return;
       if (!layerVisibility[activeLayer]) return;
+
+      // 描画開始時に現在のキャンバス状態を履歴に保存 (最大20件)
+      const targetCtx = (activeLayer === 3) ? topCtx : middleCtx;
+      const currentState = targetCtx.getImageData(0, 0, targetWidth, targetHeight);
+
+      if (currentTool === 'pen') {
+        penHistory.push(currentState);
+        if (penHistory.length > 20) penHistory.shift();
+      } else {
+        eraserHistory.push(currentState);
+        if (eraserHistory.length > 20) eraserHistory.shift();
+      }
+      updateUndoButtonsUI();
+
       isDrawing = true;
       lastPos = getPointerPos(e);
     }
@@ -655,7 +1011,13 @@
       targetCtx.restore();
 
       lastPos = currentPos;
-      redrawLayers();
+
+      // 画像レイヤー（レイヤー3）を変更した場合は縁取りを再計算
+      if (activeLayer === 3) {
+        generateBorders();
+      } else {
+        redrawLayers();
+      }
     }
 
     function stopDrawing() {
@@ -669,6 +1031,7 @@
     editCanvas.addEventListener('touchmove', draw);
     window.addEventListener('touchend', stopDrawing);
 
+    // 書き出し用キャンバス作成
     function createExportCanvas() {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = targetWidth;
@@ -702,7 +1065,6 @@
             }, 2000);
           } catch (err) {
             console.error('クリップボードへの書き込みに失敗しました:', err);
-            alert('お使いの環境またはブラウザのセキュリティ設定により、クリップボードへのコピーが制限されています。');
           }
         }, 'image/png');
       } catch (e) {
