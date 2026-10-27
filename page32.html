@@ -252,6 +252,43 @@
 
             <hr class="border-slate-800 my-2">
 
+            <!-- Text Background Section (新機能) -->
+            <div class="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-vector-square mr-1.5"></i> テキストの背景色（長方形）
+                    </label>
+                    <label class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-400">
+                        <input type="checkbox" id="enableBg" class="rounded accent-emerald-500"> 有効
+                    </label>
+                </div>
+                <div id="bgControls" class="space-y-3 pt-1 opacity-40 pointer-events-none">
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="bgColor" value="#000000" class="w-9 h-9 rounded-lg bg-transparent border-0 cursor-pointer">
+                        <div class="flex-1">
+                            <div class="text-[11px] font-medium text-slate-300">背景色</div>
+                            <div class="text-[10px] text-slate-500 font-mono" id="bgColorHex">#000000</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>余白 (px)</span>
+                                <span id="bgPaddingVal" class="text-emerald-400 font-mono">15px</span>
+                            </div>
+                            <input type="range" id="bgPadding" min="0" max="60" value="15" class="w-full accent-emerald-500 cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>角の丸み (px)</span>
+                                <span id="bgRadiusVal" class="text-emerald-400 font-mono">8px</span>
+                            </div>
+                            <input type="range" id="bgRadius" min="0" max="40" value="8" class="w-full accent-emerald-500 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 1st Stroke (Inner) -->
             <div class="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
                 <div class="flex items-center justify-between">
@@ -308,7 +345,7 @@
                 </div>
             </div>
 
-            <!-- Shadow Section -->
+            <!-- Shadow Section (拡張：複数対象選択可能) -->
             <div class="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center">
@@ -318,17 +355,35 @@
                         <input type="checkbox" id="enableShadow" class="rounded accent-amber-500"> 有効
                     </label>
                 </div>
-                <div id="shadowControls" class="grid grid-cols-2 gap-3 pt-1 opacity-40 pointer-events-none">
-                    <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
-                        <input type="color" id="shadowColor" value="#000000" class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer">
-                        <div class="text-xs text-slate-300">影の色</div>
-                    </div>
+                <div id="shadowControls" class="space-y-3 pt-1 opacity-40 pointer-events-none">
+                    <!-- シャドウ対象の複数選択 -->
                     <div class="space-y-1">
-                        <div class="flex justify-between text-[11px] text-slate-300">
-                            <span>ぼかし/オフセット</span>
-                            <span id="shadowBlurVal" class="text-amber-400 font-mono">12px</span>
+                        <label class="text-[11px] text-slate-300 font-semibold block">シャドウをつける対象（複数選択可能）：</label>
+                        <div class="flex flex-wrap gap-3 pt-1">
+                            <label class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-300">
+                                <input type="checkbox" id="shadowTargetStroke1" class="rounded accent-amber-500"> 縁取り１
+                            </label>
+                            <label class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-300">
+                                <input type="checkbox" id="shadowTargetStroke2" class="rounded accent-amber-500"> 縁取り２
+                            </label>
+                            <label class="cursor-pointer flex items-center gap-1.5 text-xs text-slate-300">
+                                <input type="checkbox" id="shadowTargetBody" checked class="rounded accent-amber-500"> 画像そのもの (塗り)
+                            </label>
                         </div>
-                        <input type="range" id="shadowBlur" min="0" max="40" value="12" class="w-full accent-amber-500 cursor-pointer">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex items-center gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
+                            <input type="color" id="shadowColor" value="#000000" class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer">
+                            <div class="text-xs text-slate-300">影の色</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] text-slate-300">
+                                <span>ぼかし/オフセット</span>
+                                <span id="shadowBlurVal" class="text-amber-400 font-mono">12px</span>
+                            </div>
+                            <input type="range" id="shadowBlur" min="0" max="40" value="12" class="w-full accent-amber-500 cursor-pointer">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -422,6 +477,16 @@
         const gradientBottom = document.getElementById('gradientBottom');
         const gradientBottomHex = document.getElementById('gradientBottomHex');
 
+        // Background Elements
+        const enableBg = document.getElementById('enableBg');
+        const bgControls = document.getElementById('bgControls');
+        const bgColor = document.getElementById('bgColor');
+        const bgColorHex = document.getElementById('bgColorHex');
+        const bgPadding = document.getElementById('bgPadding');
+        const bgPaddingVal = document.getElementById('bgPaddingVal');
+        const bgRadius = document.getElementById('bgRadius');
+        const bgRadiusVal = document.getElementById('bgRadiusVal');
+
         const enableStroke1 = document.getElementById('enableStroke1');
         const stroke1Controls = document.getElementById('stroke1Controls');
         const stroke1Color = document.getElementById('stroke1Color');
@@ -441,12 +506,15 @@
         const shadowColor = document.getElementById('shadowColor');
         const shadowBlur = document.getElementById('shadowBlur');
         const shadowBlurVal = document.getElementById('shadowBlurVal');
+        const shadowTargetStroke1 = document.getElementById('shadowTargetStroke1');
+        const shadowTargetStroke2 = document.getElementById('shadowTargetStroke2');
+        const shadowTargetBody = document.getElementById('shadowTargetBody');
 
         const canvas = document.getElementById('thumbnailCanvas');
         const ctx = canvas.getContext('2d');
         const canvasInfo = document.getElementById('canvasInfo');
 
-        // Toggle UI visibility for gradient/strokes/shadows
+        // Toggle UI visibility for gradient/bg/strokes/shadows
         enableGradient.addEventListener('change', (e) => {
             if (e.target.checked) {
                 solidColorBox.classList.add('hidden');
@@ -455,6 +523,12 @@
                 solidColorBox.classList.remove('hidden');
                 gradientBox.classList.add('hidden');
             }
+            renderCanvas();
+        });
+
+        enableBg.addEventListener('change', (e) => {
+            bgControls.style.opacity = e.target.checked ? '1' : '0.4';
+            bgControls.style.pointerEvents = e.target.checked ? 'auto' : 'none';
             renderCanvas();
         });
 
@@ -481,6 +555,8 @@
             fontSizeVal.textContent = fontSize.value + 'px';
             lineHeightVal.textContent = lineHeight.value;
             letterSpacingVal.textContent = letterSpacing.value + 'px';
+            bgPaddingVal.textContent = bgPadding.value + 'px';
+            bgRadiusVal.textContent = bgRadius.value + 'px';
             stroke1WidthVal.textContent = stroke1Width.value + 'px';
             stroke2WidthVal.textContent = stroke2Width.value + 'px';
             shadowBlurVal.textContent = shadowBlur.value + 'px';
@@ -488,6 +564,7 @@
             textColorHex.textContent = textColor.value.toUpperCase();
             gradientTopHex.textContent = gradientTop.value.toUpperCase();
             gradientBottomHex.textContent = gradientBottom.value.toUpperCase();
+            bgColorHex.textContent = bgColor.value.toUpperCase();
             stroke1ColorHex.textContent = stroke1Color.value.toUpperCase();
             stroke2ColorHex.textContent = stroke2Color.value.toUpperCase();
         }
@@ -521,6 +598,12 @@
             textColor.value = "#000000";
             gradientTop.value = "#000000";
             gradientBottom.value = "#333333";
+            enableBg.checked = false;
+            bgColor.value = "#000000";
+            bgPadding.value = 15;
+            bgRadius.value = 8;
+            bgControls.style.opacity = '0.4';
+            bgControls.style.pointerEvents = 'none';
             enableStroke1.checked = true;
             stroke1Color.value = "#ffffff";
             stroke1Width.value = 10;
@@ -530,6 +613,9 @@
             enableShadow.checked = false;
             shadowColor.value = "#000000";
             shadowBlur.value = 12;
+            shadowTargetStroke1.checked = false;
+            shadowTargetStroke2.checked = false;
+            shadowTargetBody.checked = true;
             shadowControls.style.opacity = '0.4';
             shadowControls.style.pointerEvents = 'none';
 
@@ -564,6 +650,15 @@
             }
         }
 
+        // Helper to measure full width of a line considering letter spacing
+        function getLineWidth(text, spacing) {
+            let width = 0;
+            for (let i = 0; i < text.length; i++) {
+                width += ctx.measureText(text[i]).width + (i < text.length - 1 ? spacing : 0);
+            }
+            return width;
+        }
+
         function renderCanvas() {
             updateLabels();
 
@@ -596,20 +691,58 @@
             if (align === 'left') startX = targetWidth * 0.15;
             if (align === 'right') startX = targetWidth * 0.85;
 
-            // Optional Shadow configuration
-            if (enableShadow.checked) {
-                ctx.shadowColor = shadowColor.value;
-                ctx.shadowBlur = parseInt(shadowBlur.value, 10);
-                ctx.shadowOffsetX = parseInt(shadowBlur.value, 10) * 0.5;
-                ctx.shadowOffsetY = parseInt(shadowBlur.value, 10) * 0.8;
-            } else {
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+            // --- Draw Text Background (Rectangles) if Enabled ---
+            if (enableBg.checked) {
+                const pad = parseInt(bgPadding.value, 10);
+                const rad = parseInt(bgRadius.value, 10);
+                const s1W = enableStroke1.checked ? parseInt(stroke1Width.value, 10) : 0;
+                const s2W = enableStroke2.checked ? parseInt(stroke2Width.value, 10) : 0;
+                const strokeOffset = s1W + s2W; // Extra offset from outer stroke
+
+                ctx.save();
+                ctx.fillStyle = bgColor.value;
+
+                lines.forEach((line, index) => {
+                    const currentY = startY + (index * lineHeightPx);
+                    const lineWidth = (lSpacing === 0) ? ctx.measureText(line).width : getLineWidth(line, lSpacing);
+                    
+                    let bgX = startX;
+                    if (align === 'center') bgX = startX - (lineWidth / 2);
+                    else if (align === 'right') bgX = startX - lineWidth;
+
+                    bgX -= (pad + strokeOffset);
+                    const bgY = currentY - (baseFontSize / 2) - pad - strokeOffset;
+                    const bgW = lineWidth + (pad + strokeOffset) * 2;
+                    const bgH = baseFontSize + (pad + strokeOffset) * 2;
+
+                    ctx.beginPath();
+                    if (rad > 0 && ctx.roundRect) {
+                        ctx.roundRect(bgX, bgY, bgW, bgH, rad);
+                    } else {
+                        ctx.rect(bgX, bgY, bgW, bgH);
+                    }
+                    ctx.fill();
+                });
+                ctx.restore();
             }
 
-            // Draw line by line with double strokes
+            // Shadow helper setup
+            const applyShadow = (isTargetActive) => {
+                if (enableShadow.checked && isTargetActive) {
+                    const blur = parseInt(shadowBlur.value, 10);
+                    ctx.shadowColor = shadowColor.value;
+                    ctx.shadowBlur = blur;
+                    ctx.shadowOffsetX = blur * 0.5;
+                    ctx.shadowOffsetY = blur * 0.8;
+                } else {
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+            };
+
+            // Draw line by line with double strokes and selective shadows
             lines.forEach((line, index) => {
                 const currentY = startY + (index * lineHeightPx);
 
@@ -620,6 +753,7 @@
                     const totalStrokeWidth = s1W + s2W;
 
                     if (totalStrokeWidth > 0) {
+                        applyShadow(shadowTargetStroke2.checked);
                         ctx.lineWidth = totalStrokeWidth * 2;
                         ctx.strokeStyle = stroke2Color.value;
                         ctx.lineJoin = 'round';
@@ -635,6 +769,7 @@
                 if (enableStroke1.checked) {
                     const s1W = parseInt(stroke1Width.value, 10);
                     if (s1W > 0) {
+                        applyShadow(shadowTargetStroke1.checked);
                         ctx.lineWidth = s1W * 2;
                         ctx.strokeStyle = stroke1Color.value;
                         ctx.lineJoin = 'round';
@@ -647,8 +782,7 @@
                 }
 
                 // --- Text Fill (Solid or Gradient) ---
-                const tempShadowColor = ctx.shadowColor;
-                ctx.shadowColor = 'transparent';
+                applyShadow(shadowTargetBody.checked);
 
                 if (enableGradient.checked) {
                     const gradTopY = currentY - (baseFontSize / 2);
@@ -665,7 +799,11 @@
                     ctx.fillText(txt, cx, cy);
                 });
 
-                ctx.shadowColor = tempShadowColor;
+                // Reset shadow after line completion
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
             });
         }
 
@@ -710,14 +848,25 @@
         }
 
         // Bind interactive inputs to re-render
-        [textInput, fontFamily, fontSize, textAlign, lineHeight, letterSpacing, enableGradient, textColor, gradientTop, gradientBottom, enableStroke1, stroke1Color, stroke1Width, enableStroke2, stroke2Color, stroke2Width, enableShadow, shadowColor, shadowBlur].forEach(el => {
-            el.addEventListener('input', renderCanvas);
-            el.addEventListener('change', renderCanvas);
+        [
+            textInput, fontFamily, fontSize, textAlign, lineHeight, letterSpacing, 
+            enableGradient, textColor, gradientTop, gradientBottom, 
+            enableBg, bgColor, bgPadding, bgRadius,
+            enableStroke1, stroke1Color, stroke1Width, 
+            enableStroke2, stroke2Color, stroke2Width, 
+            enableShadow, shadowColor, shadowBlur, shadowTargetStroke1, shadowTargetStroke2, shadowTargetBody
+        ].forEach(el => {
+            if (el) {
+                el.addEventListener('input', renderCanvas);
+                el.addEventListener('change', renderCanvas);
+            }
         });
 
         // Initialize fonts and render on window load with requested defaults
         window.onload = function() {
-            // Apply initial disabled state for shadow based on default checkbox state
+            // Apply initial disabled state based on default checkbox states
+            bgControls.style.opacity = '0.4';
+            bgControls.style.pointerEvents = 'none';
             shadowControls.style.opacity = '0.4';
             shadowControls.style.pointerEvents = 'none';
 
