@@ -860,119 +860,6 @@
     .stamp-nav-btn:hover {
       opacity: 0.95;
     }
-    .editor-layout {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      align-items: flex-start;
-    }
-    .canvas-wrapper {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      border: 2px dashed rgba(168, 85, 247, 0.4);
-      border-radius: var(--radius-md);
-      background-color: #0b0f19;
-      background-image: linear-gradient(45deg, #131b2e 25%, transparent 25%), linear-gradient(-45deg, #131b2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #131b2e 75%), linear-gradient(-45deg, transparent 75%, #131b2e 75%);
-      background-size: 20px 20px;
-      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-      flex-shrink: 0;
-    }
-    .stamp-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: calc(var(--radius-md) - 2px);
-      touch-action: none;
-    }
-    .ps-layers-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 105px;
-      background-color: #0f172a;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 8px;
-    }
-    .ps-layer-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 6px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border: 2px solid transparent;
-      border-radius: 6px;
-      cursor: grab;
-      transition: var(--transition);
-    }
-    .ps-layer-item.active {
-      border-color: var(--accent-purple);
-      background-color: rgba(168, 85, 247, 0.12);
-    }
-    .ps-layer-title {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-      font-weight: 700;
-    }
-    .ps-layer-preview {
-      width: 60px;
-      height: 60px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      background-color: #0b0f19;
-      object-fit: contain;
-      pointer-events: none;
-    }
-    .stamp-tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      align-items: center;
-      margin-top: 10px;
-      background: rgba(0,0,0,0.15);
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-color);
-    }
-    .tool-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .tool-btn {
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      color: #fff;
-      border-radius: 6px;
-      padding: 7px 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-    .tool-btn:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-    .tool-btn.active {
-      border-color: var(--accent-purple);
-      color: var(--accent-purple);
-      background-color: rgba(168, 85, 247, 0.15);
-    }
-    select.tool-select {
-      background-color: #000000;
-      color: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 7px 10px;
-      font-size: 0.8rem;
-      outline: none;
-      cursor: pointer;
-    }
     .history-header-bar {
       display: flex;
       justify-content: space-between;
@@ -1277,7 +1164,6 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メモを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
-            <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="改行・絵文字">⏎</button>
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
@@ -1308,81 +1194,11 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button id="go-to-stamp-btn" class="stamp-nav-btn">🎨 手描きスタンプ</button>
+        <div></div>
         <div class="modal-footer-right">
           <button id="modal-clear-btn" class="secondary-btn">クリア</button>
           <button id="modal-close-btn" class="secondary-btn">キャンセル</button>
           <button id="modal-submit-btn" class="send-btn-style">送信</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 手描きスタンプ作成モーダル -->
-  <div id="stamp-modal-overlay" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title">手描きスタンプ作成</div>
-        <button id="stamp-modal-close-x" class="modal-close-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <button id="back-to-comment-btn" class="tool-btn">⬅ メモへ戻る</button>
-          <button id="go-to-history-btn" class="stamp-nav-btn">🕒 履歴</button>
-        </div>
-        <div class="editor-layout">
-          <div class="canvas-wrapper">
-            <canvas id="layer-bottom" class="stamp-canvas" width="250" height="250"></canvas>
-            <canvas id="layer-top" class="stamp-canvas" width="250" height="250"></canvas>
-          </div>
-          <div class="ps-layers-panel" id="layers-panel-container">
-            <div class="ps-layer-item active" id="layer-item-2" draggable="true" data-layer="2">
-              <div class="ps-layer-title">Layer 2</div>
-              <img id="ps-preview-2" class="ps-layer-preview" alt="Layer 2">
-            </div>
-            <div class="ps-layer-item" id="layer-item-1" draggable="true" data-layer="1">
-              <div class="ps-layer-title">Layer 1</div>
-              <img id="ps-preview-1" class="ps-layer-preview" alt="Layer 1">
-            </div>
-          </div>
-        </div>
-        <div class="stamp-tools">
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">色:</span>
-            <input type="color" id="stamp-color" value="#ffffff" style="background:none; border:none; width:28px; height:28px; cursor:pointer;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">透明度:</span>
-            <input type="range" id="stamp-opacity" min="0.1" max="1" step="0.05" value="1" style="width:50px;">
-          </div>
-          <div class="tool-group">
-            <span style="font-size:0.8rem; color:var(--text-muted);">太さ:</span>
-            <input type="range" id="stamp-size" min="2" max="30" value="5" style="width:55px;">
-          </div>
-          <div class="tool-group">
-            <select id="brush-select" class="tool-select">
-              <option value="pen">ブラシ (通常)</option>
-              <option value="calligraphy-brush">カリグラフィ ブラシ</option>
-              <option value="calligraphy-pen">カリグラフィ ペン</option>
-              <option value="airbrush">エアブラシ</option>
-              <option value="oil">油彩ブラシ</option>
-              <option value="crayon">クレヨン</option>
-              <option value="marker">マーカー</option>
-              <option value="pencil">鉛筆</option>
-              <option value="watercolor">水彩ブラシ</option>
-            </select>
-          </div>
-          <button id="tool-fill" class="tool-btn">ペンキ</button>
-          <button id="tool-eraser" class="tool-btn">消しゴム</button>
-          <button id="tool-undo" class="tool-btn">1つ戻す</button>
-          <button id="tool-clear" class="tool-btn">全消去</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <div></div>
-        <div class="modal-footer-right">
-          <button id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
-          <button id="stamp-submit-btn" class="send-btn-style">完成して追加</button>
         </div>
       </div>
     </div>
@@ -1405,7 +1221,7 @@
       </div>
       <div class="modal-footer">
         <div></div>
-        <button id="back-to-stamp-draw-btn" class="secondary-btn">描画に戻る</button>
+        <button id="history-modal-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
   </div>
@@ -1716,7 +1532,6 @@
 
     async function verifyAndUnlock() {
       try {
-        // メアド不要の匿名認証を実行
         await signInAnonymously(auth);
       } catch (error) {
         console.error("認証エラー:", error);
@@ -1906,7 +1721,6 @@
     const overlay = document.getElementById('overlay');
 
     const modalOpenBtn = document.getElementById('modal-open-btn');
-    const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
     const footerStampHistoryBtn = document.getElementById('footer-stamp-history-btn');
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const modalCloseX = document.getElementById('modal-close-x');
@@ -1917,114 +1731,14 @@
     const emojiPalette = document.getElementById('emoji-palette');
     const kaimojiPalette = document.getElementById('kaimoji-palette');
 
-    const stampModalOverlay = document.getElementById('stamp-modal-overlay');
-    const goToStampBtn = document.getElementById('go-to-stamp-btn');
-    const stampModalCloseX = document.getElementById('stamp-modal-close-x');
-    const stampCancelBtn = document.getElementById('stamp-cancel-btn');
-    const backToCommentBtn = document.getElementById('back-to-comment-btn');
-    const goToHistoryBtn = document.getElementById('go-to-history-btn');
-    const stampSubmitBtn = document.getElementById('stamp-submit-btn');
-
-    const layerItem1 = document.getElementById('layer-item-1');
-    const layerItem2 = document.getElementById('layer-item-2');
-    const psPreview1 = document.getElementById('ps-preview-1');
-    const psPreview2 = document.getElementById('ps-preview-2');
-    const layersPanelContainer = document.getElementById('layers-panel-container');
-
     const historyModalOverlay = document.getElementById('history-modal-overlay');
     const historyModalCloseX = document.getElementById('history-modal-close-x');
-    const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
+    const historyModalCloseBtn = document.getElementById('history-modal-close-btn');
     const historyGrid = document.getElementById('history-grid');
     const stampUploadInput = document.getElementById('stamp-upload-input');
 
-    const canvasA = document.getElementById('layer-bottom');
-    const canvasB = document.getElementById('layer-top');
-    const ctxA = canvasA.getContext('2d', { willReadFrequently: true });
-    const ctxB = canvasB.getContext('2d', { willReadFrequently: true });
-
-    let activeLayerId = 2;
-    let layerOrder = [1, 2];
-
-    const stampColorInput = document.getElementById('stamp-color');
-    const stampOpacityInput = document.getElementById('stamp-opacity');
-    const stampSizeInput = document.getElementById('stamp-size');
-    const brushSelect = document.getElementById('brush-select');
-    const toolFill = document.getElementById('tool-fill');
-    const toolEraser = document.getElementById('tool-eraser');
-    const toolUndo = document.getElementById('tool-undo');
-    const toolClear = document.getElementById('tool-clear');
-
     let cachedMessages = {};
     let cachedStampHistory = {};
-    let currentTool = 'pen';
-    let currentBrushType = 'pen';
-    let historyStack = [];
-    let lastPoint = null;
-
-    function getLayerObj(id) {
-      if (id === 1) return { canvas: canvasA, ctx: ctxA };
-      return { canvas: canvasB, ctx: ctxB };
-    }
-
-    function getActiveLayer() {
-      return getLayerObj(activeLayerId);
-    }
-
-    function updateLayerDOMOrder() {
-      if (activeLayerId === 1) {
-        canvasA.style.zIndex = 10;
-        canvasB.style.zIndex = 5;
-      } else {
-        canvasA.style.zIndex = 5;
-        canvasB.style.zIndex = 10;
-      }
-
-      layersPanelContainer.innerHTML = '';
-      [...layerOrder].reverse().forEach(id => {
-        if (id === 1) layersPanelContainer.appendChild(layerItem1);
-        if (id === 2) layersPanelContainer.appendChild(layerItem2);
-      });
-
-      layerItem1.classList.toggle('active', activeLayerId === 1);
-      layerItem2.classList.toggle('active', activeLayerId === 2);
-    }
-
-    function setActiveLayer(id) {
-      activeLayerId = id;
-      updateLayerDOMOrder();
-    }
-
-    layerItem1.addEventListener('click', () => setActiveLayer(1));
-    layerItem2.addEventListener('click', () => setActiveLayer(2));
-
-    let draggedLayerId = null;
-    [layerItem1, layerItem2].forEach(item => {
-      item.addEventListener('dragstart', () => {
-        draggedLayerId = parseInt(item.getAttribute('data-layer'));
-      });
-      item.addEventListener('dragend', () => {
-        draggedLayerId = null;
-      });
-      item.addEventListener('dragover', (e) => e.preventDefault());
-      item.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const targetLayerId = parseInt(item.getAttribute('data-layer'));
-        if (draggedLayerId && draggedLayerId !== targetLayerId) {
-          const indexA = layerOrder.indexOf(draggedLayerId);
-          const indexB = layerOrder.indexOf(targetLayerId);
-          if (indexA !== -1 && indexB !== -1) {
-            layerOrder[indexA] = targetLayerId;
-            layerOrder[indexB] = draggedLayerId;
-            updateLayerDOMOrder();
-          }
-        }
-      });
-    });
-
-    function updateLayerPreviews() {
-      psPreview1.src = canvasA.toDataURL();
-      psPreview2.src = canvasB.toDataURL();
-    }
 
     const emojis = ['✨', '👑', '💘', '❤', '🔥', '😊', '😍', '👏', '🎉', '🙌', '🌟', '👍', '💐', '🥰', '💯'];
     const kaimojis = ['( ﾟДﾟ)', '( *´艸｀)', '( ;∀;)', '(^^)ﾉｼ'];
@@ -2076,229 +1790,9 @@
       closeModal();
     });
 
-    footerStampOpenBtn.addEventListener('click', () => {
-      stampModalOverlay.classList.add('active');
-      saveState();
-      updateLayerPreviews();
-      updateLayerDOMOrder();
-    });
-
     footerStampHistoryBtn.addEventListener('click', () => {
       renderStampHistory();
       historyModalOverlay.classList.add('active');
-    });
-
-    goToStampBtn.addEventListener('click', () => {
-      closeModal();
-      stampModalOverlay.classList.add('active');
-      saveState();
-      updateLayerPreviews();
-      updateLayerDOMOrder();
-    });
-    backToCommentBtn.addEventListener('click', () => {
-      stampModalOverlay.classList.remove('active');
-      commentModalOverlay.classList.add('active');
-    });
-    stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
-    stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
-
-    brushSelect.addEventListener('change', () => {
-      currentTool = 'pen';
-      currentBrushType = brushSelect.value;
-      toolFill.classList.remove('active');
-      toolEraser.classList.remove('active');
-    });
-    toolFill.addEventListener('click', () => { currentTool = 'fill'; toolEraser.classList.remove('active'); toolFill.classList.add('active'); });
-    toolEraser.addEventListener('click', () => { currentTool = 'eraser'; toolFill.classList.remove('active'); toolEraser.classList.add('active'); });
-
-    function saveState() {
-      if (historyStack.length >= 10) historyStack.shift();
-      historyStack.push({
-        l1: ctxA.getImageData(0, 0, canvasA.width, canvasA.height),
-        l2: ctxB.getImageData(0, 0, canvasB.width, canvasB.height),
-        order: [...layerOrder]
-      });
-    }
-
-    toolUndo.addEventListener('click', () => {
-      if (historyStack.length > 0) {
-        const prevState = historyStack.pop();
-        ctxA.putImageData(prevState.l1, 0, 0);
-        ctxB.putImageData(prevState.l2, 0, 0);
-        layerOrder = [...prevState.order];
-        updateLayerDOMOrder();
-        updateLayerPreviews();
-      }
-    });
-
-    toolClear.addEventListener('click', () => {
-      saveState();
-      const { ctx, canvas } = getActiveLayer();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      updateLayerPreviews();
-    });
-
-    function hexToRgb(hex) {
-      let c = hex.replace('#', '');
-      if (c.length === 3) c = c.split('').map(x => x + x).join('');
-      const num = parseInt(c, 16);
-      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
-    }
-
-    function floodFill(canvas, startX, startY, fillColorHex, opacity) {
-      const ctx = canvas.getContext('2d');
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      const width = canvas.width;
-      const height = canvas.height;
-
-      const targetPos = (startY * width + startX) * 4;
-      const targetR = data[targetPos];
-      const targetG = data[targetPos + 1];
-      const targetB = data[targetPos + 2];
-      const targetA = data[targetPos + 3];
-
-      const fillRgb = hexToRgb(fillColorHex);
-      const fillA = Math.round(opacity * 255);
-
-      if (targetR === fillRgb.r && targetG === fillRgb.g && targetB === fillRgb.b && targetA === fillA) return;
-
-      const queue = [[startX, startY]];
-      const visited = new Uint8Array(width * height);
-
-      while (queue.length > 0) {
-        const [x, y] = queue.pop();
-        const pos = (y * width + x) * 4;
-        const idx = y * width + x;
-
-        if (x < 0 || x >= width || y < 0 || y >= height) continue;
-        if (visited[idx]) continue;
-        visited[idx] = 1;
-
-        if (Math.abs(data[pos] - targetR) < 30 &&
-            Math.abs(data[pos + 1] - targetG) < 30 &&
-            Math.abs(data[pos + 2] - targetB) < 30 &&
-            Math.abs(data[pos + 3] - targetA) < 30) {
-          data[pos] = fillRgb.r;
-          data[pos + 1] = fillRgb.g;
-          data[pos + 2] = fillRgb.b;
-          data[pos + 3] = fillA;
-
-          queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-    }
-
-    function getCanvasCoords(e, canvasEl) {
-      const rect = canvasEl.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: Math.floor((clientX - rect.left) * (canvasEl.width / rect.width)),
-        y: Math.floor((clientY - rect.top) * (canvasEl.height / rect.height))
-      };
-    }
-
-    function drawStroke(ctx, p1, p2) {
-      const baseSize = parseFloat(stampSizeInput.value);
-      const opacity = parseFloat(stampOpacityInput.value);
-      const color = stampColorInput.value;
-      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-
-      ctx.save();
-      if (currentTool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.globalAlpha = opacity;
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = baseSize * 1.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        ctx.restore();
-        return;
-      }
-
-      ctx.globalCompositeOperation = 'source-over';
-      switch (currentBrushType) {
-        case 'pen':
-        default:
-          ctx.globalAlpha = opacity;
-          ctx.strokeStyle = color;
-          ctx.lineWidth = baseSize;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-          break;
-      }
-      ctx.restore();
-    }
-
-    [canvasA, canvasB].forEach(targetCanvas => {
-      let isTargetDrawing = false;
-      function startDraw(e) {
-        const activeObj = getActiveLayer();
-        if (targetCanvas !== activeObj.canvas) return;
-        const pos = getCanvasCoords(e, targetCanvas);
-        saveState();
-
-        if (currentTool === 'fill') {
-          floodFill(targetCanvas, pos.x, pos.y, stampColorInput.value, parseFloat(stampOpacityInput.value));
-          updateLayerPreviews();
-          return;
-        }
-
-        isTargetDrawing = true;
-        lastPoint = pos;
-        drawStroke(activeObj.ctx, pos, pos);
-      }
-
-      function moveDraw(e) {
-        if (!isTargetDrawing || currentTool === 'fill') return;
-        const activeObj = getActiveLayer();
-        if (targetCanvas !== activeObj.canvas) return;
-        e.preventDefault();
-        const pos = getCanvasCoords(e, targetCanvas);
-        drawStroke(activeObj.ctx, lastPoint, pos);
-        lastPoint = pos;
-      }
-
-      function endDraw() {
-        if (isTargetDrawing) {
-          isTargetDrawing = false;
-          lastPoint = null;
-          updateLayerPreviews();
-        }
-      }
-
-      targetCanvas.addEventListener('mousedown', startDraw);
-      targetCanvas.addEventListener('mousemove', moveDraw);
-      targetCanvas.addEventListener('mouseup', endDraw);
-      targetCanvas.addEventListener('mouseleave', endDraw);
-      targetCanvas.addEventListener('touchstart', startDraw, { passive: false });
-      targetCanvas.addEventListener('touchmove', moveDraw, { passive: false });
-      targetCanvas.addEventListener('touchend', endDraw);
-    });
-
-    stampSubmitBtn.addEventListener('click', () => {
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = 250; exportCanvas.height = 250;
-      const expCtx = exportCanvas.getContext('2d');
-      layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
-      const stampDataUrl = exportCanvas.toDataURL('image/png');
-      push(messagesRef, { text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
-      push(stampHistoryRef, { dataUrl: stampDataUrl, timestamp: Date.now() });
-      ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
-      ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
-      historyStack = [];
-      updateLayerPreviews();
-      stampModalOverlay.classList.remove('active');
     });
 
     stampUploadInput.addEventListener('change', (e) => {
@@ -2346,9 +1840,8 @@
       });
     }
 
-    goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
-    backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
     historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
+    historyModalCloseBtn.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 
     hamburgerBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
     overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
