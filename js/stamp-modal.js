@@ -1,14 +1,16 @@
 // stamp-modal.js
 import { ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-export function initStampModal({ db, messagesRef, stampHistoryRef }) {
+export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect }) {
   // --- DOM要素の取得 ---
   const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
-  const footerStampHistoryOpenBtn = document.getElementById('footer-stamp-history-btn');
+  const footerStampHistoryOpenBtn = document.getElementById('footer-stamp-history-open-btn');
   
   const stampModalOverlay = document.getElementById('stamp-modal-overlay');
+  const goToStampBtn = document.getElementById('go-to-stamp-btn');
   const stampModalCloseX = document.getElementById('stamp-modal-close-x');
   const stampCancelBtn = document.getElementById('stamp-cancel-btn');
+  const backToCommentBtn = document.getElementById('back-to-comment-btn');
   const goToHistoryBtn = document.getElementById('go-to-history-btn');
   const stampSubmitBtn = document.getElementById('stamp-submit-btn');
 
@@ -19,7 +21,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
 
   const historyModalOverlay = document.getElementById('history-modal-overlay');
   const historyModalCloseX = document.getElementById('history-modal-close-x');
-  const historyModalCloseBtn = document.getElementById('history-modal-close-btn');
   const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
   const historyGrid = document.getElementById('history-grid');
   const stampUploadInput = document.getElementById('stamp-upload-input');
@@ -81,6 +82,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     historyModalOverlay.classList.add('active');
   });
 
+  backToCommentBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); });
   stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
   stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
@@ -278,9 +280,10 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
     
     const stampDataUrl = exportCanvas.toDataURL('image/png');
+    const senderName = userSelect.value;
     
-    push(messagesRef, { text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
-    push(stampHistoryRef, { dataUrl: stampDataUrl, timestamp: Date.now() });
+    push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+    push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
     
     ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
     ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
@@ -294,7 +297,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      push(stampHistoryRef, { dataUrl: event.target.result, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: event.target.result, creator: userSelect.value, timestamp: Date.now() });
       stampUploadInput.value = '';
     };
     reader.readAsDataURL(file);
@@ -324,7 +327,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
         </div>
       `;
       card.querySelector('.send-hist').addEventListener('click', () => {
-        push(messagesRef, { text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+        push(messagesRef, { sender: userSelect.value, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
         historyModalOverlay.classList.remove('active');
       });
       card.querySelector('.del-hist').addEventListener('click', () => {
@@ -337,5 +340,4 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
   goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
   backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
   historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
-  historyModalCloseBtn.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 }
