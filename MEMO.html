@@ -1292,11 +1292,22 @@
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: center;">
-          <input type="color" id="stamp-color" value="#a855f7" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          <!-- デフォルト色を白（#ffffff）に変更 -->
+          <input type="color" id="stamp-color" value="#ffffff" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          
+          <!-- ブラシ選択メニューに多彩な種類を追加 -->
           <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">
-            <option value="pen">ペン</option>
+            <option value="pen">ブラシ (通常)</option>
+            <option value="calligraphy-brush">カリグラフィ ブラシ</option>
+            <option value="calligraphy-pen">カリグラフィ ペン</option>
             <option value="airbrush">エアブラシ</option>
+            <option value="oil">油彩ブラシ</option>
+            <option value="crayon">クレヨン</option>
+            <option value="marker">マーカー</option>
+            <option value="pencil">鉛筆</option>
+            <option value="watercolor">水彩ブラシ</option>
           </select>
+
           <button type="button" id="tool-fill" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">塗り</button>
           <button type="button" id="tool-eraser" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">消しゴム</button>
         </div>
