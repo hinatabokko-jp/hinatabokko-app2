@@ -1,16 +1,14 @@
 // stamp-modal.js
 import { ref, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect }) {
+export function initStampModal({ db, messagesRef, stampHistoryRef }) {
   // --- DOM要素の取得 ---
   const footerStampOpenBtn = document.getElementById('footer-stamp-open-btn');
-  const footerStampHistoryOpenBtn = document.getElementById('footer-stamp-history-open-btn');
+  const footerStampHistoryOpenBtn = document.getElementById('footer-stamp-history-btn');
   
   const stampModalOverlay = document.getElementById('stamp-modal-overlay');
-  const goToStampBtn = document.getElementById('go-to-stamp-btn');
   const stampModalCloseX = document.getElementById('stamp-modal-close-x');
   const stampCancelBtn = document.getElementById('stamp-cancel-btn');
-  const backToCommentBtn = document.getElementById('back-to-comment-btn');
   const goToHistoryBtn = document.getElementById('go-to-history-btn');
   const stampSubmitBtn = document.getElementById('stamp-submit-btn');
 
@@ -21,6 +19,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
 
   const historyModalOverlay = document.getElementById('history-modal-overlay');
   const historyModalCloseX = document.getElementById('history-modal-close-x');
+  const historyModalCloseBtn = document.getElementById('history-modal-close-btn');
   const backToStampDrawBtn = document.getElementById('back-to-stamp-draw-btn');
   const historyGrid = document.getElementById('history-grid');
   const stampUploadInput = document.getElementById('stamp-upload-input');
@@ -82,7 +81,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
     historyModalOverlay.classList.add('active');
   });
 
-  backToCommentBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); });
   stampModalCloseX.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
   stampCancelBtn.addEventListener('click', () => stampModalOverlay.classList.remove('active'));
 
@@ -175,7 +173,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
     ctx.putImageData(imgData, 0, 0);
   }
 
-  // ブラシ描画処理（質感を改善）[cite: 2]
+  // ブラシ描画処理
   function drawStroke(ctx, p1, p2) {
     const color = stampColorInput.value;
     const baseSize = parseFloat(stampSizeInput.value);
@@ -199,30 +197,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
     ctx.globalCompositeOperation = 'source-over';
 
     switch (currentBrushType) {
-      case 'calligraphy-brush':
-        ctx.globalAlpha = opacity;
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'round';
-        ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        break;
-
-      case 'calligraphy-pen':
-        ctx.globalAlpha = opacity;
-        ctx.fillStyle = color;
-        const stepsCallig = Math.max(1, Math.floor(dist));
-        for (let i = 0; i <= stepsCallig; i++) {
-          const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
-          const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
-          ctx.beginPath();
-          ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        break;
-
       case 'airbrush':
         ctx.globalAlpha = opacity * 0.15;
         ctx.fillStyle = color;
@@ -238,76 +212,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
           }
         }
         break;
-
-      case 'oil':
-        ctx.globalAlpha = opacity * 0.7;
-        ctx.strokeStyle = color;
-        ctx.lineCap = 'butt';
-        ctx.lineWidth = baseSize;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-        break;
-
-      case 'crayon':
-        ctx.globalAlpha = opacity * 0.6;
-        ctx.fillStyle = color;
-        const craySteps = Math.max(1, Math.floor(dist));
-        for (let i = 0; i <= craySteps; i++) {
-          const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
-          const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
-          for (let j = 0; j < baseSize * 1.5; j++) {
-            const rx = (Math.random() - 0.5) * baseSize;
-            const ry = (Math.random() - 0.5) * baseSize;
-            if (Math.hypot(rx, ry) <= baseSize / 2) {
-              ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
-            }
-          }
-        }
-        break;
-
-      case 'marker':
-        ctx.globalAlpha = opacity * 0.4;
-        ctx.fillStyle = color;
-        const markSteps = Math.max(1, Math.floor(dist));
-        for (let i = 0; i <= markSteps; i++) {
-          const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
-          const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
-          ctx.beginPath();
-          ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        break;
-
-      case 'pencil':
-        ctx.globalAlpha = opacity * 0.8;
-        ctx.fillStyle = color;
-        const pSteps = Math.max(1, Math.floor(dist));
-        for (let i = 0; i <= pSteps; i++) {
-          const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
-          const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
-          for (let j = 0; j < baseSize; j++) {
-            const rx = (Math.random() - 0.5) * (baseSize / 2);
-            const ry = (Math.random() - 0.5) * (baseSize / 2);
-            ctx.fillRect(curX + rx, curY + ry, 1, 1);
-          }
-        }
-        break;
-
-      case 'watercolor':
-        ctx.globalAlpha = opacity * 0.12;
-        ctx.fillStyle = color;
-        const wcSteps = Math.max(1, Math.floor(dist / 2));
-        for (let i = 0; i <= wcSteps; i++) {
-          const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
-          const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
-          ctx.beginPath();
-          ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        break;
-
       case 'pen':
       default:
         ctx.globalAlpha = opacity;
@@ -374,10 +278,9 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
     layerOrder.forEach(id => expCtx.drawImage(getLayerObj(id).canvas, 0, 0));
     
     const stampDataUrl = exportCanvas.toDataURL('image/png');
-    const senderName = userSelect.value;
     
-    push(messagesRef, { sender: senderName, text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
-    push(stampHistoryRef, { dataUrl: stampDataUrl, creator: senderName, timestamp: Date.now() });
+    push(messagesRef, { text: '', fileData: stampDataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+    push(stampHistoryRef, { dataUrl: stampDataUrl, timestamp: Date.now() });
     
     ctxA.clearRect(0, 0, canvasA.width, canvasA.height);
     ctxB.clearRect(0, 0, canvasB.width, canvasB.height);
@@ -391,7 +294,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      push(stampHistoryRef, { dataUrl: event.target.result, creator: userSelect.value, timestamp: Date.now() });
+      push(stampHistoryRef, { dataUrl: event.target.result, timestamp: Date.now() });
       stampUploadInput.value = '';
     };
     reader.readAsDataURL(file);
@@ -421,7 +324,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
         </div>
       `;
       card.querySelector('.send-hist').addEventListener('click', () => {
-        push(messagesRef, { sender: userSelect.value, text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
+        push(messagesRef, { text: '', fileData: item.dataUrl, fileName: `stamp_${Date.now()}.png`, isStamp: true, timestamp: Date.now() });
         historyModalOverlay.classList.remove('active');
       });
       card.querySelector('.del-hist').addEventListener('click', () => {
@@ -434,4 +337,5 @@ export function initStampModal({ db, messagesRef, stampHistoryRef, userSelect })
   goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
   backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
   historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
+  historyModalCloseBtn.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
 }
