@@ -353,10 +353,20 @@
 
         // Dictionary Database
         const dictionaryData = [
-            // 追加項目: 体外式ペースメーカー設定
+            // 新規追加項目（指示文より）
+            { id: "anamne", term: "アナムネ", reading: "アナムネ / あなむねーぜ", fullName: "Anamnese", category: "CHART", initial: "A", meaning: "医療における「アナムネ（正式名称：アナムネーゼ / Anamnese）」とは、患者から病歴や既往歴、生活状況などの情報を聴取すること、またはその記録を指す言葉です。<br>ドイツ語の「Anamnese（過去を思い出すこと・病歴）」が語源となっています。" },
+            { id: "muntella", term: "ムンテラ", reading: "ムンテラ / むんてら", fullName: "Mundtherapie", category: "CHART", initial: "M", meaning: "ムンテラとは、医師が患者やその家族に対して病状や治療方針などを説明することです。1990年代後半以降の医療法改正などを経て、現在では医師と患者が対等な立場で情報共有し、患者が納得して同意する「インフォームド・コンセント（IC）」という考え方が主流になっています。" },
+            { id: "ic", term: "IC", reading: "アイシー / いんふぉーむどこんせんと", fullName: "Informed Consent", category: "CHART", initial: "I", meaning: "医療における「IC」とは、「インフォームド・コンセント（Informed Consent）」の略で、日本語では「説明と同意」や「納得診療」と訳されます。<br>単に病気の説明を聞いて同意書にサインすることではなく、患者が主体となって治療を選ぶためのプロセス全体を指します。" },
+            { id: "erbd", term: "ERBD", reading: "イーアールビーディー / ないしきょうてきぎゃくこうせいたんかんどれなーじ", fullName: "Endoscopic Retrograde Biliary Drainage", category: "ERCP", initial: "E", meaning: "ERBD（内視鏡的逆行性胆管ドレナージ）は、胆汁の流れが悪くなる閉塞性黄疸や急性胆管炎などの治療法です。胃カメラ（内視鏡）を使って十二指腸の出口（乳頭部）から胆管にアプローチし、細いチューブやステントを留置して胆汁を十二指腸へと流します（内瘻化）。" },
+            { id: "ida", term: "IDA", reading: "アイディーエー / てつけつぼうせいひんけつ", fullName: "Iron Deficiency Anemia", category: "CHART", initial: "I", meaning: "鉄欠乏性貧血" },
+            { id: "paf", term: "Paf", reading: "ピーエーエフ / ほっさせいしんぼうさいどう", fullName: "Paroxysmal Atrial Fibrillation", category: "CARD", initial: "P", meaning: "発作性心房細動 Paroxysmal Atrial Fibrillation" },
+            { id: "ht", term: "HT", reading: "エイチティー / こうけつあつしょう", fullName: "Hypertension", category: "CARD", initial: "H", meaning: "高血圧症 Hypertension" },
+            { id: "sas", term: "SAS", reading: "エスエーエス / すいみんじむこきゅうしょうこうぐん", fullName: "Sleep Apnea Syndrome", category: "CARD", initial: "S", meaning: "睡眠時無呼吸症候群 Sleep Apnea Syndrome" },
+
+            // 体外式ペースメーカー設定
             { id: "hr70_sen3_output3", term: "HR70 SEN3 Output3", reading: "エイチアールナナジュウ エスイーエヌサン アウトプットサン / たいがいしきぺーすめーかーせってい", fullName: "体外式ペースメーカー設定 (Temporary Pacemaker Settings)", category: "TL", initial: "H", meaning: "体外式ペースメーカー（テンポラリーペースメーカー）の稼働設定および出力パラメータの記録。<br>・HR70（Heart Rate / 設定心拍数）：70 bpm。最低心拍数を70回/分に維持。<br>・SEN3（Sensitivity / 感度）：3 mV。自己心拍の電気信号を感知する閾値。<br>・Output3（Output / 出力）：3 mA。ペーシング刺激の電気量。<br><span class='text-xs text-cyan-400 mt-1 block'>※算定・レセプト上のポイント: 体外ペースメーキング（J043等）や関連材料の算定時、適切な設定で稼働していたことの臨床経過の裏付けとして参照される。</span>" },
 
-            // 追加された用語
+            // 以前の追加用語
             { id: "smi", term: "#SMI", reading: "エスエムアイ / えいえんし・こえだ", fullName: "Small Marginal Branch", category: "PCI", initial: "S", meaning: "鋭縁枝・小枝。心臓を包む「右冠動脈（RCA）」から分岐する細い枝（血管）のことです。" },
             { id: "rca_new", term: "RCA", reading: "アールシーエー / うかんどうみゃく", fullName: "Right Coronary Artery", category: "PCI", initial: "R", meaning: "右冠動脈。心臓に酸素や栄養を運ぶ3本の主要な血管（冠動脈）のうち、右側を走る血管です。" },
             { id: "num_1_2", term: "#1-2", reading: "イチノニ / うかんどうみゃくきんいぶ・ちゅうおうぶ", fullName: "Right Coronary Artery Segment #1-#2", category: "PCI", initial: "#", meaning: "冠動脈の部位番号（AHA分類）。#1は右冠動脈の入口〜前半部（近位部）、#2は中央部（中位部）を指し、#1-2は右冠動脈の根元から中央にかけての領域を示します。" },
@@ -537,7 +547,7 @@
             { id: "timi_0", term: "TIMI 0", reading: "ティミ ゼロ / かんぜんへいそく", fullName: "TIMI Grade 0 Flow", category: "PCI", initial: "T", meaning: "完全閉塞・順行性血流なし。閉塞部位より遠位に造影剤が全く流れない状態。" },
             { id: "timi_1", term: "TIMI 1", reading: "ティミ ワン / わずかなけつりゅう", fullName: "TIMI Grade 1 Flow", category: "PCI", initial: "T", meaning: "わずかな順行性血流あり。造影剤は閉塞部を通過するが末梢全体を満たせない状態。" },
             { id: "timi_2", term: "TIMI 2", reading: "ティミ ツー / ちえんけつりゅう", fullName: "TIMI Grade 2 Flow", category: "PCI", initial: "T", meaning: "遅延した順行性血流。造影剤が末梢まで到達するが、正常血管に比べて造影・消失が遅い状態。" },
-            { id: "timi_3", term: "TIMI 3", reading: "ティミ スリー / せいじょうけつりゅう", fullName: "TIMI Grade 3 Flow", category: "PCI", initial: "T", meaning: "正常な順行性血流。造影剤が正常な速さで末梢まで完全に流れる状態。" },
+            { id: "timi_3", term: "TIMI 3", reading: "TIMI 3", reading: "ティミ スリー / せいじょうけつりゅう", fullName: "TIMI Grade 3 Flow", category: "PCI", initial: "T", meaning: "正常な順行性血流。造影剤が正常な速さで末梢まで完全に流れる状態。" },
             { id: "torque", term: "torque", reading: "トルク / かいてん", fullName: "Torque Control", category: "TL", initial: "T", meaning: "トルク・回転操作。ガイドワイヤー等の手元を回転させて先端の向きを微調整する操作。" },
             { id: "trband", term: "TR Band", reading: "ティーアールバンド / しけつバンド", fullName: "TR Band Compression Device", category: "TL", initial: "T", meaning: "手首の止血用エアバンド。TRI手技終了後、橈骨動脈の穿刺部を空気圧で圧迫止血する器具。" },
             { id: "trackability", term: "trackability", reading: "トラッカビリティ / つじゅうせい", fullName: "Trackability", category: "TL", initial: "T", meaning: "追従性。屈曲した血管の形状に沿ってデバイスがスムーズに進みやすい性質。" },
