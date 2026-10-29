@@ -568,15 +568,16 @@
       display: block;
       object-fit: contain;
       box-shadow: var(--shadow-sm);
+      cursor: zoom-in;
     }
     .chat-stamp {
       max-width: 170px;
       max-height: 170px;
       display: block;
       user-select: none;
-      pointer-events: none;
       object-fit: contain;
       filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+      cursor: zoom-in;
     }
     .chat-link {
       color: #ffffff;
@@ -1199,7 +1200,6 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メモを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
-            <!-- 手描きスタンプ作成モーダルを開くボタン -->
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="改行・絵文字">⏎</button>
             <button id="send-btn" class="send-btn-style">送信</button>
@@ -1293,7 +1293,7 @@
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: center;">
           <input type="color" id="stamp-color" value="#ffffff" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-        <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem; background-color: #000000; color: #ffffff;">
+          <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem; background-color: #000000; color: #ffffff;">
             <option value="pen">ペン</option>
             <option value="calligraphy-brush">カリグラフィ ブラシ</option>
             <option value="calligraphy-pen">カリグラフィ ペン</option>
@@ -1534,8 +1534,9 @@
   <script type="module">
     import { db, messagesRef, stampHistoryRef } from "./js/config.js";
     import { initStampModal } from "./js/stamp-modal.js";
+    import { initImageViewer } from "./js/image-viewer.js";
     
-    // ユーザー選択要素が存在しない場合のフォールバック（必要に応じて変更してください）
+    // ユーザー選択要素が存在しない場合のフォールバック
     const dummyUserSelect = { value: "ユーザー" };
     
     initStampModal({ 
@@ -1544,6 +1545,9 @@
       stampHistoryRef, 
       userSelect: document.getElementById('user-select') || dummyUserSelect 
     });
+
+    // 画像拡大表示機能の初期化
+    initImageViewer();
   </script>
 </body>
 </html>
