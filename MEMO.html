@@ -930,6 +930,43 @@
       color: #fb7185; 
     }
 
+    /* 手描きスタンプ作成モーダル用スタイル追加 */
+    .stamp-canvas-container {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin: 0 auto;
+      background: #0b0f19;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .stamp-canvas-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .layer-panel-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .layer-panel-item.active {
+      border-color: var(--accent-purple);
+      background: rgba(168, 85, 247, 0.1);
+    }
+    
     /* 管理画面用スタイル */
     .admin-user-row {
       display: flex;
@@ -952,7 +989,6 @@
       align-items: center;
     }
     
-    /* スイッチ（トグル）用カスタムクラス */
     .toggle-switch-label {
       position: relative;
       display: inline-flex;
@@ -992,7 +1028,6 @@
       transform: translateX(18px);
     }
 
-    /* カレンダー拡張用配色・スタイル */
     .calendar-cell {
       background-color: rgba(19, 27, 46, 0.4);
       border: 1px solid var(--border-color);
@@ -1164,6 +1199,8 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メモを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
+            <!-- 手描きスタンプ作成モーダルを開くボタン -->
+            <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="改行・絵文字">⏎</button>
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
@@ -1213,7 +1250,7 @@
       </div>
       <div class="modal-body">
         <div class="history-header-bar">
-          <span style="font-size: 0.8rem; color: var(--text-muted);">登録済みスタンプ一覧</span>
+          <button id="back-to-stamp-draw-btn" class="stamp-nav-btn">🎨 スタンプ作成へ</button>
           <label for="stamp-upload-input" class="stamp-nav-btn" style="cursor: pointer;">📁 PNGを追加</label>
           <input type="file" id="stamp-upload-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
         </div>
@@ -1222,6 +1259,66 @@
       <div class="modal-footer">
         <div></div>
         <button id="history-modal-close-btn" class="secondary-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手描きスタンプ作成モーダル -->
+  <div id="stamp-modal-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">手描きスタンプ作成</div>
+        <button id="stamp-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="gap: 12px;">
+        <div class="stamp-canvas-container">
+          <canvas id="layer-bottom" class="stamp-canvas-layer" width="250" height="250" style="z-index: 5;"></canvas>
+          <canvas id="layer-top" class="stamp-canvas-layer" width="250" height="250" style="z-index: 10;"></canvas>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div id="layer-item-1" class="layer-panel-item">
+            <span style="font-size: 0.8rem; font-weight: 600;">レイヤー 1</span>
+            <div style="width: 32px; height: 32px; background: #0b0f19; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+              <img id="ps-preview-1" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+          </div>
+          <div id="layer-item-2" class="layer-panel-item active">
+            <span style="font-size: 0.8rem; font-weight: 600;">レイヤー 2</span>
+            <div style="width: 32px; height: 32px; background: #0b0f19; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+              <img id="ps-preview-2" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: center;">
+          <input type="color" id="stamp-color" value="#a855f7" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+          <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">
+            <option value="pen">ペン</option>
+            <option value="airbrush">エアブラシ</option>
+          </select>
+          <button type="button" id="tool-fill" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">塗り</button>
+          <button type="button" id="tool-eraser" class="secondary-btn" style="height: 38px; font-size: 0.75rem;">消しゴム</button>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">サイズ</span>
+            <input type="range" id="stamp-size" min="1" max="40" value="5" style="accent-color: var(--accent-purple);">
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 0.7rem; color: var(--text-muted);">不透明度</span>
+            <input type="range" id="stamp-opacity" min="0.05" max="1" step="0.05" value="1" style="accent-color: var(--accent-purple);">
+          </div>
+          <button type="button" id="tool-clear" class="secondary-btn" style="height: 34px; font-size: 0.75rem; margin-top: auto;">クリア</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="go-to-history-btn" class="secondary-btn" style="font-size: 0.75rem;">🕒 履歴</button>
+        <div class="modal-footer-right">
+          <button type="button" id="stamp-cancel-btn" class="secondary-btn">キャンセル</button>
+          <button type="button" id="stamp-submit-btn" class="send-btn-style">送信</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1427,5 +1524,10 @@
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/memo.js"></script>
   <script type="module" src="js/calendar.js"></script>
+  <script type="module">
+    import { db, messagesRef, stampHistoryRef } from "./js/config.js";
+    import { initStampModal } from "./js/stamp-modal.js";
+    initStampModal({ db, messagesRef, stampHistoryRef });
+  </script>
 </body>
 </html>
