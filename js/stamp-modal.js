@@ -173,7 +173,7 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     ctx.putImageData(imgData, 0, 0);
   }
 
-  // ブラシ描画処理
+  // ブラシ描画処理（各種ブラシの質感向上）
   function drawStroke(ctx, p1, p2) {
     const color = stampColorInput.value;
     const baseSize = parseFloat(stampSizeInput.value);
@@ -197,6 +197,30 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     ctx.globalCompositeOperation = 'source-over';
 
     switch (currentBrushType) {
+      case 'calligraphy-brush':
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.lineWidth = Math.max(1, baseSize * (1 - Math.min(dist / 20, 0.7)));
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        break;
+
+      case 'calligraphy-pen':
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = color;
+        const stepsCallig = Math.max(1, Math.floor(dist));
+        for (let i = 0; i <= stepsCallig; i++) {
+          const curX = p1.x + (p2.x - p1.x) * (i / stepsCallig);
+          const curY = p1.y + (p2.y - p1.y) * (i / stepsCallig);
+          ctx.beginPath();
+          ctx.ellipse(curX, curY, baseSize, Math.max(1, baseSize / 4), Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+
       case 'airbrush':
         ctx.globalAlpha = opacity * 0.15;
         ctx.fillStyle = color;
@@ -212,6 +236,76 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
           }
         }
         break;
+
+      case 'oil':
+        ctx.globalAlpha = opacity * 0.7;
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'butt';
+        ctx.lineWidth = baseSize;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        break;
+
+      case 'crayon':
+        ctx.globalAlpha = opacity * 0.6;
+        ctx.fillStyle = color;
+        const craySteps = Math.max(1, Math.floor(dist));
+        for (let i = 0; i <= craySteps; i++) {
+          const curX = p1.x + (p2.x - p1.x) * (i / craySteps);
+          const curY = p1.y + (p2.y - p1.y) * (i / craySteps);
+          for (let j = 0; j < baseSize * 1.5; j++) {
+            const rx = (Math.random() - 0.5) * baseSize;
+            const ry = (Math.random() - 0.5) * baseSize;
+            if (Math.hypot(rx, ry) <= baseSize / 2) {
+              ctx.fillRect(curX + rx, curY + ry, 1.5, 1.5);
+            }
+          }
+        }
+        break;
+
+      case 'marker':
+        ctx.globalAlpha = opacity * 0.4;
+        ctx.fillStyle = color;
+        const markSteps = Math.max(1, Math.floor(dist));
+        for (let i = 0; i <= markSteps; i++) {
+          const curX = p1.x + (p2.x - p1.x) * (i / markSteps);
+          const curY = p1.y + (p2.y - p1.y) * (i / markSteps);
+          ctx.beginPath();
+          ctx.arc(curX, curY, baseSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+
+      case 'pencil':
+        ctx.globalAlpha = opacity * 0.8;
+        ctx.fillStyle = color;
+        const pSteps = Math.max(1, Math.floor(dist));
+        for (let i = 0; i <= pSteps; i++) {
+          const curX = p1.x + (p2.x - p1.x) * (i / pSteps);
+          const curY = p1.y + (p2.y - p1.y) * (i / pSteps);
+          for (let j = 0; j < baseSize; j++) {
+            const rx = (Math.random() - 0.5) * (baseSize / 2);
+            const ry = (Math.random() - 0.5) * (baseSize / 2);
+            ctx.fillRect(curX + rx, curY + ry, 1, 1);
+          }
+        }
+        break;
+
+      case 'watercolor':
+        ctx.globalAlpha = opacity * 0.12;
+        ctx.fillStyle = color;
+        const wcSteps = Math.max(1, Math.floor(dist / 2));
+        for (let i = 0; i <= wcSteps; i++) {
+          const curX = p1.x + (p2.x - p1.x) * (i / wcSteps);
+          const curY = p1.y + (p2.y - p1.y) * (i / wcSteps);
+          ctx.beginPath();
+          ctx.arc(curX, curY, baseSize * 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+
       case 'pen':
       default:
         ctx.globalAlpha = opacity;
