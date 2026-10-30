@@ -4,6 +4,7 @@
  */
 
 export function initImageViewer() {
+  // 画像ビューワー用のモーダルを動的に生成してDOMに追加
   if (document.getElementById('image-viewer-modal')) return;
 
   const modalHtml = `
@@ -84,12 +85,14 @@ export function initImageViewer() {
     }
   });
 
+  // ESCキーでも閉じられるように
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeModal();
     }
   });
 
+  // グローバル関数として開く関数を公開（またはイベント委任で対応）
   window.openImageViewer = (imgSrc) => {
     if (!imgSrc) return;
     modalImg.src = imgSrc;
