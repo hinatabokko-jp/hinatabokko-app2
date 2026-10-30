@@ -9,7 +9,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
   const stampModalOverlay = document.getElementById('stamp-modal-overlay');
   const stampModalCloseX = document.getElementById('stamp-modal-close-x');
   const stampCancelBtn = document.getElementById('stamp-cancel-btn');
-  const goToHistoryBtn = document.getElementById('go-to-history-btn');
   const stampSubmitBtn = document.getElementById('stamp-submit-btn');
 
   const layerItem1 = document.getElementById('layer-item-1');
@@ -428,7 +427,6 @@ export function initStampModal({ db, messagesRef, stampHistoryRef }) {
     });
   }
 
-  goToHistoryBtn.addEventListener('click', () => { stampModalOverlay.classList.remove('active'); renderStampHistory(); historyModalOverlay.classList.add('active'); });
   backToStampDrawBtn.addEventListener('click', () => { historyModalOverlay.classList.remove('active'); stampModalOverlay.classList.add('active'); });
   historyModalCloseX.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
   historyModalCloseBtn.addEventListener('click', () => historyModalOverlay.classList.remove('active'));
