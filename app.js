@@ -200,6 +200,151 @@ function enterRoom(roomId) {
 }
 
 /**
+ * Render List of Available Rooms
+ */
+function renderRoomsList() {
+    const list = document.getElementById("roomList");
+    if (!list) return;
+    list.innerHTML = "";
+
+    if (STATE.rooms.length === 0) {
+        list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">現在利用可能なルームはありません</div>';
+        return;
+    }
+
+    STATE.rooms.forEach(room => {
+        const item = document.createElement("div");
+        item.className = "glass-panel p-3.5 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-purple-500/50 transition";
+        item.innerHTML = `
+            <div class="space-y-0.5">
+                <div class="flex items-center space-x-2">
+                    <span class="font-bold text-sm text-slate-200">${room.name}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full ${room.type === 'fixed' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'}">${room.type === 'fixed' ? '固定' : '招待'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400">コード: <strong class="text-purple-400 font-mono">${room.inviteCode}</strong> • メンバー: ${room.members.length}名</div>
+            </div>
+            <button class="brand-gradient-bg text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow hover:opacity-90 transition">入室</button>
+        `;
+        item.addEventListener("click", () => enterRoom(room.id));
+        list.appendChild(item);
+    });
+}
+
+/**
+ * Handle Creating a New Room
+ */
+function handleCreateRoom() {
+    const name = document.getElementById("newRoomName").value.trim();
+    const type = document.getElementById("newRoomType").value;
+
+    if (!name) {
+        showToast("ルーム名を入力してください");
+        return;
+    }
+
+    const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const newRoom = {
+        id: "ROOM_" + Date.now(),
+        name: name,
+        type: type,
+        inviteCode: inviteCode,
+        createdBy: STATE.currentUser.uid,
+        members: [STATE.currentUser.uid],
+        locations: {}
+    };
+
+    STATE.rooms.unshift(newRoom);
+    hideModal("createRoomModal");
+    document.getElementById("newRoomName").value = "";
+    
+    renderRoomsList();
+    enterRoom(newRoom.id);
+    showToast(`ルーム「${name}」を作成しました`);
+}
+
+/**
+ * Handle Joining Room by 6-digit Code
+ */
+function handleJoinByCode() {
+    const code = document.getElementById("inputInviteCode").value.trim();
+    if (!code) {
+        showToast("招待コードを入力してください");
+        return;
+    }
+
+    const room = STATE.rooms.find(r => r.inviteCode === code);
+    if (!room) {
+        showToast("該当するルームが見つかりません");
+        return;
+    }
+
+    document.getElementById("inputInviteCode").value = "";
+    enterRoom(room.id);
+}
+
+/**
+ * Toggle GPS Position Sharing
+ */
+function toggleGpsSharing() {
+    const btn = document.getElementById("btnToggleGps");
+    const dot = document.getElementById("gpsStatusDot");
+    const text = document.getElementById("gpsStatusText");
+
+    if (STATE.watchPositionId === null) {
+        if (!navigator.geolocation) {
+            showToast("お使いの端末は位置情報機能に対応していません");
+            return;
+        }
+
+        STATE.watchPositionId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                STATE.myLocation = { lat, lng };
+
+                if (STATE.currentRoom) {
+                    STATE.currentRoom.locations[STATE.currentUser.uid] = {
+                        lat: lat,
+                        lng: lng,
+                        accuracy: pos.coords.accuracy,
+                        updatedAt: new Date()
+                    };
+                    updateMapMarkers();
+                    updateProximityCards();
+                }
+            },
+            (err) => {
+                showToast("位置情報の取得に失敗しました: " + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+
+        btn.innerText = "位置共有を停止";
+        btn.classList.remove("brand-gradient-bg");
+        btn.classList.add("bg-rose-600");
+        dot.className = "w-3 h-3 rounded-full bg-emerald-400 animate-ping";
+        text.innerText = "位置共有: ON";
+        showToast("位置情報のリアルタイム共有を開始しました");
+    } else {
+        navigator.geolocation.clearWatch(STATE.watchPositionId);
+        STATE.watchPositionId = null;
+
+        if (STATE.currentRoom && STATE.currentRoom.locations[STATE.currentUser.uid]) {
+            delete STATE.currentRoom.locations[STATE.currentUser.uid];
+            updateMapMarkers();
+            updateProximityCards();
+        }
+
+        btn.innerText = "位置共有を開始";
+        btn.classList.remove("bg-rose-600");
+        btn.classList.add("brand-gradient-bg");
+        dot.className = "w-3 h-3 rounded-full bg-slate-500";
+        text.innerText = "位置共有: OFF";
+        showToast("位置共有を停止しました");
+    }
+}
+
+/**
  * Initialize Leaflet Interactive Map
  */
 function initMap() {
