@@ -74,6 +74,9 @@ function bindEvents() {
     // Auth & Login
     document.getElementById("btnLogin").addEventListener("click", handleLogin);
 
+    // User Menu Click Handler
+    document.getElementById("btnUserMenu").addEventListener("click", handleUserMenuClick);
+
     // Room operations
     document.getElementById("btnCreateRoomModal").addEventListener("click", () => showModal("createRoomModal"));
     document.getElementById("btnCloseCreateRoom").addEventListener("click", () => hideModal("createRoomModal"));
@@ -127,8 +130,14 @@ function handleLogin() {
     // Update UI Header
     document.getElementById("headerUserNav").classList.remove("hidden");
     document.getElementById("navNickname").innerText = nickname;
+
+    const btnAdmin = document.getElementById("btnAdminDashboard");
     if (isAdmin) {
-        document.getElementById("btnAdminDashboard").classList.remove("hidden");
+        btnAdmin.classList.remove("hidden");
+        btnAdmin.style.display = "inline-flex";
+    } else {
+        btnAdmin.classList.add("hidden");
+        btnAdmin.style.display = "none";
     }
 
     // Switch View
@@ -136,86 +145,21 @@ function handleLogin() {
     document.getElementById("roomSelectSection").classList.remove("hidden");
 
     renderRoomsList();
-    showToast(`ようこそ、${nickname} さん！`);
+    showToast(`ようこそ、${nickname} さん！${isAdmin ? '（管理者権限）' : ''}`);
 }
 
 /**
- * Render Rooms List
+ * Handle User Menu Click (Header Nickname Button)
  */
-function renderRoomsList() {
-    const listContainer = document.getElementById("roomList");
-    listContainer.innerHTML = "";
+function handleUserMenuClick() {
+    if (!STATE.currentUser) return;
 
-    STATE.rooms.forEach(room => {
-        const card = document.createElement("div");
-        card.className = "glass-panel p-4 rounded-xl border border-slate-800 flex justify-between items-center hover:border-purple-500/50 transition cursor-pointer";
-        
-        const isFixed = room.type === "fixed";
-        card.innerHTML = `
-            <div>
-                <div class="flex items-center space-x-2">
-                    <h4 class="font-bold text-sm text-slate-200">${room.name}</h4>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full ${isFixed ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'}">
-                        ${isFixed ? '固定' : '招待制'}
-                    </span>
-                </div>
-                <p class="text-xs text-slate-400 mt-1">招待コード: <span class="font-mono text-purple-400 font-bold">${room.inviteCode}</span> • 参加者: ${room.members.length}名</p>
-            </div>
-            <button class="brand-gradient-bg px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow">入室</button>
-        `;
-
-        card.addEventListener("click", () => enterRoom(room.id));
-        listContainer.appendChild(card);
-    });
-}
-
-/**
- * Create Room Handler
- */
-function handleCreateRoom() {
-    const name = document.getElementById("newRoomName").value.trim();
-    const type = document.getElementById("newRoomType").value;
-
-    if (!name) {
-        showToast("ルーム名を入力してください");
-        return;
-    }
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const newRoom = {
-        id: "ROOM_" + Date.now(),
-        name: name,
-        type: type,
-        inviteCode: code,
-        members: [STATE.currentUser.uid],
-        locations: {}
-    };
-
-    STATE.rooms.push(newRoom);
-    hideModal("createRoomModal");
-    document.getElementById("newRoomName").value = "";
-    
-    renderRoomsList();
-    enterRoom(newRoom.id);
-    showToast(`ルーム「${name}」を作成しました`);
-}
-
-/**
- * Join Room by 6-digit Invite Code
- */
-function handleJoinByCode() {
-    const code = document.getElementById("inputInviteCode").value.trim();
-    if (!code) {
-        showToast("招待コードを入力してください");
-        return;
-    }
-
-    const targetRoom = STATE.rooms.find(r => r.inviteCode === code);
-    if (targetRoom) {
-        enterRoom(targetRoom.id);
-        document.getElementById("inputInviteCode").value = "";
+    if (STATE.currentUser.isAdmin) {
+        openAdminDashboard();
     } else {
-        showToast("該当するルームが見つかりません");
+        if (confirm("ログアウトしてログイン画面に戻りますか？")) {
+            location.reload();
+        }
     }
 }
 
@@ -240,8 +184,13 @@ function enterRoom(roomId) {
     document.getElementById("activeRoomCode").innerText = room.inviteCode;
     document.getElementById("participantCount").innerText = `${room.members.length}名参加中`;
 
-    // Initialize Map
+    // Initialize Map and force size re-calculation
     initMap();
+    setTimeout(() => {
+        if (STATE.map) {
+            STATE.map.invalidateSize();
+        }
+    }, 200);
 
     // Reset Chat Feed
     STATE.chatMessages = [];
@@ -263,81 +212,22 @@ function initMap() {
     const defaultLat = 35.681236;
     const defaultLng = 139.767125;
 
+    const mapContainer = document.getElementById("map");
+    if (!mapContainer) return;
+
     STATE.map = L.map("map", { zoomControl: false }).setView([defaultLat, defaultLng], 16);
 
-    // OpenStreetMap Dark/Standard Layer
+    // Standard OpenStreetMap Tile Layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "© OpenStreetMap contributors"
     }).addTo(STATE.map);
 
     L.control.zoom({ position: "topright" }).addTo(STATE.map);
-}
 
-/**
- * Toggle GPS Real-Time Location Sharing
- */
-function toggleGpsSharing() {
-    const btn = document.getElementById("btnToggleGps");
-    const statusDot = document.getElementById("gpsStatusDot");
-    const statusText = document.getElementById("gpsStatusText");
-
-    if (STATE.watchPositionId !== null) {
-        // Stop Sharing
-        navigator.geolocation.clearWatch(STATE.watchPositionId);
-        STATE.watchPositionId = null;
-
-        btn.innerText = "位置共有を開始";
-        btn.className = "brand-gradient-bg text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:opacity-90 transition";
-        statusDot.className = "w-3 h-3 rounded-full bg-slate-500 animate-pulse";
-        statusText.innerText = "位置共有: OFF";
-
-        // Remove own location
-        if (STATE.currentRoom && STATE.currentUser) {
-            delete STATE.currentRoom.locations[STATE.currentUser.uid];
-            updateMapMarkers();
-        }
-
-        showToast("位置情報の共有を停止しました");
-    } else {
-        // Start Sharing
-        if (!navigator.geolocation) {
-            showToast("お使いの端末はGPS機能に対応していません");
-            return;
-        }
-
-        btn.innerText = "共有停止";
-        btn.className = "bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow transition";
-        statusDot.className = "w-3 h-3 rounded-full bg-emerald-400 animate-ping";
-        statusText.innerText = "位置共有: リアルタイム送信中";
-
-        STATE.watchPositionId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const { latitude, longitude, accuracy } = pos.coords;
-                STATE.myLocation = { lat: latitude, lng: longitude };
-
-                // Save to Room State
-                if (STATE.currentRoom) {
-                    STATE.currentRoom.locations[STATE.currentUser.uid] = {
-                        lat: latitude,
-                        lng: longitude,
-                        accuracy: accuracy,
-                        updatedAt: new Date()
-                    };
-                }
-
-                // Center Map initially
-                STATE.map.setView([latitude, longitude], 17);
-                updateMapMarkers();
-                updateProximityCards();
-            },
-            (err) => {
-                showToast("位置情報の取得に失敗しました: " + err.message);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-
-        showToast("リアルタイム位置共有を開始しました");
+    // If position already exists, update center
+    if (STATE.myLocation) {
+        STATE.map.setView([STATE.myLocation.lat, STATE.myLocation.lng], 16);
     }
 }
 
