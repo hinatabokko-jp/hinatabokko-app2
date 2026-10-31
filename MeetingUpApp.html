@@ -76,9 +76,12 @@
             <span class="text-xl font-extrabold tracking-tight brand-gradient-text">MEETING UP</span>
         </div>
         <div id="headerUserNav" class="hidden flex items-center space-x-3">
-            <span id="navNickname" class="text-xs font-semibold text-slate-300 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700"></span>
-            <button id="btnAdminDashboard" class="hidden text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg hover:bg-amber-500/30 transition">
-                <i class="fa-solid font-bold text-amber-400 mr-1"></i>管理者
+            <button id="btnUserMenu" class="text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 px-2.5 py-1 rounded-full border border-slate-700 transition flex items-center space-x-1 cursor-pointer">
+                <span id="navNickname"></span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+            </button>
+            <button id="btnAdminDashboard" class="hidden text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg hover:bg-amber-500/30 transition flex items-center font-bold">
+                <i class="fa-solid fa-shield-halved text-amber-400 mr-1.5"></i>管理者
             </button>
         </div>
     </header>
