@@ -469,12 +469,10 @@
 
             updateRoomUI();
 
-            initMap();
+            // 画面表示切り替え直後に地図サイズを再計算・タイル再描画させる
             setTimeout(() => {
-                if (STATE.map) {
-                    STATE.map.invalidateSize();
-                }
-            }, 250);
+                initMap();
+            }, 100);
 
             // Chat Listener for room
             const chatRef = ref(db, `rooms/${roomId}/messages`);
@@ -542,6 +540,7 @@
             const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
             const roomId = "ROOM_" + Date.now();
             const newRoom = {
+                id: roomId,
                 name: name,
                 type: type,
                 inviteCode: inviteCode,
@@ -550,11 +549,30 @@
                 locations: {}
             };
 
-            set(ref(db, `rooms/${roomId}`), newRoom).then(() => {
+            // ローカルの rooms リストにも追加して即座に参照可能にする
+            const existingIndex = STATE.rooms.findIndex(r => r.id === roomId);
+            if (existingIndex >= 0) {
+                STATE.rooms[existingIndex] = newRoom;
+            } else {
+                STATE.rooms.unshift(newRoom);
+            }
+
+            set(ref(db, `rooms/${roomId}`), {
+                name: name,
+                type: type,
+                inviteCode: inviteCode,
+                createdBy: STATE.currentUser.uid,
+                members: { [STATE.currentUser.uid]: STATE.currentUser.nickname },
+                locations: {}
+            }).then(() => {
                 hideModal("createRoomModal");
                 document.getElementById("newRoomName").value = "";
+                renderRoomsList();
                 enterRoom(roomId);
                 showToast(`ルーム「${name}」を作成しました`);
+            }).catch((err) => {
+                console.error("Room creation error:", err);
+                showToast("ルーム作成に失敗しました");
             });
         }
 
@@ -642,12 +660,18 @@
             const mapContainer = document.getElementById("map");
             if (!mapContainer) return;
 
+            // コンテナサイズ確定を保証
+            if (mapContainer.clientHeight === 0) {
+                mapContainer.style.minHeight = "300px";
+            }
+
             STATE.map = L.map("map", { zoomControl: false }).setView([defaultLat, defaultLng], 16);
 
-            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            // スタイリッシュで信頼性の高いCartoDB Dark Tileを使用
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", {
                 maxZoom: 19,
                 subdomains: 'abcd',
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
             }).addTo(STATE.map);
 
             L.control.zoom({ position: "topright" }).addTo(STATE.map);
@@ -656,7 +680,8 @@
                 STATE.map.setView([STATE.myLocation.lat, STATE.myLocation.lng], 16);
             }
 
-            [100, 300, 700].forEach(delay => {
+            // タイルの読み込み残しを防ぐため段階的に描画を更新
+            [100, 300, 600, 1000].forEach(delay => {
                 setTimeout(() => {
                     if (STATE.map) {
                         STATE.map.invalidateSize();
