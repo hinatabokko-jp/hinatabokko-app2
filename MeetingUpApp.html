@@ -42,7 +42,6 @@
             height: 100%;
         }
         
-        /* 互換性の向上のためフィルター処理を最適化 */
         .leaflet-tile {
             filter: brightness(0.85) contrast(1.1);
         }
@@ -104,7 +103,6 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1">アプリ合言葉</label>
                     <input type="password" id="inputPassphrase" placeholder="合言葉を入力" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <p class="text-[10px] text-slate-500 mt-1">* 共通合言葉: meeting2026 (管理者用: admin2026)</p>
                 </div>
                 <button id="btnLogin" class="w-full brand-gradient-bg text-white font-bold py-3.5 rounded-xl shadow-lg hover:opacity-95 transition transform active:scale-95 text-sm">
                     認証して入室
@@ -154,7 +152,7 @@
                     <div class="text-[11px] text-slate-400 flex items-center space-x-2 mt-0.5">
                         <span>コード: <strong id="activeRoomCode" class="text-purple-400"></strong></span>
                         <span>•</span>
-                        <span id="participantCount">1名参加中</span>
+                        <span id="participantCount">0名参加中</span>
                     </div>
                 </div>
                 <button id="btnLeaveRoom" class="bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition">
@@ -264,7 +262,639 @@
 
     <!-- Leaflet JS for Interactive OpenMaps -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Import Logic Script File -->
-    <script src="app.js"></script>
+
+    <!-- Firebase SDKs & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Obfuscated Verification Keys (Base64 Encodings)
+        const _k1 = "MTIzNA=="; // 1234
+        const _k2 = "MDgxMw=="; // 0813
+
+        function verifyToken(input, token) {
+            try {
+                return btoa(input) === token;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7zMaJys6IGRN1gV0cPEQveVO6Oq7hNlM",
+            authDomain: "meetingupapp-99624.firebaseapp.com",
+            projectId: "meetingupapp-99624",
+            storageBucket: "meetingupapp-99624.firebasestorage.app",
+            messagingSenderId: "675238703207",
+            appId: "1:675238703207:web:64a2d64c1e33340e47e4c2",
+            measurementId: "G-7Q2KK5ZDB1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Global State
+        const STATE = {
+            currentUser: null,
+            currentRoom: null,
+            watchPositionId: null,
+            map: null,
+            markers: {},
+            myLocation: null,
+            users: [],
+            rooms: [],
+            chatMessages: [],
+            roomListenerUnsub: null,
+            chatListenerUnsub: null,
+            usersListenerUnsub: null
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initApp();
+        });
+
+        function initApp() {
+            // Authenticate anonymously to Firebase backend
+            signInAnonymously(auth).catch(err => console.error("Firebase Auth Error:", err));
+            setupInitialData();
+            bindEvents();
+        }
+
+        function setupInitialData() {
+            // Subscribe to Firebase Rooms Data
+            const roomsRef = ref(db, "rooms");
+            onValue(roomsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    STATE.rooms = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                } else {
+                    // Seed initial default fixed room if DB is empty
+                    const defaultRoom = {
+                        name: "待ち合わせ",
+                        type: "fixed",
+                        inviteCode: "999888",
+                        members: {},
+                        locations: {}
+                    };
+                    set(ref(db, "rooms/ROOM_FIXED_WAITING"), defaultRoom);
+                    STATE.rooms = [{ id: "ROOM_FIXED_WAITING", ...defaultRoom }];
+                }
+                renderRoomsList();
+                if (STATE.currentRoom) {
+                    const updatedRoom = STATE.rooms.find(r => r.id === STATE.currentRoom.id);
+                    if (updatedRoom) {
+                        STATE.currentRoom = updatedRoom;
+                        updateRoomUI();
+                        updateMapMarkers();
+                        updateProximityCards();
+                    }
+                }
+            });
+
+            // Subscribe to Online Users List
+            const usersRef = ref(db, "users");
+            onValue(usersRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    STATE.users = Object.keys(data).map(key => ({ uid: key, ...data[key] }));
+                } else {
+                    STATE.users = [];
+                }
+            });
+        }
+
+        function bindEvents() {
+            document.getElementById("btnLogin").addEventListener("click", handleLogin);
+            document.getElementById("btnUserMenu").addEventListener("click", handleUserMenuClick);
+            document.getElementById("btnCreateRoomModal").addEventListener("click", () => showModal("createRoomModal"));
+            document.getElementById("btnCloseCreateRoom").addEventListener("click", () => hideModal("createRoomModal"));
+            document.getElementById("btnConfirmCreateRoom").addEventListener("click", handleCreateRoom);
+            document.getElementById("btnJoinByCode").addEventListener("click", handleJoinByCode);
+            document.getElementById("btnLeaveRoom").addEventListener("click", handleLeaveRoom);
+            document.getElementById("btnToggleGps").addEventListener("click", toggleGpsSharing);
+            document.getElementById("btnSendMessage").addEventListener("click", handleSendMessage);
+            
+            document.querySelectorAll(".preset-msg").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    document.getElementById("inputChatMessage").value = e.target.innerText;
+                    handleSendMessage();
+                });
+            });
+
+            document.getElementById("btnAdminDashboard").addEventListener("click", openAdminDashboard);
+            document.getElementById("btnCloseAdmin").addEventListener("click", () => hideModal("adminModal"));
+        }
+
+        function handleLogin() {
+            const nickname = document.getElementById("inputNickname").value.trim();
+            const passphrase = document.getElementById("inputPassphrase").value.trim();
+
+            if (!nickname) {
+                showToast("ニックネームを入力してください");
+                return;
+            }
+
+            const isUserValid = verifyToken(passphrase, _k1);
+            const isAdminValid = verifyToken(passphrase, _k2);
+
+            if (!isUserValid && !isAdminValid) {
+                showToast("合言葉が正しくありません");
+                return;
+            }
+
+            const isAdmin = isAdminValid;
+            const uid = auth.currentUser ? auth.currentUser.uid : "UID_" + Math.random().toString(36).substring(2, 9);
+
+            STATE.currentUser = {
+                uid: uid,
+                nickname: nickname,
+                isAdmin: isAdmin
+            };
+
+            // Sync user details to Firebase Database
+            set(ref(db, `users/${uid}`), {
+                nickname: nickname,
+                isAdmin: isAdmin,
+                status: "active",
+                updatedAt: Date.now()
+            });
+
+            document.getElementById("headerUserNav").classList.remove("hidden");
+            document.getElementById("navNickname").innerText = nickname + (isAdmin ? " 👑" : "");
+
+            const btnAdmin = document.getElementById("btnAdminDashboard");
+            if (isAdmin) {
+                btnAdmin.classList.remove("hidden");
+                btnAdmin.style.display = "inline-flex";
+            } else {
+                btnAdmin.classList.add("hidden");
+                btnAdmin.style.display = "none";
+            }
+
+            document.getElementById("authSection").classList.add("hidden");
+            document.getElementById("roomSelectSection").classList.remove("hidden");
+
+            renderRoomsList();
+            showToast(`ようこそ、${nickname} さん！${isAdmin ? '（管理者権限）' : ''}`);
+        }
+
+        function handleUserMenuClick() {
+            if (!STATE.currentUser) return;
+            if (STATE.currentUser.isAdmin) {
+                openAdminDashboard();
+            } else {
+                if (confirm("ログアウトしてログイン画面に戻りますか？")) {
+                    location.reload();
+                }
+            }
+        }
+
+        function enterRoom(roomId) {
+            const room = STATE.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            STATE.currentRoom = room;
+
+            // Register user to room in Firebase
+            update(ref(db, `rooms/${roomId}/members`), {
+                [STATE.currentUser.uid]: STATE.currentUser.nickname
+            });
+
+            document.getElementById("roomSelectSection").classList.add("hidden");
+            document.getElementById("activeRoomSection").classList.remove("hidden");
+
+            updateRoomUI();
+
+            initMap();
+            setTimeout(() => {
+                if (STATE.map) {
+                    STATE.map.invalidateSize();
+                }
+            }, 250);
+
+            // Chat Listener for room
+            const chatRef = ref(db, `rooms/${roomId}/messages`);
+            onValue(chatRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    STATE.chatMessages = Object.values(data);
+                } else {
+                    STATE.chatMessages = [];
+                }
+                renderChatMessages();
+            });
+
+            showToast(`「${room.name}」に入室しました`);
+        }
+
+        function updateRoomUI() {
+            if (!STATE.currentRoom) return;
+            const r = STATE.currentRoom;
+            const memberCount = r.members ? Object.keys(r.members).length : 0;
+            document.getElementById("activeRoomTitle").innerText = r.name;
+            document.getElementById("activeRoomBadge").innerText = r.type === "fixed" ? "固定グループ" : "招待ルーム";
+            document.getElementById("activeRoomCode").innerText = r.inviteCode;
+            document.getElementById("participantCount").innerText = `${memberCount}名参加中`;
+        }
+
+        function renderRoomsList() {
+            const list = document.getElementById("roomList");
+            if (!list) return;
+            list.innerHTML = "";
+
+            if (STATE.rooms.length === 0) {
+                list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">現在利用可能なルームはありません</div>';
+                return;
+            }
+
+            STATE.rooms.forEach(room => {
+                const memberCount = room.members ? Object.keys(room.members).length : 0;
+                const item = document.createElement("div");
+                item.className = "glass-panel p-3.5 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-purple-500/50 transition";
+                item.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-sm text-slate-200">${room.name}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full ${room.type === 'fixed' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'}">${room.type === 'fixed' ? '固定' : '招待'}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400">コード: <strong class="text-purple-400 font-mono">${room.inviteCode}</strong> • メンバー: ${memberCount}名</div>
+                    </div>
+                    <button class="brand-gradient-bg text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow hover:opacity-90 transition">入室</button>
+                `;
+                item.addEventListener("click", () => enterRoom(room.id));
+                list.appendChild(item);
+            });
+        }
+
+        function handleCreateRoom() {
+            const name = document.getElementById("newRoomName").value.trim();
+            const type = document.getElementById("newRoomType").value;
+
+            if (!name) {
+                showToast("ルーム名を入力してください");
+                return;
+            }
+
+            const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const roomId = "ROOM_" + Date.now();
+            const newRoom = {
+                name: name,
+                type: type,
+                inviteCode: inviteCode,
+                createdBy: STATE.currentUser.uid,
+                members: { [STATE.currentUser.uid]: STATE.currentUser.nickname },
+                locations: {}
+            };
+
+            set(ref(db, `rooms/${roomId}`), newRoom).then(() => {
+                hideModal("createRoomModal");
+                document.getElementById("newRoomName").value = "";
+                enterRoom(roomId);
+                showToast(`ルーム「${name}」を作成しました`);
+            });
+        }
+
+        function handleJoinByCode() {
+            const code = document.getElementById("inputInviteCode").value.trim();
+            if (!code) {
+                showToast("招待コードを入力してください");
+                return;
+            }
+
+            const room = STATE.rooms.find(r => r.inviteCode === code);
+            if (!room) {
+                showToast("該当するルームが見つかりません");
+                return;
+            }
+
+            document.getElementById("inputInviteCode").value = "";
+            enterRoom(room.id);
+        }
+
+        function toggleGpsSharing() {
+            const btn = document.getElementById("btnToggleGps");
+            const dot = document.getElementById("gpsStatusDot");
+            const text = document.getElementById("gpsStatusText");
+
+            if (STATE.watchPositionId === null) {
+                if (!navigator.geolocation) {
+                    showToast("お使いの端末は位置情報機能に対応していません");
+                    return;
+                }
+
+                STATE.watchPositionId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        STATE.myLocation = { lat, lng };
+
+                        if (STATE.currentRoom) {
+                            set(ref(db, `rooms/${STATE.currentRoom.id}/locations/${STATE.currentUser.uid}`), {
+                                lat: lat,
+                                lng: lng,
+                                accuracy: pos.coords.accuracy,
+                                updatedAt: Date.now()
+                            });
+                        }
+                    },
+                    (err) => {
+                        showToast("位置情報の取得に失敗しました: " + err.message);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+
+                btn.innerText = "位置共有を停止";
+                btn.classList.remove("brand-gradient-bg");
+                btn.classList.add("bg-rose-600");
+                dot.className = "w-3 h-3 rounded-full bg-emerald-400 animate-ping";
+                text.innerText = "位置共有: ON";
+                showToast("位置情報のリアルタイム共有を開始しました");
+            } else {
+                navigator.geolocation.clearWatch(STATE.watchPositionId);
+                STATE.watchPositionId = null;
+
+                if (STATE.currentRoom) {
+                    remove(ref(db, `rooms/${STATE.currentRoom.id}/locations/${STATE.currentUser.uid}`));
+                }
+
+                btn.innerText = "位置共有を開始";
+                btn.classList.remove("bg-rose-600");
+                btn.classList.add("brand-gradient-bg");
+                dot.className = "w-3 h-3 rounded-full bg-slate-500";
+                text.innerText = "位置共有: OFF";
+                showToast("位置共有を停止しました");
+            }
+        }
+
+        function initMap() {
+            if (STATE.map) {
+                STATE.map.remove();
+                STATE.map = null;
+            }
+
+            const defaultLat = 35.681236;
+            const defaultLng = 139.767125;
+
+            const mapContainer = document.getElementById("map");
+            if (!mapContainer) return;
+
+            STATE.map = L.map("map", { zoomControl: false }).setView([defaultLat, defaultLng], 16);
+
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(STATE.map);
+
+            L.control.zoom({ position: "topright" }).addTo(STATE.map);
+
+            if (STATE.myLocation) {
+                STATE.map.setView([STATE.myLocation.lat, STATE.myLocation.lng], 16);
+            }
+
+            [100, 300, 700].forEach(delay => {
+                setTimeout(() => {
+                    if (STATE.map) {
+                        STATE.map.invalidateSize();
+                    }
+                }, delay);
+            });
+        }
+
+        function updateMapMarkers() {
+            if (!STATE.map || !STATE.currentRoom) return;
+
+            const locations = STATE.currentRoom.locations || {};
+
+            Object.keys(locations).forEach(uid => {
+                const loc = locations[uid];
+                const isSelf = uid === STATE.currentUser.uid;
+                const nickname = isSelf ? `${STATE.currentUser.nickname}(自分)` : getNicknameByUid(uid);
+
+                const customIcon = L.divIcon({
+                    className: "custom-pin",
+                    html: `
+                        <div class="flex flex-col items-center">
+                            <div class="bg-slate-900/90 text-slate-100 text-[10px] font-bold px-2 py-0.5 rounded-md border border-purple-500 shadow-md whitespace-nowrap">
+                                ${nickname}
+                            </div>
+                            <div class="w-4 h-4 rounded-full ${isSelf ? 'bg-pink-500' : 'bg-indigo-500'} border-2 border-white shadow-lg animate-bounce mt-0.5"></div>
+                        </div>
+                    `,
+                    iconSize: [60, 40],
+                    iconAnchor: [30, 40]
+                });
+
+                if (STATE.markers[uid]) {
+                    STATE.markers[uid].setLatLng([loc.lat, loc.lng]);
+                } else {
+                    STATE.markers[uid] = L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(STATE.map);
+                }
+            });
+
+            Object.keys(STATE.markers).forEach(uid => {
+                if (!locations[uid]) {
+                    STATE.map.removeLayer(STATE.markers[uid]);
+                    delete STATE.markers[uid];
+                }
+            });
+        }
+
+        function updateProximityCards() {
+            const proximityList = document.getElementById("proximityList");
+            proximityList.innerHTML = "";
+
+            if (!STATE.myLocation || !STATE.currentRoom || !STATE.currentRoom.locations) return;
+
+            const locations = STATE.currentRoom.locations;
+
+            Object.keys(locations).forEach(uid => {
+                if (uid === STATE.currentUser.uid) return;
+
+                const targetLoc = locations[uid];
+                const dist = calculateDistance(STATE.myLocation.lat, STATE.myLocation.lng, targetLoc.lat, targetLoc.lng);
+                const bearing = calculateBearing(STATE.myLocation.lat, STATE.myLocation.lng, targetLoc.lat, targetLoc.lng);
+                const directionText = getDirectionName(bearing);
+                const name = getNicknameByUid(uid);
+
+                const card = document.createElement("div");
+                card.className = "glass-panel p-2.5 rounded-xl border border-slate-800 min-w-[140px] flex flex-col justify-between space-y-1 shadow-md";
+                card.innerHTML = `
+                    <div class="text-[11px] font-bold text-slate-200 truncate">${name}</div>
+                    <div class="text-xs font-black brand-gradient-text">${dist < 1000 ? Math.round(dist) + 'm' : (dist/1000).toFixed(1) + 'km'}</div>
+                    <div class="text-[10px] text-slate-400 font-semibold"><i class="fa-solid fa-compass text-purple-400 mr-1"></i>${directionText}</div>
+                `;
+
+                if (dist <= 20) {
+                    showToast(`✨ ${name} さんが近くにいます！（${Math.round(dist)}m）`);
+                }
+
+                proximityList.appendChild(card);
+            });
+        }
+
+        function handleSendMessage() {
+            const input = document.getElementById("inputChatMessage");
+            const text = input.value.trim();
+            if (!text || !STATE.currentRoom) return;
+
+            const msgRef = ref(db, `rooms/${STATE.currentRoom.id}/messages`);
+            push(msgRef, {
+                sender: STATE.currentUser.nickname,
+                text: text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: Date.now()
+            });
+
+            input.value = "";
+        }
+
+        function renderChatMessages() {
+            const feed = document.getElementById("chatFeed");
+            feed.innerHTML = "";
+
+            if (STATE.chatMessages.length === 0) {
+                feed.innerHTML = '<div class="text-center text-slate-500 text-[10px] py-2">メッセージ履歴はありません</div>';
+                return;
+            }
+
+            STATE.chatMessages.forEach(msg => {
+                const item = document.createElement("div");
+                item.className = "flex justify-between items-start space-x-2 text-slate-300";
+                item.innerHTML = `
+                    <div>
+                        <strong class="text-purple-400 font-bold">${msg.sender}:</strong>
+                        <span class="text-slate-200">${msg.text}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-500 whitespace-nowrap">${msg.time}</span>
+                `;
+                feed.appendChild(item);
+            });
+
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function openAdminDashboard() {
+            if (!STATE.currentUser || !STATE.currentUser.isAdmin) {
+                showToast("管理者権限がありません");
+                return;
+            }
+
+            showModal("adminModal");
+
+            const userContainer = document.getElementById("adminUserList");
+            userContainer.innerHTML = "";
+
+            STATE.users.forEach(u => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${u.nickname}</span>
+                        <span class="text-[10px] text-slate-500 block font-mono">UID: ${u.uid}</span>
+                    </div>
+                    <button class="bg-rose-500/20 text-rose-300 text-[10px] px-2 py-1 rounded hover:bg-rose-500/30">停止</button>
+                `;
+                userContainer.appendChild(row);
+            });
+
+            const roomContainer = document.getElementById("adminRoomList");
+            roomContainer.innerHTML = "";
+
+            STATE.rooms.forEach(r => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${r.name}</span>
+                        <span class="text-[10px] text-slate-400 block">コード: ${r.inviteCode}</span>
+                    </div>
+                    <button class="bg-rose-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow hover:bg-rose-700">強制終了</button>
+                `;
+                row.querySelector("button").addEventListener("click", () => {
+                    remove(ref(db, `rooms/${r.id}`)).then(() => {
+                        openAdminDashboard();
+                        showToast(`ルーム「${r.name}」を強制終了しました`);
+                    });
+                });
+                roomContainer.appendChild(row);
+            });
+        }
+
+        function handleLeaveRoom() {
+            if (STATE.watchPositionId !== null) {
+                toggleGpsSharing();
+            }
+
+            if (STATE.currentRoom && STATE.currentUser) {
+                remove(ref(db, `rooms/${STATE.currentRoom.id}/members/${STATE.currentUser.uid}`));
+            }
+
+            STATE.currentRoom = null;
+            document.getElementById("activeRoomSection").classList.add("hidden");
+            document.getElementById("roomSelectSection").classList.remove("hidden");
+
+            renderRoomsList();
+            showToast("ルームから退室しました");
+        }
+
+        function getNicknameByUid(uid) {
+            if (STATE.currentRoom && STATE.currentRoom.members && STATE.currentRoom.members[uid]) {
+                return STATE.currentRoom.members[uid];
+            }
+            const user = STATE.users.find(u => u.uid === uid);
+            return user ? user.nickname : "メンバー";
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+            const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                      Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+            const θ = Math.atan2(y, x);
+            return (θ * 180 / Math.PI + 360) % 360;
+        }
+
+        function getDirectionName(bearing) {
+            const directions = ["北", "北東", "東", "南東", "南", "南西", "西", "北西"];
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index] + "方向";
+        }
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove("hidden");
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add("hidden");
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toastMessage").innerText = message;
+            toast.classList.remove("hidden");
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
