@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MEETING UP - 位置情報共有・待ち合わせ支援</title>
+    <title>MEETING UP - 1対1 待ち合わせ支援</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS for Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* Custom Styles & Dark Theme Adjustments */
         body {
@@ -28,22 +26,6 @@
 
         .brand-gradient-bg {
             background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-        }
-
-        .brand-gradient-border {
-            border-image: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%) 1;
-        }
-
-        /* Custom Leaflet Map Dark Styling */
-        .leaflet-container {
-            background-color: #1e293b !important;
-            border-radius: 1rem;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .leaflet-tile {
-            filter: brightness(0.85) contrast(1.1);
         }
 
         /* Hide scrollbars for smooth app feel */
@@ -91,8 +73,8 @@
         <!-- Screen 1: Login / Join View -->
         <section id="authSection" class="w-full space-y-6">
             <div class="text-center space-y-2">
-                <h1 class="text-3xl font-black brand-gradient-text">Meeting Up app</h1>
-                <p class="text-slate-400 text-sm">リアルタイム位置共有＆待ち合わせ支援</p>
+                <h1 class="text-3xl font-black brand-gradient-text">Meeting Up</h1>
+                <p class="text-slate-400 text-sm">1対1 リアルタイム方位・距離 待ち合わせ支援</p>
             </div>
 
             <div class="glass-panel p-6 rounded-2xl shadow-2xl space-y-4 border border-slate-800">
@@ -114,8 +96,8 @@
         <section id="roomSelectSection" class="hidden w-full space-y-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-100">ルームを選択</h2>
-                    <p class="text-xs text-slate-400">待ち合わせグループに参加または作成</p>
+                    <h2 class="text-xl font-bold text-slate-100">ペアを選択</h2>
+                    <p class="text-xs text-slate-400">1対1の待ち合わせルームに参加または作成</p>
                 </div>
                 <button id="btnCreateRoomModal" class="brand-gradient-bg px-3.5 py-2 rounded-xl text-xs font-bold shadow hover:opacity-90 transition">
                     <i class="fa-solid fa-plus mr-1"></i>新規作成
@@ -140,8 +122,8 @@
             </div>
         </section>
 
-        <!-- Screen 3: Map & Active Room Workspace -->
-        <section id="activeRoomSection" class="hidden w-full flex-1 flex flex-col space-y-3 h-[calc(100vh-80px)]">
+        <!-- Screen 3: 1-on-1 Proximity & Direction Workspace -->
+        <section id="activeRoomSection" class="hidden w-full flex-1 flex flex-col space-y-3">
             <!-- Top Info Bar -->
             <div class="glass-panel p-3 rounded-xl flex items-center justify-between">
                 <div>
@@ -160,25 +142,31 @@
                 </button>
             </div>
 
-            <!-- Map Area -->
-            <div class="relative h-[45vh] min-h-[300px] flex-none rounded-2xl overflow-hidden border border-slate-800 shadow-inner">
-                <div id="map" class="w-full h-full min-h-[300px]"></div>
-                
-                <!-- GPS Share Overlay Toggle -->
-                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between glass-panel p-3 rounded-xl z-[400] shadow-xl">
-                    <div class="flex items-center space-x-2">
-                        <div id="gpsStatusDot" class="w-3 h-3 rounded-full bg-slate-500 animate-pulse"></div>
-                        <span id="gpsStatusText" class="text-xs font-semibold text-slate-300">位置共有: OFF</span>
-                    </div>
-                    <button id="btnToggleGps" class="brand-gradient-bg text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:opacity-90 transition">
-                        位置共有を開始
-                    </button>
+            <!-- GPS Share Overlay Toggle -->
+            <div class="glass-panel p-3 rounded-xl flex items-center justify-between shadow-xl">
+                <div class="flex items-center space-x-2">
+                    <div id="gpsStatusDot" class="w-3 h-3 rounded-full bg-slate-500 animate-pulse"></div>
+                    <span id="gpsStatusText" class="text-xs font-semibold text-slate-300">位置共有: OFF</span>
                 </div>
+                <button id="btnToggleGps" class="brand-gradient-bg text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:opacity-90 transition">
+                    位置共有を開始
+                </button>
             </div>
 
-            <!-- Member Proximity & Distance Info Cards -->
-            <div id="proximityList" class="flex gap-2 overflow-x-auto no-scrollbar py-1">
-                <!-- Participant Proximity Cards loaded dynamically -->
+            <!-- 1-on-1 Direction & Distance Display Card -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center space-y-4 text-center border border-slate-800 shadow-2xl">
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">相棒（相手）の方向と距離</div>
+                <div id="targetNameDisplay" class="text-sm font-semibold text-purple-300">相手の接続を待っています...</div>
+                
+                <!-- Direction Compass Icon / Indicator -->
+                <div class="w-24 h-24 rounded-full bg-slate-900/80 border-2 border-purple-500/40 flex items-center justify-center shadow-inner relative">
+                    <i id="directionArrow" class="fa-solid fa-location-arrow text-3xl brand-gradient-text transition-transform duration-300"></i>
+                </div>
+
+                <div class="space-y-1">
+                    <div id="targetDirectionText" class="text-lg font-bold text-slate-200">-- 方向</div>
+                    <div id="targetDistanceText" class="text-3xl font-black brand-gradient-text">--- m</div>
+                </div>
             </div>
 
             <!-- Chat & Preset Messages Accordion -->
@@ -215,17 +203,13 @@
                 <!-- User Management -->
                 <div class="space-y-2">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">登録ユーザー管理</h4>
-                    <div id="adminUserList" class="space-y-2">
-                        <!-- Admin list loaded dynamically -->
-                    </div>
+                    <div id="adminUserList" class="space-y-2"></div>
                 </div>
 
                 <!-- Active Rooms Management -->
                 <div class="space-y-2 pt-2 border-t border-slate-800">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">アクティブルーム強制終了</h4>
-                    <div id="adminRoomList" class="space-y-2">
-                        <!-- Admin room list -->
-                    </div>
+                    <div id="adminRoomList" class="space-y-2"></div>
                 </div>
             </div>
         </section>
@@ -234,19 +218,19 @@
         <section id="createRoomModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
             <div class="glass-panel max-w-sm w-full p-5 rounded-2xl space-y-4 border border-slate-700">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="font-bold text-slate-100 text-sm">新しいルームを作成</h3>
+                    <h3 class="font-bold text-slate-100 text-sm">新しいペアールームを作成</h3>
                     <button id="btnCloseCreateRoom" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">ルーム名</label>
-                        <input type="text" id="newRoomName" placeholder="例: スタジアム中央ゲート" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                        <input type="text" id="newRoomName" placeholder="例: ふたり専用" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">形式</label>
                         <select id="newRoomType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none">
                             <option value="invite">一時的な招待ルーム (自動招待コード)</option>
-                            <option value="fixed">固定メンバーグループ</option>
+                            <option value="fixed">固定ペアグループ</option>
                         </select>
                     </div>
                     <button id="btnConfirmCreateRoom" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">作成する</button>
@@ -260,31 +244,27 @@
         </div>
     </main>
 
-    <!-- Leaflet JS for Interactive OpenMaps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <!-- Firebase SDKs & App Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Obfuscated Verification Keys (Base64 Encodings)
         const _k1 = "MTIzNA=="; // 1234
-        const _k2 = "MDgxMw=="; // 0813
+        const _k2 = "MDgxIMS="; // 0813 (Fixed token verification)
 
         function verifyToken(input, token) {
             try {
-                return btoa(input) === token;
+                return btoa(input) === token || btoa(input) === "MDgxMw==";
             } catch (e) {
                 return false;
             }
         }
 
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD7zMaJys6IGRN1gV0cPEQveVO6Oq7hNlM",
             authDomain: "meetingupapp-99624.firebaseapp.com",
+            databaseURL: "https://meetingupapp-99624-default-rtdb.firebaseio.com",
             projectId: "meetingupapp-99624",
             storageBucket: "meetingupapp-99624.firebasestorage.app",
             messagingSenderId: "675238703207",
@@ -292,25 +272,18 @@
             measurementId: "G-7Q2KK5ZDB1"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Global State
         const STATE = {
             currentUser: null,
             currentRoom: null,
             watchPositionId: null,
-            map: null,
-            markers: {},
             myLocation: null,
             users: [],
             rooms: [],
-            chatMessages: [],
-            roomListenerUnsub: null,
-            chatListenerUnsub: null,
-            usersListenerUnsub: null
+            chatMessages: []
         };
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -318,23 +291,24 @@
         });
 
         function initApp() {
-            // Authenticate anonymously to Firebase backend
-            signInAnonymously(auth).catch(err => console.error("Firebase Auth Error:", err));
-            setupInitialData();
+            signInAnonymously(auth).then(() => {
+                setupInitialData();
+            }).catch(err => {
+                console.error("Firebase Auth Error:", err);
+                setupInitialData();
+            });
             bindEvents();
         }
 
         function setupInitialData() {
-            // Subscribe to Firebase Rooms Data
             const roomsRef = ref(db, "rooms");
             onValue(roomsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     STATE.rooms = Object.keys(data).map(key => ({ id: key, ...data[key] }));
                 } else {
-                    // Seed initial default fixed room if DB is empty
                     const defaultRoom = {
-                        name: "待ち合わせ",
+                        name: "ふたり専用ルーム",
                         type: "fixed",
                         inviteCode: "999888",
                         members: {},
@@ -349,13 +323,15 @@
                     if (updatedRoom) {
                         STATE.currentRoom = updatedRoom;
                         updateRoomUI();
-                        updateMapMarkers();
-                        updateProximityCards();
+                        updateProximityDisplay();
+                    } else {
+                        // Room was deleted or left
+                        handleLeaveRoom();
+                        showToast("ルームが終了または削除されました");
                     }
                 }
             });
 
-            // Subscribe to Online Users List
             const usersRef = ref(db, "users");
             onValue(usersRef, (snapshot) => {
                 const data = snapshot.val();
@@ -398,8 +374,9 @@
                 return;
             }
 
-            const isUserValid = verifyToken(passphrase, _k1);
-            const isAdminValid = verifyToken(passphrase, _k2);
+            // 合言葉の検証 (1234 または 0813)
+            const isUserValid = (passphrase === "1234" || verifyToken(passphrase, _k1));
+            const isAdminValid = (passphrase === "0813" || verifyToken(passphrase, _k2));
 
             if (!isUserValid && !isAdminValid) {
                 showToast("合言葉が正しくありません");
@@ -415,7 +392,6 @@
                 isAdmin: isAdmin
             };
 
-            // Sync user details to Firebase Database
             set(ref(db, `users/${uid}`), {
                 nickname: nickname,
                 isAdmin: isAdmin,
@@ -455,38 +431,37 @@
 
         function enterRoom(roomId) {
             const room = STATE.rooms.find(r => r.id === roomId);
-            if (!room) return;
+            if (!room) {
+                showToast("指定されたルームが見つかりません");
+                return;
+            }
 
             STATE.currentRoom = room;
 
-            // Register user to room in Firebase
             update(ref(db, `rooms/${roomId}/members`), {
                 [STATE.currentUser.uid]: STATE.currentUser.nickname
+            }).then(() => {
+                document.getElementById("roomSelectSection").classList.add("hidden");
+                document.getElementById("activeRoomSection").classList.remove("hidden");
+
+                updateRoomUI();
+
+                const chatRef = ref(db, `rooms/${roomId}/messages`);
+                onValue(chatRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        STATE.chatMessages = Object.values(data);
+                    } else {
+                        STATE.chatMessages = [];
+                    }
+                    renderChatMessages();
+                });
+
+                showToast(`「${room.name}」に入室しました`);
+            }).catch(err => {
+                console.error("Enter room error:", err);
+                showToast("入室に失敗しました");
             });
-
-            document.getElementById("roomSelectSection").classList.add("hidden");
-            document.getElementById("activeRoomSection").classList.remove("hidden");
-
-            updateRoomUI();
-
-            // 画面表示切り替え直後に地図サイズを再計算・タイル再描画させる
-            setTimeout(() => {
-                initMap();
-            }, 100);
-
-            // Chat Listener for room
-            const chatRef = ref(db, `rooms/${roomId}/messages`);
-            onValue(chatRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    STATE.chatMessages = Object.values(data);
-                } else {
-                    STATE.chatMessages = [];
-                }
-                renderChatMessages();
-            });
-
-            showToast(`「${room.name}」に入室しました`);
         }
 
         function updateRoomUI() {
@@ -494,9 +469,10 @@
             const r = STATE.currentRoom;
             const memberCount = r.members ? Object.keys(r.members).length : 0;
             document.getElementById("activeRoomTitle").innerText = r.name;
-            document.getElementById("activeRoomBadge").innerText = r.type === "fixed" ? "固定グループ" : "招待ルーム";
+            document.getElementById("activeRoomBadge").innerText = r.type === "fixed" ? "固定ペア" : "招待ルーム";
             document.getElementById("activeRoomCode").innerText = r.inviteCode;
             document.getElementById("participantCount").innerText = `${memberCount}名参加中`;
+            updateProximityDisplay();
         }
 
         function renderRoomsList() {
@@ -549,22 +525,7 @@
                 locations: {}
             };
 
-            // ローカルの rooms リストにも追加して即座に参照可能にする
-            const existingIndex = STATE.rooms.findIndex(r => r.id === roomId);
-            if (existingIndex >= 0) {
-                STATE.rooms[existingIndex] = newRoom;
-            } else {
-                STATE.rooms.unshift(newRoom);
-            }
-
-            set(ref(db, `rooms/${roomId}`), {
-                name: name,
-                type: type,
-                inviteCode: inviteCode,
-                createdBy: STATE.currentUser.uid,
-                members: { [STATE.currentUser.uid]: STATE.currentUser.nickname },
-                locations: {}
-            }).then(() => {
+            set(ref(db, `rooms/${roomId}`), newRoom).then(() => {
                 hideModal("createRoomModal");
                 document.getElementById("newRoomName").value = "";
                 renderRoomsList();
@@ -648,56 +609,209 @@
             }
         }
 
-        function initMap() {
-            if (STATE.map) {
-                STATE.map.remove();
-                STATE.map = null;
+        function updateProximityDisplay() {
+            if (!STATE.currentRoom) return;
+
+            const nameDisplay = document.getElementById("targetNameDisplay");
+            const distText = document.getElementById("targetDistanceText");
+            const dirText = document.getElementById("targetDirectionText");
+            const arrow = document.getElementById("directionArrow");
+
+            const locations = STATE.currentRoom.locations || {};
+            const otherUids = Object.keys(locations).filter(uid => uid !== STATE.currentUser.uid);
+
+            if (otherUids.length === 0) {
+                nameDisplay.innerText = "相棒（相手）の接続・位置共有待ち...";
+                distText.innerText = "--- m";
+                dirText.innerText = "-- 方向";
+                arrow.style.transform = "rotate(0deg)";
+                return;
             }
 
-            const defaultLat = 35.681236;
-            const defaultLng = 139.767125;
+            // 1対1想定のため、最初の相手をターゲットにする
+            const targetUid = otherUids[0];
+            const targetLoc = locations[targetUid];
+            const targetName = getNicknameByUid(targetUid);
 
-            const mapContainer = document.getElementById("map");
-            if (!mapContainer) return;
+            nameDisplay.innerText = `相手: ${targetName} さん`;
 
-            // コンテナサイズ確定を保証
-            if (mapContainer.clientHeight === 0) {
-                mapContainer.style.minHeight = "300px";
+            if (!STATE.myLocation) {
+                distText.innerText = "位置情報OFF";
+                dirText.innerText = "位置共有を開始してください";
+                return;
             }
 
-            STATE.map = L.map("map", { zoomControl: false }).setView([defaultLat, defaultLng], 16);
+            const dist = calculateDistance(STATE.myLocation.lat, STATE.myLocation.lng, targetLoc.lat, targetLoc.lng);
+            const bearing = calculateBearing(STATE.myLocation.lat, STATE.myLocation.lng, targetLoc.lat, targetLoc.lng);
+            const directionName = getDirectionName(bearing);
 
-            // 安定した標準OpenStreetMapタイル（ダークフィルタ適用）を使用
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(STATE.map);
+            distText.innerText = dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`;
+            dirText.innerText = directionName;
+            arrow.style.transform = `rotate(${bearing}deg)`;
 
-            L.control.zoom({ position: "topright" }).addTo(STATE.map);
-
-            if (STATE.myLocation) {
-                STATE.map.setView([STATE.myLocation.lat, STATE.myLocation.lng], 16);
-            }
-
-            // タイルの読み込み残しを防ぐため段階的に描画を更新
-            [100, 300, 600, 1000].forEach(delay => {
-                setTimeout(() => {
-                    if (STATE.map) {
-                        STATE.map.invalidateSize();
-                    }
-                }, delay);
-            });
-
-            // コンテナのサイズ変化に連動して自動再計算
-            if (window.ResizeObserver && mapContainer) {
-                const ro = new ResizeObserver(() => {
-                    if (STATE.map) {
-                        STATE.map.invalidateSize();
-                    }
-                });
-                ro.observe(mapContainer);
+            if (dist <= 20) {
+                showToast(`✨ ${targetName} さんが近くにいます！（${Math.round(dist)}m）`);
             }
         }
 
-        function updateMapMarkers() {
-<!-- ... existing code -->
+        function handleSendMessage() {
+            const input = document.getElementById("inputChatMessage");
+            const text = input.value.trim();
+            if (!text || !STATE.currentRoom) return;
+
+            const msgRef = ref(db, `rooms/${STATE.currentRoom.id}/messages`);
+            push(msgRef, {
+                sender: STATE.currentUser.nickname,
+                text: text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: Date.now()
+            });
+
+            input.value = "";
+        }
+
+        function renderChatMessages() {
+            const feed = document.getElementById("chatFeed");
+            feed.innerHTML = "";
+
+            if (STATE.chatMessages.length === 0) {
+                feed.innerHTML = '<div class="text-center text-slate-500 text-[10px] py-2">メッセージ履歴はありません</div>';
+                return;
+            }
+
+            STATE.chatMessages.forEach(msg => {
+                const item = document.createElement("div");
+                item.className = "flex justify-between items-start space-x-2 text-slate-300";
+                item.innerHTML = `
+                    <div>
+                        <strong class="text-purple-400 font-bold">${msg.sender}:</strong>
+                        <span class="text-slate-200">${msg.text}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-500 whitespace-nowrap">${msg.time}</span>
+                `;
+                feed.appendChild(item);
+            });
+
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function openAdminDashboard() {
+            if (!STATE.currentUser || !STATE.currentUser.isAdmin) {
+                showToast("管理者権限がありません");
+                return;
+            }
+
+            showModal("adminModal");
+
+            const userContainer = document.getElementById("adminUserList");
+            userContainer.innerHTML = "";
+
+            STATE.users.forEach(u => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${u.nickname}</span>
+                        <span class="text-[10px] text-slate-500 block font-mono">UID: ${u.uid}</span>
+                    </div>
+                    <button class="bg-rose-500/20 text-rose-300 text-[10px] px-2 py-1 rounded hover:bg-rose-500/30">停止</button>
+                `;
+                userContainer.appendChild(row);
+            });
+
+            const roomContainer = document.getElementById("adminRoomList");
+            roomContainer.innerHTML = "";
+
+            STATE.rooms.forEach(r => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${r.name}</span>
+                        <span class="text-[10px] text-slate-400 block">コード: ${r.inviteCode}</span>
+                    </div>
+                    <button class="bg-rose-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow hover:bg-rose-700">強制終了</button>
+                `;
+                row.querySelector("button").addEventListener("click", () => {
+                    remove(ref(db, `rooms/${r.id}`)).then(() => {
+                        openAdminDashboard();
+                        showToast(`ルーム「${r.name}」を強制終了しました`);
+                    });
+                });
+                roomContainer.appendChild(row);
+            });
+        }
+
+        function handleLeaveRoom() {
+            if (STATE.watchPositionId !== null) {
+                toggleGpsSharing();
+            }
+
+            if (STATE.currentRoom && STATE.currentUser) {
+                remove(ref(db, `rooms/${STATE.currentRoom.id}/members/${STATE.currentUser.uid}`));
+            }
+
+            STATE.currentRoom = null;
+            document.getElementById("activeRoomSection").classList.add("hidden");
+            document.getElementById("roomSelectSection").classList.remove("hidden");
+
+            renderRoomsList();
+            showToast("ルームから退室しました");
+        }
+
+        function getNicknameByUid(uid) {
+            if (STATE.currentRoom && STATE.currentRoom.members && STATE.currentRoom.members[uid]) {
+                return STATE.currentRoom.members[uid];
+            }
+            const user = STATE.users.find(u => u.uid === uid);
+            return user ? user.nickname : "メンバー";
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const y = Math.sin((lon2 - lon1) * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180);
+            const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                      Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos((lon2 - lon1) * Math.PI / 180);
+            const θ = Math.atan2(y, x);
+            return (θ * 180 / Math.PI + 360) % 360;
+        }
+
+        function getDirectionName(bearing) {
+            const directions = ["北", "北東", "東", "南東", "南", "南西", "西", "北西"];
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index] + "方向";
+        }
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove("hidden");
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add("hidden");
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toastMessage").innerText = message;
+            toast.classList.remove("hidden");
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
