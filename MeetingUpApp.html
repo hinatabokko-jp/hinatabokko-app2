@@ -150,9 +150,9 @@
                     <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-sm text-slate-200 px-3.5 py-2 rounded-xl whitespace-nowrap border border-slate-700 font-medium">見つけた！</button>
                 </div>
                 
-                <!-- Chat Feed -->
-                <div id="chatFeed" class="h-28 overflow-y-auto no-scrollbar space-y-2 text-base bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
-                    <div class="text-center text-slate-500 text-xs">メッセージ履歴はありません</div>
+                <!-- Chat Feed (LINE風吹き出し形式) -->
+                <div id="chatFeed" class="h-44 overflow-y-auto no-scrollbar space-y-3 text-sm bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 flex flex-col">
+                    <div class="text-center text-slate-500 text-xs my-auto">メッセージ履歴はありません</div>
                 </div>
 
                 <!-- Input box -->
@@ -197,6 +197,23 @@
             </div>
         </section>
 
+        <!-- Admin Passcode Modal (管理者ログイン用あいことば入力) -->
+        <section id="adminPasscodeModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 p-4 flex items-center justify-center">
+            <div class="glass-panel max-w-xs w-full p-5 rounded-2xl space-y-4 border border-amber-500/30">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h3 class="font-bold text-amber-300 text-sm flex items-center"><i class="fa-solid fa-key mr-2"></i>管理者認証</h3>
+                    <button id="btnCloseAdminPasscode" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">あいことば（パスワード）</label>
+                        <input type="password" id="inputAdminPasscode" placeholder="管理者パスワードを入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    </div>
+                    <button id="btnSubmitAdminPasscode" class="w-full bg-amber-500 hover:bg-amber-600 py-2.5 text-xs font-bold rounded-xl text-slate-950 shadow transition">管理者として入室</button>
+                </div>
+            </div>
+        </section>
+
         <!-- User Settings & Profile Modal -->
         <section id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
             <div class="glass-panel max-w-sm w-full p-5 rounded-2xl space-y-4 border border-slate-700">
@@ -217,6 +234,14 @@
                         <input type="text" id="editNicknameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
                     </div>
                     <button id="btnSaveProfile" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">変更を保存</button>
+                    
+                    <!-- ユーザー設定モーダル内に配置した歯車ボタン（管理者ダッシュボードへの導線） -->
+                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                        <span class="text-[11px] text-slate-400">管理者ダッシュボードを開く</span>
+                        <button id="btnOpenAdminFromSettings" class="p-2.5 text-amber-400 hover:text-amber-300 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl transition flex items-center justify-center shadow" title="管理者設定">
+                            <i class="fa-solid fa-gear text-sm"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -276,7 +301,6 @@
             bindEvents();
         }
 
-        // 訪問済みの端末かチェックし、自動ログインを試行
         function checkLocalStoredUser() {
             const savedNickname = localStorage.getItem("meetingup_nickname");
             const savedUid = localStorage.getItem("meetingup_uid");
@@ -284,19 +308,16 @@
             if (savedNickname && savedUid) {
                 document.getElementById("inputNickname").value = savedNickname;
                 document.getElementById("inputUidPassword").value = savedUid;
-                // 自動ログイン実行
                 setTimeout(() => {
                     handleLogin(true);
                 }, 500);
             } else {
-                // 初めてのアクセス：仮UIDを作成してフィールドに設定
                 const newUid = "UID_" + Math.random().toString(36).substring(2, 9).toUpperCase();
                 document.getElementById("inputUidPassword").value = newUid;
             }
         }
 
         function setupInitialData() {
-            // ルームのデータ監視
             const roomRef = ref(db, `rooms/${SINGLE_ROOM_ID}`);
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
@@ -317,7 +338,6 @@
                 }
             });
 
-            // 全ユーザーのデータ監視
             const usersRef = ref(db, "users");
             onValue(usersRef, (snapshot) => {
                 const data = snapshot.val();
@@ -328,7 +348,6 @@
                 }
             });
 
-            // アクセス制限設定の監視
             const settingsRef = ref(db, "system/accessRestricted");
             onValue(settingsRef, (snapshot) => {
                 STATE.accessRestricted = snapshot.val() || false;
@@ -358,6 +377,32 @@
             document.getElementById("btnAdminDashboard").addEventListener("click", openAdminDashboard);
             document.getElementById("btnCloseAdmin").addEventListener("click", () => hideModal("adminModal"));
             document.getElementById("toggleAccessRestriction").addEventListener("change", handleToggleAccessRestriction);
+
+            // ユーザー設定モーダル内の歯車マークボタンからの管理者あいことば画面起動
+            document.getElementById("btnOpenAdminFromSettings").addEventListener("click", () => {
+                hideModal("settingsModal");
+                document.getElementById("inputAdminPasscode").value = "";
+                showModal("adminPasscodeModal");
+            });
+            document.getElementById("btnCloseAdminPasscode").addEventListener("click", () => hideModal("adminPasscodeModal"));
+            document.getElementById("btnSubmitAdminPasscode").addEventListener("click", handleAdminPasscodeSubmit);
+        }
+
+        function handleAdminPasscodeSubmit() {
+            const passcode = document.getElementById("inputAdminPasscode").value.trim();
+            if (passcode === "ADMIN_0813" || passcode === "ADMIN_SECRET_KEY") {
+                hideModal("adminPasscodeModal");
+                if (STATE.currentUser) {
+                    STATE.currentUser.isAdmin = true;
+                    document.getElementById("navNickname").innerText = STATE.currentUser.nickname + " 👑";
+                    const btnAdmin = document.getElementById("btnAdminDashboard");
+                    btnAdmin.classList.remove("hidden");
+                    btnAdmin.style.display = "inline-flex";
+                }
+                openAdminDashboard();
+            } else {
+                showToast("あいことばが違います");
+            }
         }
 
         async function handleLogin(isAutoLogin = false) {
@@ -376,10 +421,8 @@
             const savedUid = localStorage.getItem("meetingup_uid");
             const isKnownDevice = (savedUid === uidInput);
 
-            // アクセス制限中の未認識端末チェック
             if (STATE.accessRestricted && !isKnownDevice) {
-                // 管理者チェック (特別管理UIDまたは特定の入力)
-                if (uidInput !== "ADMIN_SECRET_KEY") {
+                if (uidInput !== "ADMIN_SECRET_KEY" && uidInput !== "ADMIN_0813") {
                     showToast("現在、管理者により未認識端末からのアクセスが制限されています。");
                     return;
                 }
@@ -388,7 +431,6 @@
             const isAdmin = (uidInput === "ADMIN_0813" || uidInput === "ADMIN_SECRET_KEY");
             const uid = uidInput;
 
-            // ローカルストレージに記憶（認識端末化）
             localStorage.setItem("meetingup_nickname", nickname);
             localStorage.setItem("meetingup_uid", uid);
 
@@ -398,7 +440,6 @@
                 isAdmin: isAdmin
             };
 
-            // DBにユーザーデータ更新
             await set(ref(db, `users/${uid}`), {
                 nickname: nickname,
                 isAdmin: isAdmin,
@@ -418,17 +459,14 @@
                 btnAdmin.style.display = "none";
             }
 
-            // 直接1対1ルームへの入室を試行
             attemptEnterRoom();
         }
 
         async function attemptEnterRoom() {
-            // ルームの現メンバー数を取得・判定
             const roomSnap = await get(ref(db, `rooms/${SINGLE_ROOM_ID}/members`));
             const members = roomSnap.val() || {};
             const memberUids = Object.keys(members);
 
-            // 既に自分がメンバーに含まれているか確認
             const isAlreadyMember = memberUids.includes(STATE.currentUser.uid);
 
             if (!isAlreadyMember && memberUids.length >= 2) {
@@ -437,7 +475,6 @@
                 return;
             }
 
-            // ルームメンバーに参加登録
             await update(ref(db, `rooms/${SINGLE_ROOM_ID}/members`), {
                 [STATE.currentUser.uid]: STATE.currentUser.nickname
             });
@@ -445,7 +482,6 @@
             document.getElementById("authSection").classList.add("hidden");
             document.getElementById("activeRoomSection").classList.remove("hidden");
 
-            // チャットのリアルタイム受信設定
             const chatRef = ref(db, `rooms/${SINGLE_ROOM_ID}/messages`);
             onValue(chatRef, (snapshot) => {
                 const data = snapshot.val();
@@ -503,14 +539,13 @@
             localStorage.setItem("meetingup_nickname", newName);
             document.getElementById("navNickname").innerText = newName + (STATE.currentUser.isAdmin ? " 👑" : "");
 
-            // DB更新
             await update(ref(db, `users/${STATE.currentUser.uid}`), { nickname: newName });
             if (STATE.currentRoom) {
                 await update(ref(db, `rooms/${SINGLE_ROOM_ID}/members`), { [STATE.currentUser.uid]: newName });
             }
 
             hideModal("settingsModal");
-            showToast("プロフールを更新しました");
+            showToast("プロフィールを更新しました");
         }
 
         function toggleGpsSharing() {
@@ -620,6 +655,7 @@
             const msgRef = ref(db, `rooms/${SINGLE_ROOM_ID}/messages`);
             push(msgRef, {
                 sender: STATE.currentUser.nickname,
+                senderUid: STATE.currentUser.uid,
                 text: text,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 timestamp: Date.now()
@@ -628,40 +664,57 @@
             input.value = "";
         }
 
+        // LINE風吹き出し形式でのチャット描画
         function renderChatMessages() {
             const feed = document.getElementById("chatFeed");
             feed.innerHTML = "";
 
             if (STATE.chatMessages.length === 0) {
-                feed.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">メッセージ履歴はありません</div>';
+                feed.innerHTML = '<div class="text-center text-slate-500 text-xs my-auto">メッセージ履歴はありません</div>';
                 return;
             }
 
             STATE.chatMessages.forEach(msg => {
+                const isMe = STATE.currentUser && (msg.senderUid === STATE.currentUser.uid || msg.sender === STATE.currentUser.nickname);
                 const item = document.createElement("div");
-                item.className = "flex justify-between items-start space-x-2 text-slate-200 text-sm";
-                item.innerHTML = `
-                    <div>
-                        <strong class="text-purple-400 font-bold">${msg.sender}:</strong>
-                        <span class="text-slate-100 font-medium">${msg.text}</span>
-                    </div>
-                    <span class="text-xs text-slate-400 whitespace-nowrap">${msg.time}</span>
-                `;
+                
+                if (isMe) {
+                    // 自分（右側配置、紫系統のグラデーション背景）
+                    item.className = "flex flex-col items-end space-y-0.5 w-full";
+                    item.innerHTML = `
+                        <div class="flex items-end space-x-1.5 max-w-[80%]">
+                            <span class="text-[10px] text-slate-400 self-end mb-0.5">${msg.time}</span>
+                            <div class="brand-gradient-bg text-white px-3.5 py-2 rounded-2xl rounded-tr-sm text-sm shadow break-words font-medium">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 相手（左側配置、スレート色背景）
+                    item.className = "flex flex-col items-start space-y-0.5 w-full";
+                    item.innerHTML = `
+                        <span class="text-[10px] text-purple-300 ml-1 font-bold">${escapeHtml(msg.sender)}</span>
+                        <div class="flex items-end space-x-1.5 max-w-[80%]">
+                            <div class="bg-slate-800 border border-slate-700 text-slate-100 px-3.5 py-2 rounded-2xl rounded-tl-sm text-sm shadow break-words font-medium">
+                                ${escapeHtml(msg.text)}
+                            </div>
+                            <span class="text-[10px] text-slate-400 self-end mb-0.5">${msg.time}</span>
+                        </div>
+                    `;
+                }
                 feed.appendChild(item);
             });
 
             feed.scrollTop = feed.scrollHeight;
         }
 
-        function openAdminDashboard() {
-            if (!STATE.currentUser || !STATE.currentUser.isAdmin) {
-                showToast("管理者権限がありません");
-                return;
-            }
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
 
+        function openAdminDashboard() {
             showModal("adminModal");
 
-            // ユーザー一覧レンダリング
             const userContainer = document.getElementById("adminUserList");
             userContainer.innerHTML = "";
 
@@ -687,7 +740,6 @@
                 userContainer.appendChild(row);
             });
 
-            // アクティブルーム強制終了
             const roomContainer = document.getElementById("adminRoomList");
             roomContainer.innerHTML = "";
 
