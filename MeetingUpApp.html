@@ -84,7 +84,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1">パスワード (UID)</label>
-                    <input type="text" id="inputUidPassword" placeholder="新規入室時は自動発行されます" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm font-mono text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <!-- 要望対応：UIDは自動発行され、手動で書き換えられないように readonly を付与 -->
+                    <input type="text" id="inputUidPassword" readonly placeholder="自動発行されます" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm font-mono text-purple-300 focus:outline-none cursor-not-allowed">
                 </div>
                 <button id="btnLogin" class="w-full brand-gradient-bg text-white font-bold py-3.5 rounded-xl shadow-lg hover:opacity-95 transition transform active:scale-95 text-sm">
                     認証して入室
@@ -152,6 +153,23 @@
             </div>
         </section>
 
+        <!-- Admin Passcode Modal (要要望対応：歯車から直ぐではなく、あいことば認証を行うモーダル) -->
+        <section id="adminPassModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
+            <div class="glass-panel max-w-sm w-full p-5 rounded-2xl space-y-4 border border-slate-700">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h3 class="font-bold text-slate-100 text-sm"><i class="fa-solid fa-lock text-amber-400 mr-2"></i>管理者認証</h3>
+                    <button id="btnCloseAdminPass" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">あいことばを入力してください</label>
+                        <input type="password" id="inputAdminPasscode" placeholder="あいことば" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    </div>
+                    <button id="btnSubmitAdminPass" class="w-full bg-amber-600 hover:bg-amber-500 py-2.5 text-xs font-bold rounded-xl text-white shadow transition">認証して入室</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Admin View Modal -->
         <section id="adminModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
             <div class="glass-panel max-w-md w-full p-5 rounded-2xl space-y-4 border border-slate-700 max-h-[85vh] overflow-y-auto">
@@ -213,7 +231,6 @@
                     </div>
                     <button id="btnSaveProfile" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">変更を保存</button>
                 </div>
-                <!-- 要望対応：歯車ボタンをモーダル下部に配置し、色を黄色っぽい色（text-amber-400）に変更 -->
                 <div class="pt-2 border-t border-slate-800 flex justify-center">
                     <button id="btnOpenAdminFromModal" class="p-2 text-amber-400 hover:text-amber-300 transition flex items-center justify-center rounded-lg bg-slate-800/80 border border-slate-700 text-xs space-x-1 cursor-pointer w-full" title="管理者画面を開く">
                         <span>⚙️ 管理者画面を開く</span>
@@ -338,10 +355,22 @@
             document.getElementById("btnSettingsModal").addEventListener("click", openSettingsModal);
             document.getElementById("btnCloseSettings").addEventListener("click", () => hideModal("settingsModal"));
             
-            // ユーザー設定モーダル内の下部歯車ボタンから管理者画面を開く処理
+            // ユーザー設定モーダル内の歯車ボタンからは、直接管理画面を開かずにあいことば入力モーダルを開く
             document.getElementById("btnOpenAdminFromModal").addEventListener("click", () => {
                 hideModal("settingsModal");
-                openAdminDashboard();
+                document.getElementById("inputAdminPasscode").value = "";
+                showModal("adminPassModal");
+            });
+
+            document.getElementById("btnCloseAdminPass").addEventListener("click", () => hideModal("adminPassModal"));
+            document.getElementById("btnSubmitAdminPass").addEventListener("click", () => {
+                const pass = document.getElementById("inputAdminPasscode").value.trim();
+                if (pass === "0813") {
+                    hideModal("adminPassModal");
+                    openAdminDashboard();
+                } else {
+                    showToast("あいことばが違います");
+                }
             });
 
             document.getElementById("btnSaveProfile").addEventListener("click", handleSaveProfile);
