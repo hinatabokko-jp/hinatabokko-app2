@@ -56,12 +56,15 @@
             </div>
             <span class="text-xl font-extrabold tracking-tight brand-gradient-text">MEETING UP</span>
         </div>
-        <div id="headerUserNav" class="hidden flex items-center space-x-3">
-            <button id="btnUserMenu" class="text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 px-2.5 py-1 rounded-full border border-slate-700 transition flex items-center space-x-1 cursor-pointer">
+        <div id="headerUserNav" class="hidden flex items-center space-x-2">
+            <button id="btnSettingsModal" class="p-2 text-slate-300 hover:text-white transition flex items-center justify-center rounded-lg bg-slate-800/80 border border-slate-700" title="設定・ユーザー情報">
+                <span class="text-lg">⚙️</span>
+            </button>
+            <button id="btnUserMenu" class="text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 px-2.5 py-1.5 rounded-full border border-slate-700 transition flex items-center space-x-1 cursor-pointer">
                 <span id="navNickname"></span>
                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
             </button>
-            <button id="btnAdminDashboard" class="hidden text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg hover:bg-amber-500/30 transition flex items-center font-bold">
+            <button id="btnAdminDashboard" class="hidden text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-lg hover:bg-amber-500/30 transition flex items-center font-bold">
                 <i class="fa-solid fa-shield-halved text-amber-400 mr-1.5"></i>管理者
             </button>
         </div>
@@ -83,42 +86,12 @@
                     <input type="text" id="inputNickname" placeholder="例: たろう" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">アプリ合言葉</label>
-                    <input type="password" id="inputPassphrase" placeholder="合言葉を入力" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">パスワード (UID)</label>
+                    <input type="text" id="inputUidPassword" placeholder="新規入室時は自動発行されます" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm font-mono text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
                 <button id="btnLogin" class="w-full brand-gradient-bg text-white font-bold py-3.5 rounded-xl shadow-lg hover:opacity-95 transition transform active:scale-95 text-sm">
                     認証して入室
                 </button>
-            </div>
-        </section>
-
-        <!-- Screen 2: Room Selection / Main Dashboard -->
-        <section id="roomSelectSection" class="hidden w-full space-y-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-100">ペアを選択</h2>
-                    <p class="text-xs text-slate-400">1対1の待ち合わせルームに参加または作成</p>
-                </div>
-                <button id="btnCreateRoomModal" class="brand-gradient-bg px-3.5 py-2 rounded-xl text-xs font-bold shadow hover:opacity-90 transition">
-                    <i class="fa-solid fa-plus mr-1"></i>新規作成
-                </button>
-            </div>
-
-            <!-- Join Code Input Box -->
-            <div class="glass-panel p-4 rounded-xl space-y-2 border border-slate-800">
-                <span class="text-xs text-slate-400 font-semibold">招待コードで直接参加</span>
-                <div class="flex gap-2">
-                    <input type="text" id="inputInviteCode" placeholder="6桁のコード" class="uppercase flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
-                    <button id="btnJoinByCode" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition">参加</button>
-                </div>
-            </div>
-
-            <!-- Room Tabs -->
-            <div class="space-y-3">
-                <h3 class="text-xs uppercase tracking-wider text-slate-500 font-bold">利用可能なルーム</h3>
-                <div id="roomList" class="space-y-3 max-h-80 overflow-y-auto no-scrollbar">
-                    <!-- Rooms loaded via JS -->
-                </div>
             </div>
         </section>
 
@@ -128,13 +101,11 @@
             <div class="glass-panel p-3 rounded-xl flex items-center justify-between">
                 <div>
                     <div class="flex items-center space-x-2">
-                        <span id="activeRoomTitle" class="font-bold text-sm text-slate-100"></span>
-                        <span id="activeRoomBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"></span>
+                        <span id="activeRoomTitle" class="font-bold text-sm text-slate-100">1対1 待ち合わせルーム</span>
+                        <span id="activeRoomBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">ペア専用</span>
                     </div>
                     <div class="text-[11px] text-slate-400 flex items-center space-x-2 mt-0.5">
-                        <span>コード: <strong id="activeRoomCode" class="text-purple-400"></strong></span>
-                        <span>•</span>
-                        <span id="participantCount">0名参加中</span>
+                        <span id="participantCount">0/2名参加中</span>
                     </div>
                 </div>
                 <button id="btnLeaveRoom" class="bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition">
@@ -169,25 +140,25 @@
                 </div>
             </div>
 
-            <!-- Chat & Preset Messages Accordion -->
-            <div class="glass-panel p-3 rounded-xl space-y-2">
+            <!-- Chat & Preset Messages Accordion (高齢者向けに拡大表示) -->
+            <div class="glass-panel p-4 rounded-xl space-y-3">
                 <!-- Preset Buttons -->
-                <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap border border-slate-700">そっちに向かっているよ！</button>
-                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap border border-slate-700">ここで待ってるよ</button>
-                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap border border-slate-700">どこにいる？</button>
-                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-lg whitespace-nowrap border border-slate-700">見つけた！</button>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-sm text-slate-200 px-3.5 py-2 rounded-xl whitespace-nowrap border border-slate-700 font-medium">そっちに向かっているよ！</button>
+                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-sm text-slate-200 px-3.5 py-2 rounded-xl whitespace-nowrap border border-slate-700 font-medium">ここで待ってるよ</button>
+                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-sm text-slate-200 px-3.5 py-2 rounded-xl whitespace-nowrap border border-slate-700 font-medium">どこにいる？</button>
+                    <button class="preset-msg bg-slate-800 hover:bg-slate-700 text-sm text-slate-200 px-3.5 py-2 rounded-xl whitespace-nowrap border border-slate-700 font-medium">見つけた！</button>
                 </div>
                 
                 <!-- Chat Feed -->
-                <div id="chatFeed" class="h-20 overflow-y-auto no-scrollbar space-y-1.5 text-xs bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
-                    <div class="text-center text-slate-500 text-[10px]">メッセージ履歴はありません</div>
+                <div id="chatFeed" class="h-28 overflow-y-auto no-scrollbar space-y-2 text-base bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                    <div class="text-center text-slate-500 text-xs">メッセージ履歴はありません</div>
                 </div>
 
                 <!-- Input box -->
                 <div class="flex gap-2">
-                    <input type="text" id="inputChatMessage" placeholder="メッセージを入力..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
-                    <button id="btnSendMessage" class="brand-gradient-bg px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow">送信</button>
+                    <input type="text" id="inputChatMessage" placeholder="メッセージを入力..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-base text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <button id="btnSendMessage" class="brand-gradient-bg px-5 py-2.5 rounded-xl text-base font-bold text-white shadow hover:opacity-90 transition">送信</button>
                 </div>
             </div>
         </section>
@@ -200,40 +171,52 @@
                     <button id="btnCloseAdmin" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
 
+                <!-- Security & Access Restriction Toggle -->
+                <div class="glass-panel p-3.5 rounded-xl border border-slate-800 flex justify-between items-center bg-slate-900/60">
+                    <div>
+                        <span class="font-bold text-xs text-slate-200 block">未認識端末のアクセス制限</span>
+                        <span class="text-[10px] text-slate-400">登録履歴のない新規端末からの接続を制限</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleAccessRestriction" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                </div>
+
                 <!-- User Management -->
                 <div class="space-y-2">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">登録ユーザー管理</h4>
-                    <div id="adminUserList" class="space-y-2"></div>
+                    <div id="adminUserList" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar"></div>
                 </div>
 
                 <!-- Active Rooms Management -->
                 <div class="space-y-2 pt-2 border-t border-slate-800">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">アクティブルーム強制終了</h4>
-                    <div id="adminRoomList" class="space-y-2"></div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">アクティブルーム管理</h4>
+                    <div id="adminRoomList" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Create Room Modal -->
-        <section id="createRoomModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
+        <!-- User Settings & Profile Modal -->
+        <section id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
             <div class="glass-panel max-w-sm w-full p-5 rounded-2xl space-y-4 border border-slate-700">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="font-bold text-slate-100 text-sm">新しいペアールームを作成</h3>
-                    <button id="btnCloseCreateRoom" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+                    <h3 class="font-bold text-slate-100 text-sm">ユーザー設定</h3>
+                    <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">ルーム名</label>
-                        <input type="text" id="newRoomName" placeholder="例: ふたり専用" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                        <label class="block text-xs text-slate-400 mb-1">自分のUID (パスワード)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="displayMyUid" readonly class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-purple-300 focus:outline-none">
+                            <button id="btnCopyUid" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition">コピー</button>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">形式</label>
-                        <select id="newRoomType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none">
-                            <option value="invite">一時的な招待ルーム (自動招待コード)</option>
-                            <option value="fixed">固定ペアグループ</option>
-                        </select>
+                        <label class="block text-xs text-slate-400 mb-1">ニックネームの変更</label>
+                        <input type="text" id="editNicknameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
                     </div>
-                    <button id="btnConfirmCreateRoom" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">作成する</button>
+                    <button id="btnSaveProfile" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">変更を保存</button>
                 </div>
             </div>
         </section>
@@ -248,18 +231,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        const _k1 = "MTIzNA=="; // 1234
-        const _k2 = "MDgxIMS="; // 0813 (Fixed token verification)
-
-        function verifyToken(input, token) {
-            try {
-                return btoa(input) === token || btoa(input) === "MDgxMw==";
-            } catch (e) {
-                return false;
-            }
-        }
+        import { getDatabase, ref, set, onValue, push, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD7zMaJys6IGRN1gV0cPEQveVO6Oq7hNlM",
@@ -276,14 +248,16 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
+        const SINGLE_ROOM_ID = "ROOM_1ON1_GLOBAL";
+
         const STATE = {
             currentUser: null,
             currentRoom: null,
             watchPositionId: null,
             myLocation: null,
             users: [],
-            rooms: [],
-            chatMessages: []
+            chatMessages: [],
+            accessRestricted: false
         };
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -293,45 +267,57 @@
         function initApp() {
             signInAnonymously(auth).then(() => {
                 setupInitialData();
+                checkLocalStoredUser();
             }).catch(err => {
                 console.error("Firebase Auth Error:", err);
                 setupInitialData();
+                checkLocalStoredUser();
             });
             bindEvents();
         }
 
+        // 訪問済みの端末かチェックし、自動ログインを試行
+        function checkLocalStoredUser() {
+            const savedNickname = localStorage.getItem("meetingup_nickname");
+            const savedUid = localStorage.getItem("meetingup_uid");
+
+            if (savedNickname && savedUid) {
+                document.getElementById("inputNickname").value = savedNickname;
+                document.getElementById("inputUidPassword").value = savedUid;
+                // 自動ログイン実行
+                setTimeout(() => {
+                    handleLogin(true);
+                }, 500);
+            } else {
+                // 初めてのアクセス：仮UIDを作成してフィールドに設定
+                const newUid = "UID_" + Math.random().toString(36).substring(2, 9).toUpperCase();
+                document.getElementById("inputUidPassword").value = newUid;
+            }
+        }
+
         function setupInitialData() {
-            const roomsRef = ref(db, "rooms");
-            onValue(roomsRef, (snapshot) => {
+            // ルームのデータ監視
+            const roomRef = ref(db, `rooms/${SINGLE_ROOM_ID}`);
+            onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    STATE.rooms = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                    STATE.currentRoom = { id: SINGLE_ROOM_ID, ...data };
                 } else {
                     const defaultRoom = {
-                        name: "ふたり専用ルーム",
-                        type: "fixed",
-                        inviteCode: "999888",
+                        name: "1対1 待ち合わせルーム",
                         members: {},
                         locations: {}
                     };
-                    set(ref(db, "rooms/ROOM_FIXED_WAITING"), defaultRoom);
-                    STATE.rooms = [{ id: "ROOM_FIXED_WAITING", ...defaultRoom }];
+                    set(ref(db, `rooms/${SINGLE_ROOM_ID}`), defaultRoom);
+                    STATE.currentRoom = { id: SINGLE_ROOM_ID, ...defaultRoom };
                 }
-                renderRoomsList();
-                if (STATE.currentRoom) {
-                    const updatedRoom = STATE.rooms.find(r => r.id === STATE.currentRoom.id);
-                    if (updatedRoom) {
-                        STATE.currentRoom = updatedRoom;
-                        updateRoomUI();
-                        updateProximityDisplay();
-                    } else {
-                        // Room was deleted or left
-                        handleLeaveRoom();
-                        showToast("ルームが終了または削除されました");
-                    }
+                if (STATE.currentUser && !document.getElementById("activeRoomSection").classList.contains("hidden")) {
+                    updateRoomUI();
+                    updateProximityDisplay();
                 }
             });
 
+            // 全ユーザーのデータ監視
             const usersRef = ref(db, "users");
             onValue(usersRef, (snapshot) => {
                 const data = snapshot.val();
@@ -341,15 +327,23 @@
                     STATE.users = [];
                 }
             });
+
+            // アクセス制限設定の監視
+            const settingsRef = ref(db, "system/accessRestricted");
+            onValue(settingsRef, (snapshot) => {
+                STATE.accessRestricted = snapshot.val() || false;
+                const toggle = document.getElementById("toggleAccessRestriction");
+                if (toggle) toggle.checked = STATE.accessRestricted;
+            });
         }
 
         function bindEvents() {
-            document.getElementById("btnLogin").addEventListener("click", handleLogin);
+            document.getElementById("btnLogin").addEventListener("click", () => handleLogin(false));
             document.getElementById("btnUserMenu").addEventListener("click", handleUserMenuClick);
-            document.getElementById("btnCreateRoomModal").addEventListener("click", () => showModal("createRoomModal"));
-            document.getElementById("btnCloseCreateRoom").addEventListener("click", () => hideModal("createRoomModal"));
-            document.getElementById("btnConfirmCreateRoom").addEventListener("click", handleCreateRoom);
-            document.getElementById("btnJoinByCode").addEventListener("click", handleJoinByCode);
+            document.getElementById("btnSettingsModal").addEventListener("click", openSettingsModal);
+            document.getElementById("btnCloseSettings").addEventListener("click", () => hideModal("settingsModal"));
+            document.getElementById("btnSaveProfile").addEventListener("click", handleSaveProfile);
+            document.getElementById("btnCopyUid").addEventListener("click", copyUidToClipboard);
             document.getElementById("btnLeaveRoom").addEventListener("click", handleLeaveRoom);
             document.getElementById("btnToggleGps").addEventListener("click", toggleGpsSharing);
             document.getElementById("btnSendMessage").addEventListener("click", handleSendMessage);
@@ -363,28 +357,40 @@
 
             document.getElementById("btnAdminDashboard").addEventListener("click", openAdminDashboard);
             document.getElementById("btnCloseAdmin").addEventListener("click", () => hideModal("adminModal"));
+            document.getElementById("toggleAccessRestriction").addEventListener("change", handleToggleAccessRestriction);
         }
 
-        function handleLogin() {
+        async function handleLogin(isAutoLogin = false) {
             const nickname = document.getElementById("inputNickname").value.trim();
-            const passphrase = document.getElementById("inputPassphrase").value.trim();
+            const uidInput = document.getElementById("inputUidPassword").value.trim();
 
             if (!nickname) {
                 showToast("ニックネームを入力してください");
                 return;
             }
-
-            // 合言葉の検証 (1234 または 0813)
-            const isUserValid = (passphrase === "1234" || verifyToken(passphrase, _k1));
-            const isAdminValid = (passphrase === "0813" || verifyToken(passphrase, _k2));
-
-            if (!isUserValid && !isAdminValid) {
-                showToast("合言葉が正しくありません");
+            if (!uidInput) {
+                showToast("パスワード(UID)を入力してください");
                 return;
             }
 
-            const isAdmin = isAdminValid;
-            const uid = auth.currentUser ? auth.currentUser.uid : "UID_" + Math.random().toString(36).substring(2, 9);
+            const savedUid = localStorage.getItem("meetingup_uid");
+            const isKnownDevice = (savedUid === uidInput);
+
+            // アクセス制限中の未認識端末チェック
+            if (STATE.accessRestricted && !isKnownDevice) {
+                // 管理者チェック (特別管理UIDまたは特定の入力)
+                if (uidInput !== "ADMIN_SECRET_KEY") {
+                    showToast("現在、管理者により未認識端末からのアクセスが制限されています。");
+                    return;
+                }
+            }
+
+            const isAdmin = (uidInput === "ADMIN_0813" || uidInput === "ADMIN_SECRET_KEY");
+            const uid = uidInput;
+
+            // ローカルストレージに記憶（認識端末化）
+            localStorage.setItem("meetingup_nickname", nickname);
+            localStorage.setItem("meetingup_uid", uid);
 
             STATE.currentUser = {
                 uid: uid,
@@ -392,7 +398,8 @@
                 isAdmin: isAdmin
             };
 
-            set(ref(db, `users/${uid}`), {
+            // DBにユーザーデータ更新
+            await set(ref(db, `users/${uid}`), {
                 nickname: nickname,
                 isAdmin: isAdmin,
                 status: "active",
@@ -411,11 +418,43 @@
                 btnAdmin.style.display = "none";
             }
 
-            document.getElementById("authSection").classList.add("hidden");
-            document.getElementById("roomSelectSection").classList.remove("hidden");
+            // 直接1対1ルームへの入室を試行
+            attemptEnterRoom();
+        }
 
-            renderRoomsList();
-            showToast(`ようこそ、${nickname} さん！${isAdmin ? '（管理者権限）' : ''}`);
+        async function attemptEnterRoom() {
+            // ルームの現メンバー数を取得・判定
+            const roomSnap = await get(ref(db, `rooms/${SINGLE_ROOM_ID}/members`));
+            const members = roomSnap.val() || {};
+            const memberUids = Object.keys(members);
+
+            // 既に自分がメンバーに含まれているか確認
+            const isAlreadyMember = memberUids.includes(STATE.currentUser.uid);
+
+            if (!isAlreadyMember && memberUids.length >= 2) {
+                showToast("申し訳ありません。このルームは満員（2名定員）です。");
+                document.getElementById("authSection").classList.remove("hidden");
+                return;
+            }
+
+            // ルームメンバーに参加登録
+            await update(ref(db, `rooms/${SINGLE_ROOM_ID}/members`), {
+                [STATE.currentUser.uid]: STATE.currentUser.nickname
+            });
+
+            document.getElementById("authSection").classList.add("hidden");
+            document.getElementById("activeRoomSection").classList.remove("hidden");
+
+            // チャットのリアルタイム受信設定
+            const chatRef = ref(db, `rooms/${SINGLE_ROOM_ID}/messages`);
+            onValue(chatRef, (snapshot) => {
+                const data = snapshot.val();
+                STATE.chatMessages = data ? Object.values(data) : [];
+                renderChatMessages();
+            });
+
+            updateRoomUI();
+            showToast(`ようこそ、${STATE.currentUser.nickname} さん！`);
         }
 
         function handleUserMenuClick() {
@@ -429,129 +468,49 @@
             }
         }
 
-        function enterRoom(roomId) {
-            const room = STATE.rooms.find(r => r.id === roomId);
-            if (!room) {
-                showToast("指定されたルームが見つかりません");
-                return;
-            }
-
-            STATE.currentRoom = room;
-
-            update(ref(db, `rooms/${roomId}/members`), {
-                [STATE.currentUser.uid]: STATE.currentUser.nickname
-            }).then(() => {
-                document.getElementById("roomSelectSection").classList.add("hidden");
-                document.getElementById("activeRoomSection").classList.remove("hidden");
-
-                updateRoomUI();
-
-                const chatRef = ref(db, `rooms/${roomId}/messages`);
-                onValue(chatRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        STATE.chatMessages = Object.values(data);
-                    } else {
-                        STATE.chatMessages = [];
-                    }
-                    renderChatMessages();
-                });
-
-                showToast(`「${room.name}」に入室しました`);
-            }).catch(err => {
-                console.error("Enter room error:", err);
-                showToast("入室に失敗しました");
-            });
-        }
-
         function updateRoomUI() {
             if (!STATE.currentRoom) return;
             const r = STATE.currentRoom;
             const memberCount = r.members ? Object.keys(r.members).length : 0;
-            document.getElementById("activeRoomTitle").innerText = r.name;
-            document.getElementById("activeRoomBadge").innerText = r.type === "fixed" ? "固定ペア" : "招待ルーム";
-            document.getElementById("activeRoomCode").innerText = r.inviteCode;
-            document.getElementById("participantCount").innerText = `${memberCount}名参加中`;
+            document.getElementById("participantCount").innerText = `${memberCount}/2名参加中`;
             updateProximityDisplay();
         }
 
-        function renderRoomsList() {
-            const list = document.getElementById("roomList");
-            if (!list) return;
-            list.innerHTML = "";
+        function openSettingsModal() {
+            if (!STATE.currentUser) return;
+            document.getElementById("displayMyUid").value = STATE.currentUser.uid;
+            document.getElementById("editNicknameInput").value = STATE.currentUser.nickname;
+            showModal("settingsModal");
+        }
 
-            if (STATE.rooms.length === 0) {
-                list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">現在利用可能なルームはありません</div>';
-                return;
-            }
-
-            STATE.rooms.forEach(room => {
-                const memberCount = room.members ? Object.keys(room.members).length : 0;
-                const item = document.createElement("div");
-                item.className = "glass-panel p-3.5 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer hover:border-purple-500/50 transition";
-                item.innerHTML = `
-                    <div class="space-y-0.5">
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold text-sm text-slate-200">${room.name}</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full ${room.type === 'fixed' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-300 border border-pink-500/30'}">${room.type === 'fixed' ? '固定' : '招待'}</span>
-                        </div>
-                        <div class="text-[11px] text-slate-400">コード: <strong class="text-purple-400 font-mono">${room.inviteCode}</strong> • メンバー: ${memberCount}名</div>
-                    </div>
-                    <button class="brand-gradient-bg text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow hover:opacity-90 transition">入室</button>
-                `;
-                item.addEventListener("click", () => enterRoom(room.id));
-                list.appendChild(item);
+        function copyUidToClipboard() {
+            const uidInput = document.getElementById("displayMyUid");
+            navigator.clipboard.writeText(uidInput.value).then(() => {
+                showToast("UIDをコピーしました");
+            }).catch(() => {
+                showToast("コピーに失敗しました");
             });
         }
 
-        function handleCreateRoom() {
-            const name = document.getElementById("newRoomName").value.trim();
-            const type = document.getElementById("newRoomType").value;
-
-            if (!name) {
-                showToast("ルーム名を入力してください");
+        async function handleSaveProfile() {
+            const newName = document.getElementById("editNicknameInput").value.trim();
+            if (!newName) {
+                showToast("ニックネームを入力してください");
                 return;
             }
 
-            const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
-            const roomId = "ROOM_" + Date.now();
-            const newRoom = {
-                id: roomId,
-                name: name,
-                type: type,
-                inviteCode: inviteCode,
-                createdBy: STATE.currentUser.uid,
-                members: { [STATE.currentUser.uid]: STATE.currentUser.nickname },
-                locations: {}
-            };
+            STATE.currentUser.nickname = newName;
+            localStorage.setItem("meetingup_nickname", newName);
+            document.getElementById("navNickname").innerText = newName + (STATE.currentUser.isAdmin ? " 👑" : "");
 
-            set(ref(db, `rooms/${roomId}`), newRoom).then(() => {
-                hideModal("createRoomModal");
-                document.getElementById("newRoomName").value = "";
-                renderRoomsList();
-                enterRoom(roomId);
-                showToast(`ルーム「${name}」を作成しました`);
-            }).catch((err) => {
-                console.error("Room creation error:", err);
-                showToast("ルーム作成に失敗しました");
-            });
-        }
-
-        function handleJoinByCode() {
-            const code = document.getElementById("inputInviteCode").value.trim();
-            if (!code) {
-                showToast("招待コードを入力してください");
-                return;
+            // DB更新
+            await update(ref(db, `users/${STATE.currentUser.uid}`), { nickname: newName });
+            if (STATE.currentRoom) {
+                await update(ref(db, `rooms/${SINGLE_ROOM_ID}/members`), { [STATE.currentUser.uid]: newName });
             }
 
-            const room = STATE.rooms.find(r => r.inviteCode === code);
-            if (!room) {
-                showToast("該当するルームが見つかりません");
-                return;
-            }
-
-            document.getElementById("inputInviteCode").value = "";
-            enterRoom(room.id);
+            hideModal("settingsModal");
+            showToast("プロフールを更新しました");
         }
 
         function toggleGpsSharing() {
@@ -572,7 +531,7 @@
                         STATE.myLocation = { lat, lng };
 
                         if (STATE.currentRoom) {
-                            set(ref(db, `rooms/${STATE.currentRoom.id}/locations/${STATE.currentUser.uid}`), {
+                            set(ref(db, `rooms/${SINGLE_ROOM_ID}/locations/${STATE.currentUser.uid}`), {
                                 lat: lat,
                                 lng: lng,
                                 accuracy: pos.coords.accuracy,
@@ -597,7 +556,7 @@
                 STATE.watchPositionId = null;
 
                 if (STATE.currentRoom) {
-                    remove(ref(db, `rooms/${STATE.currentRoom.id}/locations/${STATE.currentUser.uid}`));
+                    remove(ref(db, `rooms/${SINGLE_ROOM_ID}/locations/${STATE.currentUser.uid}`));
                 }
 
                 btn.innerText = "位置共有を開始";
@@ -628,7 +587,6 @@
                 return;
             }
 
-            // 1対1想定のため、最初の相手をターゲットにする
             const targetUid = otherUids[0];
             const targetLoc = locations[targetUid];
             const targetName = getNicknameByUid(targetUid);
@@ -659,7 +617,7 @@
             const text = input.value.trim();
             if (!text || !STATE.currentRoom) return;
 
-            const msgRef = ref(db, `rooms/${STATE.currentRoom.id}/messages`);
+            const msgRef = ref(db, `rooms/${SINGLE_ROOM_ID}/messages`);
             push(msgRef, {
                 sender: STATE.currentUser.nickname,
                 text: text,
@@ -675,19 +633,19 @@
             feed.innerHTML = "";
 
             if (STATE.chatMessages.length === 0) {
-                feed.innerHTML = '<div class="text-center text-slate-500 text-[10px] py-2">メッセージ履歴はありません</div>';
+                feed.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">メッセージ履歴はありません</div>';
                 return;
             }
 
             STATE.chatMessages.forEach(msg => {
                 const item = document.createElement("div");
-                item.className = "flex justify-between items-start space-x-2 text-slate-300";
+                item.className = "flex justify-between items-start space-x-2 text-slate-200 text-sm";
                 item.innerHTML = `
                     <div>
                         <strong class="text-purple-400 font-bold">${msg.sender}:</strong>
-                        <span class="text-slate-200">${msg.text}</span>
+                        <span class="text-slate-100 font-medium">${msg.text}</span>
                     </div>
-                    <span class="text-[9px] text-slate-500 whitespace-nowrap">${msg.time}</span>
+                    <span class="text-xs text-slate-400 whitespace-nowrap">${msg.time}</span>
                 `;
                 feed.appendChild(item);
             });
@@ -703,6 +661,7 @@
 
             showModal("adminModal");
 
+            // ユーザー一覧レンダリング
             const userContainer = document.getElementById("adminUserList");
             userContainer.innerHTML = "";
 
@@ -714,31 +673,54 @@
                         <span class="font-bold text-slate-200">${u.nickname}</span>
                         <span class="text-[10px] text-slate-500 block font-mono">UID: ${u.uid}</span>
                     </div>
-                    <button class="bg-rose-500/20 text-rose-300 text-[10px] px-2 py-1 rounded hover:bg-rose-500/30">停止</button>
+                    <button class="btn-delete-user bg-rose-600 text-white text-[10px] px-2.5 py-1 rounded font-bold hover:bg-rose-700 transition">削除</button>
                 `;
+                row.querySelector(".btn-delete-user").addEventListener("click", () => {
+                    if (confirm(`ユーザー「${u.nickname}」のデータを削除しますか？`)) {
+                        remove(ref(db, `users/${u.uid}`)).then(() => {
+                            remove(ref(db, `rooms/${SINGLE_ROOM_ID}/members/${u.uid}`));
+                            showToast("ユーザーデータを削除しました");
+                            openAdminDashboard();
+                        });
+                    }
+                });
                 userContainer.appendChild(row);
             });
 
+            // アクティブルーム強制終了
             const roomContainer = document.getElementById("adminRoomList");
             roomContainer.innerHTML = "";
 
-            STATE.rooms.forEach(r => {
+            if (STATE.currentRoom) {
                 const row = document.createElement("div");
                 row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
                 row.innerHTML = `
                     <div>
-                        <span class="font-bold text-slate-200">${r.name}</span>
-                        <span class="text-[10px] text-slate-400 block">コード: ${r.inviteCode}</span>
+                        <span class="font-bold text-slate-200">${STATE.currentRoom.name}</span>
+                        <span class="text-[10px] text-slate-400 block">ID: ${SINGLE_ROOM_ID}</span>
                     </div>
-                    <button class="bg-rose-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow hover:bg-rose-700">強制終了</button>
+                    <button class="bg-rose-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow hover:bg-rose-700">クリア</button>
                 `;
                 row.querySelector("button").addEventListener("click", () => {
-                    remove(ref(db, `rooms/${r.id}`)).then(() => {
-                        openAdminDashboard();
-                        showToast(`ルーム「${r.name}」を強制終了しました`);
-                    });
+                    if (confirm("ルームの参加者情報および位置情報をクリアしますか？")) {
+                        set(ref(db, `rooms/${SINGLE_ROOM_ID}`), {
+                            name: "1対1 待ち合わせルーム",
+                            members: {},
+                            locations: {}
+                        }).then(() => {
+                            showToast("ルームをクリアしました");
+                            openAdminDashboard();
+                        });
+                    }
                 });
                 roomContainer.appendChild(row);
+            }
+        }
+
+        function handleToggleAccessRestriction(e) {
+            const restricted = e.target.checked;
+            set(ref(db, "system/accessRestricted"), restricted).then(() => {
+                showToast(restricted ? "未認識端末からのアクセスを制限しました" : "アクセス制限を解除しました");
             });
         }
 
@@ -747,16 +729,14 @@
                 toggleGpsSharing();
             }
 
-            if (STATE.currentRoom && STATE.currentUser) {
-                remove(ref(db, `rooms/${STATE.currentRoom.id}/members/${STATE.currentUser.uid}`));
+            if (STATE.currentUser) {
+                remove(ref(db, `rooms/${SINGLE_ROOM_ID}/members/${STATE.currentUser.uid}`));
             }
 
-            STATE.currentRoom = null;
             document.getElementById("activeRoomSection").classList.add("hidden");
-            document.getElementById("roomSelectSection").classList.remove("hidden");
+            document.getElementById("authSection").classList.remove("hidden");
 
-            renderRoomsList();
-            showToast("ルームから退室しました");
+            showToast("退室しました");
         }
 
         function getNicknameByUid(uid) {
