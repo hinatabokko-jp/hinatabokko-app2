@@ -124,7 +124,7 @@
 
             <!-- 1-on-1 Direction & Distance Display Card -->
             <div class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center space-y-4 text-center border border-slate-800 shadow-2xl">
-                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">相棒（相手）の方向と距離</div>
+                <div class="text-xs uppercase tracking-wider text-slate-400 font-bold">相手の方向と距離</div>
                 <div id="targetNameDisplay" class="text-sm font-semibold text-purple-300">相手の接続を待っています...</div>
                 
                 <!-- Direction Compass Icon / Indicator -->
@@ -587,7 +587,7 @@
             const otherUids = Object.keys(locations).filter(uid => uid !== STATE.currentUser.uid);
 
             if (otherUids.length === 0) {
-                nameDisplay.innerText = "相棒（相手）の接続・位置共有待ち...";
+                nameDisplay.innerText = "相手の接続・位置共有待ち...";
                 distText.innerText = "--- m";
                 dirText.innerText = "-- 方向";
                 arrow.style.transform = "rotate(0deg)";
