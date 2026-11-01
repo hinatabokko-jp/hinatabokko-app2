@@ -204,7 +204,13 @@
         <section id="settingsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 p-4 flex items-center justify-center">
             <div class="glass-panel max-w-sm w-full p-5 rounded-2xl space-y-4 border border-slate-700">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="font-bold text-slate-100 text-sm">ユーザー設定</h3>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="font-bold text-slate-100 text-sm">ユーザー設定</h3>
+                        <!-- 要望対応：ユーザー設定モーダル内に管理画面へアクセスできる歯車マークのボタンを配置 -->
+                        <button id="btnOpenAdminFromModal" class="p-1.5 text-slate-300 hover:text-white transition flex items-center justify-center rounded-lg bg-slate-800/80 border border-slate-700 text-xs" title="管理者画面を開く">
+                            <span>⚙️</span>
+                        </button>
+                    </div>
                     <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="space-y-3">
@@ -339,6 +345,13 @@
             document.getElementById("btnUserMenu").addEventListener("click", handleUserMenuClick);
             document.getElementById("btnSettingsModal").addEventListener("click", openSettingsModal);
             document.getElementById("btnCloseSettings").addEventListener("click", () => hideModal("settingsModal"));
+            
+            // 要望対応：ユーザー設定モーダル内の歯車ボタンから管理者画面を開く処理
+            document.getElementById("btnOpenAdminFromModal").addEventListener("click", () => {
+                hideModal("settingsModal");
+                openAdminDashboard();
+            });
+
             document.getElementById("btnSaveProfile").addEventListener("click", handleSaveProfile);
             document.getElementById("btnCopyUid").addEventListener("click", copyUidToClipboard);
             document.getElementById("btnLeaveRoom").addEventListener("click", handleLeaveRoom);
