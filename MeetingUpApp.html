@@ -64,9 +64,6 @@
                 <span id="navNickname"></span>
                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
             </button>
-            <button id="btnAdminDashboard" class="hidden text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-lg hover:bg-amber-500/30 transition flex items-center font-bold">
-                <i class="fa-solid fa-shield-halved text-amber-400 mr-1.5"></i>管理者
-            </button>
         </div>
     </header>
 
@@ -194,22 +191,11 @@
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">アクティブルーム管理</h4>
                     <div id="adminRoomList" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar"></div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Admin Passcode Modal (管理者ログイン用あいことば入力) -->
-        <section id="adminPasscodeModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 p-4 flex items-center justify-center">
-            <div class="glass-panel max-w-xs w-full p-5 rounded-2xl space-y-4 border border-amber-500/30">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                    <h3 class="font-bold text-amber-300 text-sm flex items-center"><i class="fa-solid fa-key mr-2"></i>管理者認証</h3>
-                    <button id="btnCloseAdminPasscode" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">あいことば（パスワード）</label>
-                        <input type="password" id="inputAdminPasscode" placeholder="管理者パスワードを入力" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500">
-                    </div>
-                    <button id="btnSubmitAdminPasscode" class="w-full bg-amber-500 hover:bg-amber-600 py-2.5 text-xs font-bold rounded-xl text-slate-950 shadow transition">管理者として入室</button>
+                <!-- Chat Messages Management -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">メッセージ管理</h4>
+                    <div id="adminMessageList" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar"></div>
                 </div>
             </div>
         </section>
@@ -234,14 +220,6 @@
                         <input type="text" id="editNicknameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-purple-500">
                     </div>
                     <button id="btnSaveProfile" class="w-full brand-gradient-bg py-2.5 text-xs font-bold rounded-xl text-white shadow">変更を保存</button>
-                    
-                    <!-- ユーザー設定モーダル内に配置した歯車ボタン（管理者ダッシュボードへの導線） -->
-                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
-                        <span class="text-[11px] text-slate-400">管理者ダッシュボードを開く</span>
-                        <button id="btnOpenAdminFromSettings" class="p-2.5 text-amber-400 hover:text-amber-300 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl transition flex items-center justify-center shadow" title="管理者設定">
-                            <i class="fa-solid fa-gear text-sm"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </section>
@@ -281,7 +259,7 @@
             watchPositionId: null,
             myLocation: null,
             users: [],
-            chatMessages: [],
+            chatMessages: {},
             accessRestricted: false
         };
 
@@ -374,35 +352,8 @@
                 });
             });
 
-            document.getElementById("btnAdminDashboard").addEventListener("click", openAdminDashboard);
             document.getElementById("btnCloseAdmin").addEventListener("click", () => hideModal("adminModal"));
             document.getElementById("toggleAccessRestriction").addEventListener("change", handleToggleAccessRestriction);
-
-            // ユーザー設定モーダル内の歯車マークボタンからの管理者あいことば画面起動
-            document.getElementById("btnOpenAdminFromSettings").addEventListener("click", () => {
-                hideModal("settingsModal");
-                document.getElementById("inputAdminPasscode").value = "";
-                showModal("adminPasscodeModal");
-            });
-            document.getElementById("btnCloseAdminPasscode").addEventListener("click", () => hideModal("adminPasscodeModal"));
-            document.getElementById("btnSubmitAdminPasscode").addEventListener("click", handleAdminPasscodeSubmit);
-        }
-
-        function handleAdminPasscodeSubmit() {
-            const passcode = document.getElementById("inputAdminPasscode").value.trim();
-            if (passcode === "ADMIN_0813" || passcode === "ADMIN_SECRET_KEY") {
-                hideModal("adminPasscodeModal");
-                if (STATE.currentUser) {
-                    STATE.currentUser.isAdmin = true;
-                    document.getElementById("navNickname").innerText = STATE.currentUser.nickname + " 👑";
-                    const btnAdmin = document.getElementById("btnAdminDashboard");
-                    btnAdmin.classList.remove("hidden");
-                    btnAdmin.style.display = "inline-flex";
-                }
-                openAdminDashboard();
-            } else {
-                showToast("あいことばが違います");
-            }
         }
 
         async function handleLogin(isAutoLogin = false) {
@@ -448,18 +399,13 @@
             });
 
             document.getElementById("headerUserNav").classList.remove("hidden");
-            document.getElementById("navNickname").innerText = nickname + (isAdmin ? " 👑" : "");
+            document.getElementById("navNickname").innerText = nickname;
 
-            const btnAdmin = document.getElementById("btnAdminDashboard");
             if (isAdmin) {
-                btnAdmin.classList.remove("hidden");
-                btnAdmin.style.display = "inline-flex";
+                openAdminDashboard();
             } else {
-                btnAdmin.classList.add("hidden");
-                btnAdmin.style.display = "none";
+                attemptEnterRoom();
             }
-
-            attemptEnterRoom();
         }
 
         async function attemptEnterRoom() {
@@ -485,8 +431,11 @@
             const chatRef = ref(db, `rooms/${SINGLE_ROOM_ID}/messages`);
             onValue(chatRef, (snapshot) => {
                 const data = snapshot.val();
-                STATE.chatMessages = data ? Object.values(data) : [];
+                STATE.chatMessages = data || {};
                 renderChatMessages();
+                if (!document.getElementById("adminModal").classList.contains("hidden")) {
+                    renderAdminMessages();
+                }
             });
 
             updateRoomUI();
@@ -495,12 +444,8 @@
 
         function handleUserMenuClick() {
             if (!STATE.currentUser) return;
-            if (STATE.currentUser.isAdmin) {
-                openAdminDashboard();
-            } else {
-                if (confirm("ログアウトしてログイン画面に戻りますか？")) {
-                    location.reload();
-                }
+            if (confirm("ログアウトしてログイン画面に戻りますか？")) {
+                location.reload();
             }
         }
 
@@ -537,7 +482,7 @@
 
             STATE.currentUser.nickname = newName;
             localStorage.setItem("meetingup_nickname", newName);
-            document.getElementById("navNickname").innerText = newName + (STATE.currentUser.isAdmin ? " 👑" : "");
+            document.getElementById("navNickname").innerText = newName;
 
             await update(ref(db, `users/${STATE.currentUser.uid}`), { nickname: newName });
             if (STATE.currentRoom) {
@@ -664,38 +609,40 @@
             input.value = "";
         }
 
-        // LINE風吹き出し形式でのチャット描画
+        // LINE風吹き出し形式でのチャット描画（文字サイズを拡大）
         function renderChatMessages() {
             const feed = document.getElementById("chatFeed");
             feed.innerHTML = "";
 
-            if (STATE.chatMessages.length === 0) {
+            const messageList = Object.values(STATE.chatMessages);
+
+            if (messageList.length === 0) {
                 feed.innerHTML = '<div class="text-center text-slate-500 text-xs my-auto">メッセージ履歴はありません</div>';
                 return;
             }
 
-            STATE.chatMessages.forEach(msg => {
+            messageList.forEach(msg => {
                 const isMe = STATE.currentUser && (msg.senderUid === STATE.currentUser.uid || msg.sender === STATE.currentUser.nickname);
                 const item = document.createElement("div");
                 
                 if (isMe) {
-                    // 自分（右側配置、紫系統のグラデーション背景）
+                    // 自分（右側配置、紫系統のグラデーション背景、文字サイズ text-[17px]）
                     item.className = "flex flex-col items-end space-y-0.5 w-full";
                     item.innerHTML = `
-                        <div class="flex items-end space-x-1.5 max-w-[80%]">
+                        <div class="flex items-end space-x-1.5 max-w-[85%]">
                             <span class="text-[10px] text-slate-400 self-end mb-0.5">${msg.time}</span>
-                            <div class="brand-gradient-bg text-white px-3.5 py-2 rounded-2xl rounded-tr-sm text-sm shadow break-words font-medium">
+                            <div class="brand-gradient-bg text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-[17px] shadow break-words font-medium leading-normal">
                                 ${escapeHtml(msg.text)}
                             </div>
                         </div>
                     `;
                 } else {
-                    // 相手（左側配置、スレート色背景）
+                    // 相手（左側配置、スレート色背景、文字サイズ text-[17px]）
                     item.className = "flex flex-col items-start space-y-0.5 w-full";
                     item.innerHTML = `
-                        <span class="text-[10px] text-purple-300 ml-1 font-bold">${escapeHtml(msg.sender)}</span>
-                        <div class="flex items-end space-x-1.5 max-w-[80%]">
-                            <div class="bg-slate-800 border border-slate-700 text-slate-100 px-3.5 py-2 rounded-2xl rounded-tl-sm text-sm shadow break-words font-medium">
+                        <span class="text-xs text-purple-300 ml-1 font-bold">${escapeHtml(msg.sender)}</span>
+                        <div class="flex items-end space-x-1.5 max-w-[85%]">
+                            <div class="bg-slate-800 border border-slate-700 text-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm text-[17px] shadow break-words font-medium leading-normal">
                                 ${escapeHtml(msg.text)}
                             </div>
                             <span class="text-[10px] text-slate-400 self-end mb-0.5">${msg.time}</span>
@@ -767,6 +714,45 @@
                 });
                 roomContainer.appendChild(row);
             }
+
+            renderAdminMessages();
+        }
+
+        // 管理者画面用のメッセージ一覧表示と削除機能
+        function renderAdminMessages() {
+            const msgContainer = document.getElementById("adminMessageList");
+            if (!msgContainer) return;
+            msgContainer.innerHTML = "";
+
+            const entries = Object.entries(STATE.chatMessages);
+
+            if (entries.length === 0) {
+                msgContainer.innerHTML = '<div class="text-slate-500 text-xs text-center py-2">メッセージ履歴はありません</div>';
+                return;
+            }
+
+            entries.forEach(([key, msg]) => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center glass-panel p-2.5 rounded-lg text-xs border border-slate-800";
+                row.innerHTML = `
+                    <div class="pr-2 overflow-hidden">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-purple-300">${escapeHtml(msg.sender)}</span>
+                            <span class="text-[10px] text-slate-500">${msg.time}</span>
+                        </div>
+                        <div class="text-slate-200 truncate mt-0.5">${escapeHtml(msg.text)}</div>
+                    </div>
+                    <button class="btn-delete-msg bg-rose-600 text-white text-[10px] px-2.5 py-1 rounded font-bold hover:bg-rose-700 transition shrink-0">削除</button>
+                `;
+                row.querySelector(".btn-delete-msg").addEventListener("click", () => {
+                    if (confirm("このメッセージを削除しますか？")) {
+                        remove(ref(db, `rooms/${SINGLE_ROOM_ID}/messages/${key}`)).then(() => {
+                            showToast("メッセージを削除しました");
+                        });
+                    }
+                });
+                msgContainer.appendChild(row);
+            });
         }
 
         function handleToggleAccessRestriction(e) {
