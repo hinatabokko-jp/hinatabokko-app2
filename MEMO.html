@@ -482,7 +482,7 @@
       color: var(--text-muted);
       font-weight: 500;
     }
-    .delete-btn, .edit-btn, .copy-btn, .viewer-link-btn {
+    .delete-btn, .edit-btn, .copy-btn {
       background: none;
       border: none;
       color: var(--text-muted);
@@ -494,13 +494,12 @@
       transition: var(--transition);
       opacity: 0.85;
     }
-    .delete-btn:hover, .edit-btn:hover, .copy-btn:hover, .viewer-link-btn:hover {
+    .delete-btn:hover, .edit-btn:hover, .copy-btn:hover {
       opacity: 1;
       color: #fff;
       text-shadow: 0 0 8px rgba(255,255,255,0.4);
     }
     .delete-btn:hover { color: var(--danger-color); }
-    .viewer-link-btn:hover { color: var(--accent-purple); }
 
     .edit-container {
       display: flex;
@@ -569,25 +568,15 @@
       display: block;
       object-fit: contain;
       box-shadow: var(--shadow-sm);
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .chat-image:hover {
-      opacity: 0.9;
     }
     .chat-stamp {
       max-width: 170px;
       max-height: 170px;
       display: block;
       user-select: none;
-      pointer-events: auto;
-      cursor: pointer;
+      pointer-events: none;
       object-fit: contain;
       filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
-      transition: opacity 0.2s;
-    }
-    .chat-stamp:hover {
-      opacity: 0.9;
     }
     .chat-link {
       color: #ffffff;
@@ -909,7 +898,6 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      cursor: pointer;
     }
     .history-actions {
       display: flex;
@@ -1134,7 +1122,6 @@
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page31.html">Canvas Share</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page12.html">フォントWOFF2化</a></li>
         <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page14.html">グラデーション</a></li>
-        <li><a href="https://hinatabokko-jp.github.io/hinatabokko-app2/MeetingUpApp.html">待ち合わせ</a></li>
       </ul>
     </aside>
 
@@ -1212,6 +1199,7 @@
             <input type="file" id="file-input" style="display: none;">
             <textarea id="message-input" placeholder="メモを入力..." rows="1"></textarea>
             <button id="footer-stamp-history-btn" class="icon-btn-style" title="スタンプ履歴">🕒</button>
+            <!-- 手描きスタンプ作成モーダルを開くボタン -->
             <button id="footer-stamp-open-btn" class="icon-btn-style" title="手描きスタンプ作成">🎨</button>
             <button id="modal-open-btn" class="icon-btn-style" title="改行・絵文字">⏎</button>
             <button id="send-btn" class="send-btn-style">送信</button>
@@ -1305,7 +1293,7 @@
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-items: center;">
           <input type="color" id="stamp-color" value="#ffffff" style="width: 100%; height: 38px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
-          <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem; background-color: #000000; color: #ffffff;">
+        <select id="brush-select" class="secondary-btn" style="height: 38px; font-size: 0.75rem; background-color: #000000; color: #ffffff;">
             <option value="pen">ペン</option>
             <option value="calligraphy-brush">カリグラフィ ブラシ</option>
             <option value="calligraphy-pen">カリグラフィ ペン</option>
@@ -1546,11 +1534,8 @@
   <script type="module">
     import { db, messagesRef, stampHistoryRef } from "./js/config.js";
     import { initStampModal } from "./js/stamp-modal.js";
-    import { initImageViewer } from "./js/image-viewer.js";
     
-    // 画像ビューワーの初期化
-    initImageViewer();
-
+    // ユーザー選択要素が存在しない場合のフォールバック（必要に応じて変更してください）
     const dummyUserSelect = { value: "ユーザー" };
     
     initStampModal({ 
