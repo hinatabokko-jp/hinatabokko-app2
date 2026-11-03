@@ -1,5 +1,6 @@
 /**
- * Gallery機能ロジック (gallery.js) - エラーハンドリング強化版
+ * Gallery機能ロジック (gallery.js) - 修正版
+ * 画像自動縮小およびFirebase同期対応
  */
 import { ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { db } from "./config.js";
@@ -197,24 +198,8 @@ async function handleFileSelect(e) {
                     loadedPdfPagesCount++;
                 }
             } catch (err) {
-                console.error('[Gallery Error] PDF処理に失敗しました:', {
-                    fileName: file.name,
-                    fileSize: file.size,
-                    error: err,
-                    message: err.message
-                });
-
-                // エラー内容に応じた詳細なメッセージを判定
-                let errorMsg = 'PDFの変換に失敗しました';
-                if (err.name === 'PasswordException' || (err.message && err.message.toLowerCase().includes('password'))) {
-                    errorMsg = 'パスワード保護されたPDFは読み込めません';
-                } else if (err.name === 'InvalidPDFException' || (err.message && err.message.toLowerCase().includes('invalid'))) {
-                    errorMsg = '破損しているか無効なPDFファイルです';
-                } else if (typeof pdfjsLib === 'undefined') {
-                    errorMsg = 'PDF.jsライブラリが読み込まれていません';
-                }
-
-                showGalleryToast(errorMsg, 'delete');
+                console.error('PDF Conversion Error:', err);
+                showGalleryToast('PDFの変換に失敗しました', 'delete');
             } finally {
                 hideGalleryLoading();
             }
@@ -233,8 +218,7 @@ async function handleFileSelect(e) {
                 await set(newRef, newItem);
                 loadedImageCount++;
             } catch (err) {
-                console.error('[Gallery Error] 画像の読み込みに失敗しました:', err);
-                showGalleryToast('画像の処理に失敗しました', 'delete');
+                console.error('File reading error:', err);
             } finally {
                 hideGalleryLoading();
             }
@@ -242,7 +226,7 @@ async function handleFileSelect(e) {
     }
 
     if (loadedImageCount > 0 || loadedPdfPagesCount > 0) {
-        showGalleryToast('ファイルを追加しました');
+        showGalleryToast('画像を追加しました');
     }
     e.target.value = '';
 }
@@ -251,7 +235,7 @@ async function handleFileSelect(e) {
  * 画像サイズが大きすぎる場合にスマホ向け（最大幅・高さ 1200px）に縮小する関数
  */
 function resizeImageIfNeeded(dataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.85) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
             let width = img.width;
@@ -275,39 +259,28 @@ function resizeImageIfNeeded(dataUrl, maxWidth = 1200, maxHeight = 1200, quality
 
             resolve(canvas.toDataURL('image/jpeg', quality));
         };
-        img.onerror = (err) => reject(new Error('画像の変形・リサイズに失敗しました'));
+        img.onerror = () => resolve(dataUrl); // 失敗時は元のまま返す
         img.src = dataUrl;
     });
 }
 
 async function convertPdfToJpg(file) {
-    if (typeof pdfjsLib === 'undefined') {
-        throw new Error('PDF.js (pdfjsLib) is not loaded.');
-    }
-
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const images = [];
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        try {
-            const page = await pdf.getPage(pageNum);
-            const scale = 1.5;
-            const viewport = page.getViewport({ scale });
+        const page = await pdf.getPage(pageNum);
+        const scale = 1.5; // 画質と容量のバランスを最適化
+        const viewport = page.getViewport({ scale });
 
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
 
-            await page.render({ canvasContext: context, viewport }).promise;
-            images.push(canvas.toDataURL('image/jpeg', 0.85));
-        } catch (pageErr) {
-            console.error(`[Gallery Warning] PDFのページ ${pageNum} のレンダリングに失敗しました:`, pageErr);
-            // 特定のページで失敗しても続行するか、全体を中断するか。ここでは続行せずエラーをスロー
-            throw pageErr;
-        }
+        await page.render({ canvasContext: context, viewport }).promise;
+        images.push(canvas.toDataURL('image/jpeg', 0.85));
     }
     return images;
 }
@@ -332,7 +305,7 @@ function readFileAsDataURL(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(new Error('ファイルの読み込みに失敗しました'));
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 }
@@ -396,7 +369,7 @@ function showGalleryToast(message, type = 'info') {
     const container = document.getElementById('gallery-toast-container');
     if (!container) return;
     const toast = document.createElement('div');
-    const icon = type === 'delete' ? 'fa-triangle-exclamation' : 'fa-circle-check';
+    const icon = type === 'delete' ? 'fa-trash-can' : 'fa-circle-check';
     const iconColor = type === 'delete' ? 'text-red-400' : 'text-emerald-400';
 
     toast.className = 'bg-gray-800/90 border border-gray-700/80 text-gray-100 text-xs py-2.5 px-4 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-[-10px]';
@@ -407,7 +380,7 @@ function showGalleryToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-[-10px]');
         setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, 2500);
 }
 
 function escapeHtml(str) {
