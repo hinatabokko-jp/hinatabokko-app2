@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>縦型画像ギャラリーアプリ</title>
+    <title>Gallery</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -61,7 +61,7 @@
             <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">
                 <i class="fa-solid font-bold fa-camera"></i>
             </div>
-            <h1 class="text-xl font-bold bg-gradient-to-r from-gray-100 to-gray-400 bg-clip-text text-transparent tracking-tight">Portrait Feed</h1>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-gray-100 to-gray-400 bg-clip-text text-transparent tracking-tight">Gallery</h1>
         </div>
         
         <!-- アップロードボタン (ヘッダーアクション) -->
@@ -150,95 +150,31 @@
     <!-- トースト通知 -->
     <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-2 w-full max-w-xs"></div>
 
-    <!-- IndexedDB & App logic -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <!-- App logic -->
     <script>
-        /** IndexedDB データベースヘルパー */
-        const DB_NAME = 'PortraitGalleryDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'images';
+        /** Firebase 初期設定 */
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
+            authDomain: "memo-32979.firebaseapp.com",
+            databaseURL: "https://memo-32979-default-rtdb.firebaseio.com",
+            projectId: "memo-32979",
+            storageBucket: "memo-32979.firebasestorage.app",
+            messagingSenderId: "798457900857",
+            appId: "1:798457900857:web:8b5ac2812aee8c3c8402e8",
+            measurementId: "G-7ZFJFTTHNW"
+        };
 
-        let db = null;
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const imagesRef = database.ref('gallery_images');
+
         let itemToDeleteId = null;
-
-        // DB初期化
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onupgradeneeded = (e) => {
-                    const dbInstance = e.target.result;
-                    if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-                        const store = dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                        store.createIndex('timestamp', 'timestamp', { unique: false });
-                    }
-                };
-
-                request.onsuccess = (e) => {
-                    db = e.target.result;
-                    resolve(db);
-                };
-
-                request.onerror = (e) => {
-                    console.error('IndexedDB error:', e.target.error);
-                    reject(e.target.error);
-                };
-            });
-        }
-
-        // 全画像を取得
-        function getAllImages() {
-            return new Promise((resolve) => {
-                if (!db) return resolve([]);
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const index = store.index('timestamp');
-                const request = index.openCursor(null, 'prev'); // 新しい順
-
-                const results = [];
-                request.onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    if (cursor) {
-                        results.push(cursor.value);
-                        cursor.continue();
-                    } else {
-                        resolve(results);
-                    }
-                };
-                request.onerror = () => resolve([]);
-            });
-        }
-
-        // 画像保存
-        function saveImage(imageData) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.put(imageData);
-                request.onsuccess = () => resolve(imageData);
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        // 画像削除
-        function deleteImageFromDB(id) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.delete(id);
-                request.onsuccess = () => resolve();
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        // DBクリア（サンプルプリロード用）
-        function clearDB() {
-            return new Promise((resolve) => {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.clear();
-                request.onsuccess = () => resolve();
-            });
-        }
+        let cachedImages = [];
 
         /** サンプル画像データの準備 */
         const SAMPLE_IMAGES = [
@@ -267,18 +203,35 @@
 
         /** UI制御 logic */
         document.addEventListener('DOMContentLoaded', async () => {
-            await initDB();
-            let images = await getAllImages();
-
-            // データが全く無ければサンプルをプリロード
-            if (images.length === 0) {
-                for (const item of SAMPLE_IMAGES) {
-                    await saveImage(item);
-                }
-                images = await getAllImages();
+            // Firebase 匿名認証（ルールの auth != null を満たすため）
+            try {
+                await firebase.auth().signInAnonymously();
+            } catch (err) {
+                console.error("Firebase Auth Error:", err);
             }
 
-            renderFeed(images);
+            // データのリアルタイム監視
+            imagesRef.on('value', async (snapshot) => {
+                const data = snapshot.val();
+                let items = [];
+                if (data) {
+                    items = Object.values(data);
+                }
+
+                // データが全く無ければサンプルを初期登録
+                if (items.length === 0) {
+                    for (const item of SAMPLE_IMAGES) {
+                        await imagesRef.child(item.id).set(item);
+                    }
+                    return; // on('value')が再発火して描画されます
+                }
+
+                // タイムスタンプの新しい順に並び替え
+                items.sort((a, b) => b.timestamp - a.timestamp);
+                cachedImages = items;
+                renderFeed(cachedImages);
+            });
+
             setupEventListeners();
         });
 
@@ -401,12 +354,10 @@
             // デモ初期化ボタン
             document.getElementById('btn-reset-demo').addEventListener('click', async () => {
                 if (confirm('すべての追加画像をリセットして初期状態に戻しますか？')) {
-                    await clearDB();
+                    await imagesRef.remove();
                     for (const item of SAMPLE_IMAGES) {
-                        await saveImage(item);
+                        await imagesRef.child(item.id).set(item);
                     }
-                    const items = await getAllImages();
-                    renderFeed(items);
                     showToast('初期データにリセットしました');
                 }
             });
@@ -421,10 +372,8 @@
             document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
             document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
                 if (itemToDeleteId) {
-                    await deleteImageFromDB(itemToDeleteId);
+                    await imagesRef.child(itemToDeleteId).remove();
                     closeDeleteModal();
-                    const items = await getAllImages();
-                    renderFeed(items);
                     showToast('画像を削除しました', 'delete');
                 }
             });
@@ -445,13 +394,14 @@
                     try {
                         const pageImages = await convertPdfToJpg(file);
                         for (let i = 0; i < pageImages.length; i++) {
+                            const newId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
                             const newItem = {
-                                id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                id: newId,
                                 src: pageImages[i],
                                 name: `${file.name} - Page ${i + 1}`,
-                                timestamp: Date.now() - (pageImages.length - i) // 順番を維持
+                                timestamp: Date.now() - (pageImages.length - i)
                             };
-                            await saveImage(newItem);
+                            await imagesRef.child(newId).set(newItem);
                             loadedPdfPagesCount++;
                         }
                     } catch (err) {
@@ -464,14 +414,15 @@
                     // 通常の画像ファイル処理
                     try {
                         const dataUrl = await readFileAsDataURL(file);
+                        const newId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
                         const newItem = {
-                            id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            id: newId,
                             src: dataUrl,
                             name: file.name,
                             timestamp: Date.now()
                         };
 
-                        await saveImage(newItem);
+                        await imagesRef.child(newId).set(newItem);
                         loadedImageCount++;
                     } catch (err) {
                         console.error('File reading error:', err);
@@ -480,9 +431,6 @@
             }
 
             if (loadedImageCount > 0 || loadedPdfPagesCount > 0) {
-                const items = await getAllImages();
-                renderFeed(items);
-                
                 let msg = '';
                 if (loadedPdfPagesCount > 0 && loadedImageCount > 0) {
                     msg = `画像 ${loadedImageCount}件 と PDF ${loadedPdfPagesCount}ページを追加しました`;
