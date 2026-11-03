@@ -1,5 +1,5 @@
 /**
- * Gallery機能ロジック (gallery.js) - 修正版
+ * Gallery機能ロジック (gallery.js) - Firebase同期 & 画像リサイズ対応版
  */
 import { ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { db } from "./config.js";
@@ -10,7 +10,7 @@ let itemToDeleteId = null;
 export function setupGalleryModule() {
     const galleryRef = ref(db, GALLERY_PATH);
 
-    // FirebaseからリアルタイムにGalleryデータを取得・同期
+    // FirebaseからリアルタイムにGalleryデータを取得・同期（他端末の変更も即座に反映）
     onValue(galleryRef, (snapshot) => {
         const data = snapshot.val();
         let images = [];
@@ -152,6 +152,7 @@ function setupGalleryEventListeners() {
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
             if (itemToDeleteId) {
+                // Firebaseからデータを削除
                 await remove(ref(db, `${GALLERY_PATH}/${itemToDeleteId}`));
                 closeDeleteModal();
                 showGalleryToast('画像を削除しました', 'delete');
@@ -160,13 +161,11 @@ function setupGalleryEventListeners() {
     }
 
     const openBtn = document.getElementById('open-gallery-modal-btn');
-    const closeBtn = document.getElementById('close-gallery-modal-btn');
     const modal = document.getElementById('gallery-modal-overlay');
 
     if (openBtn && modal) {
         openBtn.addEventListener('click', () => modal.classList.add('active'));
     }
-    // HTML側のギャラリー閉じるボタン（もしあれば）の紐付け
     const galleryCloseBtn = document.querySelector('#gallery-modal-overlay .modal-close-btn');
     if (galleryCloseBtn && modal) {
         galleryCloseBtn.addEventListener('click', () => modal.classList.remove('active'));
@@ -187,12 +186,14 @@ async function handleFileSelect(e) {
             try {
                 const pageImages = await convertPdfToJpg(file);
                 for (let i = 0; i < pageImages.length; i++) {
+                    const resizedDataUrl = await resizeImageIfNeeded(pageImages[i]);
                     const newItem = {
-                        src: pageImages[i],
+                        src: resizedDataUrl,
                         name: `${file.name} - Page ${i + 1}`,
                         timestamp: Date.now() + i,
                         caption: '🖼️ PDFから変換されたページ'
                     };
+                    // Firebaseに新規データを追加
                     const newRef = push(galleryRef);
                     await set(newRef, newItem);
                     loadedPdfPagesCount++;
@@ -204,19 +205,24 @@ async function handleFileSelect(e) {
                 hideGalleryLoading();
             }
         } else if (file.type.startsWith('image/')) {
+            showGalleryLoading('画像を処理中...', `${file.name} を最適化しています`);
             try {
                 const dataUrl = await readFileAsDataURL(file);
+                const resizedDataUrl = await resizeImageIfNeeded(dataUrl);
                 const newItem = {
-                    src: dataUrl,
+                    src: resizedDataUrl,
                     name: file.name,
                     timestamp: Date.now(),
                     caption: '🖼️ アップロードされた画像'
                 };
+                // Firebaseに新規データを追加
                 const newRef = push(galleryRef);
                 await set(newRef, newItem);
                 loadedImageCount++;
             } catch (err) {
                 console.error('File reading error:', err);
+            } finally {
+                hideGalleryLoading();
             }
         }
     }
@@ -227,6 +233,39 @@ async function handleFileSelect(e) {
     e.target.value = '';
 }
 
+/**
+ * 画像サイズが大きすぎる場合にスマホ向け（最大幅・高さ 1200px）に縮小する関数
+ */
+function resizeImageIfNeeded(dataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.85) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                if (width / height > maxWidth / maxHeight) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                } else {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+}
+
 async function convertPdfToJpg(file) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -234,7 +273,7 @@ async function convertPdfToJpg(file) {
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
-        const scale = 2.0;
+        const scale = 1.5;
         const viewport = page.getViewport({ scale });
 
         const canvas = document.createElement('canvas');
@@ -243,7 +282,7 @@ async function convertPdfToJpg(file) {
         canvas.width = viewport.width;
 
         await page.render({ canvasContext: context, viewport }).promise;
-        images.push(canvas.toDataURL('image/jpeg', 0.9));
+        images.push(canvas.toDataURL('image/jpeg', 0.85));
     }
     return images;
 }
