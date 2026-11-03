@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>縦型画像ギャラリーアプリ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f17',
+                        cardBg: '#161b26',
+                        accent: '#6366f1'
+                    },
+                    aspectRatio: {
+                        '9/16': '9 / 16',
+                        '3/4': '3 / 4'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js ワーカーの参照パスを設定
+        if (window['pdfjs-dist/build/pdf']) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f17;
+            color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* スクロールバー非表示（フィード用） */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-hidden select-none">
+
+    <!-- ヘッダー -->
+    <header class="sticky top-0 z-30 bg-darkBg/80 backdrop-blur-md border-b border-gray-800/80 px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid font-bold fa-camera"></i>
+            </div>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-gray-100 to-gray-400 bg-clip-text text-transparent tracking-tight">Portrait Feed</h1>
+        </div>
+        
+        <!-- アップロードボタン (ヘッダーアクション) -->
+        <label for="image-upload-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/30 active:scale-95">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>投稿する</span>
+        </label>
+        <input type="file" id="image-upload-input" accept="image/*,application/pdf" multiple class="hidden">
+    </header>
+
+    <!-- メインフィードエリア -->
+    <main id="feed-container" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth w-full max-w-md mx-auto py-4 px-2 sm:px-0 space-y-6">
+        <!-- JSで動的にフィードカードが生成されます -->
+    </main>
+
+    <!-- 空状態（画像がない場合） -->
+    <div id="empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-md mx-auto">
+        <div class="w-20 h-20 bg-gray-800/60 rounded-full flex items-center justify-center mb-4 border border-gray-700/50">
+            <i class="fa-regular fa-images text-3xl text-gray-500"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-200 mb-1">投稿された画像がありません</h3>
+        <p class="text-xs text-gray-400 mb-5 max-w-xs">右上または下のボタンから縦長画像やPDFファイルをアップロードしてタイムラインを作成しましょう。</p>
+        <label for="empty-upload-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-500/25 active:scale-95 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            画像・PDFをアップロード
+        </label>
+        <input type="file" id="empty-upload-input" accept="image/*,application/pdf" multiple class="hidden">
+    </div>
+
+    <!-- フッター/ナビゲーション（モバイルUI感の演出） -->
+    <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
+        <button id="btn-scroll-top" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5" title="トップへ移動">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px]">ホーム</span>
+        </button>
+        <label for="footer-upload-input" class="cursor-pointer p-2 hover:text-white transition flex flex-col items-center gap-0.5">
+            <i class="fa-solid fa-square-plus text-xl text-indigo-500"></i>
+            <span class="text-[10px]">追加</span>
+        </label>
+        <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
+        <button id="btn-reset-demo" class="p-2 hover:text-red-400 transition flex flex-col items-center gap-0.5" title="初期データに戻す">
+            <i class="fa-solid fa-rotate-left text-lg"></i>
+            <span class="text-[10px]">リセット</span>
+        </button>
+    </footer>
+
+    <!-- PDF変換中スピナーローディング overlay -->
+    <div id="loading-overlay" class="fixed inset-0 z-50 bg-black/80 hidden flex-col items-center justify-center backdrop-blur-sm">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+            <h4 class="font-bold text-gray-100 text-sm mb-1" id="loading-title">PDFを画像に変換中...</h4>
+            <p class="text-xs text-gray-400" id="loading-desc">しばらくお待ちください。</p>
+        </div>
+    </div>
+
+    <!-- フルスクリーンスライド/モーダル -->
+    <div id="fullmodal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-center p-2 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <button id="close-modal-btn" class="absolute top-4 right-4 text-white/70 hover:text-white bg-gray-800/60 p-2.5 rounded-full w-10 h-10 flex items-center justify-center z-10 transition">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <div class="relative w-full h-full flex items-center justify-center overflow-hidden">
+            <img id="modal-img" src="" alt="Full view" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl">
+        </div>
+        <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-4 px-4">
+            <button id="modal-download-btn" class="bg-gray-800/80 hover:bg-gray-700 text-white px-4 py-2 rounded-full text-xs font-medium backdrop-blur-md flex items-center gap-2 border border-gray-700/50">
+                <i class="fa-solid fa-download"></i> ダウンロード
+            </button>
+        </div>
+    </div>
+
+    <!-- 削除確認カスタムダイアログ -->
+    <div id="delete-modal" class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 max-w-xs w-full text-center shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-trash-can text-xl"></i>
+            </div>
+            <h4 class="font-bold text-gray-100 text-base mb-1">投稿を削除しますか？</h4>
+            <p class="text-xs text-gray-400 mb-5">この操作は取り消せません。保存された画像データがストレージから永久に消去されます。</p>
+            <div class="flex gap-2.5">
+                <button id="cancel-delete-btn" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-xl text-xs font-semibold transition">キャンセル</button>
+                <button id="confirm-delete-btn" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-xl text-xs font-semibold transition shadow-lg shadow-red-600/30">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-2 w-full max-w-xs"></div>
+
+    <!-- IndexedDB & App logic -->
+    <script>
+        /** IndexedDB データベースヘルパー */
+        const DB_NAME = 'PortraitGalleryDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'images';
+
+        let db = null;
+        let itemToDeleteId = null;
+
+        // DB初期化
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    const dbInstance = e.target.result;
+                    if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+                        const store = dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (e) => {
+                    console.error('IndexedDB error:', e.target.error);
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        // 全画像を取得
+        function getAllImages() {
+            return new Promise((resolve) => {
+                if (!db) return resolve([]);
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const index = store.index('timestamp');
+                const request = index.openCursor(null, 'prev'); // 新しい順
+
+                const results = [];
+                request.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        results.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        resolve(results);
+                    }
+                };
+                request.onerror = () => resolve([]);
+            });
+        }
+
+        // 画像保存
+        function saveImage(imageData) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(imageData);
+                request.onsuccess = () => resolve(imageData);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // 画像削除
+        function deleteImageFromDB(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // DBクリア（サンプルプリロード用）
+        function clearDB() {
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+                request.onsuccess = () => resolve();
+            });
+        }
+
+        /** サンプル画像データの準備 */
+        const SAMPLE_IMAGES = [
+            {
+                id: 'sample-1',
+                src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=900&auto=format&fit=crop',
+                name: 'Portrait Neon City',
+                timestamp: Date.now() - 3600000 * 2,
+                caption: '夜の街とネオンライト 🌆✨'
+            },
+            {
+                id: 'sample-2',
+                src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=900&auto=format&fit=crop',
+                name: 'Natural Light Portrait',
+                timestamp: Date.now() - 3600000 * 5,
+                caption: '木漏れ日のポートレート 🌿'
+            },
+            {
+                id: 'sample-3',
+                src: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=900&auto=format&fit=crop',
+                name: 'Golden Hour Vibe',
+                timestamp: Date.now() - 3600000 * 12,
+                caption: '夕暮れ時の一コマ 🌇'
+            }
+        ];
+
+        /** UI制御 logic */
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+            let images = await getAllImages();
+
+            // データが全く無ければサンプルをプリロード
+            if (images.length === 0) {
+                for (const item of SAMPLE_IMAGES) {
+                    await saveImage(item);
+                }
+                images = await getAllImages();
+            }
+
+            renderFeed(images);
+            setupEventListeners();
+        });
+
+        // フィード描画
+        function renderFeed(items) {
+            const container = document.getElementById('feed-container');
+            const emptyState = document.getElementById('empty-state');
+
+            container.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            items.forEach(item => {
+                const card = createCardElement(item);
+                container.appendChild(card);
+            });
+        }
+
+        // 単一カードエレメントの生成 (縦長・アスペクト比固定 9:16)
+        function createCardElement(item) {
+            const formattedDate = new Date(item.timestamp).toLocaleString('ja-JP', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const card = document.createElement('article');
+            card.className = 'bg-cardBg border border-gray-800/80 rounded-2xl overflow-hidden shadow-xl flex flex-col mb-4 transition-all hover:border-gray-700/80';
+            card.dataset.id = item.id;
+
+            card.innerHTML = `
+                <!-- カードヘッダー -->
+                <div class="px-3.5 py-3 flex items-center justify-between border-b border-gray-800/50 bg-cardBg">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-200 line-clamp-1">${escapeHtml(item.name || '無題の画像')}</p>
+                            <p class="text-[10px] text-gray-400">${formattedDate}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <!-- ダウンロードボタン -->
+                        <button class="download-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 transition" title="ダウンロード">
+                            <i class="fa-solid fa-download text-xs"></i>
+                        </button>
+                        <!-- 削除ボタン -->
+                        <button class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-gray-800 transition" title="削除">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 縦長画像メインエリア (9:16 アスペクト比でいっぱいに表示) -->
+                <div class="relative w-full aspect-[9/16] bg-black overflow-hidden cursor-pointer group image-container">
+                    <img src="${item.src}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+                    
+                    <!-- 拡大用オーバーレイインジケータ -->
+                    <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                            <i class="fa-solid fa-expand text-xs"></i> 拡大表示
+                        </span>
+                    </div>
+
+                    <!-- フローティングキャプション（存在する場合） -->
+                    ${item.caption ? `
+                        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3.5 pt-8 text-xs text-gray-200 backdrop-blur-[1px]">
+                            <p class="line-clamp-2">${escapeHtml(item.caption)}</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // イベントリスナー設定
+            const imgContainer = card.querySelector('.image-container');
+            imgContainer.addEventListener('click', () => openFullModal(item.src, item.name));
+
+            const dlBtn = card.querySelector('.download-btn');
+            dlBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                downloadImage(item.src, item.name || 'image.jpg');
+            });
+
+            const delBtn = card.querySelector('.delete-btn');
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                promptDelete(item.id);
+            });
+
+            return card;
+        }
+
+        // イベントハンドラー初期化
+        function setupEventListeners() {
+            // ファイルアップロード (複数箇所対応)
+            const inputs = ['image-upload-input', 'empty-upload-input', 'footer-upload-input'];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', handleFileSelect);
+                }
+            });
+
+            // トップへスクロール
+            document.getElementById('btn-scroll-top').addEventListener('click', () => {
+                document.getElementById('feed-container').scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // デモ初期化ボタン
+            document.getElementById('btn-reset-demo').addEventListener('click', async () => {
+                if (confirm('すべての追加画像をリセットして初期状態に戻しますか？')) {
+                    await clearDB();
+                    for (const item of SAMPLE_IMAGES) {
+                        await saveImage(item);
+                    }
+                    const items = await getAllImages();
+                    renderFeed(items);
+                    showToast('初期データにリセットしました');
+                }
+            });
+
+            // モーダル操作
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            document.getElementById('fullmodal').addEventListener('click', (e) => {
+                if (e.target.id === 'fullmodal') closeModal();
+            });
+
+            // 削除モーダル
+            document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+                if (itemToDeleteId) {
+                    await deleteImageFromDB(itemToDeleteId);
+                    closeDeleteModal();
+                    const items = await getAllImages();
+                    renderFeed(items);
+                    showToast('画像を削除しました', 'delete');
+                }
+            });
+        }
+
+        // 画像選択・処理
+        async function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            let loadedImageCount = 0;
+            let loadedPdfPagesCount = 0;
+
+            for (const file of files) {
+                if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    // PDFファイルの処理
+                    showLoading('PDFを変換中...', `${file.name} を読み込んでいます`);
+                    try {
+                        const pageImages = await convertPdfToJpg(file);
+                        for (let i = 0; i < pageImages.length; i++) {
+                            const newItem = {
+                                id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                                src: pageImages[i],
+                                name: `${file.name} - Page ${i + 1}`,
+                                timestamp: Date.now() - (pageImages.length - i) // 順番を維持
+                            };
+                            await saveImage(newItem);
+                            loadedPdfPagesCount++;
+                        }
+                    } catch (err) {
+                        console.error('PDF Conversion Error:', err);
+                        showToast('PDFの変換に失敗しました', 'delete');
+                    } finally {
+                        hideLoading();
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    // 通常の画像ファイル処理
+                    try {
+                        const dataUrl = await readFileAsDataURL(file);
+                        const newItem = {
+                            id: 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            src: dataUrl,
+                            name: file.name,
+                            timestamp: Date.now()
+                        };
+
+                        await saveImage(newItem);
+                        loadedImageCount++;
+                    } catch (err) {
+                        console.error('File reading error:', err);
+                    }
+                }
+            }
+
+            if (loadedImageCount > 0 || loadedPdfPagesCount > 0) {
+                const items = await getAllImages();
+                renderFeed(items);
+                
+                let msg = '';
+                if (loadedPdfPagesCount > 0 && loadedImageCount > 0) {
+                    msg = `画像 ${loadedImageCount}件 と PDF ${loadedPdfPagesCount}ページを追加しました`;
+                } else if (loadedPdfPagesCount > 0) {
+                    msg = `PDFから ${loadedPdfPagesCount}ページのJPG画像を保存しました`;
+                } else {
+                    msg = `${loadedImageCount}件の画像を保存しました`;
+                }
+                showToast(msg);
+            }
+
+            // inputの値をリセットして連続アップロードを可能に
+            e.target.value = '';
+        }
+
+        // PDFを各ページのJPGデータ（DataURL）配列に変換
+        async function convertPdfToJpg(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const images = [];
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                updateLoadingText(`PDFを変換中 (${pageNum}/${pdf.numPages}ページ)...`);
+                
+                const page = await pdf.getPage(pageNum);
+                const scale = 2.0; // 高解像度レンダリング
+                const viewport = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+                const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                images.push(jpgDataUrl);
+            }
+
+            return images;
+        }
+
+        // ローディング表示制御
+        function showLoading(title, desc) {
+            const overlay = document.getElementById('loading-overlay');
+            document.getElementById('loading-title').textContent = title;
+            document.getElementById('loading-desc').textContent = desc;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+
+        function updateLoadingText(title) {
+            document.getElementById('loading-title').textContent = title;
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        // FileReader Promise化
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ダウンロード処理
+        function downloadImage(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'downloaded-portrait.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('画像をダウンロードしました');
+        }
+
+        // 削除確認モーダル開く
+        function promptDelete(id) {
+            itemToDeleteId = id;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // 削除確認モーダル閉じる
+        function closeDeleteModal() {
+            itemToDeleteId = null;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // 全画面モーダル表示
+        function openFullModal(src, filename) {
+            const modal = document.getElementById('fullmodal');
+            const img = document.getElementById('modal-img');
+            const dlBtn = document.getElementById('modal-download-btn');
+
+            img.src = src;
+            dlBtn.onclick = () => downloadImage(src, filename);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        // 全画面モーダル閉じる
+        function closeModal() {
+            const modal = document.getElementById('fullmodal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.getElementById('modal-img').src = '';
+            }, 300);
+        }
+
+        // トースト通知表示
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const icon = type === 'delete' ? 'fa-trash-can' : 'fa-circle-check';
+            const iconColor = type === 'delete' ? 'text-red-400' : 'text-emerald-400';
+
+            toast.className = 'bg-gray-800/90 border border-gray-700/80 text-gray-100 text-xs py-2.5 px-4 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-[-10px]';
+            toast.innerHTML = `<i class="fa-solid ${icon} ${iconColor}"></i> <span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-[-10px]');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 2500);
+        }
+
+        // HTMLエスケープ処理
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
