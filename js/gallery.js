@@ -1,34 +1,84 @@
 /**
- * Gallery機能ロジック (gallery.js) - 修正版
- * 画像自動縮小およびFirebase同期対応
+ * Gallery機能ロジック (Firebase / Firestore 保存版)
  */
-import { ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { db } from "./config.js";
+import { firestore, appId } from "./config.js";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const GALLERY_PATH = 'gallery_images';
 let itemToDeleteId = null;
 
-export function setupGalleryModule() {
-    const galleryRef = ref(db, GALLERY_PATH);
+// Firestoreのコレクション参照（既存のMEMOアプリと同じデータ構造パスを使用）
+const galleryCollectionRef = collection(firestore, 'artifacts', appId, 'public', 'data', 'gallery_images');
 
-    // FirebaseからリアルタイムにGalleryデータを取得・同期
-    onValue(galleryRef, (snapshot) => {
-        const data = snapshot.val();
-        let images = [];
-        if (data) {
-            images = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key]
-            }));
-            // タイムスタンプの降順（新しい順）にソート
-            images.sort((a, b) => b.timestamp - a.timestamp);
+// Firebase (Firestore) から全画像を取得
+async function getImagesFromFirestore() {
+    try {
+        const q = query(galleryCollectionRef, orderBy('timestamp', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const results = [];
+        querySnapshot.forEach((docSnap) => {
+            results.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        return results;
+    } catch (error) {
+        console.error('Firestore fetch error:', error);
+        return [];
+    }
+}
+
+// Firebase (Firestore) に画像を保存
+async function saveImageToFirestore(imageData) {
+    try {
+        const docRef = await addDoc(galleryCollectionRef, imageData);
+        return { id: docRef.id, ...imageData };
+    } catch (error) {
+        console.error('Firestore save error:', error);
+        throw error;
+    }
+}
+
+// Firebase (Firestore) から画像を削除
+async function deleteImageFromFirestore(id) {
+    try {
+        const docRef = doc(firestore, 'artifacts', appId, 'public', 'data', 'gallery_images', id);
+        await deleteDoc(docRef);
+    } catch (error) {
+        console.error('Firestore delete error:', error);
+        throw error;
+    }
+}
+
+// 初期サンプル画像データ
+const SAMPLE_IMAGES = [
+    {
+        src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=900&auto=format&fit=crop',
+        name: 'Portrait Neon City',
+        timestamp: Date.now() - 3600000 * 2,
+        caption: '🖼️ 夜の街とネオンライト 🌆✨'
+    },
+    {
+        src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=900&auto=format&fit=crop',
+        name: 'Natural Light Portrait',
+        timestamp: Date.now() - 3600000 * 5,
+        caption: '🖼️ 木漏れ日のポートレート 🌿'
+    }
+];
+
+export async function setupGalleryModule() {
+    let images = await getImagesFromFirestore();
+
+    // データが全く無ければサンプルをプリロード
+    if (images.length === 0) {
+        for (const item of SAMPLE_IMAGES) {
+            await saveImageToFirestore(item);
         }
-        renderFeed(images);
-    });
+        images = await getImagesFromFirestore();
+    }
 
+    renderFeed(images);
     setupGalleryEventListeners();
 }
 
+// フィード描画
 function renderFeed(items) {
     const container = document.getElementById('gallery-feed-container');
     const emptyState = document.getElementById('gallery-empty-state');
@@ -38,18 +88,14 @@ function renderFeed(items) {
 
     if (!items || items.length === 0) {
         container.classList.add('hidden');
-        if (emptyState) {
-            emptyState.classList.remove('hidden');
-            emptyState.classList.add('flex');
-        }
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
         return;
     }
 
     container.classList.remove('hidden');
-    if (emptyState) {
-        emptyState.classList.add('hidden');
-        emptyState.classList.remove('flex');
-    }
+    emptyState.classList.add('hidden');
+    emptyState.classList.remove('flex');
 
     items.forEach(item => {
         const card = createCardElement(item);
@@ -57,6 +103,7 @@ function renderFeed(items) {
     });
 }
 
+// 単一カードエレメントの生成 (縦長・アスペクト比固定 9:16)
 function createCardElement(item) {
     const formattedDate = new Date(item.timestamp).toLocaleString('ja-JP', {
         month: 'short',
@@ -117,6 +164,7 @@ function createCardElement(item) {
     return card;
 }
 
+// イベントハンドラー初期化
 function setupGalleryEventListeners() {
     const inputs = ['gallery-upload-input', 'gallery-empty-upload-input', 'gallery-footer-upload-input'];
     inputs.forEach(id => {
@@ -124,61 +172,58 @@ function setupGalleryEventListeners() {
         if (el) el.addEventListener('change', handleFileSelect);
     });
 
-    const scrollTopBtn = document.getElementById('gallery-btn-scroll-top');
-    if (scrollTopBtn) {
-        scrollTopBtn.addEventListener('click', () => {
-            const container = document.getElementById('gallery-feed-container');
-            if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-    }
+    document.getElementById('gallery-btn-scroll-top').addEventListener('click', () => {
+        document.getElementById('gallery-feed-container').scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
-    const closeFullModalBtn = document.getElementById('gallery-close-modal-btn');
-    if (closeFullModalBtn) {
-        closeFullModalBtn.addEventListener('click', closeFullModal);
-    }
-
-    const fullModal = document.getElementById('gallery-fullmodal');
-    if (fullModal) {
-        fullModal.addEventListener('click', (e) => {
-            if (e.target.id === 'gallery-fullmodal') closeFullModal();
-        });
-    }
-
-    const cancelDeleteBtn = document.getElementById('gallery-cancel-delete-btn');
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-    }
-
-    const confirmDeleteBtn = document.getElementById('gallery-confirm-delete-btn');
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (itemToDeleteId) {
-                await remove(ref(db, `${GALLERY_PATH}/${itemToDeleteId}`));
-                closeDeleteModal();
-                showGalleryToast('画像を削除しました', 'delete');
+    document.getElementById('gallery-btn-reset-demo').addEventListener('click', async () => {
+        if (confirm('すべてのギャラリー画像をリセットして初期状態に戻しますか？')) {
+            const currentItems = await getImagesFromFirestore();
+            for (const item of currentItems) {
+                await deleteImageFromFirestore(item.id);
             }
-        });
-    }
+            for (const item of SAMPLE_IMAGES) {
+                await saveImageToFirestore(item);
+            }
+            renderFeed(await getImagesFromFirestore());
+            showGalleryToast('初期データにリセットしました');
+        }
+    });
+
+    document.getElementById('gallery-close-modal-btn').addEventListener('click', closeFullModal);
+    document.getElementById('gallery-fullmodal').addEventListener('click', (e) => {
+        if (e.target.id === 'gallery-fullmodal') closeFullModal();
+    });
+
+    document.getElementById('gallery-cancel-delete-btn').addEventListener('click', closeDeleteModal);
+    document.getElementById('gallery-confirm-delete-btn').addEventListener('click', async () => {
+        if (itemToDeleteId) {
+            await deleteImageFromFirestore(itemToDeleteId);
+            closeDeleteModal();
+            renderFeed(await getImagesFromFirestore());
+            showGalleryToast('画像を削除しました', 'delete');
+        }
+    });
 
     const openBtn = document.getElementById('open-gallery-modal-btn');
+    const closeBtn = document.getElementById('close-gallery-modal-btn');
     const modal = document.getElementById('gallery-modal-overlay');
 
     if (openBtn && modal) {
         openBtn.addEventListener('click', () => modal.classList.add('active'));
     }
-    const galleryCloseBtn = document.querySelector('#gallery-modal-overlay .modal-close-btn');
-    if (galleryCloseBtn && modal) {
-        galleryCloseBtn.addEventListener('click', () => modal.classList.remove('active'));
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
     }
 }
 
+// 画像・PDF選択処理
 async function handleFileSelect(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     let loadedImageCount = 0;
     let loadedPdfPagesCount = 0;
-    const galleryRef = ref(db, GALLERY_PATH);
 
     for (const file of files) {
         if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
@@ -186,15 +231,13 @@ async function handleFileSelect(e) {
             try {
                 const pageImages = await convertPdfToJpg(file);
                 for (let i = 0; i < pageImages.length; i++) {
-                    const resizedDataUrl = await resizeImageIfNeeded(pageImages[i]);
                     const newItem = {
-                        src: resizedDataUrl,
+                        src: pageImages[i],
                         name: `${file.name} - Page ${i + 1}`,
-                        timestamp: Date.now() + i,
+                        timestamp: Date.now() - (pageImages.length - i),
                         caption: '🖼️ PDFから変換されたページ'
                     };
-                    const newRef = push(galleryRef);
-                    await set(newRef, newItem);
+                    await saveImageToFirestore(newItem);
                     loadedPdfPagesCount++;
                 }
             } catch (err) {
@@ -204,66 +247,30 @@ async function handleFileSelect(e) {
                 hideGalleryLoading();
             }
         } else if (file.type.startsWith('image/')) {
-            showGalleryLoading('画像を処理中...', `${file.name} を最適化しています`);
             try {
                 const dataUrl = await readFileAsDataURL(file);
-                const resizedDataUrl = await resizeImageIfNeeded(dataUrl);
                 const newItem = {
-                    src: resizedDataUrl,
+                    src: dataUrl,
                     name: file.name,
                     timestamp: Date.now(),
                     caption: '🖼️ アップロードされた画像'
                 };
-                const newRef = push(galleryRef);
-                await set(newRef, newItem);
+                await saveImageToFirestore(newItem);
                 loadedImageCount++;
             } catch (err) {
                 console.error('File reading error:', err);
-            } finally {
-                hideGalleryLoading();
             }
         }
     }
 
     if (loadedImageCount > 0 || loadedPdfPagesCount > 0) {
-        showGalleryToast('画像を追加しました');
+        renderFeed(await getImagesFromFirestore());
+        showGalleryToast('Firebaseに画像を保存しました');
     }
     e.target.value = '';
 }
 
-/**
- * 画像サイズが大きすぎる場合にスマホ向け（最大幅・高さ 1200px）に縮小する関数
- */
-function resizeImageIfNeeded(dataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.85) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth || height > maxHeight) {
-                if (width / height > maxWidth / maxHeight) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                } else {
-                    width = Math.round((width * maxHeight) / height);
-                    height = maxHeight;
-                }
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = () => resolve(dataUrl); // 失敗時は元のまま返す
-        img.src = dataUrl;
-    });
-}
-
+// PDF変換
 async function convertPdfToJpg(file) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -271,7 +278,7 @@ async function convertPdfToJpg(file) {
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
-        const scale = 1.5; // 画質と容量のバランスを最適化
+        const scale = 2.0;
         const viewport = page.getViewport({ scale });
 
         const canvas = document.createElement('canvas');
@@ -280,14 +287,13 @@ async function convertPdfToJpg(file) {
         canvas.width = viewport.width;
 
         await page.render({ canvasContext: context, viewport }).promise;
-        images.push(canvas.toDataURL('image/jpeg', 0.85));
+        images.push(canvas.toDataURL('image/jpeg', 0.9));
     }
     return images;
 }
 
 function showGalleryLoading(title, desc) {
     const overlay = document.getElementById('gallery-loading-overlay');
-    if (!overlay) return;
     document.getElementById('gallery-loading-title').textContent = title;
     document.getElementById('gallery-loading-desc').textContent = desc;
     overlay.classList.remove('hidden');
@@ -296,7 +302,6 @@ function showGalleryLoading(title, desc) {
 
 function hideGalleryLoading() {
     const overlay = document.getElementById('gallery-loading-overlay');
-    if (!overlay) return;
     overlay.classList.add('hidden');
     overlay.classList.remove('flex');
 }
@@ -323,19 +328,15 @@ function downloadImage(url, filename) {
 function promptDelete(id) {
     itemToDeleteId = id;
     const modal = document.getElementById('gallery-delete-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function closeDeleteModal() {
     itemToDeleteId = null;
     const modal = document.getElementById('gallery-delete-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 function openFullModal(src, filename) {
@@ -343,10 +344,8 @@ function openFullModal(src, filename) {
     const img = document.getElementById('gallery-modal-img');
     const dlBtn = document.getElementById('gallery-modal-download-btn');
 
-    if (!modal || !img) return;
-
     img.src = src;
-    if (dlBtn) dlBtn.onclick = () => downloadImage(src, filename);
+    dlBtn.onclick = () => downloadImage(src, filename);
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -355,13 +354,11 @@ function openFullModal(src, filename) {
 
 function closeFullModal() {
     const modal = document.getElementById('gallery-fullmodal');
-    if (!modal) return;
     modal.classList.add('opacity-0');
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        const img = document.getElementById('gallery-modal-img');
-        if (img) img.src = '';
+        document.getElementById('gallery-modal-img').src = '';
     }, 300);
 }
 
