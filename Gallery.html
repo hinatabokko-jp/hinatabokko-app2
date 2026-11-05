@@ -470,9 +470,9 @@
                 <span class="text-[10px]">追加</span>
             </label>
             <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
-            <button id="btn-reset-demo" class="p-2 hover:text-red-400 transition flex flex-col items-center gap-0.5" title="初期データに戻す">
+            <button id="btn-reset-demo" class="p-2 hover:text-red-400 transition flex flex-col items-center gap-0.5" title="全画像をクリア">
                 <i class="fa-solid fa-rotate-left text-lg"></i>
-                <span class="text-[10px]">リセット</span>
+                <span class="text-[10px]">全削除</span>
             </button>
         </footer>
     </div>
@@ -599,9 +599,9 @@
     <!-- トースト通知 -->
     <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-2 w-full max-w-xs"></div>
 
-    <!-- モジュールJavaScriptファイルの読み込み -->
+    <!-- モジュールJavaScriptファイルの読み込み (auth_2.jsを指定) -->
     <script type="module" src="js/config.js"></script>
-    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/auth_2.js"></script>
     
     <!-- Gallery専用ロジック -->
     <script type="module">
@@ -612,29 +612,8 @@
         let itemToDeleteId = null;
         let cachedImages = [];
 
-        const SAMPLE_IMAGES = [
-            {
-                id: 'sample-1',
-                src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=900&auto=format&fit=crop',
-                name: 'Portrait Neon City',
-                timestamp: Date.now() - 3600000 * 2,
-                caption: '夜の街とネオンライト 🌆✨'
-            },
-            {
-                id: 'sample-2',
-                src: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=900&auto=format&fit=crop',
-                name: 'Natural Light Portrait',
-                timestamp: Date.now() - 3600000 * 5,
-                caption: '木漏れ日のポートレート 🌿'
-            },
-            {
-                id: 'sample-3',
-                src: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=900&auto=format&fit=crop',
-                name: 'Golden Hour Vibe',
-                timestamp: Date.now() - 3600000 * 12,
-                caption: '夕暮れ時の一コマ 🌇'
-            }
-        ];
+        // サンプル画像を表示しない仕様（空の配列）
+        const SAMPLE_IMAGES = [];
 
         // 認証解除（アンロック）後にGalleryのデータを読み込み開始
         window.initGalleryApp = function() {
@@ -643,13 +622,6 @@
                 let items = [];
                 if (data) {
                     items = Object.values(data);
-                }
-
-                if (items.length === 0) {
-                    for (const item of SAMPLE_IMAGES) {
-                        await set(ref(db, 'gallery_images/' + item.id), item);
-                    }
-                    return;
                 }
 
                 items.sort((a, b) => b.timestamp - a.timestamp);
@@ -773,12 +745,9 @@
             });
 
             document.getElementById('btn-reset-demo').addEventListener('click', async () => {
-                if (confirm('すべての追加画像をリセットして初期状態に戻しますか？')) {
+                if (confirm('保存されているすべての画像を完全に削除しますか？')) {
                     await remove(imagesRef);
-                    for (const item of SAMPLE_IMAGES) {
-                        await set(ref(db, 'gallery_images/' + item.id), item);
-                    }
-                    showToast('初期データにリセットしました');
+                    showToast('すべての画像を削除しました', 'delete');
                 }
             });
 
