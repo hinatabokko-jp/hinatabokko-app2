@@ -290,89 +290,115 @@
         </section>
     </main>
 
-    <!-- JSON Manager Modal -->
+    <!-- JSON Manager Modal (2カラムレイアウトで左に追加・編集、右に収録済みリストと検索を配置) -->
     <div id="json-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-cardbg border border-bordercolor rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="bg-cardbg border border-bordercolor rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-bordercolor flex items-center justify-between bg-slate-900/50">
                 <h3 class="font-bold text-slate-100 flex items-center gap-2">
                     <i class="fa-solid fa-database text-cyan-400"></i> 辞書データ JSON管理・編集
                 </h3>
                 <button id="close-manager-btn" class="text-slate-400 hover:text-slate-200 text-lg px-2">✕</button>
             </div>
-            <div class="p-4 flex-grow overflow-y-auto flex flex-col gap-4">
-                <p class="text-xs text-slate-400">
-                    外部JSONファイルの内容を確認・編集、新しい用語の追加、既存データの削除が行えます。テキストボックス内での改行はそのまま保持され、JSONファイルとしてエクスポートできます。
-                </p>
-                
-                <!-- 新規追加・編集フォーム -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-bordercolor flex flex-col gap-3">
-                    <h4 id="form-title" class="text-xs font-bold text-cyan-400 uppercase tracking-wider">新規用語の追加</h4>
-                    <input type="hidden" id="edit-index" value="-1">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">ID (半角英字など)</label>
-                            <input type="text" id="input-id" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: sample_id">
+            
+            <div class="p-4 flex-grow overflow-y-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    <!-- 左側：新規追加・編集フォーム (5カラム分) -->
+                    <div class="lg:col-span-5 bg-slate-900 p-4 rounded-xl border border-bordercolor flex flex-col gap-3 sticky top-0">
+                        <div class="flex items-center justify-between border-b border-bordercolor pb-2">
+                            <h4 id="form-title" class="text-xs font-bold text-cyan-400 uppercase tracking-wider">新規用語の追加</h4>
+                            <button id="cancel-edit-btn" class="hidden px-2 py-1 rounded text-[11px] bg-slate-800 text-slate-300 hover:bg-slate-700">キャンセル</button>
                         </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">用語名 (Term)</label>
-                            <input type="text" id="input-term" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: サンプル">
+                        <input type="hidden" id="edit-index" value="-1">
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">ID (半角英字など)</label>
+                                <input type="text" id="input-id" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: sample_id">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">頭文字 (Initial)</label>
+                                <input type="text" id="input-initial" maxlength="2" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: S">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">読み方 (Reading)</label>
-                            <input type="text" id="input-reading" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: さんぷる">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">正式名称 (Full Name)</label>
-                            <input type="text" id="input-fullname" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: Sample Term">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">カテゴリ</label>
-                            <select id="input-category" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
-                                <option value="PCI">PCI（循環器・虚血）</option>
-                                <option value="CARD">心臓・循環器病名</option>
-                                <option value="CHART">カルテ記載略語</option>
-                                <option value="TL">経過記録・手技用語</option>
-                                <option value="ERCP">ERCP（消化器内視鏡）</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">頭文字 (Initial)</label>
-                            <input type="text" id="input-initial" maxlength="2" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: S">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1">意味・解説 (Meaning) ※Enterキーによる改行が反映されます</label>
-                        <textarea id="input-meaning" rows="3" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="解説を入力..."></textarea>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button id="cancel-edit-btn" class="hidden px-3 py-1.5 rounded-lg text-xs bg-slate-800 text-slate-300 hover:bg-slate-700">キャンセル</button>
-                        <button id="save-term-btn" class="px-4 py-1.5 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-medium">追加・更新を保存</button>
-                    </div>
-                </div>
 
-                <!-- データ一覧テーブル / 管理用 -->
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-300">登録済み辞書データ一覧</span>
-                    <button id="export-json-btn" class="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5">
-                        <i class="fa-solid fa-download"></i> JSONファイルとして出力
-                    </button>
-                </div>
-                <div class="border border-bordercolor rounded-xl overflow-x-auto bg-slate-900">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-slate-800 text-slate-400 border-b border-bordercolor">
-                            <tr>
-                                <th class="p-2.5">用語 / 読み</th>
-                                <th class="p-2.5">カテゴリ</th>
-                                <th class="p-2.5">意味・解説</th>
-                                <th class="p-2.5 text-right">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body" class="divide-y divide-bordercolor">
-                            <!-- JS注入 -->
-                        </tbody>
-                    </table>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">用語名 (Term)</label>
+                                <input type="text" id="input-term" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: サンプル">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">読み方 (Reading)</label>
+                                <input type="text" id="input-reading" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: さんぷる">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">正式名称 (Full Name)</label>
+                                <input type="text" id="input-fullname" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="例: Sample Term">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">カテゴリ</label>
+                                <select id="input-category" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500">
+                                    <option value="PCI">PCI（循環器・虚血）</option>
+                                    <option value="CARD">心臓・循環器病名</option>
+                                    <option value="CHART">カルテ記載略語</option>
+                                    <option value="TL">経過記録・手技用語</option>
+                                    <option value="ERCP">ERCP（消化器内視鏡）</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">意味・解説 (Meaning) ※Enterキーによる改行が反映されます</label>
+                            <textarea id="input-meaning" rows="5" class="w-full bg-slate-800 border border-bordercolor rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500" placeholder="解説を入力..."></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button id="save-term-btn" class="w-full py-2 rounded-lg text-xs bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-md transition-all">追加・更新を保存</button>
+                        </div>
+                    </div>
+
+                    <!-- 右側：既に収録されている用語の検索・一覧・エクスポート (7カラム分) -->
+                    <div class="lg:col-span-7 bg-slate-900 p-4 rounded-xl border border-bordercolor flex flex-col gap-3">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-bordercolor pb-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-200">収録済みデータ一覧</h4>
+                                <p class="text-[11px] text-slate-400">登録されている用語の検索・編集・削除を行います。</p>
+                            </div>
+                            <button id="export-json-btn" class="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shrink-0">
+                                <i class="fa-solid fa-download"></i> JSON出力
+                            </button>
+                        </div>
+
+                        <!-- 収録済みデータ専用の検索バー -->
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="admin-search-input" placeholder="登録済みデータから検索（用語名・意味など）..." 
+                                class="w-full pl-9 pr-8 py-2 rounded-lg bg-slate-800 border border-bordercolor text-slate-100 text-xs focus:outline-none focus:border-cyan-500 transition-all placeholder:text-slate-500">
+                            <button id="admin-clear-search" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <div class="border border-bordercolor rounded-xl overflow-y-auto max-h-[460px] bg-slate-950/60">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead class="bg-slate-800 text-slate-400 border-b border-bordercolor sticky top-0 z-10">
+                                    <tr>
+                                        <th class="p-2.5">用語 / 読み</th>
+                                        <th class="p-2.5">カテゴリ</th>
+                                        <th class="p-2.5">意味・解説</th>
+                                        <th class="p-2.5 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-body" class="divide-y divide-bordercolor">
+                                    <!-- JS注入 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -409,7 +435,7 @@
         openManagerBtn.addEventListener("click", () => { jsonModal.classList.remove("hidden"); renderAdminTable(); });
         closeManagerBtn.addEventListener("click", () => { jsonModal.classList.add("hidden"); });
 
-        // 辞書データ配列 (外部JSON「dictionary.json」から読み込み、フォールバックとしてローカルストレージまたは初期配列を使用)
+        // 辞書データ配列
         let dictionaryData = [];
 
         // UI要素
@@ -424,6 +450,11 @@
         const filterStatusText = document.getElementById("filter-status-text");
         const resetInitialBtn = document.getElementById("reset-initial");
 
+        // 管理画面用検索
+        const adminSearchInput = document.getElementById("admin-search-input");
+        const adminClearSearchBtn = document.getElementById("admin-clear-search");
+        let adminSearchQuery = "";
+
         let currentCategory = "ALL";
         let currentInitial = "ALL";
         let searchQuery = "";
@@ -431,7 +462,6 @@
         // 外部JSON読み込み処理
         async function loadDictionary() {
             try {
-                // ローカルストレージに編集データがあれば優先、なければdictionary.jsonをfetch
                 const saved = localStorage.getItem("medical_dictionary_data");
                 if (saved) {
                     dictionaryData = JSON.parse(saved);
@@ -517,7 +547,6 @@
                 else if (item.category === "TL") { catBadgeClass = "bg-purple-950 text-purple-400 border-purple-800"; catBadgeText = "経過記録"; }
                 else if (item.category === "ERCP") { catBadgeClass = "bg-emerald-950 text-emerald-400 border-emerald-800"; catBadgeText = "ERCP"; }
 
-                // 改行コード（\n）をHTMLの<br>タグに置換して表示
                 const formattedMeaning = item.meaning ? item.meaning.replace(/\n/g, '<br>') : '';
 
                 card.innerHTML = `
@@ -539,11 +568,17 @@
             });
         }
 
-        // 管理画面テーブル描画
+        // 管理画面テーブル描画（検索フィルター対応）
         function renderAdminTable() {
             const tbody = document.getElementById("admin-table-body");
             tbody.innerHTML = "";
+            
+            const q = adminSearchQuery.toLowerCase().trim();
             dictionaryData.forEach((item, index) => {
+                if (q && !item.term.toLowerCase().includes(q) && !item.reading.toLowerCase().includes(q) && !item.meaning.toLowerCase().includes(q) && !item.category.toLowerCase().includes(q)) {
+                    return; // 検索条件に一致しないものはスキップ
+                }
+
                 const tr = document.createElement("tr");
                 tr.className = "hover:bg-slate-800/50";
                 tr.innerHTML = `
@@ -551,8 +586,8 @@
                     <td class="p-2.5"><span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-bordercolor">${item.category}</span></td>
                     <td class="p-2.5 text-slate-300 text-xs max-w-xs truncate">${item.meaning}</td>
                     <td class="p-2.5 text-right whitespace-nowrap">
-                        <button onclick="editTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-[11px] mr-1"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded text-[11px]"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="editTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-[11px] mr-1" title="編集"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded text-[11px]" title="削除"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -568,7 +603,7 @@
             document.getElementById("input-fullname").value = item.fullName;
             document.getElementById("input-category").value = item.category;
             document.getElementById("input-initial").value = item.initial;
-            document.getElementById("input-meaning").value = item.meaning; // テキストエリアの改行保持
+            document.getElementById("input-meaning").value = item.meaning;
             document.getElementById("form-title").textContent = "用語の編集 (index: " + index + ")";
             document.getElementById("cancel-edit-btn").classList.remove("hidden");
         };
@@ -610,7 +645,7 @@
                 fullName: document.getElementById("input-fullname").value.trim(),
                 category: document.getElementById("input-category").value,
                 initial: document.getElementById("input-initial").value.trim().toUpperCase() || "A",
-                meaning: document.getElementById("input-meaning").value // 改行をそのまま保持
+                meaning: document.getElementById("input-meaning").value
             };
 
             if (!newItem.term) {
@@ -632,7 +667,7 @@
             alert("保存しました。");
         });
 
-        // JSONファイルとしてエクスポート（改行がそのまま反映される仕様）
+        // JSONファイルとしてエクスポート
         document.getElementById("export-json-btn").addEventListener("click", () => {
             const jsonString = JSON.stringify(dictionaryData, null, 2);
             const blob = new Blob([jsonString], { type: "application/json" });
@@ -644,7 +679,7 @@
             URL.revokeObjectURL(url);
         });
 
-        // イベントリスナー
+        // イベントリスナー設定
         function setupEventListeners() {
             searchInput.addEventListener("input", (e) => {
                 searchQuery = e.target.value;
@@ -657,6 +692,20 @@
                 searchQuery = "";
                 clearSearchBtn.classList.add("hidden");
                 render();
+            });
+
+            // 管理画面用検索イベント
+            adminSearchInput.addEventListener("input", (e) => {
+                adminSearchQuery = e.target.value;
+                adminClearSearchBtn.classList.toggle("hidden", !adminSearchQuery);
+                renderAdminTable();
+            });
+
+            adminClearSearchBtn.addEventListener("click", () => {
+                adminSearchInput.value = "";
+                adminSearchQuery = "";
+                adminClearSearchBtn.classList.add("hidden");
+                renderAdminTable();
             });
 
             initialButtonsContainer.addEventListener("click", (e) => {
