@@ -1539,6 +1539,52 @@
     </div>
   </div>
 
+  <!-- PDFアップロード自動圧縮・サイズ制限処理（Firebase制限対策） -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          // PDFファイルの場合、PDF.jsでCanvasに描画し、軽量なJPEGデータに圧縮・変換する
+          if (file.type === 'application/pdf' && typeof pdfjsLib !== 'undefined') {
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+              const pdfDoc = await loadingTask.promise;
+              const page = await pdfDoc.getPage(1);
+              
+              const scale = 1.0;
+              const viewport = page.getViewport({ scale });
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              await page.render({ canvasContext: context, viewport: viewport }).promise;
+              
+              // 品質0.7のJPEGに圧縮してBase64データURLを生成
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+              
+              // 圧縮したデータをプレビュー・アップロード用にBlob/Fileに変換してイベントオブジェクトを置き換え
+              const res = await fetch(compressedDataUrl);
+              const blob = await res.blob();
+              const compressedFile = new File([blob], file.name.replace(/\.pdf$/i, '.jpg'), { type: 'image/jpeg' });
+              
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(compressedFile);
+              fileInput.files = dataTransfer.files;
+            } catch (err) {
+              console.error('PDF compression failed:', err);
+            }
+          }
+        }, true);
+      }
+    });
+  </script>
+
   <!-- モジュールJavaScriptファイルの読み込み -->
   <script type="module" src="js/config.js"></script>
   <script type="module" src="js/auth.js"></script>
