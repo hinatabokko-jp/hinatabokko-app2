@@ -12,36 +12,6 @@
             "target": "Hello",
             "kana": "ハロー"
           },
-          ...
-        ]
-      },
-      ...
-    }
-  },
-  "es": { ... },
-  "it": { ... }
-}
-
-
-
-
-Gemini は AI であり、不正確な情報を表示することがあります。
-
-分析しています
-{
-  "en": {
-    "name": "English",
-    "langCode": "en-US",
-    "categories": {
-      "greetings": {
-        "name": "挨拶・基本",
-        "icon": "fa-hand-wave",
-        "phrases": [
-          {
-            "ja": "こんにちは",
-            "target": "Hello",
-            "kana": "ハロー"
-          },
           {
             "ja": "おはようございます",
             "target": "Good morning",
@@ -838,9 +808,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
         "icon": "fa-house-chimney",
         "phrases": [
           {
-            "ja": "いらっしゃい！",
-            "target": "¡Bienvenido/a!",
-            "kana": "ビエンベニド / ア"
+            "ja": "いらっしゃい！ (男性に対して)",
+            "target": "¡Bienvenido!",
+            "kana": "ビエンベニド"
+          },
+          {
+            "ja": "いらっしゃい！ (女性に対して)",
+            "target": "¡Bienvenida!",
+            "kana": "ビエンベニダ"
           },
           {
             "ja": "来てくれてありがとう！",
@@ -873,9 +848,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
             "kana": "テ ア コスタド エンコントラル ラ カサ"
           },
           {
-            "ja": "遠かったでしょう？お疲れさま。",
-            "target": "Habrá sido un viaje largo. Estarás cansado/a.",
-            "kana": "アブラ シド ウン ビアヘラルゴ エスタラス カンサド / ア"
+            "ja": "遠かったでしょう？お疲れさま。(男性に対して)",
+            "target": "Habrá sido un viaje largo. Estarás cansado.",
+            "kana": "アブラ シド ウン ビアヘラルゴ エスタラス カンサド"
+          },
+          {
+            "ja": "遠かったでしょう？お疲れさま。(女性に対して)",
+            "target": "Habrá sido un viaje largo. Estarás cansada.",
+            "kana": "アブラ シド ウン ビアヘラルゴ エスタラス カンサダ"
           },
           {
             "ja": "荷物を預かるよ。",
@@ -894,9 +874,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
         "icon": "fa-child-reaching",
         "phrases": [
           {
-            "ja": "おかえり！",
-            "target": "¡Bienvenido/a a casa!",
-            "kana": "ビエンベニド / ア ア カサ"
+            "ja": "おかえり！ (男性に対して)",
+            "target": "¡Bienvenido a casa!",
+            "kana": "ビエンベニド ア カサ"
+          },
+          {
+            "ja": "おかえり！ (女性に対して)",
+            "target": "¡Bienvenida a casa!",
+            "kana": "ビエンベニダ ア カサ"
           },
           {
             "ja": "手を洗ってね。",
@@ -990,9 +975,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
             "kana": "ジェバス トド ロ ケ ネセシタス"
           },
           {
-            "ja": "準備できた？",
-            "target": "¿Estás listo/a?",
-            "kana": "エスタス リスト / ア"
+            "ja": "準備できた？ (男性に対して)",
+            "target": "¿Estás listo?",
+            "kana": "エスタス リスト"
+          },
+          {
+            "ja": "準備できた？ (女性に対して)",
+            "target": "¿Estás lista?",
+            "kana": "エスタス リスタ"
           },
           {
             "ja": "さあ、行くよ！",
@@ -1546,14 +1536,24 @@ Gemini は AI であり、不正確な情報を表示することがあります
         "icon": "fa-house-chimney",
         "phrases": [
           {
-            "ja": "いらっしゃい！",
-            "target": "Benvenuto/a!",
-            "kana": "ベンヴェヌト / ア"
+            "ja": "いらっしゃい！ (男性に対して)",
+            "target": "Benvenuto!",
+            "kana": "ベンヴェヌト"
           },
           {
-            "ja": "来てくれてありがとう！",
-            "target": "Grazie per essere venuto/a!",
-            "kana": "グラツィエ ペル エッセレ ヴェヌト / ア"
+            "ja": "いらっしゃい！ (女性に対して)",
+            "target": "Benvenuta!",
+            "kana": "ベンヴェヌタ"
+          },
+          {
+            "ja": "来てくれてありがとう！ (男性に対して)",
+            "target": "Grazie per essere venuto!",
+            "kana": "グラツィエ ペル エッセレ ヴェヌト"
+          },
+          {
+            "ja": "来てくれてありがとう！ (女性に対して)",
+            "target": "Grazie per essere venuta!",
+            "kana": "グラツィエ ペル エッセレ ヴェヌタ"
           },
           {
             "ja": "どうぞ、入って！",
@@ -1581,9 +1581,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
             "kana": "ハイ アヴト ディッフィコルタ ア トロヴァーレ カサ"
           },
           {
-            "ja": "遠かったでしょう？お疲れさま。",
-            "target": "Sarà stato un viaggio lungo. Sarai stanco/a.",
-            "kana": "サラ スタート ウン ビアッジオ ルンゴ サライ スタンコ / ア"
+            "ja": "遠かったでしょう？お疲れさま。(男性に対して)",
+            "target": "Sarà stato un viaggio lungo. Sarai stanco.",
+            "kana": "サラ スタート ウン ビアッジオ ルンゴ サライ スタンコ"
+          },
+          {
+            "ja": "遠かったでしょう？お疲れさま。(女性に対して)",
+            "target": "Sarà stato un viaggio lungo. Sarai stanca.",
+            "kana": "サラ スタート ウン ビアッジオ ルンゴ サライ スタンカ"
           },
           {
             "ja": "荷物を預かるよ。",
@@ -1602,9 +1607,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
         "icon": "fa-child-reaching",
         "phrases": [
           {
-            "ja": "おかえり！",
-            "target": "Bentornato/a a casa!",
-            "kana": "ベントルナト / ア ア カサ"
+            "ja": "おかえり！ (男性に対して)",
+            "target": "Bentornato a casa!",
+            "kana": "ベントルナト ア カサ"
+          },
+          {
+            "ja": "おかえり！ (女性に対して)",
+            "target": "Bentornata a casa!",
+            "kana": "ベントルナタ ア カサ"
           },
           {
             "ja": "手を洗ってね。",
@@ -1698,9 +1708,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
             "kana": "ハイ プレゾ トット"
           },
           {
-            "ja": "準備できた？",
-            "target": "Sei pronto/a?",
-            "kana": "セイ プロント / ア"
+            "ja": "準備できた？ (男性に対して)",
+            "target": "Sei pronto?",
+            "kana": "セイ プロント"
+          },
+          {
+            "ja": "準備できた？ (女性に対して)",
+            "target": "Sei pronta?",
+            "kana": "セイ プロンタ"
           },
           {
             "ja": "さあ、行くよ！",
@@ -2089,9 +2104,14 @@ Gemini は AI であり、不正確な情報を表示することがあります
             "kana": "チ センティアモ"
           },
           {
-            "ja": "今日は本当に楽しかった！",
-            "target": "Oggi mi sono divertito/a tantissimo!",
-            "kana": "オッジ ミ ソノ ディヴェルティト / ア タンティッシモ"
+            "ja": "今日は本当に楽しかった！ (男性が話す場合)",
+            "target": "Oggi mi sono divertito tantissimo!",
+            "kana": "オッジ ミ ソノ ディヴェルティト タンティッシモ"
+          },
+          {
+            "ja": "今日は本当に楽しかった！ (女性が話す場合)",
+            "target": "Oggi mi sono divertita tantissimo!",
+            "kana": "オッジ ミ ソノ ディヴェルティタ タンティッシモ"
           }
         ]
       },
