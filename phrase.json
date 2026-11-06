@@ -1,0 +1,85 @@
+{
+  "en": {
+    "name": "English",
+    "langCode": "en-US",
+    "categories": {
+      "greetings": {
+        "name": "挨拶・基本",
+        "icon": "fa-hand-wave",
+        "phrases": [
+          { "ja": "こんにちは", "target": "Hello", "kana": "ハロー" },
+          { "ja": "おはようございます", "target": "Good morning", "kana": "グッド モーニング" },
+          { "ja": "はじめまして", "target": "Nice to meet you", "kana": "ナイストゥ ミートゥ ユー" },
+          { "ja": "お元気ですか？", "target": "How are you?", "kana": "ハウ アー ユー" },
+          { "ja": "ありがとう", "target": "Thank you very much", "kana": "サンキュー ヴェリィ マッチ" },
+          { "ja": "またね！", "target": "See you later", "kana": "シー ユー レイター" }
+        ]
+      },
+      "welcoming": {
+        "name": "お出迎え",
+        "icon": "fa-house-chimney",
+        "phrases": [
+          { "ja": "いらっしゃい！", "target": "Welcome!", "kana": "ウェルカム" },
+          { "ja": "来てくれてありがとう！", "target": "Thanks for coming!", "kana": "サンクス フォー カミング" },
+          { "ja": "どうぞ、入って！", "target": "Come on in!", "kana": "カム オン イン" }
+        ]
+      }
+    }
+  },
+  "es": {
+    "name": "Español",
+    "langCode": "es-ES",
+    "categories": {
+      "greetings": {
+        "name": "挨拶・基本",
+        "icon": "fa-hand-wave",
+        "phrases": [
+          { "ja": "こんにちは", "target": "Hola", "kana": "オラ" },
+          { "ja": "おはようございます", "target": "Buenos días", "kana": "ブエノス ディアス" },
+          { "ja": "ありがとう", "target": "Muchas gracias", "kana": "ムーチャス グラシアス" }
+        ]
+      },
+      "welcoming": {
+        "name": "お出迎え・性別対応",
+        "icon": "fa-house-chimney",
+        "phrases": [
+          { "ja": "いらっしゃい！ (男性へ)", "target": "¡Bienvenido!", "kana": "ビエンベニド" },
+          { "ja": "いらっしゃい！ (女性へ)", "target": "¡Bienvenida!", "kana": "ビエンベニダ" },
+          { "ja": "疲れたでしょう？ (男性へ)", "target": "Estarás cansado.", "kana": "エスタラス カンサド" },
+          { "ja": "疲れたでしょう？ (女性へ)", "target": "Estarás cansada.", "kana": "エスタラス カンサダ" },
+          { "ja": "準備できた？ (男性へ)", "target": "¿Estás listo?", "kana": "エスタス リスト" },
+          { "ja": "準備できた？ (女性へ)", "target": "¿Estás lista?", "kana": "エスタス リスタ" }
+        ]
+      }
+    }
+  },
+  "it": {
+    "name": "Italiano",
+    "langCode": "it-IT",
+    "categories": {
+      "greetings": {
+        "name": "挨拶・基本",
+        "icon": "fa-hand-wave",
+        "phrases": [
+          { "ja": "こんにちは / やあ", "target": "Ciao", "kana": "チャオ" },
+          { "ja": "こんにちは（丁寧）", "target": "Buongiorno", "kana": "ボンジョルノ" },
+          { "ja": "ありがとう", "target": "Grazie mille", "kana": "グラツィエ ミッレ" }
+        ]
+      },
+      "welcoming": {
+        "name": "お出迎え・性別対応",
+        "icon": "fa-house-chimney",
+        "phrases": [
+          { "ja": "いらっしゃい！ (男性へ)", "target": "Benvenuto!", "kana": "ベンヴェヌト" },
+          { "ja": "いらっしゃい！ (女性へ)", "target": "Benvenuta!", "kana": "ベンヴェヌタ" },
+          { "ja": "来てくれてありがとう！ (男性へ)", "target": "Grazie per essere venuto!", "kana": "グラツィエ ペル エッセレ ヴェヌト" },
+          { "ja": "来てくれてありがとう！ (女性へ)", "target": "Grazie per essere venuta!", "kana": "グラツィエ ペル エッセレ ヴェヌタ" },
+          { "ja": "お疲れさま・疲れたでしょう？ (男性へ)", "target": "Sarai stanco.", "kana": "サライ スタンコ" },
+          { "ja": "お疲れさま・疲れたでしょう？ (女性へ)", "target": "Sarai stanca.", "kana": "サライ スタンカ" },
+          { "ja": "準備できた？ (男性へ)", "target": "Sei pronto?", "kana": "セイ プロント" },
+          { "ja": "準備できた？ (女性へ)", "target": "Sei pronta?", "kana": "セイ プロンタ" }
+        ]
+      }
+    }
+  }
+}
