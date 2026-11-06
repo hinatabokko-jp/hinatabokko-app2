@@ -721,7 +721,7 @@
             card.querySelector('.image-container').addEventListener('click', () => openFullModal(item.src, item.name));
             card.querySelector('.download-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                downloadImage(item.src, item.name || 'image.jpg');
+                downloadImageAsJpg(item.src, item.name || 'image.jpg');
             });
             card.querySelector('.delete-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -880,14 +880,37 @@
             });
         }
 
-        function downloadImage(url, filename) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename || 'downloaded-portrait.jpg';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showToast('画像をダウンロードしました');
+        // JPEGに強制変換してダウンロードする関数
+        function downloadImageAsJpg(url, filename) {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // canvasからJPEGのData URLを生成 (品質0.9)
+                const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+                // 拡張子を .jpg に置換
+                let baseName = filename.substring(0, filename.lastIndexOf('.')) || filename;
+                if (!baseName) baseName = 'image';
+                const jpgFilename = `${baseName}.jpg`;
+
+                const a = document.createElement('a');
+                a.href = jpgDataUrl;
+                a.download = jpgFilename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('JPEG形式でダウンロードしました');
+            };
+            img.onerror = () => {
+                showToast('ダウンロードに失敗しました', 'delete');
+            };
+            img.src = url;
         }
 
         function promptDelete(id) {
@@ -910,7 +933,7 @@
             const dlBtn = document.getElementById('modal-download-btn');
 
             img.src = src;
-            dlBtn.onclick = () => downloadImage(src, filename);
+            dlBtn.onclick = () => downloadImageAsJpg(src, filename);
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
