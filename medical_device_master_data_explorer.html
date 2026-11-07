@@ -825,6 +825,32 @@
       elements.btnPageLast.disabled = state.currentPage >= totalPages || totalPages === 0;
     }
 
+    // --- Sample Data Generator for Offline / Fallback Testing ---
+    function loadSampleData() {
+      showToast('サンプルデータを生成・読み込み中...');
+      elements.dropZone.classList.add('hidden');
+      elements.filterControls.classList.remove('hidden');
+      elements.tableContainer.classList.remove('hidden');
+      elements.tableStatusOverlay.style.display = 'flex';
+
+      const sampleRows = [
+        ['10000001', '4987123456789', '0', '超音波手術器用ハンドピース 20cm', '14987123456786', '1', '12345678', '710010001', '1330010020000', 'メディカルテクノロジー株式会社', '2024/01/15', '特定の超音波能動アタッチメント'],
+        ['10000002', '4987987654321', '1', '再製造シース型処置具 テーパーガイド', '14987987654314', '5', '87654321', '710010002', '1330010020001', 'ヘルスケア機器ジャパン株式会社', '2024/02/20', '再製造単回使用高周波切開器'],
+        ['10000003', '4901234567890', '0', '人工関節用ポリエチレンライナー Lサイズ', '14901234567897', '1', '34567890', '710020055', '1450020010000', 'グローバル整形外科システムズ', '2023/11/05', '荷重保持型人工股関節構成要素'],
+        ['10000004', '4987111222333', '0', 'バルーン拡張式血管用カテーテル 3.0mm', '14987111222330', '10', '45678901', '710030012', '1200030010000', '日本医療デバイス株式会社', '2024/03/01', '冠動脈用PTCAカテーテル'],
+        ['10000005', '4987444555666', '1', '再製造内視鏡用自動生検鉗子', '14987444555663', '2', '56789012', '710040089', '1330050010000', 'アドバンスドメディカル機器', '2024/02/12', '消化管用再製造生検用器具'],
+        ['10000006', '4987888999000', '0', '中心静脈用トリプルルーメンカテーテルキット', '14987888999007', '5', '67890123', '710050034', '1120010030000', 'サンライズメディカルサプライ', '2023/12/18', '中心静脈穿刺用カテーテルキット'],
+        ['10000007', '4909999888777', '0', '単回使用吸入用ネブライザーキット', '14909999888774', '20', '78901234', '710060011', '1180020010000', 'メディカル呼吸器システムズ', '2024/01/25', '吸入薬投与用汎用器具']
+      ];
+
+      setTimeout(() => {
+        parseCSVData(sampleRows);
+        elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        elements.statusText.textContent = `サンプルデータ表示中 (${sampleRows.length}件)`;
+        showToast('サンプルデータを正常に表示しました');
+      }, 300);
+    }
+
     // --- Slide-over Detail Drawer ---
     function openDrawer(item) {
       state.selectedRow = item;
@@ -1023,13 +1049,6 @@
     }
 
     // --- Initialize Application ---
-    window.addEventListener('DOMContentLoaded', () => {
-      initEvents();
-    });
-  </script>
-</body>
-</html>
-    // --- Init Application ---
     window.addEventListener('DOMContentLoaded', () => {
       initEvents();
       // Auto fetch CodeMaster_Integrated.csv from same directory on load
