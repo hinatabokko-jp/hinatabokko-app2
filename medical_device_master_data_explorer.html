@@ -130,6 +130,36 @@
     </div>
   </header>
 
+  <!-- Progress Bar Modal (進捗表示モーダル) -->
+  <div id="progressModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-all duration-300">
+    <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-slate-700/80 shadow-2xl relative">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-400">
+          <i class="ph-bold ph-spinner-gap text-2xl animate-spin" id="progressIcon"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-100" id="progressTitle">CSVファイルをロード中...</h3>
+          <p class="text-xs text-slate-400" id="progressSubTitle">データを解析しています</p>
+        </div>
+      </div>
+
+      <!-- Main Progress Bar -->
+      <div class="space-y-2">
+        <div class="flex justify-between text-xs font-mono">
+          <span class="text-brand-400 font-bold" id="progressPercent">0%</span>
+          <span class="text-slate-400" id="progressBytes">0 MB / 0 MB</span>
+        </div>
+        <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
+          <div id="progressBarFill" class="h-full bg-gradient-to-r from-brand-500 to-accent-400 rounded-full transition-all duration-150 ease-out w-0 shadow-lg shadow-brand-500/50"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1">
+          <span id="progressRecords">処理件数: 0 件</span>
+          <span id="progressETA">残り時間: 計算中...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Banner -->
   <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 border border-brand-500/40 text-slate-100 shadow-2xl text-xs font-medium">
     <i id="toastIcon" class="ph-bold ph-check-circle text-accent-400 text-lg"></i>
@@ -153,9 +183,7 @@
       </button>
     </div>
 
-    <!-- Upload Dropzone (Visible when no data or toggled) -->
-    <section id="dropZone" class="glass-card rounded-2xl p-6 text-center border-2 border-dashed border-slate-700 hover:border-brand-400/60 transition-all group cursor-pointer">
-
+    <!-- Upload Dropzone -->
     <section id="dropZone" class="glass-card rounded-2xl p-6 text-center border-2 border-dashed border-slate-700 hover:border-brand-400/60 transition-all group cursor-pointer">
       <input type="file" id="dropZoneFileInput" accept=".csv, .txt" class="hidden" />
       <div class="flex flex-col items-center justify-center py-6 gap-3">
@@ -210,8 +238,6 @@
 
       <!-- Advanced Filter Panel (Collapsible) -->
       <div id="advancedPanel" class="hidden pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        
-        <!-- Filter 1: Remanufactured Flag -->
         <div>
           <label class="block text-[11px] font-medium text-slate-400 mb-1">再製造区分</label>
           <select id="filterRemanufactured" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-brand-400 focus:outline-none">
@@ -220,33 +246,23 @@
             <option value="1">1: 再製造品</option>
           </select>
         </div>
-
-        <!-- Filter 2: Manufacturer Name -->
         <div>
           <label class="block text-[11px] font-medium text-slate-400 mb-1">製造販売業者名</label>
           <input type="text" id="filterManufacturer" placeholder="業者名で絞り込み..." class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-brand-400 focus:outline-none placeholder-slate-400" />
         </div>
-
-        <!-- Filter 3: Functional Category Code -->
         <div>
           <label class="block text-[11px] font-medium text-slate-400 mb-1">機能区分コード</label>
           <input type="text" id="filterFuncCategory" placeholder="コードで絞り込み..." class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-brand-400 focus:outline-none placeholder-slate-400" />
         </div>
-
-        <!-- Filter 4: Medical Billing Code -->
         <div>
           <label class="block text-[11px] font-medium text-slate-400 mb-1">医事コード</label>
           <input type="text" id="filterMedicalCode" placeholder="医事コードで絞り込み..." class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-brand-400 focus:outline-none placeholder-slate-400" />
         </div>
-
       </div>
-
     </section>
 
     <!-- Data Table Container -->
     <section id="tableContainer" class="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden hidden border border-slate-800">
-      
-      <!-- Scrollable Table -->
       <div class="flex-1 overflow-auto relative">
         <table class="w-full text-left border-collapse text-xs">
           <thead class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
@@ -265,11 +281,9 @@
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-800/60 font-normal text-slate-300">
-            <!-- Rows rendered dynamically -->
           </tbody>
         </table>
 
-        <!-- Empty / Loading State Overlay inside Table -->
         <div id="tableStatusOverlay" class="p-12 text-center flex flex-col items-center justify-center gap-3 text-slate-400">
           <i class="ph-duotone ph-spinner-gap text-3xl animate-spin text-brand-400"></i>
           <p class="text-sm">データを読み込み中...</p>
@@ -314,12 +328,10 @@
 
   </main>
 
-  <!-- Item Detail Drawer (Slide-over panel) -->
+  <!-- Item Detail Drawer -->
   <div id="detailDrawerBackdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
   
   <aside id="detailDrawer" class="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-slate-900 border-l border-slate-800 z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
-    
-    <!-- Drawer Header -->
     <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80 sticky top-0 backdrop-blur">
       <div class="flex items-center space-x-2.5">
         <span class="w-3 h-3 rounded-full bg-brand-400"></span>
@@ -330,10 +342,7 @@
       </button>
     </div>
 
-    <!-- Drawer Body -->
     <div class="flex-1 overflow-y-auto p-5 space-y-6">
-      
-      <!-- Primary Info Header Box -->
       <div class="bg-gradient-to-br from-slate-800/80 to-slate-900 p-4 rounded-xl border border-slate-700/60">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
           <span>行No. <strong id="drawerLineNo" class="text-brand-400 font-mono">00000000</strong></span>
@@ -346,12 +355,10 @@
         </p>
       </div>
 
-      <!-- Detail Grid -->
       <div class="space-y-4">
         <h4 class="text-xs font-semibold text-brand-400 uppercase tracking-wider border-b border-slate-800 pb-1">識別・管理コード</h4>
 
         <div class="grid grid-cols-1 gap-3">
-          <!-- JAN Code -->
           <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 flex items-center justify-between">
             <div>
               <span class="text-[11px] text-slate-400 block">JANコード (13桁)</span>
@@ -362,7 +369,6 @@
             </button>
           </div>
 
-          <!-- GTIN14 -->
           <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 flex items-center justify-between">
             <div>
               <span class="text-[11px] text-slate-400 block">GTIN14 (14桁)</span>
@@ -373,7 +379,6 @@
             </button>
           </div>
 
-          <!-- Medical Billing Code -->
           <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 flex items-center justify-between">
             <div>
               <span class="text-[11px] text-slate-400 block">医事コード (9桁)</span>
@@ -384,7 +389,6 @@
             </button>
           </div>
 
-          <!-- Functional Category Code -->
           <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 flex items-center justify-between">
             <div>
               <span class="text-[11px] text-slate-400 block">機能区分コード (最大13桁)</span>
@@ -395,7 +399,6 @@
             </button>
           </div>
 
-          <!-- JMDN Code -->
           <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800/80 flex items-center justify-between">
             <div>
               <span class="text-[11px] text-slate-400 block">JMDNコード (8桁)</span>
@@ -424,23 +427,19 @@
           <span class="text-slate-400 block text-[11px] mb-1">特定保険医療材料名メモ</span>
           <p id="drawerMemo" class="text-slate-300 leading-relaxed whitespace-pre-wrap">--</p>
         </div>
-
       </div>
-
     </div>
 
-    <!-- Drawer Footer -->
     <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
       <button id="btnDrawerCloseFooter" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all">
         閉じる
       </button>
     </div>
-
   </aside>
 
   <!-- Application Logic -->
   <script>
-    // State management
+    // Application State
     const state = {
       rawData: [],
       filteredData: [],
@@ -474,13 +473,22 @@
       btnToggleAdvanced: document.getElementById('btnToggleAdvanced'),
       advancedPanel: document.getElementById('advancedPanel'),
       iconAdvancedChevron: document.getElementById('iconAdvancedChevron'),
+      // Progress Modal
+      progressModal: document.getElementById('progressModal'),
+      progressTitle: document.getElementById('progressTitle'),
+      progressSubTitle: document.getElementById('progressSubTitle'),
+      progressPercent: document.getElementById('progressPercent'),
+      progressBytes: document.getElementById('progressBytes'),
+      progressBarFill: document.getElementById('progressBarFill'),
+      progressRecords: document.getElementById('progressRecords'),
+      progressETA: document.getElementById('progressETA'),
       // Status & Notices
       loadStatusBadge: document.getElementById('loadStatusBadge'),
       statusDot: document.getElementById('statusDot'),
       statusText: document.getElementById('statusText'),
       autoLoadNotice: document.getElementById('autoLoadNotice'),
       btnCloseNotice: document.getElementById('btnCloseNotice'),
-      // Filter Inputs
+      // Filters
       filterRemanufactured: document.getElementById('filterRemanufactured'),
       filterManufacturer: document.getElementById('filterManufacturer'),
       filterFuncCategory: document.getElementById('filterFuncCategory'),
@@ -508,21 +516,100 @@
       toastMessage: document.getElementById('toastMessage')
     };
 
-    // --- Automatic CSV Fetching from Same Directory ---
+    // --- Progress UI Helper ---
+    let progressStartTime = 0;
+
+    function showProgressModal(title, subTitle) {
+      elements.progressTitle.textContent = title;
+      elements.progressSubTitle.textContent = subTitle;
+      elements.progressBarFill.style.width = '0%';
+      elements.progressPercent.textContent = '0%';
+      elements.progressBytes.textContent = '0 MB / 0 MB';
+      elements.progressRecords.textContent = '処理件数: 0 件';
+      elements.progressETA.textContent = '残り時間: 計算中...';
+      elements.progressModal.classList.remove('hidden');
+      progressStartTime = performance.now();
+    }
+
+    function updateProgressUI(loadedBytes, totalBytes, recordCount = 0) {
+      let percent = 0;
+      if (totalBytes > 0) {
+        percent = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
+      }
+
+      elements.progressBarFill.style.width = `${percent}%`;
+      elements.progressPercent.textContent = `${percent}%`;
+
+      const loadedMB = (loadedBytes / (1024 * 1024)).toFixed(2);
+      const totalMB = totalBytes > 0 ? (totalBytes / (1024 * 1024)).toFixed(2) : '?';
+      elements.progressBytes.textContent = `${loadedMB} MB / ${totalMB} MB`;
+
+      if (recordCount > 0) {
+        elements.progressRecords.textContent = `処理件数: ${recordCount.toLocaleString()} 件`;
+      }
+
+      // Calculate ETA
+      const elapsedTime = (performance.now() - progressStartTime) / 1000;
+      if (percent > 0 && percent < 100 && elapsedTime > 0.3) {
+        const totalEstimatedTime = (elapsedTime / percent) * 100;
+        const remainingSeconds = Math.max(0, Math.ceil(totalEstimatedTime - elapsedTime));
+        elements.progressETA.textContent = `残り時間: 約 ${remainingSeconds} 秒`;
+      } else if (percent >= 100) {
+        elements.progressETA.textContent = '展開・描画中...';
+      }
+    }
+
+    function hideProgressModal() {
+      setTimeout(() => {
+        elements.progressModal.classList.add('hidden');
+      }, 300);
+    }
+
+    // --- Dynamic Fetch CSV with Stream Reader & Progress ---
     async function autoFetchIntegratedCSV() {
       elements.loadStatusBadge.classList.remove('hidden');
       elements.statusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
-      elements.statusText.textContent = 'CodeMaster_Integrated.csv を検索中...';
+      elements.statusText.textContent = 'CodeMaster_Integrated.csv を接続中...';
 
       try {
-        // Fetch CodeMaster_Integrated.csv from relative directory
         const response = await fetch('./CodeMaster_Integrated.csv', { cache: 'no-cache' });
         
         if (!response.ok) {
           throw new Error(`HTTP Error: ${response.status}`);
         }
 
-        const csvText = await response.text();
+        const contentLength = response.headers.get('content-length');
+        const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+
+        showProgressModal('CodeMaster_Integrated.csv を取得中...', 'サーバーからデータをダウンロードしています');
+
+        const reader = response.body.getReader();
+        let loadedBytes = 0;
+        const chunks = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          loadedBytes += value.length;
+          updateProgressUI(loadedBytes, totalBytes);
+        }
+
+        elements.progressTitle.textContent = 'データを解析中...';
+        elements.progressSubTitle.textContent = 'CSV構造を高速パースしています';
+
+        // Combine chunks into single ArrayBuffer
+        const allChunks = new Uint8Array(loadedBytes);
+        let position = 0;
+        for (const chunk of chunks) {
+          allChunks.set(chunk, position);
+          position += chunk.length;
+        }
+
+        const decoder = new TextDecoder('utf-8');
+        const csvText = decoder.decode(allChunks);
+
         if (!csvText || csvText.trim().length === 0) {
           throw new Error('CSVファイルが空です');
         }
@@ -533,28 +620,12 @@
         elements.dropZone.classList.add('hidden');
         elements.filterControls.classList.remove('hidden');
         elements.tableContainer.classList.remove('hidden');
-        elements.tableStatusOverlay.style.display = 'flex';
 
-        Papa.parse(csvText, {
-          header: false,
-          skipEmptyLines: true,
-          dynamicTyping: false,
-          complete: function(results) {
-            if (results.data && results.data.length > 0) {
-              parseCSVData(results.data);
-              elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-              elements.statusText.textContent = `自動読込完了 (${results.data.length.toLocaleString()}行)`;
-              showToast(`CodeMaster_Integrated.csv (${results.data.length.toLocaleString()} 件) を自動統合・反映しました`);
-            } else {
-              throw new Error('解析結果が空です');
-            }
-          },
-          error: function(err) {
-            handleAutoFetchError(err.message);
-          }
-        });
+        // Parse with PapaParse chunking for streaming progress
+        parseCSVStringWithProgress(csvText, totalBytes, 'CodeMaster_Integrated.csv');
 
       } catch (error) {
+        hideProgressModal();
         handleAutoFetchError(error.message);
       }
     }
@@ -563,6 +634,86 @@
       elements.statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
       elements.statusText.textContent = '自動読込待機中';
       elements.autoLoadNotice.classList.remove('hidden');
+    }
+
+    // --- Process File via FileReader & PapaParse (Manual Upload) ---
+    function processFile(file) {
+      showProgressModal(`${file.name} を読み込み中...`, 'ローカルファイルをロードしています');
+      
+      elements.dropZone.classList.add('hidden');
+      elements.filterControls.classList.remove('hidden');
+      elements.tableContainer.classList.remove('hidden');
+
+      const totalBytes = file.size;
+      let parsedRows = [];
+
+      Papa.parse(file, {
+        header: false,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        encoding: 'UTF-8',
+        chunkSize: 1024 * 1024 * 2, // 2MB Chunking for UI updates
+        chunk: function(results, parser) {
+          if (results.data) {
+            parsedRows.push(...results.data);
+            const estimatedByteProgress = Math.min(totalBytes, parsedRows.length * 120); // Estimation per row
+            updateProgressUI(estimatedByteProgress, totalBytes, parsedRows.length);
+          }
+        },
+        complete: function() {
+          updateProgressUI(totalBytes, totalBytes, parsedRows.length);
+          setTimeout(() => {
+            if (parsedRows.length > 0) {
+              parseCSVData(parsedRows);
+              elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+              elements.statusText.textContent = `手動読込完了 (${file.name})`;
+              showToast(`${parsedRows.length.toLocaleString()} 件のデータを正常に読み込みました`);
+            } else {
+              showToast('CSVファイル内にデータが存在しません', true);
+            }
+            hideProgressModal();
+          }, 100);
+        },
+        error: function(err) {
+          hideProgressModal();
+          showToast(`エラー: ${err.message}`, true);
+        }
+      });
+    }
+
+    // Helper for parsing raw string text with chunk progress
+    function parseCSVStringWithProgress(csvText, totalBytes, fileName) {
+      let parsedRows = [];
+
+      Papa.parse(csvText, {
+        header: false,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        chunkSize: 1024 * 1024 * 2,
+        chunk: function(results) {
+          if (results.data) {
+            parsedRows.push(...results.data);
+            const estimatedByteProgress = Math.min(totalBytes, parsedRows.length * 120);
+            updateProgressUI(estimatedByteProgress, totalBytes, parsedRows.length);
+          }
+        },
+        complete: function() {
+          updateProgressUI(totalBytes, totalBytes, parsedRows.length);
+          setTimeout(() => {
+            if (parsedRows.length > 0) {
+              parseCSVData(parsedRows);
+              elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+              elements.statusText.textContent = `自動読込完了 (${parsedRows.length.toLocaleString()}行)`;
+              showToast(`${fileName} (${parsedRows.length.toLocaleString()} 件) を反映しました`);
+            }
+            hideProgressModal();
+          }, 100);
+        },
+        error: function(err) {
+          hideProgressModal();
+          handleAutoFetchError(err.message);
+        }
+      });
     }
 
     // --- Toast Notification ---
@@ -582,7 +733,6 @@
 
     // --- CSV File Drag & Drop & Upload Handling ---
     function setupFileHandlers() {
-      // Drag events
       ['dragenter', 'dragover'].forEach(eventName => {
         elements.dropZone.addEventListener(eventName, (e) => {
           e.preventDefault();
@@ -616,7 +766,7 @@
       });
 
       elements.btnLoadSample.addEventListener('click', loadSampleData);
-      elements.btnTriggerSample.addEventListener('click', (e) => {
+      elements.btnTriggerSample?.addEventListener('click', (e) => {
         e.stopPropagation();
         loadSampleData();
       });
@@ -625,34 +775,28 @@
       });
     }
 
-    // --- Process File via PapaParse (Manual Upload) ---
-    function processFile(file) {
-      showToast(`${file.name} を読み込み中...`);
-      
-      elements.dropZone.classList.add('hidden');
-      elements.filterControls.classList.remove('hidden');
-      elements.tableContainer.classList.remove('hidden');
-      elements.tableStatusOverlay.style.display = 'flex';
+    // --- Sample Data Loader ---
+    function loadSampleData() {
+      showProgressModal('サンプルデータを生成中...', 'テスト用ダミーデータを作成しています');
+      const sampleRows = [
+        ['行No', 'JANコード', '再製造区分', '商品名', 'GTIN14', '数量', 'JMDNコード', '医事コード', '機能区分コード', '製造販売業者名', '確認日', 'メモ'],
+        ['00000001', '4987123456789', '0', 'PTCAバルーンカテーテル 2.5mm×15mm', '14987123456786', '1', '38524000', '710010001', '12901001', 'テルモ株式会社', '2026/04/01', '予備拡張用'],
+        ['00000002', '4987987654321', '1', '薬剤溶出型冠動脈ステント 3.0mm×18mm', '14987987654314', '1', '37642000', '710020005', '12902003', '日本メドトロニック株式会社', '2026/04/01', '再製造再滅菌品'],
+        ['00000003', '4987000111222', '0', 'ガイドワイヤー 0.014" 190cm ラジアルアクセス', '14987000111229', '5', '35671000', '710030010', '12903002', '朝日インテック株式会社', '2026/03/15', '親水性コーティング'],
+        ['00000004', '4987555444333', '0', 'ガイディングカテーテル 6F EBU3.5', '14987555444330', '1', '35670000', '710040088', '12904001', 'ボストン・サイエンティフィックジャパン', '2026/02/20', '高バックアップ性']
+      ];
 
-      Papa.parse(file, {
-        header: false,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-        encoding: 'UTF-8',
-        complete: function(results) {
-          if (results.data && results.data.length > 0) {
-            parseCSVData(results.data);
-            elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-            elements.statusText.textContent = `手動読込完了 (${file.name})`;
-            showToast(`${results.data.length.toLocaleString()} 件のデータを正常に読み込みました`);
-          } else {
-            showToast('CSVファイル内にデータが存在しません', true);
-          }
-        },
-        error: function(err) {
-          showToast(`エラー: ${err.message}`, true);
-        }
-      });
+      setTimeout(() => {
+        updateProgressUI(100, 100, sampleRows.length - 1);
+        parseCSVData(sampleRows);
+        elements.dropZone.classList.add('hidden');
+        elements.filterControls.classList.remove('hidden');
+        elements.tableContainer.classList.remove('hidden');
+        elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        elements.statusText.textContent = 'サンプルデータ表示中';
+        showToast('サンプルデータをロードしました');
+        hideProgressModal();
+      }, 400);
     }
 
     // Convert Raw Array Data to Standard Objects
@@ -692,13 +836,6 @@
     }
 
     // --- Search & Debounced Filtering Engine ---
-    function debouncedApplyFilters() {
-      clearTimeout(state.searchDebounceTimer);
-      state.searchDebounceTimer = setTimeout(() => {
-        applyFilters();
-      }, 150);
-    }
-
     function applyFilters() {
       const query = state.searchQuery.toLowerCase().trim();
       const reman = state.filters.remanufactured;
@@ -774,7 +911,7 @@
 
       const q = state.searchQuery.trim();
 
-      pageData.forEach((item, idx) => {
+      pageData.forEach((item) => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/60 transition-colors cursor-pointer group';
         
@@ -825,32 +962,6 @@
       elements.btnPageLast.disabled = state.currentPage >= totalPages || totalPages === 0;
     }
 
-    // --- Sample Data Generator for Offline / Fallback Testing ---
-    function loadSampleData() {
-      showToast('サンプルデータを生成・読み込み中...');
-      elements.dropZone.classList.add('hidden');
-      elements.filterControls.classList.remove('hidden');
-      elements.tableContainer.classList.remove('hidden');
-      elements.tableStatusOverlay.style.display = 'flex';
-
-      const sampleRows = [
-        ['10000001', '4987123456789', '0', '超音波手術器用ハンドピース 20cm', '14987123456786', '1', '12345678', '710010001', '1330010020000', 'メディカルテクノロジー株式会社', '2024/01/15', '特定の超音波能動アタッチメント'],
-        ['10000002', '4987987654321', '1', '再製造シース型処置具 テーパーガイド', '14987987654314', '5', '87654321', '710010002', '1330010020001', 'ヘルスケア機器ジャパン株式会社', '2024/02/20', '再製造単回使用高周波切開器'],
-        ['10000003', '4901234567890', '0', '人工関節用ポリエチレンライナー Lサイズ', '14901234567897', '1', '34567890', '710020055', '1450020010000', 'グローバル整形外科システムズ', '2023/11/05', '荷重保持型人工股関節構成要素'],
-        ['10000004', '4987111222333', '0', 'バルーン拡張式血管用カテーテル 3.0mm', '14987111222330', '10', '45678901', '710030012', '1200030010000', '日本医療デバイス株式会社', '2024/03/01', '冠動脈用PTCAカテーテル'],
-        ['10000005', '4987444555666', '1', '再製造内視鏡用自動生検鉗子', '14987444555663', '2', '56789012', '710040089', '1330050010000', 'アドバンスドメディカル機器', '2024/02/12', '消化管用再製造生検用器具'],
-        ['10000006', '4987888999000', '0', '中心静脈用トリプルルーメンカテーテルキット', '14987888999007', '5', '67890123', '710050034', '1120010030000', 'サンライズメディカルサプライ', '2023/12/18', '中心静脈穿刺用カテーテルキット'],
-        ['10000007', '4909999888777', '0', '単回使用吸入用ネブライザーキット', '14909999888774', '20', '78901234', '710060011', '1180020010000', 'メディカル呼吸器システムズ', '2024/01/25', '吸入薬投与用汎用器具']
-      ];
-
-      setTimeout(() => {
-        parseCSVData(sampleRows);
-        elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        elements.statusText.textContent = `サンプルデータ表示中 (${sampleRows.length}件)`;
-        showToast('サンプルデータを正常に表示しました');
-      }, 300);
-    }
-
     // --- Slide-over Detail Drawer ---
     function openDrawer(item) {
       state.selectedRow = item;
@@ -877,7 +988,6 @@
       document.getElementById('drawerConfirmDate').textContent = item.confirmDate || '--';
       document.getElementById('drawerMemo').textContent = item.memo || '（補足なし）';
 
-      // Open UI
       elements.detailDrawerBackdrop.classList.remove('opacity-0', 'pointer-events-none');
       elements.detailDrawer.classList.remove('translate-x-full');
     }
@@ -920,7 +1030,6 @@
         csvRows.push(row.join(','));
       });
 
-      // Add UTF-8 BOM for Excel Japanese encoding compatibility
       const bom = '\uFEFF';
       const blob = new Blob([bom + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -946,7 +1055,6 @@
         const textToCopy = document.getElementById(targetId)?.textContent;
 
         if (textToCopy && textToCopy !== '--') {
-          // Use execCommand or fallback for iframe compatibility
           const tempInput = document.createElement('textarea');
           tempInput.value = textToCopy;
           document.body.appendChild(tempInput);
@@ -967,7 +1075,6 @@
       setupFileHandlers();
       setupCopyButtons();
 
-      // Search Inputs
       elements.globalSearch.addEventListener('input', (e) => {
         state.searchQuery = e.target.value;
         elements.btnClearSearch.classList.toggle('hidden', !e.target.value);
@@ -981,7 +1088,6 @@
         applyFilters();
       });
 
-      // Advanced Filters
       elements.btnToggleAdvanced.addEventListener('click', () => {
         const isHidden = elements.advancedPanel.classList.toggle('hidden');
         elements.iconAdvancedChevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
@@ -1007,7 +1113,6 @@
         applyFilters();
       });
 
-      // Pagination
       elements.pageSizeSelect.addEventListener('change', (e) => {
         state.pageSize = parseInt(e.target.value, 10);
         state.currentPage = 1;
@@ -1039,19 +1144,16 @@
         renderTable();
       });
 
-      // Drawer Listeners
       elements.btnCloseDrawer.addEventListener('click', closeDrawer);
       elements.btnDrawerCloseFooter.addEventListener('click', closeDrawer);
       elements.detailDrawerBackdrop.addEventListener('click', closeDrawer);
 
-      // Export Button
       elements.btnExportCSV.addEventListener('click', exportFilteredCSV);
     }
 
-    // --- Initialize Application ---
+    // Initialize Application
     window.addEventListener('DOMContentLoaded', () => {
       initEvents();
-      // Auto fetch CodeMaster_Integrated.csv from same directory on load
       autoFetchIntegratedCSV();
     });
   </script>
