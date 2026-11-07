@@ -772,6 +772,342 @@
             "kana": "メイ ザ フォース ビィ ウィズ ユー"
           }
         ]
+      },
+      "kids_play": {
+        "name": "子ども同士が遊ぶ言葉",
+        "icon": "fa-child",
+        "phrases": [
+          {
+            "ja": "一緒に遊ぼう！",
+            "target": "Let's play together!",
+            "kana": "レッツ プレイ トゥゲザー"
+          },
+          {
+            "ja": "一緒に行こう！",
+            "target": "Let's go together!",
+            "kana": "レッツ ゴー トゥゲザー"
+          },
+          {
+            "ja": "私も入れて！",
+            "target": "Can I play too?",
+            "kana": "キャン アイ プレイ トゥ"
+          },
+          {
+            "ja": "鬼ごっこしよう！",
+            "target": "Let's play tag!",
+            "kana": "レッツ プレイ タッグ"
+          },
+          {
+            "ja": "かくれんぼしよう！",
+            "target": "Let's play hide-and-seek!",
+            "kana": "レッツ プレイ ハイド アンド シーク"
+          },
+          {
+            "ja": "次は私の番！",
+            "target": "It's my turn next!",
+            "kana": "イッツ マイ ターン ネクスト"
+          },
+          {
+            "ja": "待って！一緒に行く！",
+            "target": "Wait! I'm coming with you!",
+            "kana": "ウェイト アイム カミング ウィズ ユー"
+          },
+          {
+            "ja": "こっちにおいで！",
+            "target": "Come over here!",
+            "kana": "カム オーバー ヒア"
+          },
+          {
+            "ja": "もう一回やろう！",
+            "target": "Let's do it again!",
+            "kana": "レッツ ドゥ イット アゲイン"
+          },
+          {
+            "ja": "今日も楽しかったね！",
+            "target": "We had fun today!",
+            "kana": "ウィ ハッド ファン トゥデイ"
+          }
+        ]
+      },
+      "toddler_talk": {
+        "name": "幼児の会話",
+        "icon": "fa-baby",
+        "phrases": [
+          {
+            "ja": "これなあに？",
+            "target": "What's this?",
+            "kana": "ホワッツ ディス"
+          },
+          {
+            "ja": "これ、ちょうだい！",
+            "target": "Can I have this?",
+            "kana": "キャン アイ ハヴ ディス"
+          },
+          {
+            "ja": "もう一回やって！",
+            "target": "Do it again!",
+            "kana": "ドゥ イット アゲイン"
+          },
+          {
+            "ja": "見て見て！",
+            "target": "Look! Look!",
+            "kana": "ルック ルック"
+          },
+          {
+            "ja": "できたよ！",
+            "target": "I did it!",
+            "kana": "アイ ディッド イット"
+          },
+          {
+            "ja": "これ、私の！",
+            "target": "This is mine!",
+            "kana": "ディス イズ マイン"
+          },
+          {
+            "ja": "もうおなかいっぱい！",
+            "target": "I'm full!",
+            "kana": "アイム フル"
+          },
+          {
+            "ja": "眠くなっちゃった。",
+            "target": "I'm getting sleepy.",
+            "kana": "アイム ゲッティング スリーピー"
+          },
+          {
+            "ja": "これ、こわいよ。",
+            "target": "This is scary.",
+            "kana": "ディス イズ スケアリー"
+          },
+          {
+            "ja": "だいじょうぶだよ！",
+            "target": "It's okay!",
+            "kana": "イッツ オッケー"
+          }
+        ]
+      },
+      "cafe_service": {
+        "name": "カフェの接客",
+        "icon": "fa-coffee",
+        "phrases": [
+          {
+            "ja": "いらっしゃいませ！",
+            "target": "Hi! Welcome in!",
+            "kana": "ハイ ウェルカム イン"
+          },
+          {
+            "ja": "ご注文はお決まりですか？",
+            "target": "What can I get for you?",
+            "kana": "ホワット キャン アイ ゲット フォー ユー"
+          },
+          {
+            "ja": "店内でお召し上がりですか？お持ち帰りですか？",
+            "target": "For here or to go?",
+            "kana": "フォー ヒア オア トゥ ゴー"
+          },
+          {
+            "ja": "サイズはいかがなさいますか？",
+            "target": "What size would you like?",
+            "kana": "ホワット サイズ ウッド ユー ライク"
+          },
+          {
+            "ja": "ミルクの種類はどうされますか？",
+            "target": "What kind of milk would you like?",
+            "kana": "ホワット カインド オブ ミルク ウッド ユー ライク"
+          },
+          {
+            "ja": "ホットとアイス、どちらになさいますか？",
+            "target": "Would you like that hot or iced?",
+            "kana": "ウッド ユー ライク ザット ホット オア アイスド"
+          },
+          {
+            "ja": "お名前をお伺いしてもよろしいですか？",
+            "target": "Can I get your name?",
+            "kana": "キャン アイ ゲット ユア ネーム"
+          },
+          {
+            "ja": "ご注文を繰り返します。",
+            "target": "Let me repeat your order.",
+            "kana": "レット ミー リピート ユア オーダー"
+          },
+          {
+            "ja": "お待たせいたしました！",
+            "target": "Thanks for waiting!",
+            "kana": "サンクス フォー ウェイティング"
+          },
+          {
+            "ja": "ごゆっくりお過ごしください。",
+            "target": "Enjoy your drink!",
+            "kana": "エンジョイ ユア ドリンク"
+          }
+        ]
+      },
+      "general_store_service": {
+        "name": "雑貨屋さんの接客",
+        "icon": "fa-store",
+        "phrases": [
+          {
+            "ja": "何かお探しですか？",
+            "target": "Are you looking for anything in particular?",
+            "kana": "アー ユー ルッキング フォー エニシング イン パティキュラー"
+          },
+          {
+            "ja": "どうぞご自由にご覧ください。",
+            "target": "Feel free to look around.",
+            "kana": "フィール フリー トゥ ルック アラウンド"
+          },
+          {
+            "ja": "こちらが新商品です。",
+            "target": "These are our new arrivals.",
+            "kana": "ディーズ アー アワ ニュー アライバルズ"
+          },
+          {
+            "ja": "こちらが一番人気です。",
+            "target": "This is our most popular item.",
+            "kana": "ディス イズ アワ モスト ポピュラー アイテム"
+          },
+          {
+            "ja": "色違いもございます。",
+            "target": "It comes in other colors, too.",
+            "kana": "イット カムズ イン アザー カラーズ トゥー"
+          },
+          {
+            "ja": "お手に取ってご覧ください。",
+            "target": "Feel free to pick it up.",
+            "kana": "フィール フリー トゥ ピック イット アップ"
+          },
+          {
+            "ja": "プレゼント用ですか？",
+            "target": "Is it a gift?",
+            "kana": "イズ イット ア ギフト"
+          },
+          {
+            "ja": "ラッピングいたしましょうか？",
+            "target": "Would you like it gift-wrapped?",
+            "kana": "ウッド ユー ライク イット ギフト ラップト"
+          },
+          {
+            "ja": "お会計はこちらです。",
+            "target": "You can pay right here.",
+            "kana": "ユー キャン ペイ ライト ヒア"
+          },
+          {
+            "ja": "またお越しくださいませ。",
+            "target": "We hope to see you again!",
+            "kana": "ウィ ホープ トゥ シー ユー アゲイン"
+          }
+        ]
+      },
+      "math_dialogue": {
+        "name": "数学のセリフ",
+        "icon": "fa-calculator",
+        "phrases": [
+          {
+            "ja": "まず問題をよく読んでみよう。",
+            "target": "Let's read the problem carefully first.",
+            "kana": "レッツ リード ザ プロブレム ケアーフルリー ファースト"
+          },
+          {
+            "ja": "答えはいくつになりますか？",
+            "target": "What do you get for your answer?",
+            "kana": "ホワット ドゥ ユー ゲット フォー ユア アンサー"
+          },
+          {
+            "ja": "ここに数字を書いてください。",
+            "target": "Write the number here.",
+            "kana": "ライト ザ ナンバー ヒア"
+          },
+          {
+            "ja": "これらの数字を足してください。",
+            "target": "Add these numbers.",
+            "kana": "アド ディーズ ナンバーズ"
+          },
+          {
+            "ja": "大きい数から小さい数を引きます。",
+            "target": "Subtract the smaller number from the larger one.",
+            "kana": "サブトラクト ザ スモラー ナンバー フロム ザ ラージャー ワン"
+          },
+          {
+            "ja": "何倍になりますか？",
+            "target": "How many times greater is it?",
+            "kana": "ハウ メニー タイズ グレイター イズ イット"
+          },
+          {
+            "ja": "これを半分に分けましょう。",
+            "target": "Let's divide this in half.",
+            "kana": "レッツ ディバイド ディス イン ハーフ"
+          },
+          {
+            "ja": "分数で表してみよう。",
+            "target": "Let's write it as a fraction.",
+            "kana": "レッツ ライト イット アズ ア フラクション"
+          },
+          {
+            "ja": "答えを確かめてみよう。",
+            "target": "Let's check the answer.",
+            "kana": "レッツ チェック ザ アンサー"
+          },
+          {
+            "ja": "どうしてそうなるのか説明できる？",
+            "target": "Can you explain why?",
+            "kana": "キャン ユー エクスプレイン ホワイ"
+          }
+        ]
+      },
+      "cooking_dialogue": {
+        "name": "料理のセリフ",
+        "icon": "fa-utensils",
+        "phrases": [
+          {
+            "ja": "まず野菜を洗ってね。",
+            "target": "Wash the vegetables first.",
+            "kana": "ウォッシュ ザ ベジタブルズ ファースト"
+          },
+          {
+            "ja": "玉ねぎを薄く切って。",
+            "target": "Slice the onion thinly.",
+            "kana": "スライス ザ オニオン シンリー"
+          },
+          {
+            "ja": "お鍋に油を入れて。",
+            "target": "Pour some oil into the pot.",
+            "kana": "ポール サム オイル イン トゥ ザ ポット"
+          },
+          {
+            "ja": "中火で炒めてね。",
+            "target": "Cook it over medium heat.",
+            "kana": "クック イット オーバー ミディアム ヒート"
+          },
+          {
+            "ja": "よく混ぜてね。",
+            "target": "Mix it well.",
+            "kana": "ミックス イット ウェル"
+          },
+          {
+            "ja": "塩を少し加えて。",
+            "target": "Add a little salt.",
+            "kana": "アド ア リトル ソルト"
+          },
+          {
+            "ja": "ふたをして煮込んでね。",
+            "target": "Put the lid on and let it simmer.",
+            "kana": "プット ザ リッド オン アンド レット イット シマー"
+          },
+          {
+            "ja": "焦げないように気をつけて！",
+            "target": "Be careful not to burn it!",
+            "kana": "ビー カルフール ノット トゥ バーン イット"
+          },
+          {
+            "ja": "味見してみて。",
+            "target": "Give it a taste.",
+            "kana": "ギヴ イット ア テスト"
+          },
+          {
+            "ja": "さあ、できあがり！",
+            "target": "And it's ready!",
+            "kana": "アンド イッツ レディ"
+          }
+        ]
       }
     }
   },
@@ -1566,6 +1902,342 @@
             "source": "映画『スター・ウォーズ』シリーズ。",
             "target": "Que la Fuerza te acompañe.",
             "kana": "ケ ラ フエルサ テ アコンパニェ"
+          }
+        ]
+      },
+      "kids_play": {
+        "name": "子ども同士が遊ぶ言葉",
+        "icon": "fa-child",
+        "phrases": [
+          {
+            "ja": "一緒に遊ぼう！",
+            "target": "¡Vamos a jugar juntos! (男性) / ¡Vamos a jugar juntas! (女性)",
+            "kana": "バモス ア フガル フントス / フンタス"
+          },
+          {
+            "ja": "一緒に行こう！",
+            "target": "¡Vamos juntos! (男性) / ¡Vamos juntas! (女性)",
+            "kana": "バモス フントス / フンタス"
+          },
+          {
+            "ja": "私も入れて！",
+            "target": "¿Puedo jugar también?",
+            "kana": "プエド フガル タンビエン"
+          },
+          {
+            "ja": "鬼ごっこしよう！",
+            "target": "¡Vamos a jugar al pilla-pilla!",
+            "kana": "バモス ア フガル アル ピジャ ピジャ"
+          },
+          {
+            "ja": "かくれんぼしよう！",
+            "target": "¡Vamos a jugar al escondite!",
+            "kana": "バモス ア フガル アル エスコディテ"
+          },
+          {
+            "ja": "次は私の番！",
+            "target": "¡Ahora me toca a mí!",
+            "kana": "アオラ メ トカ ア ミ"
+          },
+          {
+            "ja": "待って！一緒に行く！",
+            "target": "¡Espera! ¡Voy contigo!",
+            "kana": "エスペラ ボイ コンティゴ"
+          },
+          {
+            "ja": "こっちにおいで！",
+            "target": "¡Ven aquí!",
+            "kana": "ベン アキ"
+          },
+          {
+            "ja": "もう一回やろう！",
+            "target": "¡Vamos a hacerlo otra vez!",
+            "kana": "バモス ア アセルロ オトラ ベス"
+          },
+          {
+            "ja": "今日も楽しかったね！",
+            "target": "¡Hoy también lo hemos pasado genial!",
+            "kana": "オイ タンビエン ロ エモス パサド ヘニアル"
+          }
+        ]
+      },
+      "toddler_talk": {
+        "name": "幼児の会話",
+        "icon": "fa-baby",
+        "phrases": [
+          {
+            "ja": "これなあに？",
+            "target": "¿Qué es esto?",
+            "kana": "ケ エス エスト"
+          },
+          {
+            "ja": "これ、ちょうだい！",
+            "target": "¿Me das esto?",
+            "kana": "メ ダス エスト"
+          },
+          {
+            "ja": "もう一回やって！",
+            "target": "¡Hazlo otra vez!",
+            "kana": "アスロ オトラ ベス"
+          },
+          {
+            "ja": "見て見て！",
+            "target": "¡Mira! ¡Mira!",
+            "kana": "ミラ ミラ"
+          },
+          {
+            "ja": "できたよ！",
+            "target": "¡Lo he conseguido!",
+            "kana": "ロ エ コンセギド"
+          },
+          {
+            "ja": "これ、私の！",
+            "target": "¡Esto es mío!",
+            "kana": "エスト エス ミオ"
+          },
+          {
+            "ja": "もうおなかいっぱい！",
+            "target": "¡Estoy lleno! (男性) / ¡Estoy llena! (女性)",
+            "kana": "エストイ ジェノ / ジェナ"
+          },
+          {
+            "ja": "眠くなっちゃった。",
+            "target": "Me está entrando sueño.",
+            "kana": "メ エスタ エントランド スエニョ"
+          },
+          {
+            "ja": "これ、こわいよ。",
+            "target": "Esto da miedo.",
+            "kana": "エスト ダ ミエド"
+          },
+          {
+            "ja": "だいじょうぶだよ！",
+            "target": "¡No pasa nada!",
+            "kana": "ノ パサ ナダ"
+          }
+        ]
+      },
+      "cafe_service": {
+        "name": "カフェの接客",
+        "icon": "fa-coffee",
+        "phrases": [
+          {
+            "ja": "いらっしゃいませ！",
+            "target": "¡Hola! ¡Bienvenido! (男性) / ¡Bienvenida! (女性)",
+            "kana": "オラ ビエンベニド / ビエンベニダ"
+          },
+          {
+            "ja": "ご注文はお決まりですか？",
+            "target": "¿Qué le pongo?",
+            "kana": "ケ レ ポンゴ"
+          },
+          {
+            "ja": "店内でお召し上がりですか？お持ち帰りですか？",
+            "target": "¿Para tomar aquí o para llevar?",
+            "kana": "パラ トマール アキ オ パラ ジェバル"
+          },
+          {
+            "ja": "サイズはいかがなさいますか？",
+            "target": "¿Qué tamaño desea?",
+            "kana": "ケ タマニョ デセア"
+          },
+          {
+            "ja": "ミルクの種類はどうされますか？",
+            "target": "¿Qué tipo de leche prefiere?",
+            "kana": "ケ ティポ デ レチェ Префиere"
+          },
+          {
+            "ja": "ホットとアイス、どちらになさいますか？",
+            "target": "¿Lo quiere caliente o con hielo?",
+            "kana": "ロ キエレ カリエンテ オ コン イエロ"
+          },
+          {
+            "ja": "お名前をお伺いしてもよろしいですか？",
+            "target": "¿Me dice su nombre, por favor?",
+            "kana": "メ デセ ス ノンブレ ポル ファボル"
+          },
+          {
+            "ja": "ご注文を繰り返します。",
+            "target": "Le repito el pedido.",
+            "kana": "レ レピト エル ペディド"
+          },
+          {
+            "ja": "お待たせいたしました！",
+            "target": "¡Gracias por esperar!",
+            "kana": "グラシアス ポル エスペラル"
+          },
+          {
+            "ja": "ごゆっくりお過ごしください。",
+            "target": "¡Que disfrute de su bebida!",
+            "kana": "ケ ディスフルテ デ ス ベビダ"
+          }
+        ]
+      },
+      "general_store_service": {
+        "name": "雑貨屋さんの接客",
+        "icon": "fa-store",
+        "phrases": [
+          {
+            "ja": "何かお探しですか？",
+            "target": "¿Busca algo en particular?",
+            "kana": "ブスカ アルゴ エン パティキュラール"
+          },
+          {
+            "ja": "どうぞご自由にご覧ください。",
+            "target": "Puede mirar lo que quiera.",
+            "kana": "プエデ ミラル ロ ケ キエラ"
+          },
+          {
+            "ja": "こちらが新商品です。",
+            "target": "Estos son nuestros nuevos productos.",
+            "kana": "エストス ソ、ヌエストロス ヌエボス プロダクトス"
+          },
+          {
+            "ja": "こちらが一番人気です。",
+            "target": "Este es nuestro artículo más vendido.",
+            "kana": "エステ エス ヌエストロ アルティクル マス ベンディド"
+          },
+          {
+            "ja": "色違いもございます。",
+            "target": "También lo tenemos en otros colores.",
+            "kana": "タンビエン ロ テネモス エン オトロス コロレス"
+          },
+          {
+            "ja": "お手に取ってご覧ください。",
+            "target": "Puede cogerlo y verlo de cerca.",
+            "kana": "プエデ コヘルロ イ ベルロ デ セルカ"
+          },
+          {
+            "ja": "プレゼント用ですか？",
+            "target": "¿Es para regalo?",
+            "kana": "エス パラ レガロ"
+          },
+          {
+            "ja": "ラッピングいたしましょうか？",
+            "target": "¿Quiere que se lo envolvamos para regalo?",
+            "kana": "キエレ ケ セ ロ エンボルバモス パラ レガロ"
+          },
+          {
+            "ja": "お会計はこちらです。",
+            "target": "Puede pagar aquí.",
+            "kana": "プエデ パガール アキ"
+          },
+          {
+            "ja": "またお越しくださいませ。",
+            "target": "¡Esperamos volver a verle! (男性) / ¡Esperamos volver a verla! (女性)",
+            "kana": "エスペラモス ボルベル ア ベールレ / ベールラ"
+          }
+        ]
+      },
+      "math_dialogue": {
+        "name": "数学のセリフ",
+        "icon": "fa-calculator",
+        "phrases": [
+          {
+            "ja": "まず問題をよく読んでみよう。",
+            "target": "Primero, vamos a leer bien el problema.",
+            "kana": "プリメロ バモス ア レール ビエン エル プロブレマ"
+          },
+          {
+            "ja": "答えはいくつになりますか？",
+            "target": "¿Qué resultado te da?",
+            "kana": "ケ レスルタド テ ダ"
+          },
+          {
+            "ja": "ここに数字を書いてください。",
+            "target": "Escribe el número aquí.",
+            "kana": "エスクリベ エル ヌメロ アキ"
+          },
+          {
+            "ja": "これらの数字を足してください。",
+            "target": "Suma estos números.",
+            "kana": "スマ エストス ヌメロス"
+          },
+          {
+            "ja": "大きい数から小さい数を引きます。",
+            "target": "Resta el número más pequeño del más grande.",
+            "kana": "レスタ エル ヌメロ マス ペケニョ デ ル マス グランデ"
+          },
+          {
+            "ja": "何倍になりますか？",
+            "target": "¿Cuántas veces mayor es?",
+            "kana": "クアンタス ベセス マヨール エス"
+          },
+          {
+            "ja": "これを半分に分けましょう。",
+            "target": "Vamos a dividir esto por la mitad.",
+            "kana": "バモス ア ディビディ尔 エスト ポル ラ ミタット"
+          },
+          {
+            "ja": "分数で表してみよう。",
+            "target": "Vamos a expresarlo como una fracción.",
+            "kana": "バモス ア エクスプレサルロ コモ ウナ フラクシオン"
+          },
+          {
+            "ja": "答えを確かめてみよう。",
+            "target": "Vamos a comprobar la respuesta.",
+            "kana": "バモス ア コンプロバール ラ レスプエスタ"
+          },
+          {
+            "ja": "どうしてそうなるのか説明できる？",
+            "target": "¿Puedes explicar por qué?",
+            "kana": "プエデス エクスプリカール ポル ケ"
+          }
+        ]
+      },
+      "cooking_dialogue": {
+        "name": "料理のセリフ",
+        "icon": "fa-utensils",
+        "phrases": [
+          {
+            "ja": "まず野菜を洗ってね。",
+            "target": "Primero, lava las verduras.",
+            "kana": "プリメロ ラバ ラス ベルドゥラス"
+          },
+          {
+            "ja": "玉ねぎを薄く切って。",
+            "target": "Corta la cebolla en rodajas finas.",
+            "kana": "コルタ ラ セボジャ エン ロダハス フィナス"
+          },
+          {
+            "ja": "お鍋に油を入れて。",
+            "target": "Echa un poco de aceite en la olla.",
+            "kana": "エチャ ウン ポコ デ アセイレ エン ラ オジャ"
+          },
+          {
+            "ja": "中火で炒めてね。",
+            "target": "Cocínalo a fuego medio.",
+            "kana": "コシナルロ ア フエゴ メディオ"
+          },
+          {
+            "ja": "よく混ぜてね。",
+            "target": "Mézclalo bien.",
+            "kana": "メズクラロ ビエン"
+          },
+          {
+            "ja": "塩を少し加えて。",
+            "target": "Añade un poco de sal.",
+            "kana": "アニャデ ウン ポコ デ サル"
+          },
+          {
+            "ja": "ふたをして煮込んでね。",
+            "target": "Pon la tapa y déjalo cocer a fuego lento.",
+            "kana": "ポン ラ タパ イ デハロ コセル ア フエゴ レント"
+          },
+          {
+            "ja": "焦げないように気をつけて！",
+            "target": "¡Ten cuidado de que no se queme!",
+            "kana": "テン クイドーダ デ ケ ノ セ ケメ"
+          },
+          {
+            "ja": "味見してみて。",
+            "target": "Pruébalo. (男性) / Pruébala. (女性)",
+            "kana": "プルエバロ / プルエバラ"
+          },
+          {
+            "ja": "さあ、できあがり！",
+            "target": "¡Y ya está listo! (男性) / ¡Y ya está lista! (女性)",
+            "kana": "イ ヤ エスタ リスト / リスタ"
           }
         ]
       }
@@ -2372,6 +3044,342 @@
             "source": "映画『スター・ウォーズ』シリーズ。",
             "target": "Che la Forza sia con te.",
             "kana": "ケ ラ フォーザ シア コン テ"
+          }
+        ]
+      },
+      "kids_play": {
+        "name": "子ども同士が遊ぶ言葉",
+        "icon": "fa-child",
+        "phrases": [
+          {
+            "ja": "一緒に遊ぼう！",
+            "target": "Giochiamo insieme!",
+            "kana": "ジョキアモ インシエメ"
+          },
+          {
+            "ja": "一緒に行こう！",
+            "target": "Andiamo insieme!",
+            "kana": "アンディアモ インシエメ"
+          },
+          {
+            "ja": "私も入れて！",
+            "target": "Posso giocare anch'io?",
+            "kana": "ポッソ ジョカレ アンキオ"
+          },
+          {
+            "ja": "鬼ごっこしよう！",
+            "target": "Giochiamo a rincorrerci!",
+            "kana": "ジョキアモ ア リンコルチェルチ"
+          },
+          {
+            "ja": "かくれんぼしよう！",
+            "target": "Giochiamo a nascondino!",
+            "kana": "ジョキアモ ア ナスコディーノ"
+          },
+          {
+            "ja": "次は私の番！",
+            "target": "Adesso tocca a me!",
+            "kana": "アデッソ トッカ ア メ"
+          },
+          {
+            "ja": "待って！一緒に行く！",
+            "target": "Aspetta! Vengo con te!",
+            "kana": "アスペッタ ヴェンゴ コン テ"
+          },
+          {
+            "ja": "こっちにおいで！",
+            "target": "Vieni qui!",
+            "kana": "ヴィエニ クイ"
+          },
+          {
+            "ja": "もう一回やろう！",
+            "target": "Facciamolo un'altra volta!",
+            "kana": "ファッチャモロ ウンアルトラ ヴォルタ"
+          },
+          {
+            "ja": "今日も楽しかったね！",
+            "target": "Anche oggi ci siamo divertiti! (男性・混合) / Anche oggi ci siamo divertite! (女性)",
+            "kana": "アンケ オッジ チ シアモ ディヴェルティティ / ディヴェルティテ"
+          }
+        ]
+      },
+      "toddler_talk": {
+        "name": "幼児の会話",
+        "icon": "fa-baby",
+        "phrases": [
+          {
+            "ja": "これなあに？",
+            "target": "Che cos'è questo?",
+            "kana": "ケ コゼ クエスト"
+          },
+          {
+            "ja": "これ、ちょうだい！",
+            "target": "Mi dai questo?",
+            "kana": "ミ ダイ クエスト"
+          },
+          {
+            "ja": "もう一回やって！",
+            "target": "Fallo un'altra volta!",
+            "kana": "ファッロ ウンアルトラ ヴォルタ"
+          },
+          {
+            "ja": "見て見て！",
+            "target": "Guarda! Guarda!",
+            "kana": "グアルダ グアルダ"
+          },
+          {
+            "ja": "できたよ！",
+            "target": "Ce l'ho fatta!",
+            "kana": "チェ ロ ファッタ"
+          },
+          {
+            "ja": "これ、私の！",
+            "target": "Questo è mio! (男性・女性共通)",
+            "kana": "クエスト エ ミオ"
+          },
+          {
+            "ja": "もうおなかいっぱい！",
+            "target": "Sono pieno! (男性) / Sono piena! (女性)",
+            "kana": "ソノ ピエノ / ピエナ"
+          },
+          {
+            "ja": "眠くなっちゃった。",
+            "target": "Mi sta venendo sonno.",
+            "kana": "ミ スタ ヴェネンド ソンノ"
+          },
+          {
+            "ja": "これ、こわいよ。",
+            "target": "Questo fa paura.",
+            "kana": "クエスト ファ パウラ"
+          },
+          {
+            "ja": "だいじょうぶだよ！",
+            "target": "Non ti preoccupare!",
+            "kana": "ノン ティ プレオックパレ"
+          }
+        ]
+      },
+      "cafe_service": {
+        "name": "カフェの接客",
+        "icon": "fa-coffee",
+        "phrases": [
+          {
+            "ja": "いらっしゃいませ！",
+            "target": "Buongiorno! Benvenuto! (男性) / Benvenuta! (女性)",
+            "kana": "ボンジョルノ ベンヴェヌト / ベンヴェヌタ"
+          },
+          {
+            "ja": "ご注文はお決まりですか？",
+            "target": "Cosa le preparo?",
+            "kana": "コサ レ プレパロ"
+          },
+          {
+            "ja": "店内でお召し上がりですか？お持ち帰りですか？",
+            "target": "Da consumare qui o da portare via?",
+            "kana": "ダ コンスマレ クイ オ ダ ポルターレ ヴィア"
+          },
+          {
+            "ja": "サイズはいかがなさいますか？",
+            "target": "Che misura desidera?",
+            "kana": "ケ ミズラ デジデラ"
+          },
+          {
+            "ja": "ミルクの種類はどうされますか？",
+            "target": "Che tipo di latte preferisce?",
+            "kana": "ケ ティポ ディ ラッテ プレフェリシェ"
+          },
+          {
+            "ja": "ホットとアイス、どちらになさいますか？",
+            "target": "Lo preferisce caldo o freddo?",
+            "kana": "ロ プレフェリシェ カルド オ フレッド"
+          },
+          {
+            "ja": "お名前をお伺いしてもよろしいですか？",
+            "target": "Mi dice il suo nome, per favore?",
+            "kana": "ミ ディチェ イル スオ ノメ ペル ファヴォレ"
+          },
+          {
+            "ja": "ご注文を繰り返します。",
+            "target": "Le ripeto l'ordine.",
+            "kana": "レ リペト ロルディネ"
+          },
+          {
+            "ja": "お待たせいたしました！",
+            "target": "Grazie per l'attesa!",
+            "kana": "グラツィエ ペル ラッテサ"
+          },
+          {
+            "ja": "ごゆっくりお過ごしください。",
+            "target": "Si goda la sua bevanda!",
+            "kana": "シ ゴダ ラ スア ベヴァンダ"
+          }
+        ]
+      },
+      "general_store_service": {
+        "name": "雑貨屋さんの接客",
+        "icon": "fa-store",
+        "phrases": [
+          {
+            "ja": "何かお探しですか？",
+            "target": "Sta cercando qualcosa in particolare?",
+            "kana": "スタ チェルカンド クアルコサ イン パティコラーレ"
+          },
+          {
+            "ja": "どうぞご自由にご覧ください。",
+            "target": "Dia pure un'occhiata.",
+            "kana": "ディア ピュレ ウノッキアータ"
+          },
+          {
+            "ja": "こちらが新商品です。",
+            "target": "Questi sono i nostri nuovi arrivi.",
+            "kana": "クエスティ ソノ イ ノストリ ヌーヴィ アッリーヴィ"
+          },
+          {
+            "ja": "こちらが一番人気です。",
+            "target": "Questo è il nostro articolo più venduto.",
+            "kana": "クエスト エ イル ノストロ アルティコロ ピュ ベンドウト"
+          },
+          {
+            "ja": "色違いもございます。",
+            "target": "È disponibile anche in altri colori.",
+            "kana": "エ ディスポニビレ アンケ イン アルトリ コロリ"
+          },
+          {
+            "ja": "お手に取ってご覧ください。",
+            "target": "Può prenderlo in mano e guardarlo da vicino.",
+            "kana": "プオイ プレンデルロ イン マノ エ グアルダルロ ダ ヴィチーノ"
+          },
+          {
+            "ja": "プレゼント用ですか？",
+            "target": "È un regalo?",
+            "kana": "エ ウン レガロ"
+          },
+          {
+            "ja": "ラッピングいたしましょうか？",
+            "target": "Vuole che glielo confezioniamo per regalo?",
+            "kana": "ヴォレ ケ グリエロ コンフェツィオニアモ ペル レガロ"
+          },
+          {
+            "ja": "お会計はこちらです。",
+            "target": "Può pagare qui.",
+            "kana": "プオイ パガレ クイ"
+          },
+          {
+            "ja": "またお越しくださいませ。",
+            "target": "Speriamo di rivederla presto!",
+            "kana": "スペリアモ ディ リヴェデルラ プレスト"
+          }
+        ]
+      },
+      "math_dialogue": {
+        "name": "数学のセリフ",
+        "icon": "fa-calculator",
+        "phrases": [
+          {
+            "ja": "まず問題をよく読んでみよう。",
+            "target": "Per prima cosa, leggiamo attentamente il problema.",
+            "kana": "ペル プリマ コサ レッジアモ アッテントアメンテ イル プロブレマ"
+          },
+          {
+            "ja": "答えはいくつになりますか？",
+            "target": "Che risultato ottieni?",
+            "kana": "ケ リスルタド オッティーニ"
+          },
+          {
+            "ja": "ここに数字を書いてください。",
+            "target": "Scrivi il numero qui.",
+            "kana": "スクリーヴィ イル ヌメロ クイ"
+          },
+          {
+            "ja": "これらの数字を足してください。",
+            "target": "Somma questi numeri.",
+            "kana": "ソンマ クエスティ ヌメリ"
+          },
+          {
+            "ja": "大きい数から小さい数を引きます。",
+            "target": "Sottrai il numero più piccolo da quello più grande.",
+            "kana": "ソットライ イル ヌメロ ピュ ピッコロ ダ クエッロ ピュ グランデ"
+          },
+          {
+            "ja": "何倍になりますか？",
+            "target": "Quante volte è più grande?",
+            "kana": "クアンテ ヴォルテ エ ピュ グランデ"
+          },
+          {
+            "ja": "これを半分に分けましょう。",
+            "target": "Dividiamo questo a metà.",
+            "kana": "ディヴィディアモ クエスト ア メタ"
+          },
+          {
+            "ja": "分数で表してみよう。",
+            "target": "Esprimiamolo sotto forma di frazione.",
+            "kana": "エスプリミャモロ ソット フォーマ ディ フラツィオーネ"
+          },
+          {
+            "ja": "答えを確かめてみよう。",
+            "target": "Controlliamo la risposta.",
+            "kana": "コントロッリアモ ラ リスポスタ"
+          },
+          {
+            "ja": "どうしてそうなるのか説明できる？",
+            "target": "Sai spiegare perché?",
+            "kana": "サイ スピエガル ペルケ"
+          }
+        ]
+      },
+      "cooking_dialogue": {
+        "name": "料理のセリフ",
+        "icon": "fa-utensils",
+        "phrases": [
+          {
+            "ja": "まず野菜を洗ってね。",
+            "target": "Per prima cosa, lava le verdure.",
+            "kana": "ペル プリマ コサ ラヴァ レ ヴェルドゥレ"
+          },
+          {
+            "ja": "玉ねぎを薄く切って。",
+            "target": "Taglia la cipolla a fettine sottili.",
+            "kana": "タリア ラ チポッラ ア フェッティーネ ソッテリ"
+          },
+          {
+            "ja": "お鍋に油を入れて。",
+            "target": "Versa un po' d'olio nella pentola.",
+            "kana": "ヴェルサ ウン ポ ドリオ ネッラ ペントラ"
+          },
+          {
+            "ja": "中火で炒めてね。",
+            "target": "Cuocilo a fuoco medio.",
+            "kana": "クオチロ ア フオコ メディオ"
+          },
+          {
+            "ja": "よく混ぜてね。",
+            "target": "Mescola bene.",
+            "kana": "メスコラ ベネ"
+          },
+          {
+            "ja": "塩を少し加えて。",
+            "target": "Aggiungi un po' di sale.",
+            "kana": "アッジウンギ ウン ポ ディ サレ"
+          },
+          {
+            "ja": "ふたをして煮込んでね。",
+            "target": "Metti il coperchio e lascia cuocere a fuoco lento.",
+            "kana": "メッティ イル コペルキオ エ ラッシャ クオチェレ ア フオコ レント"
+          },
+          {
+            "ja": "焦げないように気をつけて！",
+            "target": "Attenzione a non bruciarlo!",
+            "kana": "アテンツィオーネ ア ノン ブルチャルロ"
+          },
+          {
+            "ja": "味見してみて。",
+            "target": "Assaggialo. (男性) / Assaggiala. (女性)",
+            "kana": "アッサッジャロ / アッサッジャラ"
+          },
+          {
+            "ja": "さあ、できあがり！",
+            "target": "Ed è pronto! (男性) / Ed è pronta! (女性)",
+            "kana": "エド エ プロント / プロンタ"
           }
         ]
       }
