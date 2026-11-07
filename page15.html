@@ -98,138 +98,157 @@
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 pt-6 space-y-6">
 
-        <!-- カテゴリ選択バー -->
-        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-tabs">
-            <!-- Dynamic Category Buttons -->
+        <!-- 1. カテゴリー選択ビュー (初期画面) -->
+        <div id="category-view" class="space-y-4">
+            <div class="text-center py-2">
+                <h2 class="text-xl sm:text-2xl font-extrabold text-white">学習するカテゴリーを選んでね</h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">下のボタンから練習したいテーマを選択してください</p>
+            </div>
+            <!-- 2列の大きいボタンが並ぶグリッド -->
+            <div id="category-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- 動的に生成されます -->
+            </div>
         </div>
 
-        <!-- フラッシュカード area -->
-        <div class="bg-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/50 border border-slate-700/70 relative overflow-hidden transition-all duration-300">
-            <!-- 右上のカード番号インジケーター -->
-            <div class="flex justify-between items-center mb-4">
-                <span id="category-badge" class="px-3 py-1 bg-indigo-950/80 text-indigo-300 text-xs font-bold rounded-full border border-indigo-700/50">
+        <!-- 2. シャドーイング・フラッシュカード画面 (非表示初期) -->
+        <div id="practice-view" class="space-y-6 hidden">
+            
+            <!-- カテゴリーに戻るボタン & 現在のカテゴリ名 -->
+            <div class="flex items-center justify-between bg-slate-800/60 px-4 py-3 rounded-2xl border border-slate-700/60">
+                <button onclick="backToCategoryView()" class="px-3 py-1.5 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-arrow-left"></i> カテゴリー選択へ戻る
+                </button>
+                <span id="active-category-title" class="text-xs sm:text-sm font-bold text-indigo-300">
                     挨拶・基本
                 </span>
-                <span id="phrase-counter" class="text-xs font-semibold text-slate-400">
-                    1 / 5
-                </span>
             </div>
 
-            <!-- 日本語の意味 & 出典情報 -->
-            <div class="text-center mb-6 space-y-1">
-                <p id="phrase-ja" class="text-xl sm:text-2xl font-bold text-slate-100 tracking-wide">
-                    こんにちは
-                </p>
-                <p id="phrase-meaning" class="text-xs sm:text-sm text-indigo-300 font-medium hidden">
-                    意味: ---
-                </p>
-                <p id="phrase-source" class="text-xs text-slate-400 italic hidden">
-                    出典: ---
-                </p>
-            </div>
+            <!-- フラッシュカード area -->
+            <div class="bg-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/50 border border-slate-700/70 relative overflow-hidden transition-all duration-300">
+                <!-- 右上のカード番号インジケーター -->
+                <div class="flex justify-end items-center mb-4">
+                    <span id="phrase-counter" class="text-xs font-semibold text-slate-400">
+                        1 / 5
+                    </span>
+                </div>
 
-            <!-- ターゲット言語のスペル & カタカナ -->
-            <div class="bg-slate-900/90 rounded-2xl p-6 text-center border border-slate-700/80 mb-6 relative group shadow-inner">
-                <p id="phrase-target" class="text-3xl sm:text-4xl font-extrabold text-cyan-400 tracking-wide mb-2 font-['Plus_Jakarta_Sans']">
-                    Hello
-                </p>
-                <div class="flex items-center justify-center gap-2">
-                    <span class="text-xs text-slate-400 font-semibold">読み:</span>
-                    <p id="phrase-kana" class="text-base sm:text-lg font-bold text-amber-400">
-                        ハロー
+                <!-- 日本語の意味 & 出典情報 -->
+                <div class="text-center mb-6 space-y-1">
+                    <p id="phrase-ja" class="text-xl sm:text-2xl font-bold text-slate-100 tracking-wide">
+                        こんにちは
+                    </p>
+                    <p id="phrase-meaning" class="text-xs sm:text-sm text-indigo-300 font-medium hidden">
+                        意味: ---
+                    </p>
+                    <p id="phrase-source" class="text-xs text-slate-400 italic hidden">
+                        出典: ---
                     </p>
                 </div>
-            </div>
 
-            <!-- 音声コントロールアクションエリア -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- AI音声お手本再生ボタン -->
-                <button id="play-ai-btn" onclick="speakCurrentPhrase()" class="flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-indigo-900/40 transition-all">
-                    <i class="fa-solid fa-volume-high text-xl"></i>
-                    <span>お手本を聞く (AI)</span>
-                </button>
-
-                <!-- マイクシャドーイング開始ボタン -->
-                <button id="mic-btn" onclick="toggleSpeechRecognition()" class="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-900/40 transition-all">
-                    <i class="fa-solid fa-microphone text-xl" id="mic-icon"></i>
-                    <span id="mic-btn-text">真似して話す (判定)</span>
-                </button>
-            </div>
-
-            <!-- 音声処理ステータス表示 -->
-            <div id="status-container" class="mt-4 hidden">
-                <!-- AI再生中アニメーション -->
-                <div id="status-playing" class="hidden flex items-center justify-center gap-3 py-2 text-indigo-300 font-bold text-sm bg-indigo-950/60 rounded-xl border border-indigo-800/50">
-                    <span>AI発音再生中...</span>
-                    <div class="flex items-end gap-1 h-5">
-                        <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
-                        <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
-                        <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
-                        <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
-                    </div>
-                </div>
-
-                <!-- 録音中状態 -->
-                <div id="status-listening" class="hidden flex items-center justify-center gap-3 py-2 text-rose-300 font-bold text-sm bg-rose-950/60 rounded-xl border border-rose-800/50">
-                    <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
-                    <span>あなたの声を聴いています... 話してください！</span>
-                </div>
-            </div>
-
-            <!-- ナビゲーションボタン -->
-            <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-700/60">
-                <button onclick="prevPhrase()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-700/50 font-bold text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-chevron-left"></i> 前へ
-                </button>
-                <button onclick="randomPhrase()" class="px-3 py-2 rounded-xl text-slate-400 hover:text-indigo-300 hover:bg-indigo-950/50 font-semibold text-xs flex items-center gap-1">
-                    <i class="fa-solid fa-shuffle"></i> ランダム
-                </button>
-                <button onclick="nextPhrase()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-700/50 font-bold text-sm flex items-center gap-2">
-                    次へ <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- スコア・フィードバック結果カード -->
-        <div id="score-card" class="bg-slate-800/90 rounded-3xl p-6 shadow-2xl border border-slate-700/70 hidden transition-all duration-500">
-            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-square-poll-vertical text-indigo-400"></i> 発音判定レポート
-            </h3>
-
-            <div class="flex flex-col md:flex-row items-center gap-6">
-                <!-- 点数ドーナツ/バッジ -->
-                <div class="flex-shrink-0 text-center">
-                    <div id="score-badge" class="w-28 h-28 rounded-full border-8 flex flex-col items-center justify-center border-indigo-500 bg-indigo-950/80 text-indigo-300 shadow-inner">
-                        <span id="score-number" class="text-3xl font-extrabold leading-none">0</span>
-                        <span class="text-xs font-bold mt-1">点 / 100</span>
-                    </div>
-                </div>
-
-                <!-- フィードバック & 認識されたテキスト比較 -->
-                <div class="flex-1 w-full space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span id="score-label" class="text-lg font-extrabold px-3 py-1 rounded-lg bg-indigo-900/80 text-indigo-200 border border-indigo-700/50">
-                            Excellent! 素晴らしい！
-                        </span>
-                        <button onclick="speakUserTranscript()" id="speak-user-btn" class="text-xs font-bold text-indigo-400 hover:underline flex items-center gap-1 hidden">
-                            <i class="fa-solid fa-volume-low"></i> 自分の声を聞く
-                        </button>
-                    </div>
-
-                    <!-- ユーザーの発音書き起こし結果 -->
-                    <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-700/80">
-                        <p class="text-xs text-slate-400 font-bold mb-1">聞き取れたフレーズ:</p>
-                        <p id="user-transcript" class="text-lg font-bold text-cyan-300 italic font-['Plus_Jakarta_Sans']">
-                            "---"
+                <!-- ターゲット言語のスペル & カタカナ -->
+                <div class="bg-slate-900/90 rounded-2xl p-6 text-center border border-slate-700/80 mb-6 relative group shadow-inner">
+                    <p id="phrase-target" class="text-3xl sm:text-4xl font-extrabold text-cyan-400 tracking-wide mb-2 font-['Plus_Jakarta_Sans']">
+                        Hello
+                    </p>
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="text-xs text-slate-400 font-semibold">読み:</span>
+                        <p id="phrase-kana" class="text-base sm:text-lg font-bold text-amber-400">
+                            ハロー
                         </p>
                     </div>
+                </div>
 
-                    <!-- コメント・アドバイス -->
-                    <p id="score-comment" class="text-sm text-slate-300 leading-relaxed font-medium">
-                        ネイティブに近い完璧な発音です！この調子で続けましょう！
-                    </p>
+                <!-- 音声コントロールアクションエリア -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- AI音声お手本再生ボタン -->
+                    <button id="play-ai-btn" onclick="speakCurrentPhrase()" class="flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-indigo-900/40 transition-all">
+                        <i class="fa-solid fa-volume-high text-xl"></i>
+                        <span>お手本を聞く (AI)</span>
+                    </button>
+
+                    <!-- マイクシャドーイング開始ボタン -->
+                    <button id="mic-btn" onclick="toggleSpeechRecognition()" class="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-900/40 transition-all">
+                        <i class="fa-solid fa-microphone text-xl" id="mic-icon"></i>
+                        <span id="mic-btn-text">真似して話す (判定)</span>
+                    </button>
+                </div>
+
+                <!-- 音声処理ステータス表示 -->
+                <div id="status-container" class="mt-4 hidden">
+                    <!-- AI再生中アニメーション -->
+                    <div id="status-playing" class="hidden flex items-center justify-center gap-3 py-2 text-indigo-300 font-bold text-sm bg-indigo-950/60 rounded-xl border border-indigo-800/50">
+                        <span>AI発音再生中...</span>
+                        <div class="flex items-end gap-1 h-5">
+                            <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
+                            <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
+                            <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
+                            <div class="w-1 bg-indigo-400 rounded-full wave-bar"></div>
+                        </div>
+                    </div>
+
+                    <!-- 録音中状態 -->
+                    <div id="status-listening" class="hidden flex items-center justify-center gap-3 py-2 text-rose-300 font-bold text-sm bg-rose-950/60 rounded-xl border border-rose-800/50">
+                        <span class="w-3 h-3 bg-rose-500 rounded-full animate-ping"></span>
+                        <span>あなたの声を聴いています... 話してください！</span>
+                    </div>
+                </div>
+
+                <!-- ナビゲーションボタン -->
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-700/60">
+                    <button onclick="prevPhrase()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-700/50 font-bold text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-chevron-left"></i> 前へ
+                    </button>
+                    <button onclick="randomPhrase()" class="px-3 py-2 rounded-xl text-slate-400 hover:text-indigo-300 hover:bg-indigo-950/50 font-semibold text-xs flex items-center gap-1">
+                        <i class="fa-solid fa-shuffle"></i> ランダム
+                    </button>
+                    <button onclick="nextPhrase()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-700/50 font-bold text-sm flex items-center gap-2">
+                        次へ <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
+
+            <!-- スコア・フィードバック結果カード -->
+            <div id="score-card" class="bg-slate-800/90 rounded-3xl p-6 shadow-2xl border border-slate-700/70 hidden transition-all duration-500">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-square-poll-vertical text-indigo-400"></i> 発音判定レポート
+                </h3>
+
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <!-- 点数ドーナツ/バッジ -->
+                    <div class="flex-shrink-0 text-center">
+                        <div id="score-badge" class="w-28 h-28 rounded-full border-8 flex flex-col items-center justify-center border-indigo-500 bg-indigo-950/80 text-indigo-300 shadow-inner">
+                            <span id="score-number" class="text-3xl font-extrabold leading-none">0</span>
+                            <span class="text-xs font-bold mt-1">点 / 100</span>
+                        </div>
+                    </div>
+
+                    <!-- フィードバック & 認識されたテキスト比較 -->
+                    <div class="flex-1 w-full space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span id="score-label" class="text-lg font-extrabold px-3 py-1 rounded-lg bg-indigo-900/80 text-indigo-200 border border-indigo-700/50">
+                                Excellent! 素晴らしい！
+                            </span>
+                            <button onclick="speakUserTranscript()" id="speak-user-btn" class="text-xs font-bold text-indigo-400 hover:underline flex items-center gap-1 hidden">
+                                <i class="fa-solid fa-volume-low"></i> 自分の声を聞く
+                            </button>
+                        </div>
+
+                        <!-- ユーザーの発音書き起こし結果 -->
+                        <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-700/80">
+                            <p class="text-xs text-slate-400 font-bold mb-1">聞き取れたフレーズ:</p>
+                            <p id="user-transcript" class="text-lg font-bold text-cyan-300 italic font-['Plus_Jakarta_Sans']">
+                                "---"
+                            </p>
+                        </div>
+
+                        <!-- コメント・アドバイス -->
+                        <p id="score-comment" class="text-sm text-slate-300 leading-relaxed font-medium">
+                            ネイティブに近い完璧な発音です！この調子で続けましょう！
+                        </p>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- 音声認識未対応の警告モーダル/メッセージ -->
@@ -247,7 +266,7 @@
     <script>
         let phraseData = null;
         let currentLang = 'en';
-        let currentCategoryKey = 'greetings';
+        let currentCategoryKey = null;
         let currentPhraseIndex = 0;
         let lastUserSpeech = "";
 
@@ -286,7 +305,7 @@
             document.getElementById('browser-warning').classList.remove('hidden');
         }
 
-        // Initialize App by loading phrase data (including added proverbs & quotes)
+        // Initialize App by loading phrase.json
         window.onload = async () => {
             try {
                 const response = await fetch('phrase.json');
@@ -296,8 +315,7 @@
                 console.warn("外部JSONの読み込みに失敗したため、内蔵データを使用します。", error);
                 phraseData = embeddedPhraseData;
             }
-            renderCategories();
-            updateCardDisplay();
+            renderCategoryGrid();
         };
 
         // Switch Language
@@ -314,43 +332,64 @@
                 }
             });
 
-            currentCategoryKey = Object.keys(phraseData[lang].categories)[0];
-            currentPhraseIndex = 0;
-
-            hideScoreCard();
-            renderCategories();
-            updateCardDisplay();
+            currentCategoryKey = null;
+            backToCategoryView();
+            renderCategoryGrid();
         }
 
-        // Render category selector tabs
-        function renderCategories() {
+        // Render 2-column Category selection grid (初期表示)
+        function renderCategoryGrid() {
             if (!phraseData) return;
-            const container = document.getElementById('category-tabs');
-            container.innerHTML = '';
+            const gridContainer = document.getElementById('category-grid');
+            gridContainer.innerHTML = '';
 
             const categories = phraseData[currentLang].categories;
             Object.keys(categories).forEach(catKey => {
                 const cat = categories[catKey];
-                const isActive = catKey === currentCategoryKey;
+                const count = cat.phrases ? cat.phrases.length : 0;
 
-                const btn = document.createElement('button');
-                btn.onclick = () => selectCategory(catKey);
-                btn.className = `px-4 py-2 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 border ${
-                    isActive 
-                        ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-900/40' 
-                        : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-slate-500 hover:text-white'
-                }`;
-                btn.innerHTML = `<i class="fa-solid ${cat.icon || 'fa-folder'}"></i> ${cat.name}`;
-                container.appendChild(btn);
+                const card = document.createElement('button');
+                card.onclick = () => selectCategory(catKey);
+                card.className = "bg-slate-800/90 hover:bg-slate-750 border border-slate-700/80 hover:border-indigo-500/80 p-5 rounded-3xl text-left transition-all duration-200 shadow-lg hover:shadow-indigo-950/50 flex items-center gap-4 group";
+                
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-950 border border-indigo-700/50 flex items-center justify-center text-indigo-400 text-xl group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner">
+                        <i class="fa-solid ${cat.icon || 'fa-folder'}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-base text-white group-hover:text-indigo-300 transition-colors truncate">${cat.name}</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">${count} フレーズ収録</p>
+                    </div>
+                    <div class="text-slate-500 group-hover:text-indigo-400 transition-colors">
+                        <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
             });
         }
 
+        // Select a category and show practice view
         function selectCategory(catKey) {
             currentCategoryKey = catKey;
             currentPhraseIndex = 0;
-            renderCategories();
+            
+            // Switch views
+            document.getElementById('category-view').classList.add('hidden');
+            document.getElementById('practice-view').classList.remove('hidden');
+
             hideScoreCard();
             updateCardDisplay();
+        }
+
+        // Back to category view
+        function backToCategoryView() {
+            if (synth && synth.speaking) synth.cancel();
+            if (isListening && recognition) {
+                recognition.stop();
+            }
+            document.getElementById('practice-view').classList.add('hidden');
+            document.getElementById('category-view').classList.remove('hidden');
+            renderCategoryGrid();
         }
 
         function getCurrentPhraseObject() {
@@ -358,12 +397,12 @@
         }
 
         function updateCardDisplay() {
-            if (!phraseData) return;
+            if (!phraseData || !currentCategoryKey) return;
             const phrase = getCurrentPhraseObject();
             const categoryName = phraseData[currentLang].categories[currentCategoryKey].name;
             const total = phraseData[currentLang].categories[currentCategoryKey].phrases.length;
 
-            document.getElementById('category-badge').innerText = categoryName;
+            document.getElementById('active-category-title').innerText = categoryName;
             document.getElementById('phrase-counter').innerText = `${currentPhraseIndex + 1} / ${total}`;
             document.getElementById('phrase-ja').innerText = phrase.ja;
             
@@ -468,13 +507,13 @@
             const statusListening = document.getElementById('status-listening');
 
             if (listening) {
-                micBtn.className = "flex items-center justify-center gap-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-rose-900/50 transition-all pulse-ring";
+                micBtn.className = "flex items-center justify-center gap-3 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-rose-950/50 transition-all pulse-ring";
                 micIcon.className = "fa-solid fa-square text-xl";
                 micText.innerText = "録音中... クリックで停止";
                 statusContainer.classList.remove('hidden');
                 statusListening.classList.remove('hidden');
             } else {
-                micBtn.className = "flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-900/40 transition-all";
+                micBtn.className = "flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-950/40 transition-all";
                 micIcon.className = "fa-solid fa-microphone text-xl";
                 micText.innerText = "真似して話す (判定)";
                 statusListening.classList.add('hidden');
@@ -586,78 +625,17 @@
             synth.speak(utterance);
         }
 
-        // 拡張した「ことわざ・名台詞」を含む内蔵データ構造 (phrase.json と同じ構成)
+        // フォールバック用内蔵データ
         const embeddedPhraseData = {
           "en": {
             "name": "English",
             "langCode": "en-US",
             "categories": {
-              "proverbs": {
-                "name": "ことわざ・名台詞",
-                "icon": "fa-quote-left",
+              "greetings": {
+                "name": "挨拶・基本",
+                "icon": "fa-hand-wave",
                 "phrases": [
-                  {
-                    "ja": "意志あるところに道は開ける。",
-                    "meaning": "意志あるところに道は開ける。",
-                    "target": "Where there's a will, there's a way.",
-                    "kana": "ウェア デアズ ア ウィル ウェア デアズ ア ウェイ"
-                  },
-                  {
-                    "ja": "遅くなっても、やらないよりはまし。",
-                    "meaning": "遅くなっても、やらないよりはまし。",
-                    "target": "Better late than never.",
-                    "kana": "ベター レイト ザン ネバー"
-                  },
-                  {
-                    "ja": "言葉より行動が大切。",
-                    "meaning": "言葉より行動が大切。",
-                    "target": "Actions speak louder than words.",
-                    "kana": "アクションズ スピーク ラウダー ザン ワーズ"
-                  },
-                  {
-                    "ja": "どんな困難にも、希望の光はある。",
-                    "meaning": "どんな悪いことにも、何か良い面がある。",
-                    "target": "Every cloud has a silver lining.",
-                    "kana": "エブリ クラウド ハズ ア シルバー ライニング"
-                  },
-                  {
-                    "ja": "人は見かけによらない。",
-                    "meaning": "見た目だけで判断してはいけない。",
-                    "target": "Don't judge a book by its cover.",
-                    "kana": "ドント ジャッジ ア ブック バイ イッツ カバー"
-                  },
-                  {
-                    "ja": "早起きは三文の徳。",
-                    "meaning": "早起きする人は得をする。",
-                    "target": "The early bird catches the worm.",
-                    "kana": "ジ アーリー バード キャッチズ ザ ワーム"
-                  },
-                  {
-                    "ja": "継続は力なり。",
-                    "meaning": "練習を重ねれば上達する。",
-                    "target": "Practice makes perfect.",
-                    "kana": "プラクティス メイクス パーフェクト"
-                  },
-                  {
-                    "ja": "最後まで勝負はわからない。",
-                    "meaning": "最後まで何が起こるかわからない。",
-                    "target": "It's not over until it's over.",
-                    "kana": "イッツ ノット オーバー アンティル イッツ オーバー"
-                  },
-                  {
-                    "ja": "無限の彼方へ、さあ行くぞ！",
-                    "meaning": "無限の彼方へ！",
-                    "source": "映画『トイ・ストーリー』のバズ・ライトイヤーの決め台詞。",
-                    "target": "To infinity and beyond!",
-                    "kana": "トゥ インフィニティ アンド ビヨンド"
-                  },
-                  {
-                    "ja": "フォースとともにあらんことを。",
-                    "meaning": "フォースとともにあらんことを。",
-                    "source": "映画『スター・ウォーズ』シリーズ。",
-                    "target": "May the Force be with you.",
-                    "kana": "メイ ザ フォース ビィ ウィズ ユー"
-                  }
+                  { "ja": "こんにちは", "target": "Hello", "kana": "ハロー" }
                 ]
               }
             }
@@ -666,72 +644,11 @@
             "name": "Español",
             "langCode": "es-ES",
             "categories": {
-              "proverbs": {
-                "name": "ことわざ・名台詞",
-                "icon": "fa-quote-left",
+              "greetings": {
+                "name": "挨拶・基本",
+                "icon": "fa-hand-wave",
                 "phrases": [
-                  {
-                    "ja": "意志あるところに道は開ける。",
-                    "meaning": "意志あるところに道は開ける。",
-                    "target": "Querer es poder.",
-                    "kana": "ケレール エス ポデル"
-                  },
-                  {
-                    "ja": "遅くなっても、やらないよりはまし。",
-                    "meaning": "遅くなっても、やらないよりはまし。",
-                    "target": "Más vale tarde que nunca.",
-                    "kana": "マス バレ タルデ ケ ヌンカ"
-                  },
-                  {
-                    "ja": "言葉より行動が大切。",
-                    "meaning": "言葉より行動が大切。",
-                    "target": "Los hechos hablan más que las palabras.",
-                    "kana": "ロス エチョス アブラン マス ケ ラス パラブラス"
-                  },
-                  {
-                    "ja": "どんな困難にも、希望の光はある。",
-                    "meaning": "どんな悪いことにも、何か良い面がある。",
-                    "target": "No hay mal que por bien no venga.",
-                    "kana": "ノ アイ マル ケ ポル ビエン ノ ベンガ"
-                  },
-                  {
-                    "ja": "人は見かけによらない。",
-                    "meaning": "見た目だけで判断してはいけない。",
-                    "target": "No juzgues un libro por su portada.",
-                    "kana": "ノ フグエス ウン リブロ ポル ス ポルタダ"
-                  },
-                  {
-                    "ja": "早起きは三文の徳。",
-                    "meaning": "早起きする人は得をする。",
-                    "target": "A quien madruga, Dios le ayuda.",
-                    "kana": "ア キエン マドルガ ディオス レ アユダ"
-                  },
-                  {
-                    "ja": "継続は力なり。",
-                    "meaning": "練習を重ねれば上達する。",
-                    "target": "La práctica hace al maestro.",
-                    "kana": "ラ プラクティカ アセ アル マエストロ"
-                  },
-                  {
-                    "ja": "最後まで勝負はわからない。",
-                    "meaning": "最後まで何が起こるかわからない。",
-                    "target": "No se acaba hasta que se acaba.",
-                    "kana": "ノ セ アカバ アスタ ケ セ アカバ"
-                  },
-                  {
-                    "ja": "無限の彼方へ、さあ行くぞ！",
-                    "meaning": "無限の彼方へ！",
-                    "source": "映画『トイ・ストーリー』のバズ・ライトイヤーの決め台詞。",
-                    "target": "¡Hasta el infinito y más allá!",
-                    "kana": "アスタ エル インフィニティ イ マス アジャ"
-                  },
-                  {
-                    "ja": "フォースとともにあらんことを。",
-                    "meaning": "フォースとともにあらんことを。",
-                    "source": "映画『スター・ウォーズ』シリーズ。",
-                    "target": "Que la Fuerza te acompañe.",
-                    "kana": "ケ ラ フエルサ テ アコンパニェ"
-                  }
+                  { "ja": "こんにちは", "target": "Hola", "kana": "オラ" }
                 ]
               }
             }
@@ -740,72 +657,11 @@
             "name": "Italiano",
             "langCode": "it-IT",
             "categories": {
-              "proverbs": {
-                "name": "ことわざ・名台詞",
-                "icon": "fa-quote-left",
+              "greetings": {
+                "name": "挨拶・基本",
+                "icon": "fa-hand-wave",
                 "phrases": [
-                  {
-                    "ja": "意志あるところに道は開ける。",
-                    "meaning": "意志あるところに道は開ける。",
-                    "target": "Volere è potere.",
-                    "kana": "ヴォレレ エ ポテレ"
-                  },
-                  {
-                    "ja": "遅くなっても、やらないよりはまし。",
-                    "meaning": "遅くなっても、やらないよりはまし。",
-                    "target": "Meglio tardi che mai.",
-                    "kana": "メリオ タルディ ケ マイ"
-                  },
-                  {
-                    "ja": "言葉より行動が大切。",
-                    "meaning": "言葉より行動が大切。",
-                    "target": "I fatti contano più delle parole.",
-                    "kana": "イ ファッティ コンタノ ピュ デッレ パロレ"
-                  },
-                  {
-                    "ja": "どんな困難にも、希望の光はある。",
-                    "meaning": "どんな悪いことにも、何か良い面がある。",
-                    "target": "Non tutto il male viene per nuocere.",
-                    "kana": "ノン トット イル マレ ヴィエネ ペル ヌオーチェレ"
-                  },
-                  {
-                    "ja": "人は見かけによらない。",
-                    "meaning": "見た目だけで判断してはいけない。",
-                    "target": "Non giudicare un libro dalla copertina.",
-                    "kana": "ノン ジュディカレ ウン リブロ ダッラ コペルティーナ"
-                  },
-                  {
-                    "ja": "早起きは三文の徳。",
-                    "meaning": "早起きする人は得をする。",
-                    "target": "Il mattino ha l'oro in bocca.",
-                    "kana": "イル マッティーノ ア ロロ イン ボッカ"
-                  },
-                  {
-                    "ja": "継続は力なり。",
-                    "meaning": "練習を重ねれば上達する。",
-                    "target": "La pratica rende perfetti.",
-                    "kana": "ラ プラティカ レンデ ペルフェッティ"
-                  },
-                  {
-                    "ja": "最後まで勝負はわからない。",
-                    "meaning": "最後まで何が起こるかわからない。",
-                    "target": "Non è finita finché non è finita.",
-                    "kana": "ノン エ フィニータ フィンケ ノン エ フィニータ"
-                  },
-                  {
-                    "ja": "無限の彼方へ、さあ行くぞ！",
-                    "meaning": "無限の彼方へ！",
-                    "source": "映画『トイ・ストーリー』のバズ・ライトイヤーの決め台詞。",
-                    "target": "Verso l'infinito e oltre!",
-                    "kana": "ヴェルソ リンフィニート エ オルトレ"
-                  },
-                  {
-                    "ja": "フォースとともにあらんことを。",
-                    "meaning": "フォースとともにあらんことを。",
-                    "source": "映画『スター・ウォーズ』シリーズ。",
-                    "target": "Che la Forza sia con te.",
-                    "kana": "ケ ラ フォーザ シア コン テ"
-                  }
+                  { "ja": "こんにちは / やあ", "target": "Ciao", "kana": "チャオ" }
                 ]
               }
             }
