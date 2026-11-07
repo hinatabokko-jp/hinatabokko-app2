@@ -491,7 +491,7 @@ const phraseData = {
           { "ja": "遅くなっても、やらないよりはまし。", "meaning": "スペインのことわざ", "target": "Más vale tarde que nunca.", "kana": "マス バレ タルデ ケ ヌンカ", "enText": "Better late than never." },
           { "ja": "言葉より行動が大切。", "meaning": "スペイン語圏のことわざ", "target": "Obras son amores y no buenas razones.", "kana": "オブラス ソン アモレス", "enText": "Actions speak louder than words." },
           { "ja": "どんな困難にも、希望の光はある。", "meaning": "スペインのことわざ", "target": "No hay mal que por bien no venga.", "kana": "ノ ハイ マル ケ ポル ビエン ノ ベンガ", "enText": "Every cloud has a silver lining." },
-          { "ja": "人は見かけによらない。", "meaning": "スペインのことわざ",++  { "ja": "人は見かけによらない。", "meaning": "スペインのことわざ", "target": "El hábito no hace al monje.", "kana": "エル アビト ノ アセ アル モンヘ", "enText": "Don't judge a book by its cover." },
+          { "ja": "人は見かけによらない。", "meaning": "スペインのことわざ", "target": "El hábito no hace al monje.", "kana": "エル アビト ノ アセ アル モンヘ", "enText": "Don't judge a book by its cover." },
           { "ja": "早起きは三文の徳。", "meaning": "スペインのことわざ", "target": "A quien madruga, Dios le ayuda.", "kana": "ア キエン マドルガ ディオス レ アジュダ", "enText": "The early bird catches the worm." },
           { "ja": "継続は力なり。", "meaning": "スペイン語圏のことわざ", "target": "La práctica hace al maestro.", "kana": "ラ プラティカ アセ アル マエストロ", "enText": "Practice makes perfect." },
           { "ja": "最後まで勝負はわからない。", "meaning": "スペインのことわざ", "target": "Hasta el rabo todo es toro.", "kana": "アスタ エル ラボ トド エス トロ", "enText": "It's not over until it's over." },
@@ -779,7 +779,7 @@ const phraseData = {
           { "ja": "継続は力なり。", "meaning": "イタリアのことわざ", "target": "La pratica rende perfetti.", "kana": "ラ プラティカ レンデ ペルフェッティ", "enText": "Practice makes perfect." },
           { "ja": "最後まで勝負はわからない。", "meaning": "イタリアのことわざ", "target": "Non è finita finché non è finita.", "kana": "ノン エ フィニータ フィンケ", "enText": "It's not over until it's over." },
           { "ja": "無限の彼方へ、さあ行くぞ！", "meaning": "映画『トイ・ストーリー』(アメリカ)", "source": "バズ・ライトイヤー", "target": "Verso l'infinito e oltre!", "kana": "ヴェルソ リンフィニート エ オルトレ", "enText": "To infinity and beyond!" },
-          { "ja": "フォースとともにあらんことを。", "meaning": "映画『スター・ウォーズ』(アメリカ)", "source": "名台詞", "target": "Che la Forza sia con te.", "kana": "ケ ラ フォーザ シア コン テ", "enText": "May the Force be with you." }
+          { "ja": "フォースとともにあらんことを。", "meaning": "映画『スター・ウォーズ』(アメリカ)", "source": "名台詞", "target": "Que la Forza sia con te.", "kana": "ケ ラ フォーザ シア コン テ", "enText": "May the Force be with you." }
         ]
       },
       "cafe_service": {
