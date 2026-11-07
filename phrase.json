@@ -882,6 +882,16 @@
             "ja": "だいじょうぶだよ！",
             "target": "It's okay!",
             "kana": "イッツ オッケー"
+          },
+          {
+            "ja": "うん、そうだよ！",
+            "target": "Yeah, that's right!",
+            "kana": "ヤァ ダッツ ライト"
+          },
+          {
+            "ja": "ううん、ちがうよ！",
+            "target": "Nope, that's not it!",
+            "kana": "ノープ ダッツ ノット イット"
           }
         ]
       },
@@ -1910,14 +1920,24 @@
         "icon": "fa-child",
         "phrases": [
           {
-            "ja": "一緒に遊ぼう！",
-            "target": "¡Vamos a jugar juntos! (男性) / ¡Vamos a jugar juntas! (女性)",
-            "kana": "バモス ア フガル フントス / フンタス"
+            "ja": "一緒に遊ぼう！ (男性が話す場合)",
+            "target": "¡Vamos a jugar juntos!",
+            "kana": "バモス ア フガル フントス"
           },
           {
-            "ja": "一緒に行こう！",
-            "target": "¡Vamos juntos! (男性) / ¡Vamos juntas! (女性)",
-            "kana": "バモス フントス / フンタス"
+            "ja": "一緒に遊ぼう！ (女性が話す場合)",
+            "target": "¡Vamos a jugar juntas!",
+            "kana": "フンタス"
+          },
+          {
+            "ja": "一緒に行こう！ (男性が話す場合)",
+            "target": "¡Vamos juntos!",
+            "kana": "バモス フントス"
+          },
+          {
+            "ja": "一緒に行こう！ (女性が話す場合)",
+            "target": "¡Vamos juntas!",
+            "kana": "フンタス"
           },
           {
             "ja": "私も入れて！",
@@ -1996,9 +2016,14 @@
             "kana": "エスト エス ミオ"
           },
           {
-            "ja": "もうおなかいっぱい！",
-            "target": "¡Estoy lleno! (男性) / ¡Estoy llena! (女性)",
-            "kana": "エストイ ジェノ / ジェナ"
+            "ja": "もうおなかいっぱい！ (男性が話す場合)",
+            "target": "¡Estoy lleno!",
+            "kana": "エストイ ジェノ"
+          },
+          {
+            "ja": "もうおなかいっぱい！ (女性が話す場合)",
+            "target": "¡Estoy llena!",
+            "kana": "ジェナ"
           },
           {
             "ja": "眠くなっちゃった。",
@@ -2014,6 +2039,16 @@
             "ja": "だいじょうぶだよ！",
             "target": "¡No pasa nada!",
             "kana": "ノ パサ ナダ"
+          },
+          {
+            "ja": "うん、そうだよ！",
+            "target": "¡Sí, eso es!",
+            "kana": "シ エソ エス"
+          },
+          {
+            "ja": "ううん、ちがうよ！",
+            "target": "¡No, eso no!",
+            "kana": "ノ エソ ノ"
           }
         ]
       },
@@ -2022,9 +2057,14 @@
         "icon": "fa-coffee",
         "phrases": [
           {
-            "ja": "いらっしゃいませ！",
-            "target": "¡Hola! ¡Bienvenido! (男性) / ¡Bienvenida! (女性)",
-            "kana": "オラ ビエンベニド / ビエンベニダ"
+            "ja": "いらっしゃいませ！ (男性に対して)",
+            "target": "¡Hola! ¡Bienvenido!",
+            "kana": "オラ ビエンベニド"
+          },
+          {
+            "ja": "いらっしゃいませ！ (女性に対して)",
+            "target": "¡Bienvenida!",
+            "kana": "ビエンベニダ"
           },
           {
             "ja": "ご注文はお決まりですか？",
@@ -2044,7 +2084,7 @@
           {
             "ja": "ミルクの種類はどうされますか？",
             "target": "¿Qué tipo de leche prefiere?",
-            "kana": "ケ ティポ デ レチェ Префиere"
+            "kana": "ケ ティポ デ レチェ Преフィエレ"
           },
           {
             "ja": "ホットとアイス、どちらになさいますか？",
@@ -2123,9 +2163,14 @@
             "kana": "プエデ パガール アキ"
           },
           {
-            "ja": "またお越しくださいませ。",
-            "target": "¡Esperamos volver a verle! (男性) / ¡Esperamos volver a verla! (女性)",
-            "kana": "エスペラモス ボルベル ア ベールレ / ベールラ"
+            "ja": "またお越しくださいませ。 (男性に対して)",
+            "target": "¡Esperamos volver a verle!",
+            "kana": "エスペラモス ボルベル ア ベールレ"
+          },
+          {
+            "ja": "またお越しくださいませ。 (女性に対して)",
+            "target": "¡Esperamos volver a verla!",
+            "kana": "ベールラ"
           }
         ]
       },
@@ -2230,14 +2275,24 @@
             "kana": "テン クイドーダ デ ケ ノ セ ケメ"
           },
           {
-            "ja": "味見してみて。",
-            "target": "Pruébalo. (男性) / Pruébala. (女性)",
-            "kana": "プルエバロ / プルエバラ"
+            "ja": "味見してみて。 (男性が話す場合)",
+            "target": "Pruébalo.",
+            "kana": "プルエバロ"
           },
           {
-            "ja": "さあ、できあがり！",
-            "target": "¡Y ya está listo! (男性) / ¡Y ya está lista! (女性)",
-            "kana": "イ ヤ エスタ リスト / リスタ"
+            "ja": "味見してみて。 (女性が話す場合)",
+            "target": "Pruébala.",
+            "kana": "プルエバラ"
+          },
+          {
+            "ja": "さあ、できあがり！ (男性が話す場合)",
+            "target": "¡Y ya está listo!",
+            "kana": "イ ヤ エスタ リスト"
+          },
+          {
+            "ja": "さあ、できあがり！ (女性が話す場合)",
+            "target": "¡Y ya está lista!",
+            "kana": "リスタ"
           }
         ]
       }
@@ -2628,9 +2683,14 @@
             "kana": "アッテント"
           },
           {
-            "ja": "ありがとう、助かったよ。",
+            "ja": "ありがとう、助かったよ。 (男性)",
             "target": "Grazie, mi sei stato/a di grande aiuto.",
-            "kana": "グラツィエ ミ セイ スタート / ア ディ グランデ アユート"
+            "kana": "グラツィエ ミ セイ スタート"
+          },
+          {
+            "ja": "ありがとう、助かったよ。 (女性)",
+            "target": "Grazie, mi sei stato/a di grande aiuto.",
+            "kana": "ア ディ グランデ アユート"
           },
           {
             "ja": "どういたしまして。",
@@ -2842,7 +2902,7 @@
           },
           {
             "ja": "信号を渡ったところにあります。",
-            "target": "Si trova proprio dall'altra parte, dopo il semaforo.",
+            "target": "Si trova proprio dall'altra parte, dopo il semafaro.",
             "kana": "シ トロヴァ プロプロ ダλλ'アルトラ パルテ ドポ イル セマフォロ"
           },
           {
@@ -2939,7 +2999,7 @@
           },
           {
             "ja": "ゆっくりでいいよ。焦らなくていいからね。",
-            "target": "Fai con calma. Non c'è fretta.",
+            "target": "Fai con calma. Non c me fretta.",
             "kana": "ファイ コン カルマ ノン チェ フレッタ"
           },
           {
@@ -3097,9 +3157,14 @@
             "kana": "ファッチャモロ ウンアルトラ ヴォルタ"
           },
           {
-            "ja": "今日も楽しかったね！",
-            "target": "Anche oggi ci siamo divertiti! (男性・混合) / Anche oggi ci siamo divertite! (女性)",
-            "kana": "アンケ オッジ チ シアモ ディヴェルティティ / ディヴェルティテ"
+            "ja": "今日も楽しかったね！ (男性・混合)",
+            "target": "Anche oggi ci siamo divertiti!",
+            "kana": "アンケ オッジ チ シアモ ディヴェルティティ"
+          },
+          {
+            "ja": "今日も楽しかったね！ (女性)",
+            "target": "Anche oggi ci siamo divertite!",
+            "kana": "アンケ オッジ チ シアモ ディヴェルティテ"
           }
         ]
       },
@@ -3134,13 +3199,18 @@
           },
           {
             "ja": "これ、私の！",
-            "target": "Questo è mio! (男性・女性共通)",
+            "target": "Questo è mio!",
             "kana": "クエスト エ ミオ"
           },
           {
-            "ja": "もうおなかいっぱい！",
-            "target": "Sono pieno! (男性) / Sono piena! (女性)",
-            "kana": "ソノ ピエノ / ピエナ"
+            "ja": "もうおなかいっぱい！ (男性)",
+            "target": "Sono pieno!",
+            "kana": "ソノ ピエノ"
+          },
+          {
+            "ja": "もうおなかいっぱい！ (女性)",
+            "target": "Sono piena!",
+            "kana": "ソノ ピエナ"
           },
           {
             "ja": "眠くなっちゃった。",
@@ -3156,6 +3226,16 @@
             "ja": "だいじょうぶだよ！",
             "target": "Non ti preoccupare!",
             "kana": "ノン ティ プレオックパレ"
+          },
+          {
+            "ja": "うん、そうだよ！",
+            "target": "Sì, è così!",
+            "kana": "シ エ コジ"
+          },
+          {
+            "ja": "ううん、ちがうよ！",
+            "target": "No, non è così!",
+            "kana": "ノ ノン エ コジ"
           }
         ]
       },
@@ -3164,9 +3244,14 @@
         "icon": "fa-coffee",
         "phrases": [
           {
-            "ja": "いらっしゃいませ！",
-            "target": "Buongiorno! Benvenuto! (男性) / Benvenuta! (女性)",
-            "kana": "ボンジョルノ ベンヴェヌト / ベンヴェヌタ"
+            "ja": "いらっしゃいませ！ (男性に対して)",
+            "target": "Buongiorno! Benvenuto!",
+            "kana": "ボンジョルノ ベンヴェヌト"
+          },
+          {
+            "ja": "いらっしゃいませ！ (女性に対して)",
+            "target": "Buongiorno! Benvenuta!",
+            "kana": "ボンジョルノ ベンヴェヌタ"
           },
           {
             "ja": "ご注文はお決まりですか？",
@@ -3372,14 +3457,24 @@
             "kana": "アテンツィオーネ ア ノン ブルチャルロ"
           },
           {
-            "ja": "味見してみて。",
-            "target": "Assaggialo. (男性) / Assaggiala. (女性)",
-            "kana": "アッサッジャロ / アッサッジャラ"
+            "ja": "味見してみて。 (男性が話す場合)",
+            "target": "Assaggialo.",
+            "kana": "アッサッジャロ"
           },
           {
-            "ja": "さあ、できあがり！",
-            "target": "Ed è pronto! (男性) / Ed è pronta! (女性)",
-            "kana": "エド エ プロント / プロンタ"
+            "ja": "味見してみて。 (女性が話す場合)",
+            "target": "Assaggiala.",
+            "kana": "アッサッジャラ"
+          },
+          {
+            "ja": "さあ、できあがり！ (男性)",
+            "target": "Ed è pronto!",
+            "kana": "エド エ プロント"
+          },
+          {
+            "ja": "さあ、できあがり！ (女性)",
+            "target": "Ed è pronta!",
+            "kana": "エド エ プロンタ"
           }
         ]
       }
