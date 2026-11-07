@@ -15,6 +15,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
 
+    <!-- 外部データファイルの読み込み -->
+    <script src="phrases.js"></script>
+
     <style>
         body {
             font-family: 'Zen Maru Gothic', 'Plus Jakarta Sans', sans-serif;
@@ -262,9 +265,8 @@
 
     </main>
 
-    <!-- JavaScript Data and Logic -->
+    <!-- JavaScript Application Logic -->
     <script>
-        let phraseData = null;
         let currentLang = 'en';
         let currentCategoryKey = null;
         let currentPhraseIndex = 0;
@@ -305,22 +307,14 @@
             document.getElementById('browser-warning').classList.remove('hidden');
         }
 
-        // Initialize App by loading phrase.json
-        window.onload = async () => {
-            try {
-                const response = await fetch('phrase.json');
-                if (!response.ok) throw new Error('Network response was not ok');
-                phraseData = await response.json();
-            } catch (error) {
-                console.warn("外部JSONの読み込みに失敗したため、内蔵データを使用します。", error);
-                phraseData = embeddedPhraseData;
-            }
+        // Initialize App
+        window.onload = () => {
             renderCategoryGrid();
         };
 
-        // Switch Language
+        // Switch Language (保持したまま他言語へ切り替え)
         function switchLanguage(lang) {
-            if (!phraseData) return;
+            if (typeof phraseData === 'undefined') return;
             currentLang = lang;
             
             ['en', 'es', 'it'].forEach(l => {
@@ -332,14 +326,28 @@
                 }
             });
 
-            currentCategoryKey = null;
-            backToCategoryView();
-            renderCategoryGrid();
+            // 練習画面が開いている場合は、同じカテゴリーとフレーズインデックスを維持して再描画
+            if (!document.getElementById('practice-view').classList.contains('hidden') && currentCategoryKey) {
+                const categories = phraseData[currentLang].categories;
+                if (!categories[currentCategoryKey]) {
+                    currentCategoryKey = Object.keys(categories)[0];
+                    currentPhraseIndex = 0;
+                } else {
+                    const maxLen = categories[currentCategoryKey].phrases.length;
+                    if (currentPhraseIndex >= maxLen) {
+                        currentPhraseIndex = maxLen - 1;
+                    }
+                }
+                hideScoreCard();
+                updateCardDisplay();
+            } else {
+                renderCategoryGrid();
+            }
         }
 
-        // Render 2-column Category selection grid (初期表示)
+        // Render 2-column Category selection grid
         function renderCategoryGrid() {
-            if (!phraseData) return;
+            if (typeof phraseData === 'undefined') return;
             const gridContainer = document.getElementById('category-grid');
             gridContainer.innerHTML = '';
 
@@ -373,7 +381,6 @@
             currentCategoryKey = catKey;
             currentPhraseIndex = 0;
             
-            // Switch views
             document.getElementById('category-view').classList.add('hidden');
             document.getElementById('practice-view').classList.remove('hidden');
 
@@ -397,7 +404,7 @@
         }
 
         function updateCardDisplay() {
-            if (!phraseData || !currentCategoryKey) return;
+            if (typeof phraseData === 'undefined' || !currentCategoryKey) return;
             const phrase = getCurrentPhraseObject();
             const categoryName = phraseData[currentLang].categories[currentCategoryKey].name;
             const total = phraseData[currentLang].categories[currentCategoryKey].phrases.length;
@@ -406,18 +413,27 @@
             document.getElementById('phrase-counter').innerText = `${currentPhraseIndex + 1} / ${total}`;
             document.getElementById('phrase-ja').innerText = phrase.ja;
             
-            // 意味と出典の表示・非表示制御
+            // 意味と出典（または国名など）の表示・非表示制御
             const meaningEl = document.getElementById('phrase-meaning');
             if (phrase.meaning) {
-                meaningEl.innerText = `意味: ${phrase.meaning}`;
+                meaningEl.innerText = phrase.meaning; // ことわざ等の場合にはここを「～のことわざ」として表示
                 meaningEl.classList.remove('hidden');
             } else {
                 meaningEl.classList.add('hidden');
             }
 
             const sourceEl = document.getElementById('phrase-source');
+            let sourceText = "";
             if (phrase.source) {
-                sourceEl.innerText = `出典: ${phrase.source}`;
+                sourceText = `出典: ${phrase.source}`;
+            }
+            // スペイン語やイタリア語の場合に、日本語訳の他に英語も表示する要望に対応
+            if (currentLang !== 'en' && phrase.enText) {
+                sourceText = sourceText ? `${sourceText} / 英語: ${phrase.enText}` : `英語: ${phrase.enText}`;
+            }
+
+            if (sourceText) {
+                sourceEl.innerText = sourceText;
                 sourceEl.classList.remove('hidden');
             } else {
                 sourceEl.classList.add('hidden');
@@ -624,49 +640,6 @@
             utterance.lang = phraseData[currentLang].langCode;
             synth.speak(utterance);
         }
-
-        // フォールバック用内蔵データ
-        const embeddedPhraseData = {
-          "en": {
-            "name": "English",
-            "langCode": "en-US",
-            "categories": {
-              "greetings": {
-                "name": "挨拶・基本",
-                "icon": "fa-hand-wave",
-                "phrases": [
-                  { "ja": "こんにちは", "target": "Hello", "kana": "ハロー" }
-                ]
-              }
-            }
-          },
-          "es": {
-            "name": "Español",
-            "langCode": "es-ES",
-            "categories": {
-              "greetings": {
-                "name": "挨拶・基本",
-                "icon": "fa-hand-wave",
-                "phrases": [
-                  { "ja": "こんにちは", "target": "Hola", "kana": "オラ" }
-                ]
-              }
-            }
-          },
-          "it": {
-            "name": "Italiano",
-            "langCode": "it-IT",
-            "categories": {
-              "greetings": {
-                "name": "挨拶・基本",
-                "icon": "fa-hand-wave",
-                "phrases": [
-                  { "ja": "こんにちは / やあ", "target": "Ciao", "kana": "チャオ" }
-                ]
-              }
-            }
-          }
-        };
     </script>
 </body>
 </html>
