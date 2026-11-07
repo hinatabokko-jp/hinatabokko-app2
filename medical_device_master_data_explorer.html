@@ -90,39 +90,46 @@
 <body class="bg-dark-bg text-slate-200 font-sans min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
 
   <!-- Header / Navigation -->
-  <header class="glass-nav sticky top-0 z-30 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
-        <i class="ph-bold ph-database text-2xl text-white"></i>
+  <header class="glass-nav sticky top-0 z-30 px-3 sm:px-6 py-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-500 flex items-center justify-center shadow-lg shadow-brand-500/20 flex-shrink-0">
+          <i class="ph-bold ph-database text-2xl text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-slate-100 tracking-wide flex items-center gap-2 flex-wrap">
+            医療機器コードマスタ
+            <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-normal">統合ビューア</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden sm:block">CodeMaster_Integrated.csv データ検索・統合解析システム</p>
+        </div>
       </div>
-      <div>
-        <h1 class="text-base font-bold text-slate-100 tracking-wide flex items-center gap-2">
-          医療機器コードマスタ
-          <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-normal">統合ビューア</span>
-        </h1>
-        <p class="text-xs text-slate-400 hidden sm:block">CodeMaster_Integrated.csv データ検索・統合解析システム</p>
+      
+      <!-- Mobile status indicator -->
+      <div class="flex md:hidden items-center gap-1 px-2 py-1 rounded-lg text-[11px] bg-slate-800/80 border border-slate-700 text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-slate-400" id="mobileStatusDot"></span>
+        <span id="mobileStatusText">未読込</span>
       </div>
     </div>
 
-    <!-- Top Action Buttons -->
-    <div class="flex items-center space-x-2 sm:space-x-3">
-      <!-- Status Badge for Auto Load -->
-      <div id="loadStatusBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 border border-slate-700 text-slate-300">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="statusDot"></span>
-        <span id="statusText">CodeMaster_Integrated.csv 接続中...</span>
+    <!-- Top Action Buttons (Optimized for Mobile) -->
+    <div class="flex items-center justify-end flex-wrap gap-2 pt-2 md:pt-0 border-t border-slate-800/80 md:border-t-0">
+      <div id="loadStatusBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 border border-slate-700 text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-slate-400" id="statusDot"></span>
+        <span id="statusText">CSV未読込 (手動選択してください)</span>
       </div>
 
-      <button id="btnLoadSample" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 hover:text-white transition-all border border-slate-700">
+      <button id="btnLoadSample" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 hover:text-white transition-all border border-slate-700">
         <i class="ph-bold ph-magic-wand text-brand-400"></i>
         <span>サンプル表示</span>
       </button>
 
-      <button id="btnExportCSV" disabled class="disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-slate-800 hover:bg-brand-600 border border-slate-700 hover:border-brand-500 transition-all shadow-sm">
+      <button id="btnExportCSV" disabled class="disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-slate-800 hover:bg-brand-600 border border-slate-700 hover:border-brand-500 transition-all shadow-sm">
         <i class="ph-bold ph-download-simple"></i>
-        <span class="hidden sm:inline">絞り込み結果を</span>CSV出力
+        <span>CSV出力</span>
       </button>
 
-      <label for="csvFileInput" class="cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-gradient-to-r from-brand-400 to-accent-400 hover:brightness-110 shadow-lg shadow-brand-500/20 transition-all">
+      <label for="csvFileInput" class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-gradient-to-r from-brand-400 to-accent-400 hover:brightness-110 shadow-lg shadow-brand-500/20 transition-all">
         <i class="ph-bold ph-upload-simple"></i>
         <span>手動選択</span>
         <input type="file" id="csvFileInput" accept=".csv, .txt" class="hidden" />
@@ -130,7 +137,7 @@
     </div>
   </header>
 
-  <!-- Progress Bar Modal (進捗表示モーダル) -->
+  <!-- Progress Bar Modal -->
   <div id="progressModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-all duration-300">
     <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-slate-700/80 shadow-2xl relative">
       <div class="flex items-center gap-3 mb-4">
@@ -169,20 +176,6 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-[1920px] w-full mx-auto p-4 sm:p-6 flex flex-col gap-5">
 
-    <!-- Auto Load Warning / Fallback Notice -->
-    <div id="autoLoadNotice" class="hidden glass-card rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <i class="ph-bold ph-warning text-lg text-amber-400 flex-shrink-0"></i>
-        <div>
-          <strong class="font-bold text-amber-300">CodeMaster_Integrated.csv の自動読み込みがスキップされました。</strong>
-          <span class="text-slate-300">（ローカル直接起動 `file://` やファイル未配置の場合、手動でCSVを選択してください）</span>
-        </div>
-      </div>
-      <button id="btnCloseNotice" class="text-slate-400 hover:text-slate-200 p-1">
-        <i class="ph-bold ph-x"></i>
-      </button>
-    </div>
-
     <!-- Upload Dropzone -->
     <section id="dropZone" class="glass-card rounded-2xl p-6 text-center border-2 border-dashed border-slate-700 hover:border-brand-400/60 transition-all group cursor-pointer">
       <input type="file" id="dropZoneFileInput" accept=".csv, .txt" class="hidden" />
@@ -206,13 +199,13 @@
       
       <!-- Top Row: Main Search & Quick Stats -->
       <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <!-- Global Search Input -->
+        <!-- Global Search Input with Space-separated multi-keyword support -->
         <div class="relative flex-1">
           <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
           <input 
             type="text" 
             id="globalSearch" 
-            placeholder="商品名、JANコード、医事コード、機能区分コード、製造販売業者名で全文検索..." 
+            placeholder="商品名やコード（スペース区切りで複数条件AND検索: 例 テルモ バルーン）..." 
             class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-all"
           />
           <button id="btnClearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 hidden">
@@ -453,8 +446,7 @@
         medicalCode: '',
         jmdn: ''
       },
-      selectedRow: null,
-      searchDebounceTimer: null
+      selectedRow: null
     };
 
     // DOM Elements
@@ -486,8 +478,8 @@
       loadStatusBadge: document.getElementById('loadStatusBadge'),
       statusDot: document.getElementById('statusDot'),
       statusText: document.getElementById('statusText'),
-      autoLoadNotice: document.getElementById('autoLoadNotice'),
-      btnCloseNotice: document.getElementById('btnCloseNotice'),
+      mobileStatusDot: document.getElementById('mobileStatusDot'),
+      mobileStatusText: document.getElementById('mobileStatusText'),
       // Filters
       filterRemanufactured: document.getElementById('filterRemanufactured'),
       filterManufacturer: document.getElementById('filterManufacturer'),
@@ -548,7 +540,6 @@
         elements.progressRecords.textContent = `処理件数: ${recordCount.toLocaleString()} 件`;
       }
 
-      // Calculate ETA
       const elapsedTime = (performance.now() - progressStartTime) / 1000;
       if (percent > 0 && percent < 100 && elapsedTime > 0.3) {
         const totalEstimatedTime = (elapsedTime / percent) * 100;
@@ -565,84 +556,9 @@
       }, 300);
     }
 
-    // --- Dynamic Fetch CSV with Stream Reader & Progress ---
-    async function autoFetchIntegratedCSV() {
-      elements.loadStatusBadge.classList.remove('hidden');
-      elements.statusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
-      elements.statusText.textContent = 'CodeMaster_Integrated.csv を接続中...';
-
-      try {
-        const response = await fetch('./CodeMaster_Integrated.csv', { cache: 'no-cache' });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const contentLength = response.headers.get('content-length');
-        const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-
-        showProgressModal('CodeMaster_Integrated.csv を取得中...', 'サーバーからデータをダウンロードしています');
-
-        const reader = response.body.getReader();
-        let loadedBytes = 0;
-        const chunks = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          chunks.push(value);
-          loadedBytes += value.length;
-          updateProgressUI(loadedBytes, totalBytes);
-        }
-
-        elements.progressTitle.textContent = 'データを解析中...';
-        elements.progressSubTitle.textContent = 'CSV構造を高速パースしています';
-
-        // Combine chunks into single ArrayBuffer
-        const allChunks = new Uint8Array(loadedBytes);
-        let position = 0;
-        for (const chunk of chunks) {
-          allChunks.set(chunk, position);
-          position += chunk.length;
-        }
-
-        const decoder = new TextDecoder('utf-8');
-        const csvText = decoder.decode(allChunks);
-
-        if (!csvText || csvText.trim().length === 0) {
-          throw new Error('CSVファイルが空です');
-        }
-
-        elements.statusDot.className = 'w-2 h-2 rounded-full bg-brand-400 animate-pulse';
-        elements.statusText.textContent = 'CSVデータ解析中...';
-
-        elements.dropZone.classList.add('hidden');
-        elements.filterControls.classList.remove('hidden');
-        elements.tableContainer.classList.remove('hidden');
-
-        // Parse with PapaParse chunking for streaming progress
-        parseCSVStringWithProgress(csvText, totalBytes, 'CodeMaster_Integrated.csv');
-
-      } catch (error) {
-        hideProgressModal();
-        handleAutoFetchError(error.message);
-      }
-    }
-
-    function handleAutoFetchError(msg) {
-      elements.statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
-      elements.statusText.textContent = '自動読込待機中';
-      elements.autoLoadNotice.classList.remove('hidden');
-    }
-
     // --- Process File via FileReader & PapaParse (Manual Upload) ---
     function processFile(file) {
       showProgressModal(`${file.name} を読み込み中...`, 'ローカルファイルをロードしています');
-      
-      elements.dropZone.classList.add('hidden');
-      elements.filterControls.classList.remove('hidden');
-      elements.tableContainer.classList.remove('hidden');
 
       const totalBytes = file.size;
       let parsedRows = [];
@@ -652,43 +568,6 @@
         skipEmptyLines: true,
         dynamicTyping: false,
         encoding: 'UTF-8',
-        chunkSize: 1024 * 1024 * 2, // 2MB Chunking for UI updates
-        chunk: function(results, parser) {
-          if (results.data) {
-            parsedRows.push(...results.data);
-            const estimatedByteProgress = Math.min(totalBytes, parsedRows.length * 120); // Estimation per row
-            updateProgressUI(estimatedByteProgress, totalBytes, parsedRows.length);
-          }
-        },
-        complete: function() {
-          updateProgressUI(totalBytes, totalBytes, parsedRows.length);
-          setTimeout(() => {
-            if (parsedRows.length > 0) {
-              parseCSVData(parsedRows);
-              elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-              elements.statusText.textContent = `手動読込完了 (${file.name})`;
-              showToast(`${parsedRows.length.toLocaleString()} 件のデータを正常に読み込みました`);
-            } else {
-              showToast('CSVファイル内にデータが存在しません', true);
-            }
-            hideProgressModal();
-          }, 100);
-        },
-        error: function(err) {
-          hideProgressModal();
-          showToast(`エラー: ${err.message}`, true);
-        }
-      });
-    }
-
-    // Helper for parsing raw string text with chunk progress
-    function parseCSVStringWithProgress(csvText, totalBytes, fileName) {
-      let parsedRows = [];
-
-      Papa.parse(csvText, {
-        header: false,
-        skipEmptyLines: true,
-        dynamicTyping: false,
         chunkSize: 1024 * 1024 * 2,
         chunk: function(results) {
           if (results.data) {
@@ -702,16 +581,25 @@
           setTimeout(() => {
             if (parsedRows.length > 0) {
               parseCSVData(parsedRows);
+              elements.dropZone.classList.add('hidden');
+              elements.filterControls.classList.remove('hidden');
+              elements.tableContainer.classList.remove('hidden');
+
               elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-              elements.statusText.textContent = `自動読込完了 (${parsedRows.length.toLocaleString()}行)`;
-              showToast(`${fileName} (${parsedRows.length.toLocaleString()} 件) を反映しました`);
+              elements.statusText.textContent = `${file.name} 読込完了`;
+              elements.mobileStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+              elements.mobileStatusText.textContent = '読込完了';
+
+              showToast(`${parsedRows.length.toLocaleString()} 件のデータを正常に読み込みました`);
+            } else {
+              showToast('CSVファイル内にデータが存在しません', true);
             }
             hideProgressModal();
           }, 100);
         },
         error: function(err) {
           hideProgressModal();
-          handleAutoFetchError(err.message);
+          showToast(`エラー: ${err.message}`, true);
         }
       });
     }
@@ -770,9 +658,6 @@
         e.stopPropagation();
         loadSampleData();
       });
-      elements.btnCloseNotice?.addEventListener('click', () => {
-        elements.autoLoadNotice.classList.add('hidden');
-      });
     }
 
     // --- Sample Data Loader ---
@@ -792,8 +677,12 @@
         elements.dropZone.classList.add('hidden');
         elements.filterControls.classList.remove('hidden');
         elements.tableContainer.classList.remove('hidden');
+
         elements.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
         elements.statusText.textContent = 'サンプルデータ表示中';
+        elements.mobileStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        elements.mobileStatusText.textContent = 'サンプル表示中';
+
         showToast('サンプルデータをロードしました');
         hideProgressModal();
       }, 400);
@@ -803,7 +692,7 @@
     function parseCSVData(rows) {
       let startIdx = 0;
       if (rows.length > 0 && isNaN(Number(rows[0][0]))) {
-        startIdx = 1; // Header detected
+        startIdx = 1;
       }
 
       state.rawData = [];
@@ -835,29 +724,38 @@
       renderTable();
     }
 
-    // --- Search & Debounced Filtering Engine ---
+    // --- Search & Multi-Term Space-Separated Filtering Engine (AND Search) ---
     function applyFilters() {
-      const query = state.searchQuery.toLowerCase().trim();
+      const rawQuery = state.searchQuery.trim();
+      // Split by spaces (both full-width and half-width spaces) into multiple keywords
+      const keywords = rawQuery ? rawQuery.split(/[\s　]+/).filter(k => k.length > 0) : [];
+      
       const reman = state.filters.remanufactured;
       const mfg = state.filters.manufacturer.toLowerCase().trim();
       const func = state.filters.funcCategory.toLowerCase().trim();
       const med = state.filters.medicalCode.toLowerCase().trim();
 
       state.filteredData = state.rawData.filter(item => {
-        if (query) {
-          const matchGlobal = 
-            item.productName.toLowerCase().includes(query) ||
-            item.jan.includes(query) ||
-            item.gtin14.includes(query) ||
-            item.medicalCode.toLowerCase().includes(query) ||
-            item.funcCategory.toLowerCase().includes(query) ||
-            item.manufacturer.toLowerCase().includes(query) ||
-            item.jmdn.includes(query) ||
-            item.lineNo.includes(query);
-          if (!matchGlobal) return false;
+        // Multi-keyword AND search across all fields
+        if (keywords.length > 0) {
+          const matchAllKeywords = keywords.every(kw => {
+            const lkw = kw.toLowerCase();
+            return (
+              item.productName.toLowerCase().includes(lkw) ||
+              item.jan.toLowerCase().includes(lkw) ||
+              item.gtin14.toLowerCase().includes(lkw) ||
+              item.medicalCode.toLowerCase().includes(lkw) ||
+              item.funcCategory.toLowerCase().includes(lkw) ||
+              item.manufacturer.toLowerCase().includes(lkw) ||
+              item.jmdn.toLowerCase().includes(lkw) ||
+              item.lineNo.toLowerCase().includes(lkw) ||
+              item.memo.toLowerCase().includes(lkw)
+            );
+          });
+          if (!matchAllKeywords) return false;
         }
 
-        if (reman !== '' && item.remanufactured !== reman) return false;
+        if (remanufacturedFilterMatch(item.remanufactured, reman) === false) return false;
         if (mfg && !item.manufacturer.toLowerCase().includes(mfg)) return false;
         if (func && !item.funcCategory.toLowerCase().includes(func)) return false;
         if (med && !item.medicalCode.toLowerCase().includes(med)) return false;
@@ -870,16 +768,25 @@
       renderTable();
     }
 
+    function remanufacturedFilterMatch(itemVal, filterVal) {
+      if (filterVal === '') return true;
+      return itemVal === filterVal;
+    }
+
     function updateStats() {
       elements.statTotalCount.textContent = state.rawData.length.toLocaleString();
       elements.statFilteredCount.textContent = state.filteredData.length.toLocaleString();
     }
 
-    // --- Highlight Text Utility ---
-    function highlightText(text, query) {
-      if (!query || !text) return text || '';
-      const escQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(${escQuery})`, 'gi');
+    // --- Highlight Text Utility (Supports multiple space-separated terms) ---
+    function highlightText(text, rawQuery) {
+      if (!rawQuery || !text) return text || '';
+      const keywords = rawQuery.split(/[\s　]+/).filter(k => k.length > 0);
+      if (keywords.length === 0) return text;
+
+      // Escape regex special chars and join with '|' for highlighting all matched terms
+      const escapedKw = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const regex = new RegExp(`(${escapedKw.join('|')})`, 'gi');
       return text.replace(regex, '<mark class="highlight-match">$1</mark>');
     }
 
@@ -1151,10 +1058,9 @@
       elements.btnExportCSV.addEventListener('click', exportFilteredCSV);
     }
 
-    // Initialize Application
+    // Initialize Application (Automatic fetch removed)
     window.addEventListener('DOMContentLoaded', () => {
       initEvents();
-      autoFetchIntegratedCSV();
     });
   </script>
 </body>
