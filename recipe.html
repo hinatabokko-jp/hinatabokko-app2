@@ -133,6 +133,7 @@ select{color-scheme:dark}
 <header class="topbar">
   <div class="brand">MY RECIPE BOOK<small>PERSONAL COOKING ARCHIVE</small></div>
   <div class="top-actions">
+    <button class="btn ghost" id="return-entry-btn" title="あいことば入力画面に戻る" aria-label="あいことば入力画面に戻る" style="display:none">→</button>
     <button class="btn ghost desktop-only" id="backupBtn">BACKUP</button>
     <button class="btn ghost desktop-only" id="restoreBtn">RESTORE</button>
     <button class="btn ghost desktop-only" id="change-user-btn">LOCK</button>
@@ -268,7 +269,7 @@ let activeCategory='すべて', favoritesMode=false, pendingConfirm=null, curren
 const PASS_KEY='recipe_app_unlocked';
 
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(name+'View').classList.add('active');$('navHome').classList.toggle('active',name==='list');$('navNew').classList.toggle('active',name==='editor');window.scrollTo(0,0);}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(name+'View').classList.add('active');$('navHome').classList.toggle('active',name==='list');$('navNew').classList.toggle('active',name==='editor');$('return-entry-btn').style.display=name==='editor'?'inline-flex':'none';window.scrollTo(0,0);}
 function categoryOptions(){$('recipeCategory').innerHTML=CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join('');$('categoryFilters').innerHTML=['すべて',...CATEGORIES].map(c=>`<button class="chip ${c==='すべて'?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');}
 function card(r){const img=r.photo?`<img src="${r.photo}" alt="">`:`<div class="no-photo">RECIPE</div>`;return `<article class="recipe-card" data-open="${esc(r.id)}"><div class="card-image">${img}</div><div class="card-body"><div class="card-meta">${esc(r.category||'その他')}</div><h3 class="card-title">${esc(r.name)}</h3><div class="card-note">${esc((r.memo||r.body||'').replace(/\s+/g,' ').slice(0,75))}</div><div class="card-foot"><span>${r.time?esc(r.time+' MIN'):''} ${r.servings?' · '+esc(r.servings):''}</span><span class="star">${r.favorite?'★':''}</span></div></div></article>`;}
 function renderList(){let q=$('searchInput').value.trim().toLocaleLowerCase();let arr=recipes.filter(r=>(activeCategory==='すべて'||r.category===activeCategory)&&(!favoritesMode||r.favorite)&&(!q||[r.name,r.body,r.memo,r.category].join(' ').toLocaleLowerCase().includes(q)));const sort=$('sortSelect').value;arr.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'ja'):sort==='created'?(b.created||0)-(a.created||0):(b.updated||0)-(a.updated||0));$('countText').textContent=`${recipes.length} RECIPES IN YOUR COLLECTION`;$('recipeGrid').innerHTML=arr.length?arr.map(card).join(''):`<div class="empty"><strong>${recipes.length?'No recipes found':'A collection begins here.'}</strong>${recipes.length?'検索条件を変えてみてください。':'最初のレシピを登録してみましょう。'}</div>`;}
@@ -316,6 +317,7 @@ $('open-admin-login-modal').onclick=openAdminLogin;$('admin-login-submit').oncli
 $('admin-login-close-x').onclick=()=>$('admin-login-modal').classList.remove('show');$('admin-panel-close-x').onclick=()=>$('admin-panel-modal').classList.remove('show');$('admin-panel-close-btn').onclick=()=>$('admin-panel-modal').classList.remove('show');
 $('update-passcode-btn').onclick=updatePasscode;$('room-lock-toggle').onchange=e=>toggleRoomLock(e.target.checked);
 $('change-user-btn').onclick=()=>{localStorage.removeItem(PASS_KEY);sessionStorage.removeItem(PASS_KEY);$('pass-input').value='';showLock();};
+$('return-entry-btn').onclick=()=>{localStorage.removeItem(PASS_KEY);sessionStorage.removeItem(PASS_KEY);$('pass-input').value='';showLock();};
 
 (async()=>{try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.database();await auth.signInAnonymously();categoryOptions();const remembered=localStorage.getItem(PASS_KEY)==='true'||sessionStorage.getItem(PASS_KEY)==='true';if(remembered)await enterApp(true);else showLock();}catch(e){console.error('Firebase initialization error:',e);showLock();$('pass-error').textContent='Firebaseに接続できません。設定と通信状態を確認してください';}})();
 })();
