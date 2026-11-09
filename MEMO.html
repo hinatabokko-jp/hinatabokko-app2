@@ -1199,7 +1199,9 @@
           </div>
         </div>
         <div class="header-right-actions">
-          <!-- ギャラリーを開くボタン（指定されたURLへリンク） -->
+          <!-- ノートの絵文字ボタンを追加（月ごとの予定モーダルを開く） -->
+          <button id="monthly-checklist-modal-open-btn" class="btn-logout" title="月ごとの予定チェックリスト" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">📖</button>
+          <!-- ギャラリーを開くボタン -->
           <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/Gallery.html" class="btn-logout" title="ギャラリーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe; text-decoration: none;">🖼️</a>
           <button id="calendar-modal-open-btn" class="btn-logout" title="カレンダーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">📅</button>
           <button id="changeUserBtn" class="btn-logout">➡</button>
@@ -1220,6 +1222,31 @@
             <button id="send-btn" class="send-btn-style">送信</button>
           </footer>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 月ごとの予定チェックリスト用モーダル -->
+  <div id="monthly-checklist-modal-overlay" class="modal-overlay">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>📖</span> 月ごとの予定チェックリスト
+        </div>
+        <button id="monthly-checklist-modal-close-x" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" style="gap: 12px; max-height: 60vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <div class="section-title" style="margin-bottom: 0;">今月の確認項目</div>
+          <button id="monthly-reset-btn" class="secondary-btn" style="font-size: 0.75rem; color: #fb7185; border-color: rgba(244, 63, 94, 0.3);">すべてはずす</button>
+        </div>
+        <div id="monthly-checklist-container" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- チェックリスト項目はJavaScriptで動的に、または確実に初期化されて生成されます -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div></div>
+        <button id="monthly-checklist-close-btn" class="secondary-btn">閉じる</button>
       </div>
     </div>
   </div>
@@ -1583,6 +1610,120 @@
             }
           }
         }, true);
+      }
+    });
+  </script>
+
+  <!-- 月ごとの予定チェックリスト制御スクリプト -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const checklistItems = [
+        "スクリレで連絡する",
+        "学級担任に連絡する",
+        "ダスキンのお金をばあばに渡す",
+        "自治会費をばあばに渡す",
+        "前月分の使途報告をまとめる",
+        "チャレンジを見て漢字ドリルなどの問題を作成する",
+        "翌月分のピアノの月謝を用意する",
+        "翌月のピアノのレッスン日を決める",
+        "SAISONカード引落額確認18日",
+        "ペイペイカード引落額確認",
+        "口座の残高が足りるか確認",
+        "給与明細をプリントアウトする",
+        "翌月のカレンダーに予定を記入する"
+      ];
+
+      const modalOverlay = document.getElementById('monthly-checklist-modal-overlay');
+      const openBtn = document.getElementById('monthly-checklist-modal-open-btn');
+      const closeBtn = document.getElementById('monthly-checklist-modal-close-btn');
+      const closeXBtn = document.getElementById('monthly-checklist-modal-close-x');
+      const resetBtn = document.getElementById('monthly-reset-btn');
+      const container = document.getElementById('monthly-checklist-container');
+
+      const STORAGE_KEY = 'monthly_checklist_state_v1';
+
+      // チェックリストのHTML生成と状態の復元
+      function renderChecklist() {
+        let savedState = {};
+        try {
+          savedState = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        } catch(e) {
+          savedState = {};
+        }
+
+        container.innerHTML = '';
+        checklistItems.forEach((text, index) => {
+          const isChecked = !!savedState[index];
+          const itemWrapper = document.createElement('label');
+          itemWrapper.style.cssText = "display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 10px; cursor: pointer; transition: all 0.2s;";
+          
+          itemWrapper.onmouseover = () => itemWrapper.style.background = "rgba(168, 85, 247, 0.08)";
+          itemWrapper.onmouseout = () => itemWrapper.style.background = "rgba(255,255,255,0.03)";
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = isChecked;
+          checkbox.dataset.index = index;
+          checkbox.style.cssText = "width: 18px; height: 18px; accent-color: #ec4899; cursor: pointer; margin-top: 1px; border-radius: 4px; flex-shrink: 0;";
+
+          checkbox.addEventListener('change', (e) => {
+            let currentStates = {};
+            try {
+              currentStates = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            } catch(err) {
+              currentStates = {};
+            }
+            currentStates[index] = e.target.checked;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStates));
+            updateTextStyle(textSpan, e.target.checked);
+          });
+
+          const textSpan = document.createElement('span');
+          textSpan.textContent = text;
+          textSpan.style.cssText = "font-size: 0.9rem; line-height: 1.4; color: #f1f5f9; word-break: break-all; transition: all 0.2s;";
+          updateTextStyle(textSpan, isChecked);
+
+          itemWrapper.appendChild(checkbox);
+          itemWrapper.appendChild(textSpan);
+          container.appendChild(itemWrapper);
+        });
+      }
+
+      function updateTextStyle(span, checked) {
+        if (checked) {
+          span.style.textDecoration = 'line-through';
+          span.style.color = '#94a3b8';
+        } else {
+          span.style.textDecoration = 'none';
+          span.style.color = '#f1f5f9';
+        }
+      }
+
+      if (openBtn && modalOverlay) {
+        openBtn.addEventListener('click', () => {
+          renderChecklist();
+          modalOverlay.classList.add('active');
+        });
+      }
+
+      const closeModal = () => {
+        if (modalOverlay) modalOverlay.classList.remove('active');
+      };
+
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (closeXBtn) closeXBtn.addEventListener('click', closeModal);
+      if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) closeModal();
+        });
+      }
+
+      // すべてのチェックをはずすリセットボタン
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          localStorage.removeItem(STORAGE_KEY);
+          renderChecklist();
+        });
       }
     });
   </script>
