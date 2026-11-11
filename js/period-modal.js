@@ -1,15 +1,15 @@
-/* Luna Diary - 生理記録モーダル (Firebase連携版)
+/* Luna Diary - 生理記録モーダル (Realtime Database連携版)
  * 使い方:
  * <script type="module" src="js/period-modal.js"></script>
  * <button onclick="PeriodModal.open()">🐰</button>
  */
 import { db } from "./config.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 (() => {
   "use strict";
 
-  const FIRESTORE_DOC_KEY = "lunaDiary_period_records";
+  const DB_PATH = "settings/lunaDiary_period_records";
 
   const PROFILES = [
     { id: "ru", label: "る", icon: "🌷" },
@@ -78,18 +78,18 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/f
     return Math.round((b - a) / 86400000);
   }
 
-  // Firebaseからデータ読み込み
+  // Realtime Databaseからデータ読み込み
   async function loadData() {
     try {
       if (!db) return cachedData;
-      const docRef = doc(db, "settings", FIRESTORE_DOC_KEY);
-      const snapshot = await getDoc(docRef);
+      const dataRef = ref(db, DB_PATH);
+      const snapshot = await get(dataRef);
 
       if (!snapshot.exists()) {
         return { ru: [], hi: [] };
       }
 
-      const parsed = snapshot.data();
+      const parsed = snapshot.val();
       const clean = { ru: [], hi: [] };
 
       for (const profile of PROFILES) {
@@ -113,14 +113,14 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/f
     }
   }
 
-  // Firebaseへデータ保存
+  // Realtime Databaseへデータ保存
   async function saveData(data) {
     try {
       if (!db) {
-        throw new Error("Firestore接続が見つかりません。");
+        throw new Error("Database接続が見つかりません。");
       }
-      const docRef = doc(db, "settings", FIRESTORE_DOC_KEY);
-      await setDoc(docRef, data);
+      const dataRef = ref(db, DB_PATH);
+      await set(dataRef, data);
       cachedData = data;
       return true;
 
@@ -659,7 +659,7 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/f
         </div>
 
         <p class="luna-period-footnote">
-          記録はクラウド（Firebase）に安全に保存されます。
+          記録はFirebase（Realtime Database）に安全に保存されます。
           端末を変更してもデータが同期されます。
           予測日は目安であり、周期が安定していない時期は
           大きく変動することがあります。
