@@ -1199,6 +1199,8 @@
           </div>
         </div>
         <div class="header-right-actions">
+          <!-- 生理の記録をするモーダルを表示するためのボタン（ウサギの絵文字） -->
+          <button id="period-modal-open-btn" class="btn-logout" title="生理管理" onclick="PeriodModal.open()" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">🐰</button>
           <!-- ノートの絵文字ボタンを追加（月ごとの予定モーダルを開く） -->
           <button id="monthly-checklist-modal-open-btn" class="btn-logout" title="月ごとの予定チェックリスト" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">📖</button>
           <!-- ギャラリーを開くボタン -->
@@ -1636,7 +1638,7 @@
 
       const modalOverlay = document.getElementById('monthly-checklist-modal-overlay');
       const openBtn = document.getElementById('monthly-checklist-modal-open-btn');
-      const closeBtn = document.getElementById('monthly-checklist-modal-close-btn');
+      const closeBtn = document.getElementById('monthly-checklist-close-btn');
       const closeXBtn = document.getElementById('monthly-checklist-modal-close-x');
       const resetBtn = document.getElementById('monthly-reset-btn');
       const container = document.getElementById('monthly-checklist-container');
@@ -1747,5 +1749,7 @@
       userSelect: document.getElementById('user-select') || dummyUserSelect 
     });
   </script>
+  <!-- 生理記録モーダル用スクリプト -->
+  <script type="module" src="js/period-modal.js"></script>
 </body>
 </html>
