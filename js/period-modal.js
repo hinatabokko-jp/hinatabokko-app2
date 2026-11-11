@@ -1,8 +1,4 @@
-/* Luna Diary - 生理記録モーダル (Realtime Database連携版)
- * 使い方:
- * <script type="module" src="js/period-modal.js"></script>
- * <button onclick="PeriodModal.open()">🐰</button>
- */
+/* Luna Diary - 生理記録モーダル (Realtime Database完全対応版) */
 import { db } from "./config.js";
 import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -659,7 +655,7 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         </div>
 
         <p class="luna-period-footnote">
-          記録はFirebase（Realtime Database）に安全に保存されます。
+          記録はRealtime Databaseに安全に保存されます。
           端末を変更してもデータが同期されます。
           予測日は目安であり、周期が安定していない時期は
           大きく変動することがあります。
