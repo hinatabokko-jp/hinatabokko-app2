@@ -913,136 +913,259 @@
                 return;
             }
 
-            // 2. 内蔵DBにない漢字の場合、無料の公開漢字API (kanjiapi.dev) からリアルタイム取得を試みる
+            // 2. 内蔵DBにない漢字の場合、Gemini API と kanjiapi.dev を組み合わせて日本語の漢和辞典データを生成
             document.getElementById('dictOnyomi').textContent = '照会中...';
             document.getElementById('dictKunyomi').textContent = '照会中...';
             document.getElementById('dictRadical').textContent = '調査中';
             document.getElementById('dictStrokes').textContent = '--画';
-            document.getElementById('dictMeaning').innerHTML = '<p class="text-sumiLight animate-pulse">辞書データを取得しています...</p>';
+            document.getElementById('dictMeaning').innerHTML = '<p class="text-sumiLight animate-pulse">漢和辞典の項目を編纂（日本語解説を生成）しています...</p>';
             document.getElementById('dictCompounds').innerHTML = '';
 
             try {
-                const res = await fetch(`https://kanjiapi.dev/v1/kanji/${encodeURIComponent(targetChar)}`);
-                if (!res.ok) throw new Error('Not found in kanjiapi');
-                const data = await res.json();
+                // Gemini API を使って日本語の漢和辞典データを構造化JSONで取得
+                const geminiData = await fetchJapaneseKanjiInfoWithGemini(targetChar);
+                if (geminiData) {
+                    displayDictionaryEntry({
+                        char: targetChar,
+                        onyomi: geminiData.onyomi || '（なし）',
+                        kunyomi: geminiData.kunyomi || '（なし）',
+                        radical: geminiData.radical || '―',
+                        strokes: geminiData.strokes ? `${geminiData.strokes}画` : '―',
+                        grade: geminiData.grade || 'JIS漢字',
+                        meanings: geminiData.meanings && geminiData.meanings.length > 0
+                            ? geminiData.meanings
+                            : [`① 「${targetChar}」の字義情報です。`],
+                        compounds: geminiData.compounds || []
+                    });
+                    return;
+                }
+                throw new Error('Gemini API returned empty data');
+            } catch (geminiErr) {
+                // Gemini API が利用できない環境向けのフォールバック（kanjiapi.dev + 日本語案内）
+                try {
+                    const res = await fetch(`https://kanjiapi.dev/v1/kanji/${encodeURIComponent(targetChar)}`);
+                    if (!res.ok) throw new Error('Not found in kanjiapi');
+                    const data = await res.json();
 
-                const onyomi = data.on_readings && data.on_readings.length > 0 ? data.on_readings.join('・') : '（なし）';
-                const kunyomi = data.kun_readings && data.kun_readings.length > 0 ? data.kun_readings.join('・') : '（なし）';
-                const strokes = data.stroke_count ? `${data.stroke_count}画` : '不明';
-                const gradeText = data.grade 
-                    ? (data.grade <= 6 ? `教育漢字（小${data.grade}）` : '常用漢字')
-                    : (data.jlpt ? `JLPT N${data.jlpt}水準` : 'JIS漢字');
+                    const onyomi = data.on_readings && data.on_readings.length > 0 ? data.on_readings.join('・') : '（なし）';
+                    const kunyomi = data.kun_readings && data.kun_readings.length > 0 ? data.kun_readings.join('・') : '（なし）';
+                    const strokesText = data.stroke_count ? `${data.stroke_count}画` : '不明';
+                    const gradeText = data.grade 
+                        ? (data.grade <= 6 ? `教育漢字（小${data.grade}）` : '常用漢字')
+                        : (data.jlpt ? `JLPT N${data.jlpt}水準` : 'JIS漢字');
 
-                // 英語義を分かりやすく整形して表示
-                const meaningsList = data.meanings && data.meanings.length > 0
-                    ? data.meanings.map((m, i) => `①②③④⑤⑥⑦⑧⑨⑩`[i] ? `${`①②③④⑤⑥⑦⑧⑨⑩`[i]} ${m}` : `・ ${m}`)
-                    : [`「${targetChar}」の字義情報です。詳しい用例は右上の「詳細検索」からも確認できます。`];
+                    const meaningsList = [
+                        `① 読み・画数などの基本データを取得しました（英字義参考：${(data.meanings || []).join(', ') || 'なし'}）。`,
+                        `② 詳しい日本語の解説は右上の「詳細検索」からもご確認いただけます。`
+                    ];
 
-                displayDictionaryEntry({
-                    char: targetChar,
-                    onyomi: onyomi,
-                    kunyomi: kunyomi,
-                    radical: '漢字部首（詳細検索参照）',
-                    strokes: strokes,
-                    grade: gradeText,
-                    meanings: meaningsList,
-                    compounds: [
-                        { word: `${targetChar}字`, reading: '―', desc: `「${targetChar}」を用いた熟語や語彙` },
-                        { word: `一${targetChar}`, reading: '―', desc: `Web上の国語辞典・漢和辞典で用例を調べる` }
-                    ]
-                });
+                    displayDictionaryEntry({
+                        char: targetChar,
+                        onyomi: onyomi,
+                        kunyomi: kunyomi,
+                        radical: '漢字部首（詳細検索参照）',
+                        strokes: strokesText,
+                        grade: gradeText,
+                        meanings: meaningsList,
+                        compounds: []
+                    });
 
-                // 熟語APIも取得して充実させる
-                fetchCompounds(targetChar);
-
-            } catch (err) {
-                // 記号やひらがな・カタカナ・特殊文字などの場合
-                displayDictionaryEntry({
-                    char: targetChar,
-                    onyomi: '―',
-                    kunyomi: '―',
-                    radical: '―',
-                    strokes: `${strokes.length || '―'}画（入力画数）`,
-                    grade: '一般文字・記号',
-                    meanings: [
-                        `① 選択された文字「${targetChar}」（U+${codePoint}）です。`,
-                        `② 詳しい意味や成り立ちについては、右上の「詳細検索」ボタンからWeb辞書をご参照ください。`
-                    ],
-                    compounds: []
-                });
+                    fetchCompounds(targetChar);
+                } catch (err) {
+                    // 記号やひらがな・カタカナ・特殊文字などの場合
+                    displayDictionaryEntry({
+                        char: targetChar,
+                        onyomi: '―',
+                        kunyomi: '―',
+                        radical: '―',
+                        strokes: `${strokes.length || '―'}画（入力画数）`,
+                        grade: '一般文字・記号',
+                        meanings: [
+                            `① 選択された文字「${targetChar}」（U+${codePoint}）です。`,
+                            `② 詳しい意味や成り立ちについては、右上の「詳細検索」ボタンからWeb辞書をご参照ください。`
+                        ],
+                        compounds: []
+                    });
+                }
             }
         }
 
-        // kanjiapi.dev から熟語データを追加取得
+        // Gemini API を呼び出して日本語の漢和辞典データを生成（指数バックオフ付き）
+        async function fetchJapaneseKanjiInfoWithGemini(char) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{
+                        text: `漢字「${char}」について、日本の本格的な漢和辞典の項目としてすべて日本語で解説データを作成してください。`
+                    }]
+                }],
+                systemInstruction: {
+                    parts: [{
+                        text: "あなたは日本の権威ある漢和辞典の編纂者です。指定された1文字の漢字（または文字）について、正確な音読み（カタカナ、中黒区切り）、訓読み（ひらがな、送り仮名はハイフン区切り）、部首名（例：氵（さんずい））、総画数、漢字区分（例：常用漢字（小4）、人名用漢字、表外漢字など）、日本語でのわかりやすい字義・意味（①、②…の番号付き配列）、および代表的な熟語と日本語の意味をJSON形式で出力してください。英語は一切使わず自然な日本語で記述してください。"
+                    }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            onyomi: { type: "STRING", description: "音読み（カタカナ。ない場合は「（なし）」）" },
+                            kunyomi: { type: "STRING", description: "訓読み（ひらがな。ない場合は「（なし）」）" },
+                            radical: { type: "STRING", description: "部首と読み方（例：木（きへん））" },
+                            strokes: { type: "INTEGER", description: "総画数" },
+                            grade: { type: "STRING", description: "漢字区分（例：常用漢字、人名用漢字、表外漢字）" },
+                            meanings: {
+                                type: "ARRAY",
+                                items: { type: "STRING" },
+                                description: "日本語の意味解説のリスト（例：['① 〜の意味。', '② 〜のさま。']）"
+                            },
+                            compounds: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        word: { type: "STRING", description: "熟語" },
+                                        reading: { type: "STRING", description: "熟語のひらがな読み" },
+                                        desc: { type: "STRING", description: "熟語の簡潔な日本語の意味" }
+                                    },
+                                    required: ["word", "reading", "desc"]
+                                },
+                                description: "主な熟語3〜4個"
+                            }
+                        },
+                        required: ["onyomi", "kunyomi", "radical", "strokes", "grade", "meanings", "compounds"]
+                    }
+                }
+            };
+
+            const delays = [1000, 2000, 4000];
+            for (let attempt = 0; attempt <= delays.length; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (jsonText) {
+                        const parsed = JSON.parse(jsonText);
+                        // 次回以降の閲覧が高速になるようメモリ上の辞書にもキャッシュ
+                        KANJI_DICTIONARY[char] = {
+                            onyomi: parsed.onyomi,
+                            kunyomi: parsed.kunyomi,
+                            radical: parsed.radical,
+                            strokes: parsed.strokes,
+                            grade: parsed.grade,
+                            meanings: parsed.meanings,
+                            compounds: parsed.compounds
+                        };
+                        return parsed;
+                    }
+                } catch (e) {
+                    if (attempt === delays.length) return null;
+                    await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                }
+            }
+            return null;
+        }
+
+        // kanjiapi.dev から熟語データを追加取得（フォールバック用）
         async function fetchCompounds(char) {
+            const container = document.getElementById('dictCompounds');
             try {
                 const res = await fetch(`https://kanjiapi.dev/v1/words/${encodeURIComponent(char)}`);
                 if (!res.ok) return;
                 const words = await res.json();
-                if (!words || words.length === 0) return;
-
-                const compoundsEl = document.getElementById('dictCompounds');
-                const topWords = words.slice(0, 4);
-                compoundsEl.innerHTML = topWords.map(w => {
-                    const variant = w.variants[0];
-                    const meaning = w.meanings[0]?.glosses?.slice(0, 2).join(', ') || '';
-                    return `
-                        <div class="p-2.5 bg-washiDark/60 rounded border border-sumi/10">
-                            <div class="flex items-baseline justify-between gap-2 mb-0.5">
-                                <span class="font-mincho font-bold text-base text-sumi">${variant.written}</span>
-                                <span class="text-xs text-shu font-mincho">${variant.pronounced}</span>
-                            </div>
-                            <p class="text-xs text-sumiLight truncate">${meaning}</p>
-                        </div>
-                    `;
-                }).join('');
+                const samples = words.slice(0, 4).map(w => {
+                    const variant = w.variants[0] || {};
+                    return {
+                        word: variant.written || char,
+                        reading: variant.pronounced || '',
+                        desc: `読み：${variant.pronounced || '―'}`
+                    };
+                });
+                if (samples.length > 0) {
+                    renderCompoundsList(samples);
+                } else {
+                    container.innerHTML = '<p class="text-xs text-sumiLight col-span-2">熟語用例は「詳細検索」からご覧いただけます。</p>';
+                }
             } catch (e) {
-                // 熟語取得失敗時は静かにスキップ
+                container.innerHTML = '';
             }
         }
 
-        function displayDictionaryEntry(info) {
-            document.getElementById('dictOnyomi').textContent = info.onyomi;
-            document.getElementById('dictKunyomi').textContent = info.kunyomi;
-            document.getElementById('dictRadical').textContent = info.radical;
-            document.getElementById('dictStrokes').textContent = info.strokes;
-            document.getElementById('dictGradeBadge').textContent = info.grade;
+        // 辞書詳細のUI反映
+        function displayDictionaryEntry(entry) {
+            document.getElementById('dictOnyomi').textContent = entry.onyomi;
+            document.getElementById('dictKunyomi').textContent = entry.kunyomi;
+            document.getElementById('dictRadical').textContent = entry.radical;
+            document.getElementById('dictStrokes').textContent = entry.strokes;
+            document.getElementById('dictGradeBadge').textContent = entry.grade;
 
+            // 意味リストの描画
             const meaningEl = document.getElementById('dictMeaning');
-            meaningEl.innerHTML = info.meanings.map(m => `<p>${m}</p>`).join('');
+            meaningEl.innerHTML = '';
+            entry.meanings.forEach(m => {
+                const p = document.createElement('p');
+                p.textContent = m;
+                meaningEl.appendChild(p);
+            });
 
-            const compoundsEl = document.getElementById('dictCompounds');
-            if (info.compounds && info.compounds.length > 0) {
-                compoundsEl.innerHTML = info.compounds.map(c => `
-                    <div class="p-2.5 bg-washiDark/60 rounded border border-sumi/10 hover:border-sumi/30 transition">
-                        <div class="flex items-baseline justify-between gap-2 mb-0.5">
-                            <span class="font-mincho font-bold text-base text-sumi">${c.word}</span>
-                            <span class="text-xs text-shu font-mincho">${c.reading}</span>
-                        </div>
-                        <p class="text-xs text-sumiLight">${c.desc}</p>
-                    </div>
-                `).join('');
-            } else {
-                compoundsEl.innerHTML = `<p class="text-xs text-sumiLight col-span-2">熟語データはありません。</p>`;
+            // 熟語リストの描画
+            renderCompoundsList(entry.compounds);
+        }
+
+        function renderCompoundsList(compounds) {
+            const container = document.getElementById('dictCompounds');
+            container.innerHTML = '';
+
+            if (!compounds || compounds.length === 0) {
+                container.innerHTML = '<p class="text-xs text-sumiLight col-span-2 font-mincho">※収録されている熟語用例はありません。</p>';
+                return;
             }
+
+            compounds.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'p-2.5 bg-washiDark rounded border border-sumi/15 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div class="flex items-baseline gap-2 mb-1">
+                        <span class="font-mincho font-bold text-base text-sumi">${escapeHtml(item.word)}</span>
+                        <span class="text-xs text-shu font-mincho">（${escapeHtml(item.reading)}）</span>
+                    </div>
+                    <p class="text-xs text-sumiLight leading-snug">${escapeHtml(item.desc)}</p>
+                `;
+                container.appendChild(card);
+            });
         }
 
+        // 閲覧履歴の描画
         function renderHistory() {
-            const historyList = document.getElementById('historyList');
-            historyList.innerHTML = searchHistory.map(char => `
-                <button onclick="lookupKanji('${char}')" 
-                    class="w-7 h-7 flex-shrink-0 rounded bg-washiDark hover:bg-shu hover:text-white text-sumi font-mincho font-bold text-sm border border-sumi/15 transition flex items-center justify-center">
-                    ${char}
-                </button>
-            `).join('');
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            searchHistory.forEach(c => {
+                const chip = document.createElement('button');
+                chip.className = 'w-7 h-7 rounded bg-washiDark hover:bg-shu hover:text-white text-sumi font-mincho text-sm font-bold border border-sumi/20 flex items-center justify-center transition flex-shrink-0';
+                chip.textContent = c;
+                chip.title = `「${c}」を再表示`;
+                chip.addEventListener('click', () => lookupKanji(c));
+                list.appendChild(chip);
+            });
         }
 
-        /**
-         * ============================================================================
-         * 5. ユーティリティ（クリップボードコピー・直接検索・モーダル）
-         * ============================================================================
-         */
-        function copyTextToClipboard(text, successMsg) {
+        // HTMLエスケープ用ヘルパー
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // クリップボードコピー（iFrame対応 execCommand 使用）
+        function copyToClipboard(text, successMsg) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
             textarea.style.position = 'fixed';
@@ -1060,19 +1183,20 @@
 
         document.getElementById('copyCharBtn').addEventListener('click', () => {
             const char = document.getElementById('dictChar').textContent;
-            copyTextToClipboard(char, `漢字「${char}」をコピーしました`);
+            copyToClipboard(char, `漢字「${char}」をコピーしました`);
         });
 
         document.getElementById('copyAllBtn').addEventListener('click', () => {
             const char = document.getElementById('dictChar').textContent;
-            const on = document.getElementById('dictOnyomi').textContent;
-            const kun = document.getElementById('dictKunyomi').textContent;
+            const onyomi = document.getElementById('dictOnyomi').textContent;
+            const kunyomi = document.getElementById('dictKunyomi').textContent;
+            const radical = document.getElementById('dictRadical').textContent;
             const strokes = document.getElementById('dictStrokes').textContent;
             const meanings = Array.from(document.getElementById('dictMeaning').querySelectorAll('p'))
                 .map(p => p.textContent).join('\n');
-            
-            const formatted = `【${char}】(${strokes})\n音読み：${on}\n訓読み：${kun}\n意味：\n${meanings}`;
-            copyTextToClipboard(formatted, `「${char}」の辞書解説をコピーしました`);
+
+            const fullText = `【${char}】\n部首：${radical} ／ 画数：${strokes}\n音読み：${onyomi}\n訓読み：${kunyomi}\n意味：\n${meanings}`;
+            copyToClipboard(fullText, `「${char}」の辞書解説をコピーしました`);
         });
 
         // 直接検索フォーム
