@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>手書き漢和辞典 - 筆跡から探す漢字辞書</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 明朝体（辞書風）とゴシック体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mincho: ['"Shippori Mincho"', 'serif'],
+                        sans: ['"Noto Sans JP"', 'sans-serif'],
+                    },
+                    colors: {
+                        washi: '#1E1C1A',      // ダークモード：黒漆・墨黒ベースの紙面色
+                        washiDark: '#141311',  // ダークモード：より深い背景・凹み色
+                        sumi: '#EDE8DF',       // ダークモード：和紙の生成り色（文字・枠線）
+                        sumiLight: '#A8A096',  // ダークモード：薄墨・銀鼠色（補助テキスト）
+                        shu: '#D94B43',        // ダークモード：暗背景に映える鮮やかな朱色
+                        shuDark: '#B93A32',
+                        ai: '#4A7C9E',         // ダークモード：視認性を高めた藍色
+                        kin: '#D4B16A',        // ダークモード：金箔・金茶色
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスタイルと黒漆・和紙風テクスチャ効果（ダークモード） */
+        body {
+            background-color: #141311;
+            color: #EDE8DF;
+            background-image: radial-gradient(#2A2723 0.75px, transparent 0.75px);
+            background-size: 20px 20px;
+        }
+
+        .dict-paper {
+            background-color: #1E1C1A;
+            box-shadow: 0 12px 32px -5px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(212, 177, 106, 0.25);
+        }
+
+        /* キャンバスの十字リーダー線（黒板・暗色練習帳風） */
+        .canvas-container {
+            position: relative;
+            background-color: #161513;
+            border: 2px solid rgba(237, 232, 223, 0.35);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .canvas-grid {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(to right, transparent 49.5%, rgba(217, 75, 67, 0.3) 49.5%, rgba(217, 75, 67, 0.3) 50.5%, transparent 50.5%),
+                linear-gradient(to bottom, transparent 49.5%, rgba(217, 75, 67, 0.3) 49.5%, rgba(217, 75, 67, 0.3) 50.5%, transparent 50.5%);
+        }
+
+        .canvas-grid::after {
+            content: '';
+            position: absolute;
+            inset: 12%;
+            border: 1px dashed rgba(217, 75, 67, 0.22);
+        }
+
+        /* 縦書き風アクセント（見出し用） */
+        .vertical-badge {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        /* 辞書の「爪（インデックス）」風デザイン */
+        .dict-tab {
+            border-left: 4px solid #D94B43;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #141311;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6B5832;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4B16A;
+        }
+
+        /* タッチデバイスでのスクロール干渉防止 */
+        canvas {
+            touch-action: none;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-shu selection:text-white">
+
+    <!-- ヘッダー（黒漆辞書装丁風） -->
+    <header class="bg-[#11100E] text-sumi border-b-4 border-shu shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- 落款（ハンコ）風アイコン -->
+                <div class="w-10 h-10 sm:w-11 sm:h-11 bg-shu text-white font-mincho font-extrabold text-xl sm:text-2xl flex items-center justify-center rounded border border-sumi/40 shadow-inner select-none">
+                    漢
+                </div>
+                <div>
+                    <h1 class="font-mincho text-xl sm:text-2xl font-bold tracking-widest text-sumi">
+                        手書き漢和辞典
+                    </h1>
+                    <p class="text-[11px] sm:text-xs text-sumiLight tracking-wider">
+                        筆跡解析・字義検索システム
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="helpBtn" class="text-xs sm:text-sm px-3 py-1.5 rounded border border-sumi/25 hover:bg-sumi/10 transition flex items-center gap-1.5 text-sumi">
+                    <svg class="w-4 h-4 text-kin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>使い方</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-3 sm:px-6 py-5 sm:py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- 左カラム：手書き入力＆候補一覧 (5カラム) -->
+            <section class="lg:col-span-5 dict-paper rounded-lg p-4 sm:p-6 border border-sumi/15">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-sumi/15">
+                    <h2 class="font-mincho font-bold text-lg text-sumi flex items-center gap-2">
+                        <span class="w-2 h-5 bg-shu inline-block rounded-sm"></span>
+                        手書き入力枠
+                    </h2>
+                    <div class="text-xs font-mincho bg-washiDark px-2.5 py-1 rounded border border-sumi/15 text-sumiLight">
+                        現在 <span id="strokeCount" class="font-bold text-shu text-sm">0</span> 画
+                    </div>
+                </div>
+
+                <!-- 手書きキャンバス領域 -->
+                <div class="w-full aspect-square max-w-[340px] mx-auto canvas-container rounded-md overflow-hidden mb-4" id="canvasWrapper">
+                    <div class="canvas-grid"></div>
+                    <canvas id="drawCanvas" class="w-full h-full block"></canvas>
+                    <!-- 初期ガイド文字 -->
+                    <div id="canvasPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-sumi/25 select-none">
+                        <span class="font-mincho text-6xl sm:text-7xl mb-2">永</span>
+                        <span class="text-xs tracking-widest">ここに漢字を書いてください</span>
+                    </div>
+                </div>
+
+                <!-- 操作ボタン群 -->
+                <div class="grid grid-cols-3 gap-2.5 mb-5">
+                    <button id="undoBtn" disabled class="py-2.5 px-3 rounded bg-washiDark hover:bg-sumi/15 disabled:opacity-40 disabled:pointer-events-none text-sumi font-medium text-xs sm:text-sm border border-sumi/20 transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                        一画戻る
+                    </button>
+                    <button id="clearBtn" class="py-2.5 px-3 rounded bg-washiDark hover:bg-shu hover:text-white text-sumi font-medium text-xs sm:text-sm border border-sumi/20 transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        全消去
+                    </button>
+                    <button id="recognizeBtn" class="py-2.5 px-3 rounded bg-ai hover:bg-ai/85 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        再検索
+                    </button>
+                </div>
+
+                <!-- 認識候補リスト -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-sumiLight tracking-wider flex items-center gap-1.5">
+                            <span>認識候補（タップして辞書を引く）</span>
+                            <span id="loadingIndicator" class="hidden inline-block w-3 h-3 border-2 border-shu border-t-transparent rounded-full animate-spin"></span>
+                        </span>
+                        <span id="engineStatus" class="text-[10px] text-sumiLight/80">自動認識待機中</span>
+                    </div>
+                    
+                    <div id="candidatesContainer" class="grid grid-cols-5 gap-2 min-h-[112px] p-2.5 bg-washiDark rounded-md border border-sumi/15">
+                        <!-- 候補ボタンがここに動的生成されます -->
+                        <div class="col-span-5 flex items-center justify-center text-xs text-sumiLight/60 font-mincho py-6">
+                            枠内に文字を書くと候補が表示されます
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 直接入力検索（補助機能） -->
+                <div class="mt-4 pt-4 border-t border-sumi/15">
+                    <form id="directSearchForm" class="flex gap-2">
+                        <input type="text" id="directInput" maxlength="1" placeholder="直接漢字を入力して引く（例：龍）" 
+                            class="flex-grow px-3 py-2 text-sm bg-washiDark text-sumi placeholder-sumiLight/50 border border-sumi/25 rounded focus:outline-none focus:border-shu font-mincho">
+                        <button type="submit" class="px-4 py-2 bg-shu text-white text-xs sm:text-sm font-mincho rounded hover:bg-shuDark transition whitespace-nowrap shadow-sm">
+                            字義検索
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 右カラム：漢和辞典 詳細表示ページ (7カラム) -->
+            <section class="lg:col-span-7 dict-paper rounded-lg p-5 sm:p-8 border border-sumi/15 relative overflow-hidden min-h-[540px]">
+                <!-- 辞書ページの装飾ライン（天・地・小口風） -->
+                <div class="absolute top-0 right-0 w-16 h-16 pointer-events-none overflow-hidden">
+                    <div class="bg-shu text-white text-[10px] font-mincho font-bold py-1 px-6 transform rotate-45 translate-x-4 translate-y-2 shadow-sm text-center">
+                        漢和辞典
+                    </div>
+                </div>
+
+                <!-- 検索履歴バー -->
+                <div class="mb-5 pb-3 border-b border-sumi/15 flex items-center gap-2 overflow-x-auto">
+                    <span class="text-xs font-mincho text-sumiLight whitespace-nowrap">閲覧履歴：</span>
+                    <div id="historyList" class="flex items-center gap-1.5">
+                        <!-- 履歴チップ -->
+                    </div>
+                </div>
+
+                <!-- 親字（見出し漢字）セクション -->
+                <div id="dictionaryContent">
+                    <div class="flex flex-col sm:flex-row sm:items-stretch gap-5 pb-6 border-b-2 border-sumi/30">
+                        <!-- 親字大枠（明朝体） -->
+                        <div class="relative flex-shrink-0 w-32 h-32 sm:w-36 sm:h-36 mx-auto sm:mx-0 bg-washiDark border-2 border-sumi/40 rounded-md flex items-center justify-center shadow-inner group">
+                            <span id="dictChar" class="font-mincho text-7xl sm:text-8xl font-extrabold text-sumi select-all">漢</span>
+                            <!-- コピーボタン -->
+                            <button id="copyCharBtn" title="漢字をコピー" class="absolute bottom-1.5 right-1.5 p-1.5 bg-washi/90 hover:bg-shu hover:text-white text-sumi border border-sumi/20 rounded text-xs transition opacity-80 group-hover:opacity-100">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+
+                        <!-- 読み・基本情報 -->
+                        <div class="flex-grow flex flex-col justify-between">
+                            <div>
+                                <!-- メタバッジ（部首・画数・学年/水準） -->
+                                <div class="flex flex-wrap items-center gap-2 mb-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-mincho font-bold bg-shu/20 text-[#F27972] border border-shu/40">
+                                        部首：<span id="dictRadical" class="ml-1">氵（さんずい）</span>
+                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-mincho font-bold bg-ai/25 text-[#8AB8D6] border border-ai/45">
+                                        総画数：<span id="dictStrokes" class="ml-1">13画</span>
+                                    </span>
+                                    <span id="dictGradeBadge" class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-mincho bg-washiDark text-sumiLight border border-sumi/20">
+                                        常用漢字
+                                    </span>
+                                </div>
+
+                                <!-- 音読み -->
+                                <div class="mb-2.5 flex items-baseline gap-2">
+                                    <span class="flex-shrink-0 px-1.5 py-0.5 text-[11px] font-bold bg-shu text-white rounded-sm">音読み</span>
+                                    <p id="dictOnyomi" class="font-mincho text-base sm:text-lg font-bold text-sumi tracking-wide">
+                                        カン
+                                    </p>
+                                </div>
+
+                                <!-- 訓読み -->
+                                <div class="flex items-baseline gap-2">
+                                    <span class="flex-shrink-0 px-1.5 py-0.5 text-[11px] font-bold bg-washiDark text-sumi border border-sumi/35 rounded-sm">訓読み</span>
+                                    <p id="dictKunyomi" class="font-mincho text-base sm:text-lg font-medium text-sumi tracking-wide">
+                                        おとこ
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- 外部辞書・Web検索リンク -->
+                            <div class="mt-4 pt-2 border-t border-dashed border-sumi/20 flex flex-wrap items-center justify-between gap-2">
+                                <span id="dictUnicode" class="text-[11px] font-mono text-sumiLight">Unicode: U+6F22</span>
+                                <div class="flex gap-2">
+                                    <button id="copyAllBtn" class="text-xs px-2.5 py-1 rounded bg-washiDark hover:bg-sumi hover:text-washi text-sumi border border-sumi/20 transition">
+                                        解説をコピー
+                                    </button>
+                                    <a id="externalSearchLink" href="https://www.google.com/search?q=漢+漢字+意味" target="_blank" rel="noopener noreferrer" 
+                                       class="text-xs px-2.5 py-1 rounded bg-ai/25 hover:bg-ai hover:text-white text-[#8AB8D6] border border-ai/45 transition flex items-center gap-1">
+                                        <span>詳細検索</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 字義・解説セクション -->
+                    <div class="py-5 border-b border-sumi/15">
+                        <h3 class="font-mincho font-bold text-base text-sumi mb-3 flex items-center gap-2 dict-tab pl-2.5">
+                            字義・意味
+                        </h3>
+                        <div id="dictMeaning" class="font-mincho text-sm sm:text-base leading-relaxed text-sumi space-y-2 pl-2">
+                            <!-- 意味のリストがここに入ります -->
+                        </div>
+                    </div>
+
+                    <!-- 熟語・用例セクション -->
+                    <div class="pt-5">
+                        <h3 class="font-mincho font-bold text-base text-sumi mb-3 flex items-center gap-2 dict-tab pl-2.5">
+                            主な熟語・用例
+                        </h3>
+                        <div id="dictCompounds" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-2">
+                            <!-- 熟語カードがここに入ります -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-[#11100E] text-sumiLight text-xs py-4 border-t border-sumi/15 mt-8">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p class="font-mincho">手書き漢和辞典 ― マウスや指で枠内に漢字を書いて検索できます。</p>
+            <p class="text-[11px] text-sumiLight/60">※オンライン手書き認識エンジンおよび内蔵漢字データベースを使用しています</p>
+        </div>
+    </footer>
+
+    <!-- トースト通知（alertの代替） -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-[#11100E] text-sumi font-mincho text-sm px-4 py-3 rounded shadow-xl border border-sumi/20 border-l-4 border-l-shu flex items-center gap-2.5">
+            <span id="toastMessage">通知メッセージ</span>
+        </div>
+    </div>
+
+    <!-- 使い方モーダル -->
+    <div id="helpModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="dict-paper max-w-md w-full rounded-lg p-6 border border-sumi/35 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-sumi/20">
+                <h3 class="font-mincho font-bold text-lg text-sumi flex items-center gap-2">
+                    <span class="w-6 h-6 bg-shu text-white text-xs flex items-center justify-center rounded">問</span>
+                    手書き漢和辞典の使い方
+                </h3>
+                <button id="closeHelpBtn" class="text-sumiLight hover:text-shu p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <ol class="font-mincho text-sm space-y-3 text-sumi leading-relaxed list-decimal list-inside">
+                <li><strong>漢字を書く：</strong>左側の入力枠内に、マウスまたは指で調べたい漢字を一画ずつ丁寧に書きます。</li>
+                <li><strong>候補を選ぶ：</strong>書き終えると自動的に下の「認識候補」に漢字が表示されます。目的の漢字をタップしてください。</li>
+                <li><strong>辞書を読む：</strong>右側の辞書ページに、音読み・訓読み・部首・画数・意味・熟語が表示されます。</li>
+                <li><strong>修正する：</strong>書き間違えた場合は「一画戻る」または「全消去」ボタンでやり直せます。</li>
+            </ol>
+            <div class="mt-6 text-right">
+                <button id="okHelpBtn" class="px-5 py-2 bg-shu text-white font-mincho text-sm rounded hover:bg-shuDark transition">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. 内蔵 漢和辞典データベース & オフライン特徴量データ
+         * ============================================================================
+         * よく検索される重要漢字や画数の多い難読漢字を中心に詳細な辞書データを収録。
+         * データベースにない漢字が認識された場合でも、Unicode情報や外部APIから動的に補完します。
+         */
+        const KANJI_DICTIONARY = {
+            "漢": {
+                onyomi: "カン",
+                kunyomi: "おとこ",
+                radical: "氵（さんずい・水部）",
+                strokes: 13,
+                grade: "常用漢字（小3）",
+                meanings: [
+                    "① 中国の古い王朝の名。また、中国・中国人を指す語。",
+                    "② 漢字・漢文など、中国伝来の文化を表す語。",
+                    "③ おとこ。一人前の男。（例：熱血漢、門外漢）",
+                    "④ あまのがわ。天の川。（例：銀漢、雲漢）"
+                ],
+                compounds: [
+                    { word: "漢字", reading: "かんじ", desc: "中国から伝来した表意文字" },
+                    { word: "漢和辞典", reading: "かんわじてん", desc: "漢字を日本語で解説した辞書" },
+                    { word: "熱血漢", reading: "ねっけつかん", desc: "正義感や情熱にあふれた男" },
+                    { word: "門外漢", reading: "もんがいかん", desc: "その分野の専門外の人間" }
+                ]
+            },
+            "永": {
+                onyomi: "エイ",
+                kunyomi: "なが-い",
+                radical: "水（みず・したみず）",
+                strokes: 5,
+                grade: "常用漢字（小5）",
+                meanings: [
+                    "① ながい。時間や距離がどこまでも長く続くさま。",
+                    "② とこしえ。いつまでも変わらないこと。永遠。",
+                    "③ 書道で基本となる八つの筆法すべてを含む字（永字八法）。"
+                ],
+                compounds: [
+                    { word: "永遠", reading: "えいえん", desc: "いつまでも果てしなく続くこと" },
+                    { word: "永久", reading: "えいきゅう", desc: "とこしえに変わらないこと" },
+                    { word: "永字八法", reading: "えいじはっぽう", desc: "「永」の字に含まれる8種の基本筆法" },
+                    { word: "永眠", reading: "えいみん", desc: "永久の眠りにつくこと。死去" }
+                ]
+            },
+            "龍": {
+                onyomi: "リュウ・リョウ・ロウ",
+                kunyomi: "たつ",
+                radical: "龍（りゅう）",
+                strokes: 16,
+                grade: "人名用漢字（旧字体）",
+                meanings: [
+                    "① たつ。想像上の霊獣。雲を呼び雨を降らせ、天に昇るとされる。",
+                    "② 天子・皇帝のたとえ。（例：龍顔、龍体）",
+                    "③ 並外れてすぐれた人物のたとえ。（例：臥龍）"
+                ],
+                compounds: [
+                    { word: "龍虎", reading: "りゅうこ", desc: "力量の伯仲した二人の英雄のたとえ" },
+                    { word: "登龍門", reading: "とうりゅうもん", desc: "立身出世のための難関" },
+                    { word: "画龍点睛", reading: "がりょうてんせい", desc: "物事を完成させるための最後の大切な仕上げ" },
+                    { word: "臥龍", reading: "がりょう", desc: "世に隠れて機会を待つ大人物" }
+                ]
+            },
+            "竜": {
+                onyomi: "リュウ・リョウ",
+                kunyomi: "たつ",
+                radical: "立（たつ）",
+                strokes: 10,
+                grade: "常用漢字",
+                meanings: [
+                    "① たつ。「龍」の新字体。想像上の霊獣。",
+                    "② 天子のたとえ。"
+                ],
+                compounds: [
+                    { word: "恐竜", reading: "きょうりゅう", desc: "中生代に栄えた巨大な爬虫類" },
+                    { word: "竜巻", reading: "たつまき", desc: "激しい渦巻きを伴う上昇気流" }
+                ]
+            },
+            "鬱": {
+                onyomi: "ウツ",
+                kunyomi: "うっ-する・ふさ-ぐ・しげ-る",
+                radical: "鬯（ちょう・においざけ）",
+                strokes: 29,
+                grade: "常用漢字",
+                meanings: [
+                    "① 草木がこんもりと茂るさま。（例：鬱蒼）",
+                    "② 気や血が滞ってふさがる。気分が晴れず落ち込む。（例：憂鬱）",
+                    "③ 盛んにわき起こるさま。（例：鬱勃）"
+                ],
+                compounds: [
+                    { word: "憂鬱", reading: "ゆううつ", desc: "心が晴れず気が滅入ること" },
+                    { word: "鬱蒼", reading: "うっそう", desc: "木々が暗くなるほど茂り合うさま" },
+                    { word: "鬱憤", reading: "うっぷん", desc: "心の中にたまった怒りや不満" },
+                    { word: "鬱積", reading: "うっせき", desc: "感情や不満が心の中に積み重なること" }
+                ]
+            },
+            "薔": {
+                onyomi: "ショウ・ソウ",
+                kunyomi: "ばら・みずたで",
+                radical: "艹（くさかんむり）",
+                strokes: 16,
+                grade: "表外漢字",
+                meanings: [
+                    "① 植物の名。「薔薇（ばら）」の「薔」。",
+                    "② みずたで。タデ科の一年草。"
+                ],
+                compounds: [
+                    { word: "薔薇", reading: "ばら・そうび", desc: "バラ科の低木。美しい花を咲かせる" },
+                    { word: "薔薇色", reading: "ばらいろ", desc: "明るいピンク色。希望に満ちたさま" }
+                ]
+            },
+            "薇": {
+                onyomi: "ビ",
+                kunyomi: "ぜんまい",
+                radical: "艹（くさかんむり）",
+                strokes: 16,
+                grade: "表外漢字",
+                meanings: [
+                    "① ぜんまい。シダ植物の一種。春の山菜。",
+                    "② 「薔薇（ばら）」の「薇」。"
+                ],
+                compounds: [
+                    { word: "薔薇", reading: "ばら", desc: "トゲのある美しい花を咲かせる植物" },
+                    { word: "紫薇", reading: "しび", desc: "サルスベリ（百日紅）の別名" }
+                ]
+            },
+            "愛": {
+                onyomi: "アイ",
+                kunyomi: "いと-しい・め-でる・まな",
+                radical: "心（こころ）",
+                strokes: 13,
+                grade: "常用漢字（小4）",
+                meanings: [
+                    "① いつくしむ。相手を大切に思い、慈しむ気持ち。",
+                    "② めでる。好み楽しむ。（例：愛読書、愛好）",
+                    "③ 惜しむ。大切にする。（例：愛惜）"
+                ],
+                compounds: [
+                    { word: "愛情", reading: "あいじょう", desc: "深く愛し慈しむ心" },
+                    { word: "敬愛", reading: "けいあい", desc: "尊敬し親しみ愛すること" },
+                    { word: "愛惜", reading: "あいせき", desc: "別れや失うことを惜しむこと" },
+                    { word: "博愛", reading: "はくあい", desc: "すべての人を平等に愛すること" }
+                ]
+            },
+            "夢": {
+                onyomi: "ム・ボウ",
+                kunyomi: "ゆめ・ゆめ-みる・くら-い",
+                radical: "夕（ゆうべ）",
+                strokes: 13,
+                grade: "常用漢字（小5）",
+                meanings: [
+                    "① ゆめ。睡眠中に見る幻覚や体験。",
+                    "② はかないこと、現実離れしたことのたとえ。（例：夢幻）",
+                    "③ 将来実現させたい願いや理想。"
+                ],
+                compounds: [
+                    { word: "夢幻", reading: "むげん", desc: "夢と幻。はかないことのたとえ" },
+                    { word: "夢想", reading: "むそう", desc: "夢の中で思うこと。空想すること" },
+                    { word: "悪夢", reading: "あくむ", desc: "恐ろしい夢。忌まわしい出来事" },
+                    { word: "夢中", reading: "むちゅう", desc: "我を忘れるほど熱中すること" }
+                ]
+            },
+            "風": {
+                onyomi: "フウ・フ",
+                kunyomi: "かぜ・かざ",
+                radical: "風（かぜ）",
+                strokes: 9,
+                grade: "常用漢字（小2）",
+                meanings: [
+                    "① かぜ。空気の流れ。",
+                    "② ようす。おもむき。姿かたち。（例：風景、風情）",
+                    "③ ならわし。世間のしきたり。（例：風習、風紀）"
+                ],
+                compounds: [
+                    { word: "風情", reading: "ふぜい", desc: "しみじみとした趣や味わい" },
+                    { word: "風景", reading: "ふうけい", desc: "目の前に広がる自然や街の眺め" },
+                    { word: "風流", reading: "ふうりゅう", desc: "俗っぽさを離れ趣があること" },
+                    { word: "薫風", reading: "くんぷう", desc: "初夏の若葉の香りを含んだ穏やかな風" }
+                ]
+            },
+            "誠": {
+                onyomi: "セイ",
+                kunyomi: "まこと",
+                radical: "言（ごんべん）",
+                strokes: 13,
+                grade: "常用漢字（小6）",
+                meanings: [
+                    "① まこと。嘘や偽りのない真実の心。",
+                    "② 誠実である。真心をもって接すること。"
+                ],
+                compounds: [
+                    { word: "誠実", reading: "せいじつ", desc: "私利私欲を交えず真心をもって対するさま" },
+                    { word: "誠意", reading: "せいい", desc: "偽りのない真心" },
+                    { word: "忠誠", reading: "ちゅうせい", desc: "主君や国に対して真心をもって尽くすこと" }
+                ]
+            },
+            "桜": {
+                onyomi: "オウ・ヨウ",
+                kunyomi: "さくら",
+                radical: "木（きへん）",
+                strokes: 10,
+                grade: "常用漢字（小5）",
+                meanings: [
+                    "① さくら。バラ科の落葉高木。春に淡紅色や白色の美しい花を咲かせる。",
+                    "② 日本を代表する花として古来より愛でられる。"
+                ],
+                compounds: [
+                    { word: "桜花", reading: "おうか", desc: "さくらの花" },
+                    { word: "観桜", reading: "かんおう", desc: "桜の花を見て楽しむこと。花見" },
+                    { word: "桜吹雪", reading: "さくらふぶき", desc: "桜の花びらが吹雪のように舞い散るさま" }
+                ]
+            }
+        };
+
+        /**
+         * ============================================================================
+         * 2. キャンバス描画システム（筆跡キャプチャ＆ストローク管理）
+         * ============================================================================
+         */
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const placeholder = document.getElementById('canvasPlaceholder');
+        const strokeCountEl = document.getElementById('strokeCount');
+        const undoBtn = document.getElementById('undoBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const recognizeBtn = document.getElementById('recognizeBtn');
+        const candidatesContainer = document.getElementById('candidatesContainer');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const engineStatus = document.getElementById('engineStatus');
+
+        // ストロークデータの保持構造: [ { x: [...], y: [...], t: [...] }, ... ]
+        let strokes = [];
+        let currentStroke = null;
+        let isDrawing = false;
+        let startTime = 0;
+        let recognitionTimer = null;
+
+        // キャンバスの解像度をコンテナに合わせて高精細化（Retina対応）
+        function resizeCanvas() {
+            const rect = canvasWrapper.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            redrawStrokes();
+        }
+
+        // 全ストロークの再描画（ダークモード用の明るい和紙・白墨色）
+        function redrawStrokes() {
+            const rect = canvasWrapper.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#EDE8DF'; // 生成り・白墨色
+
+            strokes.forEach(stroke => {
+                if (stroke.x.length === 0) return;
+                ctx.beginPath();
+                ctx.lineWidth = 6.5;
+                ctx.moveTo(stroke.x[0], stroke.y[0]);
+                for (let i = 1; i < stroke.x.length; i++) {
+                    // 中間点を使った二次ベジェ曲線で滑らかに描画
+                    if (i < stroke.x.length - 1) {
+                        const xc = (stroke.x[i] + stroke.x[i + 1]) / 2;
+                        const yc = (stroke.y[i] + stroke.y[i + 1]) / 2;
+                        ctx.quadraticCurveTo(stroke.x[i], stroke.y[i], xc, yc);
+                    } else {
+                        ctx.lineTo(stroke.x[i], stroke.y[i]);
+                    }
+                }
+                // 点（1ドット）だけのタップ対応
+                if (stroke.x.length === 1) {
+                    ctx.lineTo(stroke.x[0] + 0.1, stroke.y[0] + 0.1);
+                }
+                ctx.stroke();
+            });
+
+            if (currentStroke && currentStroke.x.length > 0) {
+                ctx.beginPath();
+                ctx.lineWidth = 6.5;
+                ctx.moveTo(currentStroke.x[0], currentStroke.y[0]);
+                for (let i = 1; i < currentStroke.x.length; i++) {
+                    ctx.lineTo(currentStroke.x[i], currentStroke.y[i]);
+                }
+                ctx.stroke();
+            }
+
+            updateUIState();
+        }
+
+        function updateUIState() {
+            const count = strokes.length;
+            strokeCountEl.textContent = count;
+            undoBtn.disabled = count === 0;
+            placeholder.style.opacity = count === 0 && !isDrawing ? '1' : '0';
+        }
+
+        // ポインター座標の取得（マウス・タッチ両対応）
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return {
+                x: Math.max(0, Math.min(rect.width, clientX - rect.left)),
+                y: Math.max(0, Math.min(rect.height, clientY - rect.top))
+            };
+        }
+
+        function handleStart(e) {
+            if (e.type === 'touchstart') e.preventDefault();
+            clearTimeout(recognitionTimer);
+            isDrawing = true;
+            if (strokes.length === 0) {
+                startTime = Date.now();
+            }
+            const pos = getCoordinates(e);
+            currentStroke = {
+                x: [Math.round(pos.x)],
+                y: [Math.round(pos.y)],
+                t: [Date.now() - startTime]
+            };
+            redrawStrokes();
+        }
+
+        function handleMove(e) {
+            if (!isDrawing || !currentStroke) return;
+            if (e.type === 'touchmove') e.preventDefault();
+            const pos = getCoordinates(e);
+            const lastX = currentStroke.x[currentStroke.x.length - 1];
+            const lastY = currentStroke.y[currentStroke.y.length - 1];
+            
+            // 微小なブレを間引きつつ滑らかに記録
+            if (Math.hypot(pos.x - lastX, pos.y - lastY) >= 2) {
+                currentStroke.x.push(Math.round(pos.x));
+                currentStroke.y.push(Math.round(pos.y));
+                currentStroke.t.push(Date.now() - startTime);
+                redrawStrokes();
+            }
+        }
+
+        function handleEnd(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (currentStroke && currentStroke.x.length > 0) {
+                strokes.push(currentStroke);
+                currentStroke = null;
+                redrawStrokes();
+                // 書き終わってから少し間を置いて自動認識を実行
+                scheduleRecognition();
+            }
+        }
+
+        // イベントリスナー登録
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+
+        // 一画戻る
+        undoBtn.addEventListener('click', () => {
+            if (strokes.length > 0) {
+                strokes.pop();
+                redrawStrokes();
+                if (strokes.length > 0) {
+                    scheduleRecognition(150);
+                } else {
+                    resetCandidates();
+                }
+            }
+        });
+
+        // 全消去
+        clearBtn.addEventListener('click', () => {
+            strokes = [];
+            currentStroke = null;
+            redrawStrokes();
+            resetCandidates();
+        });
+
+        // 再検索ボタン
+        recognizeBtn.addEventListener('click', () => {
+            if (strokes.length === 0) {
+                showToast('枠内に漢字を書いてから検索してください');
+                return;
+            }
+            recognizeHandwriting();
+        });
+
+        function resetCandidates() {
+            clearTimeout(recognitionTimer);
+            engineStatus.textContent = '自動認識待機中';
+            candidatesContainer.innerHTML = `
+                <div class="col-span-5 flex items-center justify-center text-xs text-sumiLight/60 font-mincho py-6">
+                    枠内に文字を書くと候補が表示されます
+                </div>
+            `;
+        }
+
+        function scheduleRecognition(delay = 350) {
+            clearTimeout(recognitionTimer);
+            recognitionTimer = setTimeout(() => {
+                recognizeHandwriting();
+            }, delay);
+        }
+
+        /**
+         * ============================================================================
+         * 3. 手書き認識エンジン（Google Input Tools API + ローカル画数フォールバック）
+         * ============================================================================
+         */
+        async function recognizeHandwriting() {
+            if (strokes.length === 0) return;
+
+            loadingIndicator.classList.remove('hidden');
+            engineStatus.textContent = '筆跡を解析中...';
+
+            const rect = canvasWrapper.getBoundingClientRect();
+            const width = Math.round(rect.width);
+            const height = Math.round(rect.height);
+
+            // Google Input Tools 手書き認識エンドポイント形式に整形
+            const ink = strokes.map(s => [s.x, s.y, s.t]);
+            const payload = {
+                options: "enable_pre_space",
+                requests: [{
+                    writing_guide: {
+                        writing_area_width: width,
+                        writing_area_height: height
+                    },
+                    ink: ink,
+                    language: "ja"
+                }]
+            };
+
+            try {
+                const response = await fetch('https://inputtools.google.com/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+
+                if (data[0] === 'SUCCESS' && data[1]?.[0]?.[1]) {
+                    const rawCandidates = data[1][0][1];
+                    // 1文字の漢字・文字を優先して最大10件抽出
+                    const singleChars = rawCandidates
+                        .filter(c => Array.from(c).length === 1)
+                        .slice(0, 10);
+                    
+                    const finalCandidates = singleChars.length > 0 ? singleChars : rawCandidates.slice(0, 10);
+                    renderCandidates(finalCandidates);
+                    engineStatus.textContent = `候補 ${finalCandidates.length} 件を表示`;
+                } else {
+                    throw new Error('Recognition failed');
+                }
+            } catch (error) {
+                // オフライン時やネットワーク制限時のローカルフォールバック（画数マッチング）
+                const fallbackCandidates = getLocalFallbackCandidates(strokes.length);
+                renderCandidates(fallbackCandidates);
+                engineStatus.textContent = `ローカル画数照合 (${strokes.length}画付近)`;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // オフライン時用の画数ベース候補抽出
+        function getLocalFallbackCandidates(strokeCount) {
+            const allKanji = Object.keys(KANJI_DICTIONARY);
+            // 画数が近い順にソート
+            const sorted = allKanji.sort((a, b) => {
+                const diffA = Math.abs(KANJI_DICTIONARY[a].strokes - strokeCount);
+                const diffB = Math.abs(KANJI_DICTIONARY[b].strokes - strokeCount);
+                return diffA - diffB;
+            });
+            return sorted.slice(0, 10);
+        }
+
+        // 認識候補ボタンの描画（ダークモード対応）
+        function renderCandidates(candidates) {
+            if (!candidates || candidates.length === 0) {
+                candidatesContainer.innerHTML = `
+                    <div class="col-span-5 flex items-center justify-center text-xs text-sumiLight font-mincho py-6">
+                        該当する候補が見つかりませんでした
+                    </div>
+                `;
+                return;
+            }
+
+            candidatesContainer.innerHTML = '';
+            candidates.forEach((char, idx) => {
+                const btn = document.createElement('button');
+                // 第1候補は少し強調
+                const isFirst = idx === 0;
+                btn.className = `aspect-square rounded font-mincho text-2xl sm:text-3xl font-bold flex items-center justify-center transition shadow-xs border ${
+                    isFirst 
+                    ? 'bg-washi text-sumi border-shu ring-1 ring-shu/50 hover:bg-shu hover:text-white' 
+                    : 'bg-washi/85 text-sumi border-sumi/20 hover:bg-sumi hover:text-washi'
+                }`;
+                btn.textContent = char;
+                btn.title = `「${char}」を辞書で調べる`;
+                btn.addEventListener('click', () => {
+                    lookupKanji(char);
+                    // 選択状態の視覚フィードバック
+                    Array.from(candidatesContainer.children).forEach(c => c.classList.remove('bg-shu', 'text-white'));
+                    btn.classList.add('bg-shu', 'text-white');
+                });
+                candidatesContainer.appendChild(btn);
+            });
+        }
+
+        /**
+         * ============================================================================
+         * 4. 漢和辞典 検索＆表示ロジック（内蔵DB + オンライン漢字API自動補完）
+         * ============================================================================
+         */
+        let searchHistory = ['漢', '永', '龍', '鬱'];
+
+        async function lookupKanji(char) {
+            if (!char) return;
+            const targetChar = Array.from(char)[0]; // 1文字目を抽出
+
+            // 履歴の更新
+            searchHistory = [targetChar, ...searchHistory.filter(c => c !== targetChar)].slice(0, 8);
+            renderHistory();
+
+            // Unicodeコードポイント計算
+            const codePoint = targetChar.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+            document.getElementById('dictChar').textContent = targetChar;
+            document.getElementById('dictUnicode').textContent = `Unicode: U+${codePoint}`;
+            document.getElementById('externalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(targetChar + ' 漢字 意味 読み方')}`;
+
+            // 1. まず内蔵の詳細辞書データをチェック
+            if (KANJI_DICTIONARY[targetChar]) {
+                const entry = KANJI_DICTIONARY[targetChar];
+                displayDictionaryEntry({
+                    char: targetChar,
+                    onyomi: entry.onyomi,
+                    kunyomi: entry.kunyomi,
+                    radical: entry.radical,
+                    strokes: `${entry.strokes}画`,
+                    grade: entry.grade,
+                    meanings: entry.meanings,
+                    compounds: entry.compounds
+                });
+                return;
+            }
+
+            // 2. 内蔵DBにない漢字の場合、無料の公開漢字API (kanjiapi.dev) からリアルタイム取得を試みる
+            document.getElementById('dictOnyomi').textContent = '照会中...';
+            document.getElementById('dictKunyomi').textContent = '照会中...';
+            document.getElementById('dictRadical').textContent = '調査中';
+            document.getElementById('dictStrokes').textContent = '--画';
+            document.getElementById('dictMeaning').innerHTML = '<p class="text-sumiLight animate-pulse">辞書データを取得しています...</p>';
+            document.getElementById('dictCompounds').innerHTML = '';
+
+            try {
+                const res = await fetch(`https://kanjiapi.dev/v1/kanji/${encodeURIComponent(targetChar)}`);
+                if (!res.ok) throw new Error('Not found in kanjiapi');
+                const data = await res.json();
+
+                const onyomi = data.on_readings && data.on_readings.length > 0 ? data.on_readings.join('・') : '（なし）';
+                const kunyomi = data.kun_readings && data.kun_readings.length > 0 ? data.kun_readings.join('・') : '（なし）';
+                const strokes = data.stroke_count ? `${data.stroke_count}画` : '不明';
+                const gradeText = data.grade 
+                    ? (data.grade <= 6 ? `教育漢字（小${data.grade}）` : '常用漢字')
+                    : (data.jlpt ? `JLPT N${data.jlpt}水準` : 'JIS漢字');
+
+                // 英語義を分かりやすく整形して表示
+                const meaningsList = data.meanings && data.meanings.length > 0
+                    ? data.meanings.map((m, i) => `①②③④⑤⑥⑦⑧⑨⑩`[i] ? `${`①②③④⑤⑥⑦⑧⑨⑩`[i]} ${m}` : `・ ${m}`)
+                    : [`「${targetChar}」の字義情報です。詳しい用例は右上の「詳細検索」からも確認できます。`];
+
+                displayDictionaryEntry({
+                    char: targetChar,
+                    onyomi: onyomi,
+                    kunyomi: kunyomi,
+                    radical: '漢字部首（詳細検索参照）',
+                    strokes: strokes,
+                    grade: gradeText,
+                    meanings: meaningsList,
+                    compounds: [
+                        { word: `${targetChar}字`, reading: '―', desc: `「${targetChar}」を用いた熟語や語彙` },
+                        { word: `一${targetChar}`, reading: '―', desc: `Web上の国語辞典・漢和辞典で用例を調べる` }
+                    ]
+                });
+
+                // 熟語APIも取得して充実させる
+                fetchCompounds(targetChar);
+
+            } catch (err) {
+                // 記号やひらがな・カタカナ・特殊文字などの場合
+                displayDictionaryEntry({
+                    char: targetChar,
+                    onyomi: '―',
+                    kunyomi: '―',
+                    radical: '―',
+                    strokes: `${strokes.length || '―'}画（入力画数）`,
+                    grade: '一般文字・記号',
+                    meanings: [
+                        `① 選択された文字「${targetChar}」（U+${codePoint}）です。`,
+                        `② 詳しい意味や成り立ちについては、右上の「詳細検索」ボタンからWeb辞書をご参照ください。`
+                    ],
+                    compounds: []
+                });
+            }
+        }
+
+        // kanjiapi.dev から熟語データを追加取得
+        async function fetchCompounds(char) {
+            try {
+                const res = await fetch(`https://kanjiapi.dev/v1/words/${encodeURIComponent(char)}`);
+                if (!res.ok) return;
+                const words = await res.json();
+                if (!words || words.length === 0) return;
+
+                const compoundsEl = document.getElementById('dictCompounds');
+                const topWords = words.slice(0, 4);
+                compoundsEl.innerHTML = topWords.map(w => {
+                    const variant = w.variants[0];
+                    const meaning = w.meanings[0]?.glosses?.slice(0, 2).join(', ') || '';
+                    return `
+                        <div class="p-2.5 bg-washiDark/60 rounded border border-sumi/10">
+                            <div class="flex items-baseline justify-between gap-2 mb-0.5">
+                                <span class="font-mincho font-bold text-base text-sumi">${variant.written}</span>
+                                <span class="text-xs text-shu font-mincho">${variant.pronounced}</span>
+                            </div>
+                            <p class="text-xs text-sumiLight truncate">${meaning}</p>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                // 熟語取得失敗時は静かにスキップ
+            }
+        }
+
+        function displayDictionaryEntry(info) {
+            document.getElementById('dictOnyomi').textContent = info.onyomi;
+            document.getElementById('dictKunyomi').textContent = info.kunyomi;
+            document.getElementById('dictRadical').textContent = info.radical;
+            document.getElementById('dictStrokes').textContent = info.strokes;
+            document.getElementById('dictGradeBadge').textContent = info.grade;
+
+            const meaningEl = document.getElementById('dictMeaning');
+            meaningEl.innerHTML = info.meanings.map(m => `<p>${m}</p>`).join('');
+
+            const compoundsEl = document.getElementById('dictCompounds');
+            if (info.compounds && info.compounds.length > 0) {
+                compoundsEl.innerHTML = info.compounds.map(c => `
+                    <div class="p-2.5 bg-washiDark/60 rounded border border-sumi/10 hover:border-sumi/30 transition">
+                        <div class="flex items-baseline justify-between gap-2 mb-0.5">
+                            <span class="font-mincho font-bold text-base text-sumi">${c.word}</span>
+                            <span class="text-xs text-shu font-mincho">${c.reading}</span>
+                        </div>
+                        <p class="text-xs text-sumiLight">${c.desc}</p>
+                    </div>
+                `).join('');
+            } else {
+                compoundsEl.innerHTML = `<p class="text-xs text-sumiLight col-span-2">熟語データはありません。</p>`;
+            }
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = searchHistory.map(char => `
+                <button onclick="lookupKanji('${char}')" 
+                    class="w-7 h-7 flex-shrink-0 rounded bg-washiDark hover:bg-shu hover:text-white text-sumi font-mincho font-bold text-sm border border-sumi/15 transition flex items-center justify-center">
+                    ${char}
+                </button>
+            `).join('');
+        }
+
+        /**
+         * ============================================================================
+         * 5. ユーティリティ（クリップボードコピー・直接検索・モーダル）
+         * ============================================================================
+         */
+        function copyTextToClipboard(text, successMsg) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMsg);
+            } catch (err) {
+                showToast('コピーに失敗しました');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        document.getElementById('copyCharBtn').addEventListener('click', () => {
+            const char = document.getElementById('dictChar').textContent;
+            copyTextToClipboard(char, `漢字「${char}」をコピーしました`);
+        });
+
+        document.getElementById('copyAllBtn').addEventListener('click', () => {
+            const char = document.getElementById('dictChar').textContent;
+            const on = document.getElementById('dictOnyomi').textContent;
+            const kun = document.getElementById('dictKunyomi').textContent;
+            const strokes = document.getElementById('dictStrokes').textContent;
+            const meanings = Array.from(document.getElementById('dictMeaning').querySelectorAll('p'))
+                .map(p => p.textContent).join('\n');
+            
+            const formatted = `【${char}】(${strokes})\n音読み：${on}\n訓読み：${kun}\n意味：\n${meanings}`;
+            copyTextToClipboard(formatted, `「${char}」の辞書解説をコピーしました`);
+        });
+
+        // 直接検索フォーム
+        document.getElementById('directSearchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = document.getElementById('directInput').value.trim();
+            if (val) {
+                lookupKanji(val);
+                document.getElementById('directInput').value = '';
+            }
+        });
+
+        // トースト通知制御
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // 使い方モーダル制御
+        const helpModal = document.getElementById('helpModal');
+        document.getElementById('helpBtn').addEventListener('click', () => helpModal.classList.remove('hidden'));
+        document.getElementById('closeHelpBtn').addEventListener('click', () => helpModal.classList.add('hidden'));
+        document.getElementById('okHelpBtn').addEventListener('click', () => helpModal.classList.add('hidden'));
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) helpModal.classList.add('hidden');
+        });
+
+        // 初期化処理
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            lookupKanji('漢');
+        });
+    </script>
+</body>
+</html>
