@@ -12,12 +12,12 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
     { id: "hi", label: "ひ", icon: "🌸" }
   ];
 
-  const MAX_INTERVALS_FOR_AVERAGE = 6;
-
   let activeProfile = "ru";
   let overlay = null;
   let importInput = null;
-  let cachedData = { ru: [], hi: [] };
+  
+  // 周期設定を保存するため cycles を追加
+  let cachedData = { ru: [], hi: [], cycles: { ru: 28, hi: 28 } };
 
   function toISODate(date) {
     const y = date.getFullYear();
@@ -82,11 +82,11 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
       const snapshot = await get(dataRef);
 
       if (!snapshot.exists()) {
-        return { ru: [], hi: [] };
+        return { ru: [], hi: [], cycles: { ru: 28, hi: 28 } };
       }
 
       const parsed = snapshot.val();
-      const clean = { ru: [], hi: [] };
+      const clean = { ru: [], hi: [], cycles: { ru: 28, hi: 28 } };
 
       for (const profile of PROFILES) {
         const rows = Array.isArray(parsed[profile.id])
@@ -98,6 +98,11 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
             typeof value === "string" && parseISODate(value)
           )
         )].sort();
+      }
+      
+      // 周期データの読み込み
+      if (parsed.cycles) {
+        clean.cycles = { ...clean.cycles, ...parsed.cycles };
       }
 
       cachedData = clean;
@@ -127,56 +132,22 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
     }
   }
 
-  // 周期・次回予定日の計算
-  function getStats(records) {
+  // 周期・次回予定日の計算（手動入力された周期を基準に計算）
+  function getStats(records, cycle) {
     if (!records.length) {
       return {
-        average: null,
-        nextDate: null,
-        intervals: []
+        nextDate: null
       };
     }
-
-    const intervals = [];
-
-    for (let i = 1; i < records.length; i++) {
-      const previous = parseISODate(records[i - 1]);
-      const current = parseISODate(records[i]);
-
-      const days = dayDifference(previous, current);
-
-      if (days > 0) {
-        intervals.push(days);
-      }
-    }
-
-    const recent = intervals.slice(
-      -MAX_INTERVALS_FOR_AVERAGE
-    );
-
-    if (!recent.length) {
-      return {
-        average: null,
-        nextDate: null,
-        intervals
-      };
-    }
-
-    const average = Math.round(
-      recent.reduce((sum, n) => sum + n, 0) /
-      recent.length
-    );
 
     const lastStart = parseISODate(
       records[records.length - 1]
     );
 
     return {
-      average,
       nextDate: toISODate(
-        addDays(lastStart, average)
-      ),
-      intervals
+        addDays(lastStart, cycle)
+      )
     };
   }
 
@@ -334,6 +305,25 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
         font-size: 17px;
       }
 
+      /* 周期の手動入力ボックス用スタイル追加 */
+      .luna-period-cycle-input {
+        width: 60px;
+        padding: 2px 6px;
+        background: transparent;
+        border: 1px solid #5b5064;
+        border-radius: 6px;
+        color: #fff;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        text-align: right;
+      }
+
+      .luna-period-cycle-input:focus {
+        outline: none;
+        border-color: #bd83a8;
+      }
+
       .luna-period-section-title {
         margin: 18px 0 10px;
         font-size: 14px;
@@ -475,7 +465,8 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 
     const data = await loadData();
     const records = data[activeProfile];
-    const stats = getStats(records);
+    const cycle = data.cycles ? (data.cycles[activeProfile] || 28) : 28;
+    const stats = getStats(records, cycle);
 
     const profile = PROFILES.find(
       item => item.id === activeProfile
@@ -536,19 +527,18 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
           <p class="luna-period-note">
             ${
               stats.nextDate
-                ? "過去の周期からの目安です。実際の日付とは前後することがあります。"
-                : records.length === 1
-                  ? "もう1回以上記録すると、周期をもとに予測できるようになります。"
-                  : "生理開始日を2回以上記録すると、周期をもとに予測します。"
+                ? "設定した周期からの目安です。実際の日付とは前後することがあります。"
+                : "生理開始日を記録すると、設定した周期をもとに予測します。"
             }
           </p>
 
           <div class="luna-period-stats">
             <div class="luna-period-stat">
-              <span class="luna-period-caption">平均周期</span>
-              <strong>
-                ${stats.average ? `${stats.average}日` : "—"}
-              </strong>
+              <span class="luna-period-caption">設定周期</span>
+              <div style="display: flex; align-items: baseline; margin-top: 3px;">
+                <input type="number" class="luna-period-cycle-input" value="${cycle}" min="1" max="100">
+                <span style="font-size: 17px; font-weight: bold; margin-left: 4px;">日</span>
+              </div>
             </div>
 
             <div class="luna-period-stat">
@@ -676,6 +666,47 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
       });
     });
 
+    // 周期の保存（手動入力）
+    const cycleInput = overlay.querySelector('.luna-period-cycle-input');
+    if (cycleInput) {
+      cycleInput.addEventListener('change', async (event) => {
+        let val = parseInt(event.target.value, 10);
+        if (isNaN(val) || val < 1) val = 28; // 不正な値のフォールバック
+        
+        const current = await loadData();
+        current.cycles[activeProfile] = val;
+        if (await saveData(current)) {
+          render();
+        }
+      });
+    }
+
+    // 日にち入力時の経過日数表示
+    const dateInput = overlay.querySelector('.luna-period-date');
+    const messageEl = overlay.querySelector('[data-message]');
+    
+    function updateDateMessage() {
+      const selectedDateStr = dateInput.value;
+      const selectedDate = parseISODate(selectedDateStr);
+      if (!selectedDate) {
+        messageEl.textContent = "";
+        return;
+      }
+      
+      // 選択した日付より前の記録から最新のものを取得
+      const pastRecords = records.filter(d => d < selectedDateStr).sort();
+      if (pastRecords.length > 0) {
+        const lastRecordDate = parseISODate(pastRecords[pastRecords.length - 1]);
+        const diffDays = dayDifference(lastRecordDate, selectedDate);
+        messageEl.textContent = `前回から${diffDays}日です`;
+      } else {
+        messageEl.textContent = "";
+      }
+    }
+
+    dateInput.addEventListener('input', updateDateMessage);
+    updateDateMessage(); // 初期表示時の計算
+
     // 新規登録
     overlay.querySelector(
       '[data-form="add"]'
@@ -687,19 +718,16 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
       ).get("startDate");
 
       const date = parseISODate(value);
-      const message = overlay.querySelector("[data-message]");
 
       if (!date || value > todayISO()) {
-        message.textContent =
-          "今日までの日付を選択してください。";
+        messageEl.textContent = "今日までの日付を選択してください。";
         return;
       }
 
       const current = await loadData();
 
       if (current[activeProfile].includes(value)) {
-        message.textContent =
-          "この日付はすでに記録されています。";
+        messageEl.textContent = "この日付はすでに記録されています。";
         return;
       }
 
@@ -789,7 +817,8 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 
         const imported = {
           ru: [],
-          hi: []
+          hi: [],
+          cycles: { ru: 28, hi: 28 }
         };
 
         for (const profile of PROFILES) {
@@ -805,6 +834,11 @@ import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
               parseISODate(value)
             )
           )].sort();
+        }
+        
+        // 周期データの引き継ぎ
+        if (source.cycles) {
+          imported.cycles = { ...imported.cycles, ...source.cycles };
         }
 
         if (!confirm(
