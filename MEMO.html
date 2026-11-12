@@ -1232,22 +1232,40 @@
 
   <!-- 月ごとの予定チェックリスト用モーダル -->
   <div id="monthly-checklist-modal-overlay" class="modal-overlay">
-    <div class="modal-container" style="max-width: 520px;">
+    <div class="modal-container" style="max-width: 560px;">
       <div class="modal-header">
         <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
           <span>📖</span> 月ごとの予定チェックリスト
         </div>
         <button id="monthly-checklist-modal-close-x" class="modal-close-btn">✕</button>
       </div>
-      <div class="modal-body" style="gap: 12px; max-height: 60vh; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <div class="section-title" style="margin-bottom: 0;">今月の確認項目</div>
-          <button id="monthly-reset-btn" class="secondary-btn" style="font-size: 0.75rem; color: #fb7185; border-color: rgba(244, 63, 94, 0.3);">すべてはずす</button>
+
+      <!-- タブ切り替えボタン -->
+      <div style="display: flex; background: #1a233a; border-bottom: 1px solid var(--border-color); padding: 0 16px; gap: 8px;">
+        <button id="tab-btn-1" class="view-btn active" style="border-radius: 0; border-bottom: 2px solid var(--accent-purple); padding: 10px 16px;">タブ1: 毎月のToDo</button>
+        <button id="tab-btn-2" class="view-btn" style="border-radius: 0; padding: 10px 16px;">タブ2: 月ごとの予定</button>
+      </div>
+
+      <div class="modal-body" style="gap: 12px; max-height: 55vh; overflow-y: auto;">
+        <!-- タブ1コンテンツ -->
+        <div id="tab-content-1" style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div class="section-title" style="margin-bottom: 0;">今月の確認項目</div>
+            <button id="monthly-reset-btn" class="secondary-btn" style="font-size: 0.75rem; color: #fb7185; border-color: rgba(244, 63, 94, 0.3);">すべてはずす</button>
+          </div>
+          <div id="monthly-checklist-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
-        <div id="monthly-checklist-container" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- チェックリスト項目はJavaScriptで動的に、または確実に初期化されて生成されます -->
+
+        <!-- タブ2コンテンツ -->
+        <div id="tab-content-2" style="display: none; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div class="section-title" style="margin-bottom: 0;">各月の予定（アコーディオン）</div>
+            <button id="monthly-reset-tab2-btn" class="secondary-btn" style="font-size: 0.75rem; color: #fb7185; border-color: rgba(244, 63, 94, 0.3);">タブ2をすべてはずす</button>
+          </div>
+          <div id="monthly-accordion-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
       </div>
+
       <div class="modal-footer">
         <div></div>
         <button id="monthly-checklist-close-btn" class="secondary-btn">閉じる</button>
@@ -1581,7 +1599,6 @@
           const file = e.target.files[0];
           if (!file) return;
 
-          // PDFファイルの場合、PDF.jsでCanvasに描画し、軽量なJPEGデータに圧縮・変換する
           if (file.type === 'application/pdf' && typeof pdfjsLib !== 'undefined') {
             try {
               const arrayBuffer = await file.arrayBuffer();
@@ -1598,10 +1615,8 @@
 
               await page.render({ canvasContext: context, viewport: viewport }).promise;
               
-              // 品質0.7のJPEGに圧縮してBase64データURLを生成
               const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
               
-              // 圧縮したデータをプレビュー・アップロード用にBlob/Fileに変換してイベントオブジェクトを置き換え
               const res = await fetch(compressedDataUrl);
               const blob = await res.blob();
               const compressedFile = new File([blob], file.name.replace(/\.pdf$/i, '.jpg'), { type: 'image/jpeg' });
@@ -1618,9 +1633,10 @@
     });
   </script>
 
-  <!-- 月ごとの予定チェックリスト制御スクリプト -->
+  <!-- 月ごとの予定チェックリスト制御スクリプト（タブ1・タブ2アコーディオン実装） -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // タブ1の項目
       const checklistItems = [
         "スクリレで連絡する",
         "学級担任に連絡する",
@@ -1638,25 +1654,172 @@
         "翌月のカレンダーに予定を記入する"
       ];
 
+      // タブ2の月ごとのデータ
+      const monthlyData = [
+        {
+          summary: "１月",
+          details: [
+            "１月３日 お坊さん お菓子を用意",
+            "１月７日 七草粥",
+            "１月１５日 善哉",
+            "１月１５日 正月飾りを片付ける",
+            "１月３１日 Amazon支払い",
+            "恵方巻を予約する",
+            "美容室の予約をする（３月から花粉症で大変）"
+          ]
+        },
+        {
+          summary: "２月",
+          details: [
+            "節分の日に恵方巻を食べる",
+            "サッカー、ユニフォームレプリカ買うなら２月",
+            "１８日 結婚記念日"
+          ]
+        },
+        {
+          summary: "３月",
+          details: [
+            "ピアノの調律をお願いする",
+            "天気予報で最高気温が１０℃超えないならダウン着てく",
+            "９年生を送る会は中学生の卒業式",
+            "前期課程修了式は小学生の卒業式",
+            "親戚の子の入学祝を渡す １万円",
+            "京都・東山 花灯路",
+            "花粉症 二重マスク（布マスク＋サージカルマスク）"
+          ]
+        },
+        {
+          summary: "４月",
+          details: [
+            "お花見",
+            "タイヤ交換",
+            "車の税金支払い",
+            "OTTADEの電池を変える（単５）",
+            "スクリレ毎年登録必要"
+          ]
+        },
+        {
+          summary: "５月",
+          details: [
+            "夏服を買う",
+            "ゴールデンウィークは苗箱作り、田植え",
+            "５月３０日 お母さん誕生日"
+          ]
+        },
+        {
+          summary: "６月",
+          details: [
+            "６月３０日 水無月を食べる",
+            "冷蔵庫の製氷フィルター交換 R８年７月→",
+            "６月の第３日曜日、父の日",
+            "６月２0日以降、寝るときエアコン冷房２７度しずか、朝方４時にはOFFになるようにする",
+            "体育祭",
+            "学校の美化活動",
+            "７月３0日は休みにする"
+          ]
+        },
+        {
+          summary: "７月",
+          details: [
+            "ふみの日記念切手を買う",
+            "ひなたちゃんの誕生日ケーキを予約する",
+            "土用の丑の日にうな重を食べる",
+            "黒酢とFe入り飲料（飲むの忘れると体力激低下）",
+            "中町の納涼祭",
+            "勝林島のお祭り"
+          ]
+        },
+        {
+          summary: "８月",
+          details: [
+            "夏休みが終わるころ、上履きが小さくなって履けない。早めに買いに行く。"
+          ]
+        },
+        {
+          summary: "９月",
+          details: [
+            "蚊に注意",
+            "AEONのネットショップでおせち予約"
+          ]
+        },
+        {
+          summary: "１０月",
+          details: [
+            "インフルエンザ予防接種予約",
+            "冬服を買う",
+            "１０月３1日ハロウィン"
+          ]
+        },
+        {
+          summary: "１１月",
+          details: [
+            "ソフトバレー大会",
+            "自転車の保険更新（自分の自転車）",
+            "ケンタッキークリスマス予約",
+            "１１月１8日UNIQLO感謝祭",
+            "１１月２5日頃ブラックフライデー",
+            "クリスマスプレゼント用意"
+          ]
+        },
+        {
+          summary: "１２月",
+          details: [
+            "お年玉用の診察を用意する",
+            "ダウンコート＋インナーダウン"
+          ]
+        }
+      ];
+
       const modalOverlay = document.getElementById('monthly-checklist-modal-overlay');
       const openBtn = document.getElementById('monthly-checklist-modal-open-btn');
       const closeBtn = document.getElementById('monthly-checklist-close-btn');
       const closeXBtn = document.getElementById('monthly-checklist-modal-close-x');
-      const resetBtn = document.getElementById('monthly-reset-btn');
-      const container = document.getElementById('monthly-checklist-container');
+      
+      const tabBtn1 = document.getElementById('tab-btn-1');
+      const tabBtn2 = document.getElementById('tab-btn-2');
+      const tabContent1 = document.getElementById('tab-content-1');
+      const tabContent2 = document.getElementById('tab-content-2');
 
-      const STORAGE_KEY = 'monthly_checklist_state_v1';
+      const resetBtn1 = document.getElementById('monthly-reset-btn');
+      const resetBtn2 = document.getElementById('monthly-reset-tab2-btn');
+      
+      const container1 = document.getElementById('monthly-checklist-container');
+      const container2 = document.getElementById('monthly-accordion-container');
 
-      // チェックリストのHTML生成と状態の復元
-      function renderChecklist() {
+      const STORAGE_KEY_1 = 'monthly_checklist_state_v1';
+      const STORAGE_KEY_2 = 'monthly_accordion_state_v1';
+
+      // タブ切替処理
+      if (tabBtn1 && tabBtn2) {
+        tabBtn1.addEventListener('click', () => {
+          tabBtn1.classList.add('active');
+          tabBtn1.style.borderBottom = '2px solid var(--accent-purple)';
+          tabBtn2.classList.remove('active');
+          tabBtn2.style.borderBottom = 'none';
+          tabContent1.style.display = 'flex';
+          tabContent2.style.display = 'none';
+        });
+
+        tabBtn2.addEventListener('click', () => {
+          tabBtn2.classList.add('active');
+          tabBtn2.style.borderBottom = '2px solid var(--accent-purple)';
+          tabBtn1.classList.remove('active');
+          tabBtn1.style.borderBottom = 'none';
+          tabContent2.style.display = 'flex';
+          tabContent1.style.display = 'none';
+        });
+      }
+
+      // タブ1の描画
+      function renderChecklist1() {
         let savedState = {};
         try {
-          savedState = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+          savedState = JSON.parse(localStorage.getItem(STORAGE_KEY_1)) || {};
         } catch(e) {
           savedState = {};
         }
 
-        container.innerHTML = '';
+        container1.innerHTML = '';
         checklistItems.forEach((text, index) => {
           const isChecked = !!savedState[index];
           const itemWrapper = document.createElement('label');
@@ -1674,12 +1837,12 @@
           checkbox.addEventListener('change', (e) => {
             let currentStates = {};
             try {
-              currentStates = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+              currentStates = JSON.parse(localStorage.getItem(STORAGE_KEY_1)) || {};
             } catch(err) {
               currentStates = {};
             }
             currentStates[index] = e.target.checked;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentStates));
+            localStorage.setItem(STORAGE_KEY_1, JSON.stringify(currentStates));
             updateTextStyle(textSpan, e.target.checked);
           });
 
@@ -1690,7 +1853,71 @@
 
           itemWrapper.appendChild(checkbox);
           itemWrapper.appendChild(textSpan);
-          container.appendChild(itemWrapper);
+          container1.appendChild(itemWrapper);
+        });
+      }
+
+      // タブ2（月ごとのアコーディオン＆チェックリスト）の描画
+      function renderChecklist2() {
+        let savedState = {};
+        try {
+          savedState = JSON.parse(localStorage.getItem(STORAGE_KEY_2)) || {};
+        } catch(e) {
+          savedState = {};
+        }
+
+        container2.innerHTML = '';
+        monthlyData.forEach((monthObj, mIndex) => {
+          const detailsEl = document.createElement('details');
+          detailsEl.style.cssText = "background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; transition: all 0.2s;";
+
+          const summaryEl = document.createElement('summary');
+          summaryEl.textContent = monthObj.summary;
+          summaryEl.style.cssText = "padding: 12px 16px; font-weight: 700; font-size: 0.95rem; color: #d8b4fe; cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.05); outline: none;";
+          
+          summaryEl.onmouseover = () => summaryEl.style.background = "rgba(168, 85, 247, 0.12)";
+          summaryEl.onmouseout = () => summaryEl.style.background = "rgba(168, 85, 247, 0.05)";
+
+          const contentDiv = document.createElement('div');
+          contentDiv.style.cssText = "padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.05);";
+
+          monthObj.details.forEach((detailText, dIndex) => {
+            const uniqueKey = `${mIndex}-${dIndex}`;
+            const isChecked = !!savedState[uniqueKey];
+
+            const itemLabel = document.createElement('label');
+            itemLabel.style.cssText = "display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; cursor: pointer; transition: all 0.2s;";
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = isChecked;
+            checkbox.style.cssText = "width: 16px; height: 16px; accent-color: #ec4899; cursor: pointer; margin-top: 2px; border-radius: 4px; flex-shrink: 0;";
+
+            checkbox.addEventListener('change', (e) => {
+              let currentStates = {};
+              try {
+                currentStates = JSON.parse(localStorage.getItem(STORAGE_KEY_2)) || {};
+              } catch(err) {
+                currentStates = {};
+              }
+              currentStates[uniqueKey] = e.target.checked;
+              localStorage.setItem(STORAGE_KEY_2, JSON.stringify(currentStates));
+              updateTextStyle(textSpan, e.target.checked);
+            });
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = detailText;
+            textSpan.style.cssText = "font-size: 0.88rem; line-height: 1.4; color: #f1f5f9; word-break: break-all;";
+            updateTextStyle(textSpan, isChecked);
+
+            itemLabel.appendChild(checkbox);
+            itemLabel.appendChild(textSpan);
+            contentDiv.appendChild(itemLabel);
+          });
+
+          detailsEl.appendChild(summaryEl);
+          detailsEl.appendChild(contentDiv);
+          container2.appendChild(detailsEl);
         });
       }
 
@@ -1706,7 +1933,8 @@
 
       if (openBtn && modalOverlay) {
         openBtn.addEventListener('click', () => {
-          renderChecklist();
+          renderChecklist1();
+          renderChecklist2();
           modalOverlay.classList.add('active');
         });
       }
@@ -1723,11 +1951,19 @@
         });
       }
 
-      // すべてのチェックをはずすリセットボタン
-      if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-          localStorage.removeItem(STORAGE_KEY);
-          renderChecklist();
+      // タブ1リセット
+      if (resetBtn1) {
+        resetBtn1.addEventListener('click', () => {
+          localStorage.removeItem(STORAGE_KEY_1);
+          renderChecklist1();
+        });
+      }
+
+      // タブ2リセット
+      if (resetBtn2) {
+        resetBtn2.addEventListener('click', () => {
+          localStorage.removeItem(STORAGE_KEY_2);
+          renderChecklist2();
         });
       }
     });
