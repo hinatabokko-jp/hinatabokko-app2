@@ -1204,7 +1204,7 @@
           <!-- 生理の記録をするモーダルを表示するためのボタン（ウサギの絵文字） -->
           <button id="period-modal-open-btn" class="btn-logout" title="生理管理" onclick="PeriodModal.open()" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">🐰</button>
           <!-- ノートの絵文字ボタンを追加（月ごとの予定モーダルを開く） -->
-          <button id="monthly-checklist-modal-open-btn" class="btn-logout" title="月ごとの予定チェックリスト" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">📖</button>
+          <button id="monthly-checklist-modal-open-btn" class="btn-logout" title="ToDoList" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;">📖</button>
           <!-- ギャラリーを開くボタン -->
           <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/Gallery.html" class="btn-logout" title="ギャラリーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe; text-decoration: none;">🖼️</a>
           <button id="calendar-modal-open-btn" class="btn-logout" title="カレンダーを開く" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">📅</button>
@@ -1230,20 +1230,20 @@
     </div>
   </div>
 
-  <!-- 月ごとの予定チェックリスト用モーダル -->
+  <!-- ToDoList用モーダル -->
   <div id="monthly-checklist-modal-overlay" class="modal-overlay">
     <div class="modal-container" style="max-width: 560px;">
       <div class="modal-header">
         <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-          <span>📖</span> 月ごとの予定チェックリスト
+          <span>📖</span> ToDoList
         </div>
         <button id="monthly-checklist-modal-close-x" class="modal-close-btn">✕</button>
       </div>
 
       <!-- タブ切り替えボタン -->
       <div style="display: flex; background: #1a233a; border-bottom: 1px solid var(--border-color); padding: 0 16px; gap: 8px;">
-        <button id="tab-btn-1" class="view-btn active" style="border-radius: 0; border-bottom: 2px solid var(--accent-purple); padding: 10px 16px;">タブ1: 毎月のToDo</button>
-        <button id="tab-btn-2" class="view-btn" style="border-radius: 0; padding: 10px 16px;">タブ2: 月ごとの予定</button>
+        <button id="tab-btn-1" class="view-btn active" style="border-radius: 0; border-bottom: 2px solid var(--accent-purple); padding: 10px 16px;">毎月のToDoList</button>
+        <button id="tab-btn-2" class="view-btn" style="border-radius: 0; padding: 10px 16px;">月ごとの予定</button>
       </div>
 
       <div class="modal-body" style="gap: 12px; max-height: 55vh; overflow-y: auto;">
@@ -1633,7 +1633,7 @@
     });
   </script>
 
-  <!-- 月ごとの予定チェックリスト制御スクリプト（タブ1・タブ2アコーディオン実装） -->
+  <!-- 月ごとの予定チェックリスト制御スクリプト（タブ1・タブ2アコーディオン、編集・追加機能実装） -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // タブ1の項目
@@ -1654,8 +1654,8 @@
         "翌月のカレンダーに予定を記入する"
       ];
 
-      // タブ2の月ごとのデータ
-      const monthlyData = [
+      // タブ2の月ごとの初期データ
+      const initialMonthlyData = [
         {
           summary: "１月",
           details: [
@@ -1788,6 +1788,7 @@
 
       const STORAGE_KEY_1 = 'monthly_checklist_state_v1';
       const STORAGE_KEY_2 = 'monthly_accordion_state_v1';
+      const STORAGE_KEY_2_CUSTOM = 'monthly_accordion_custom_data_v1';
 
       // タブ切替処理
       if (tabBtn1 && tabBtn2) {
@@ -1857,7 +1858,7 @@
         });
       }
 
-      // タブ2（月ごとのアコーディオン＆チェックリスト）の描画
+      // タブ2（月ごとのアコーディオン＆チェックリスト、編集・追加機能付き）の描画
       function renderChecklist2() {
         let savedState = {};
         try {
@@ -1866,8 +1867,18 @@
           savedState = {};
         }
 
+        let currentMonthlyData = initialMonthlyData;
+        try {
+          const customData = JSON.parse(localStorage.getItem(STORAGE_KEY_2_CUSTOM));
+          if (customData) {
+            currentMonthlyData = customData;
+          }
+        } catch(e) {
+          currentMonthlyData = initialMonthlyData;
+        }
+
         container2.innerHTML = '';
-        monthlyData.forEach((monthObj, mIndex) => {
+        currentMonthlyData.forEach((monthObj, mIndex) => {
           const detailsEl = document.createElement('details');
           detailsEl.style.cssText = "background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; transition: all 0.2s;";
 
@@ -1885,13 +1896,13 @@
             const uniqueKey = `${mIndex}-${dIndex}`;
             const isChecked = !!savedState[uniqueKey];
 
-            const itemLabel = document.createElement('label');
-            itemLabel.style.cssText = "display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; cursor: pointer; transition: all 0.2s;";
+            const itemWrapper = document.createElement('div');
+            itemWrapper.style.cssText = "display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; transition: all 0.2s;";
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = isChecked;
-            checkbox.style.cssText = "width: 16px; height: 16px; accent-color: #ec4899; cursor: pointer; margin-top: 2px; border-radius: 4px; flex-shrink: 0;";
+            checkbox.style.cssText = "width: 16px; height: 16px; accent-color: #ec4899; cursor: pointer; margin-top: 4px; border-radius: 4px; flex-shrink: 0;";
 
             checkbox.addEventListener('change', (e) => {
               let currentStates = {};
@@ -1907,13 +1918,100 @@
 
             const textSpan = document.createElement('span');
             textSpan.textContent = detailText;
-            textSpan.style.cssText = "font-size: 0.88rem; line-height: 1.4; color: #f1f5f9; word-break: break-all;";
+            textSpan.style.cssText = "font-size: 0.88rem; line-height: 1.4; color: #f1f5f9; word-break: break-all; flex: 1; padding-top: 1px;";
             updateTextStyle(textSpan, isChecked);
 
-            itemLabel.appendChild(checkbox);
-            itemLabel.appendChild(textSpan);
-            contentDiv.appendChild(itemLabel);
+            // 編集ボタン
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+            editBtn.title = "編集";
+            editBtn.style.cssText = "background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; padding: 4px; transition: color 0.2s; flex-shrink: 0;";
+            editBtn.onmouseover = () => editBtn.style.color = "#fff";
+            editBtn.onmouseout = () => editBtn.style.color = "var(--text-muted)";
+
+            editBtn.addEventListener('click', () => {
+              const inputField = document.createElement('input');
+              inputField.type = 'text';
+              inputField.value = textSpan.textContent;
+              inputField.className = 'input-field-cal';
+              inputField.style.cssText = "font-size: 0.88rem; padding: 4px 8px; width: 100%; border-radius: 6px;";
+
+              itemWrapper.replaceChild(inputField, textSpan);
+              editBtn.style.display = 'none';
+              inputField.focus();
+
+              const saveEdit = () => {
+                const newVal = inputField.value.trim();
+                if (newVal !== "") {
+                  currentMonthlyData[mIndex].details[dIndex] = newVal;
+                  localStorage.setItem(STORAGE_KEY_2_CUSTOM, JSON.stringify(currentMonthlyData));
+                }
+                renderChecklist2();
+              };
+
+              inputField.addEventListener('blur', saveEdit);
+              inputField.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                  saveEdit();
+                }
+              });
+            });
+
+            // 削除ボタン
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            deleteBtn.title = "削除";
+            deleteBtn.style.cssText = "background: none; border: none; color: rgba(244, 63, 94, 0.7); cursor: pointer; font-size: 0.75rem; padding: 4px; transition: color 0.2s; flex-shrink: 0;";
+            deleteBtn.onmouseover = () => deleteBtn.style.color = "#f43f5e";
+            deleteBtn.onmouseout = () => deleteBtn.style.color = "rgba(244, 63, 94, 0.7)";
+
+            deleteBtn.addEventListener('click', () => {
+              currentMonthlyData[mIndex].details.splice(dIndex, 1);
+              localStorage.setItem(STORAGE_KEY_2_CUSTOM, JSON.stringify(currentMonthlyData));
+              renderChecklist2();
+            });
+
+            itemWrapper.appendChild(checkbox);
+            itemWrapper.appendChild(textSpan);
+            itemWrapper.appendChild(editBtn);
+            itemWrapper.appendChild(deleteBtn);
+            contentDiv.appendChild(itemWrapper);
           });
+
+          // 項目追加用コンテナ
+          const addRow = document.createElement('div');
+          addRow.style.cssText = "display: flex; gap: 8px; margin-top: 4px;";
+
+          const addInput = document.createElement('input');
+          addInput.type = 'text';
+          addInput.placeholder = '新しい予定を追加...';
+          addInput.className = 'input-field-cal';
+          addInput.style.cssText = "font-size: 0.85rem; padding: 6px 10px; border-radius: 6px; flex: 1;";
+
+          const addBtn = document.createElement('button');
+          addBtn.textContent = '追加';
+          addBtn.className = 'secondary-btn';
+          addBtn.style.cssText = "font-size: 0.75rem; padding: 6px 12px; background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;";
+
+          const handleAdd = () => {
+            const val = addInput.value.trim();
+            if (val) {
+              currentMonthlyData[mIndex].details.push(val);
+              localStorage.setItem(STORAGE_KEY_2_CUSTOM, JSON.stringify(currentMonthlyData));
+              renderChecklist2();
+            }
+          };
+
+          addBtn.addEventListener('click', handleAdd);
+          addInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              handleAdd();
+            }
+          });
+
+          addRow.appendChild(addInput);
+          addRow.appendChild(addBtn);
+          contentDiv.appendChild(addRow);
 
           detailsEl.appendChild(summaryEl);
           detailsEl.appendChild(contentDiv);
@@ -1963,6 +2061,7 @@
       if (resetBtn2) {
         resetBtn2.addEventListener('click', () => {
           localStorage.removeItem(STORAGE_KEY_2);
+          localStorage.removeItem(STORAGE_KEY_2_CUSTOM);
           renderChecklist2();
         });
       }
@@ -1991,3 +2090,4 @@
   <script type="module" src="js/period-modal.js"></script>
 </body>
 </html>
+```[cite: 1, 2]
