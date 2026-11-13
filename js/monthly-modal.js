@@ -153,9 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const container1 = document.getElementById('monthly-checklist-container');
   const container2 = document.getElementById('monthly-accordion-container');
 
-  // Firebase Firestore Doc Reference for ToDo & Monthly schedule storage
-  const docRef = doc(db, "app_settings", "monthly_checklist_data");
-
   let appData = {
     checklistState: {},
     checklistCustom: initialChecklistItems,
@@ -163,34 +160,44 @@ document.addEventListener('DOMContentLoaded', () => {
     accordionCustom: initialMonthlyData
   };
 
-  // Firebaseからデータを同期取得（リアルタイム監視）
-  onSnapshot(docRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const remoteData = docSnap.data();
-      if (remoteData.checklistState) appData.checklistState = remoteData.checklistState;
-      if (remoteData.checklistCustom) appData.checklistCustom = remoteData.checklistCustom;
-      if (remoteData.accordionState) appData.accordionState = remoteData.accordionState;
-      if (remoteData.accordionCustom) appData.accordionCustom = remoteData.accordionCustom;
-    } else {
-      // 初回データがない場合は初期データを書き込む
-      saveToFirebase();
-    }
-    renderChecklist1();
-    renderChecklist2();
-  }, (error) => {
-    console.error("Firebase sync error, fallback to localStorage:", error);
-    // 万が一オフラインやエラーの場合はローカルストレージにフォールバック
+  // dbの存在チェックとドキュメント参照の安全な取得
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Falling back to localStorage.");
     loadFromLocalStorage();
     renderChecklist1();
     renderChecklist2();
-  });
+  } else {
+    // Firebase Firestore Doc Reference for ToDo & Monthly schedule storage
+    const docRef = doc(db, "app_settings", "monthly_checklist_data");
 
-  async function saveToFirebase() {
-    try {
-      await setDoc(docRef, appData, { merge: true });
-    } catch (e) {
-      console.error("Failed to save to Firebase:", e);
-      saveToLocalStorage();
+    // Firebaseからデータを同期取得（リアルタイム監視）
+    onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const remoteData = docSnap.data();
+        if (remoteData.checklistState) appData.checklistState = remoteData.checklistState;
+        if (remoteData.checklistCustom) appData.checklistCustom = remoteData.checklistCustom;
+        if (remoteData.accordionState) appData.accordionState = remoteData.accordionState;
+        if (remoteData.accordionCustom) appData.accordionCustom = remoteData.accordionCustom;
+      } else {
+        // 初回データがない場合は初期データを書き込む
+        saveToFirebase();
+      }
+      renderChecklist1();
+      renderChecklist2();
+    }, (error) => {
+      console.error("Firebase sync error, fallback to localStorage:", error);
+      loadFromLocalStorage();
+      renderChecklist1();
+      renderChecklist2();
+    });
+
+    async function saveToFirebase() {
+      try {
+        await setDoc(docRef, appData, { merge: true });
+      } catch (e) {
+        console.error("Failed to save to Firebase:", e);
+        saveToLocalStorage();
+      }
     }
   }
 
@@ -251,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       checkbox.addEventListener('change', (e) => {
         appData.checklistState[index] = e.target.checked;
-        saveToFirebase();
+        if (db) saveToFirebase(); else saveToLocalStorage();
         updateTextStyle(textSpan, e.target.checked);
       });
 
@@ -283,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const newVal = inputField.value.trim();
           if (newVal !== "") {
             appData.checklistCustom[index] = newVal;
-            saveToFirebase();
+            if (db) saveToFirebase(); else saveToLocalStorage();
           }
           renderChecklist1();
         };
@@ -304,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       deleteBtn.addEventListener('click', () => {
         appData.checklistCustom.splice(index, 1);
-        saveToFirebase();
+        if (db) saveToFirebase(); else saveToLocalStorage();
         renderChecklist1();
       });
 
@@ -334,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = addInput.value.trim();
       if (val) {
         appData.checklistCustom.push(val);
-        saveToFirebase();
+        if (db) saveToFirebase(); else saveToLocalStorage();
         renderChecklist1();
       }
     };
@@ -382,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         checkbox.addEventListener('change', (e) => {
           appData.accordionState[uniqueKey] = e.target.checked;
-          saveToFirebase();
+          if (db) saveToFirebase(); else saveToLocalStorage();
           updateTextStyle(textSpan, e.target.checked);
         });
 
@@ -414,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newVal = inputField.value.trim();
             if (newVal !== "") {
               appData.accordionCustom[mIndex].details[dIndex] = newVal;
-              saveToFirebase();
+              if (db) saveToFirebase(); else saveToLocalStorage();
             }
             renderChecklist2();
           };
@@ -435,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         deleteBtn.addEventListener('click', () => {
           appData.accordionCustom[mIndex].details.splice(dIndex, 1);
-          saveToFirebase();
+          if (db) saveToFirebase(); else saveToLocalStorage();
           renderChecklist2();
         });
 
@@ -465,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = addInput.value.trim();
         if (val) {
           appData.accordionCustom[mIndex].details.push(val);
-          saveToFirebase();
+          if (db) saveToFirebase(); else saveToLocalStorage();
           renderChecklist2();
         }
       };
@@ -518,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBtn1.addEventListener('click', () => {
       appData.checklistState = {};
       appData.checklistCustom = initialChecklistItems;
-      saveToFirebase();
+      if (db) saveToFirebase(); else saveToLocalStorage();
       renderChecklist1();
     });
   }
@@ -528,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBtn2.addEventListener('click', () => {
       appData.accordionState = {};
       appData.accordionCustom = initialMonthlyData;
-      saveToFirebase();
+      if (db) saveToFirebase(); else saveToLocalStorage();
       renderChecklist2();
     });
   }
