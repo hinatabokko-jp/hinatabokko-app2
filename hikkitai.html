@@ -78,6 +78,18 @@
             box-shadow: 0 20px 45px -10px rgba(10, 15, 28, 0.45);
         }
 
+        .paper-transparent {
+            background-color: #FFFFFF;
+            background-image: 
+                linear-gradient(45deg, #E8E6E1 25%, transparent 25%), 
+                linear-gradient(-45deg, #E8E6E1 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #E8E6E1 75%), 
+                linear-gradient(-45deg, transparent 75%, #E8E6E1 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+            box-shadow: 0 18px 40px -10px rgba(30, 36, 43, 0.08);
+        }
+
         /* カスタムスクロールバー（右サイドバー＆キャンバス内） */
         .studio-scroll::-webkit-scrollbar {
             width: 6px;
@@ -244,9 +256,13 @@
 
             <!-- キャンバス下部アクションバー（コピー・高解像度PNGダウンロード） -->
             <div class="flex flex-wrap items-center justify-between gap-3 shrink-0">
-                <p class="text-xs text-stone-500 hidden sm:block">
-                    ※ 用紙・インク・書体の設定をそのまま高画質画像として保存できます
-                </p>
+                <div class="flex items-center gap-2 text-xs text-stone-600">
+                    <span class="inline-flex items-center gap-1 font-medium text-brass-dark bg-[#F5EFE4] border border-[#E6DEC8] px-2.5 py-1 rounded-full">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                        背景透過PNG (文字のみ保存)
+                    </span>
+                    <span class="hidden sm:inline text-stone-500">デザイン素材としてそのまま貼り付け可能です</span>
+                </div>
                 <div class="flex items-center gap-2.5 ml-auto">
                     <button id="copyTextBtn" type="button" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl bg-white border border-[#DED7C8] text-ink hover:bg-[#F9F6F0] active:scale-95 transition-all shadow-2xs">
                         <i data-lucide="copy" class="w-4 h-4 text-stone-600"></i>
@@ -254,7 +270,7 @@
                     </button>
                     <button id="downloadPngBtn" type="button" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B89258] to-[#96733E] text-white hover:from-[#A68149] hover:to-[#836232] active:scale-95 transition-all shadow-sm">
                         <i data-lucide="download" class="w-4 h-4"></i>
-                        PNG画像として保存
+                        透過PNGを保存
                     </button>
                 </div>
             </div>
@@ -339,7 +355,7 @@
                             <span class="font-medium text-stone-600">文字サイズ</span>
                             <span id="fontSizeValue" class="font-mono font-semibold text-brass bg-[#F7F3EB] px-2 py-0.5 rounded">62px</span>
                         </div>
-                        <input type="range" id="fontSizeSlider" min="24" max="110" value="62" class="w-full">
+                        <input type="range" id="fontSizeSlider" min="24" max="96" value="62" class="w-full">
                     </div>
 
                     <!-- 行間スライダー -->
@@ -401,7 +417,10 @@
 
                     <!-- 用紙テーマ選択 -->
                     <div class="space-y-2">
-                        <span class="block text-xs font-medium text-stone-600">用紙テーマ</span>
+                        <div class="flex items-center justify-between">
+                            <span class="block text-xs font-medium text-stone-600">プレビュー用紙テーマ</span>
+                            <span class="text-[10px] text-stone-400">※保存時は常に背景透過</span>
+                        </div>
                         <div class="grid grid-cols-2 gap-2" id="paperPresets">
                             <button type="button" data-paper="white" class="paper-btn text-xs py-2 px-3 rounded-xl border-2 border-brass bg-white text-ink font-medium flex items-center gap-2 transition-all">
                                 <span class="w-3.5 h-3.5 rounded-full bg-white border border-stone-300 shrink-0"></span>
@@ -418,6 +437,10 @@
                             <button type="button" data-paper="dark" class="paper-btn text-xs py-2 px-3 rounded-xl border border-slate-700 bg-[#131B2E] text-slate-200 font-medium hover:border-brass flex items-center gap-2 transition-all">
                                 <span class="w-3.5 h-3.5 rounded-full bg-[#131B2E] border border-slate-500 shrink-0"></span>
                                 ダークネイビー
+                            </button>
+                            <button type="button" data-paper="transparent" class="paper-btn col-span-2 text-xs py-2 px-3 rounded-xl border border-[#DED7C8] bg-[#F9F8F6] text-stone-700 font-medium hover:border-brass/60 flex items-center justify-center gap-2 transition-all">
+                                <span class="w-3.5 h-3.5 rounded-sm border border-stone-300 shrink-0" style="background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0;"></span>
+                                透過チェック柄（保存時の背景確認）
                             </button>
                         </div>
                     </div>
@@ -632,7 +655,7 @@
         // 用紙スタイルの適用
         function applyPaperStyle(styleKey) {
             state.paperStyle = styleKey;
-            previewCard.classList.remove('paper-white', 'paper-cream', 'paper-ruled', 'paper-dark');
+            previewCard.classList.remove('paper-white', 'paper-cream', 'paper-ruled', 'paper-dark', 'paper-transparent');
             previewCard.classList.add(`paper-${styleKey}`);
 
             // ダークネイビー選択時、インクが暗い色のままなら自動的にゴールドへ切り替えて視認性を確保
@@ -766,31 +789,29 @@
             document.body.removeChild(tempTextarea);
         });
 
-        // PNG画像としてダウンロード（高解像度Canvas描画）
+        // 背景透過PNG画像としてダウンロード（文字のみ・高解像度3x Canvas描画）
         downloadPngBtn.addEventListener('click', async () => {
             const textToRender = state.text.trim().length > 0 ? state.text : state.defaultPlaceholder;
             const canvas = document.getElementById('exportCanvas');
             const ctx = canvas.getContext('2d');
 
-            // フォントが完全にロードされていることを保証
+            // Google Fontsのロード完了を待機
             try {
+                await document.fonts.ready;
                 await document.fonts.load(`${state.fontSize}px "${state.selectedFont.name}"`);
             } catch (e) {
                 console.warn('Font load check:', e);
             }
 
-            // 高解像度（Retina 2x相当）設定
-            const scale = 2;
+            // 高解像度（3x Retina）設定
+            const scale = 3;
             const exportFontSize = Math.max(state.fontSize, 48);
             const lineHeight = exportFontSize * state.lineHeight;
-            const paddingX = 100;
-            const paddingY = 90;
 
-            // 仮計測用フォント設定
             ctx.font = `${exportFontSize}px "${state.selectedFont.name}", cursive`;
 
             // 改行および長い行の折り返し計算
-            const maxLineWidth = 1000;
+            const maxLineWidth = 1100;
             const rawParagraphs = textToRender.split('\n');
             const wrappedLines = [];
 
@@ -815,80 +836,77 @@
                 wrappedLines.push(currentLine);
             });
 
-            // 最も長い行の幅を算出（筆記体の左右の装飾はみ出し分として余裕を持たせる）
-            let maxMeasuredWidth = 360;
+            // 筆記体の装飾ループ（スワッシュ・アセンダー・ディセンダー）が切れないよう精密計測
+            let maxLeftOverhang = 0;
+            let maxRightWidth = 0;
+            let maxAscent = exportFontSize * 0.85;
+            let maxDescent = exportFontSize * 0.45;
+
             wrappedLines.forEach(line => {
-                const w = ctx.measureText(line).width;
-                if (w > maxMeasuredWidth) maxMeasuredWidth = w;
+                const m = ctx.measureText(line);
+                const left = m.actualBoundingBoxLeft || 0;
+                const right = m.actualBoundingBoxRight || m.width;
+                if (left > maxLeftOverhang) maxLeftOverhang = left;
+                if (right > maxRightWidth) maxRightWidth = right;
+                if (m.actualBoundingBoxAscent && m.actualBoundingBoxAscent > maxAscent) {
+                    maxAscent = m.actualBoundingBoxAscent;
+                }
+                if (m.actualBoundingBoxDescent && m.actualBoundingBoxDescent > maxDescent) {
+                    maxDescent = m.actualBoundingBoxDescent;
+                }
             });
 
-            const canvasWidth = Math.ceil(maxMeasuredWidth + paddingX * 2);
-            const canvasHeight = Math.ceil(wrappedLines.length * lineHeight + paddingY * 2);
+            // 筆記体特有の大きく傾いた飾り線（f, g, y, J, Zなど）が切れないよう十分な透明余白を確保
+            const swashBufferX = Math.ceil(exportFontSize * 0.65);
+            const swashBufferY = Math.ceil(exportFontSize * 0.45);
+            const contentWidth = Math.max(maxLeftOverhang + maxRightWidth, 120);
+            const contentHeight = Math.max(
+                (wrappedLines.length - 1) * lineHeight + maxAscent + maxDescent,
+                exportFontSize
+            );
 
+            const canvasWidth = Math.ceil(contentWidth + swashBufferX * 2);
+            const canvasHeight = Math.ceil(contentHeight + swashBufferY * 2);
+
+            // Canvasサイズ設定と完全透過クリア（背景色・枠線・罫線は一切描画しない）
             canvas.width = canvasWidth * scale;
             canvas.height = canvasHeight * scale;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.scale(scale, scale);
 
-            // 背景の描画（選択中の用紙スタイルに合わせる）
-            if (state.paperStyle === 'dark') {
-                ctx.fillStyle = '#131B2E';
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            } else if (state.paperStyle === 'cream') {
-                ctx.fillStyle = '#FDF8EE';
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            } else {
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            }
-
-            // 罫線スタイルの場合は横線を描画
-            if (state.paperStyle === 'ruled') {
-                ctx.strokeStyle = '#E2E8F0';
-                ctx.lineWidth = 1.5;
-                for (let y = paddingY + lineHeight * 0.85; y < canvasHeight - paddingY * 0.4; y += lineHeight) {
-                    ctx.beginPath();
-                    ctx.moveTo(40, y);
-                    ctx.lineTo(canvasWidth - 40, y);
-                    ctx.stroke();
-                }
-            }
-
-            // 上品なゴールドの枠線アクセント
-            ctx.strokeStyle = 'rgba(176, 141, 87, 0.35)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(20, 20, canvasWidth - 40, canvasHeight - 40);
-
-            // テキストの描画設定
+            // テキストの描画設定（文字のみレンダリング）
             ctx.font = `${exportFontSize}px "${state.selectedFont.name}", cursive`;
             ctx.fillStyle = state.inkColor;
-            ctx.textBaseline = 'middle';
+            ctx.textBaseline = 'alphabetic';
 
             let drawX = canvasWidth / 2;
             if (state.textAlign === 'left') {
                 ctx.textAlign = 'left';
-                drawX = paddingX;
+                drawX = swashBufferX + maxLeftOverhang;
             } else if (state.textAlign === 'right') {
                 ctx.textAlign = 'right';
-                drawX = canvasWidth - paddingX;
+                drawX = canvasWidth - swashBufferX;
             } else {
                 ctx.textAlign = 'center';
                 drawX = canvasWidth / 2;
             }
 
-            // 各行をレンダリング
+            // 1行目のベースラインY座標をアセンダー高さに合わせて配置
+            const firstBaselineY = swashBufferY + maxAscent;
+
             wrappedLines.forEach((line, index) => {
-                const drawY = paddingY + (index + 0.5) * lineHeight;
+                const drawY = firstBaselineY + index * lineHeight;
                 ctx.fillText(line, drawX, drawY);
             });
 
-            // PNGとしてダウンロード実行
+            // 背景透過PNGとしてダウンロード実行
             const link = document.createElement('a');
-            const safeFontName = state.selectedFont.name.toLowerCase().replace(/\s+/g, '-');
-            link.download = `calligraphy-${safeFontName}.png`;
+            link.download = 'cursive-text-transparent.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
 
-            showToast('筆記体画像をPNGとして保存しました');
+            showToast('背景透過PNG（文字のみ）を保存しました');
         });
 
         // 初期描画実行
