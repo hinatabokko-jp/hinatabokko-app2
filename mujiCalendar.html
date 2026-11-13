@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無印良品風 カレンダーシール（正方形バランス最適化版）</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    background-color: #f2f2f0;
+    color: #2b2b2b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* 画面表示時のみの操作バー */
+  .controls {
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    padding: 10px 18px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .controls label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .controls select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+  }
+
+  .btn-print {
+    background-color: #7f0019;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-print:hover {
+    background-color: #630013;
+  }
+
+  .note {
+    font-size: 11px;
+    color: #777;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* A4用紙（210mm × 297mm）に 56mm×56mm の正方形カードを 3×4 で均等配置 */
+  .a4-sheet {
+    width: 210mm;
+    height: 297mm;
+    background-color: #ffffff;
+    display: grid;
+    grid-template-columns: repeat(3, 56mm);
+    grid-template-rows: repeat(4, 56mm);
+    justify-content: center;
+    align-content: center;
+    gap: 10mm 9mm; /* 縦10mm・横9mmの均等な余白 */
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 各月の正方形シール枠（56mm × 56mm） */
+  .month-card {
+    width: 56mm;
+    height: 56mm;
+    border: 1px dashed #c8c8c6;
+    border-radius: 3.5mm;
+    padding: 3.8mm 4mm 3.5mm;
+    display: flex;
+    flex-direction: column;
+    background-color: #fcfcfa;
+  }
+
+  /* ヘッダー（月数字 ＋ 英語月・西暦） */
+  .month-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 0.3mm solid #dcdcd8;
+    padding-bottom: 1.5mm;
+    margin-bottom: 1.8mm;
+    flex-shrink: 0;
+  }
+
+  .month-num {
+    font-size: 21pt;
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    color: #222222;
+  }
+
+  .month-meta {
+    text-align: right;
+    line-height: 1.15;
+  }
+
+  .month-en {
+    display: block;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #2b2b2b;
+    letter-spacing: 0.02em;
+  }
+
+  .month-year {
+    display: block;
+    font-size: 7pt;
+    font-weight: 500;
+    color: #777777;
+  }
+
+  /* カレンダーグリッド（残りの高さを上下均等に配分して下の余白をなくす） */
+  .calendar-grid {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    /* 1行目は曜日、2行目以降は週数に応じて均等配分 */
+    grid-auto-rows: 1fr;
+    align-items: center;
+    text-align: center;
+  }
+
+  .dow {
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #555555;
+    align-self: center;
+  }
+
+  .dow.sun {
+    color: #c93a40;
+  }
+
+  .dow.sat {
+    color: #3b6ea5;
+  }
+
+  .day {
+    font-size: 8.5pt;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .day.sun,
+  .day.holiday {
+    color: #c93a40;
+    font-weight: 600;
+  }
+
+  .day.sat {
+    color: #3b6ea5;
+  }
+
+  /* 印刷時の設定 */
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+    }
+    .controls {
+      display: none;
+    }
+    .a4-sheet {
+      box-shadow: none;
+      margin: 0;
+      width: 210mm;
+      height: 297mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <label for="start-year">開始年月：</label>
+  <select id="start-year"></select>
+  <select id="start-month"></select>
+  <button class="btn-print" onclick="window.print()">A4で印刷する</button>
+  <div class="note">※印刷設定は「レイアウト：縦」「余白：なし（またはデフォルト）」「倍率：100%」にしてください</div>
+</div>
+
+<div class="a4-sheet" id="calendar-container"></div>
+
+<script>
+  const monthNamesEn = [
+    "Jan.", "Feb.", "Mar.", "Apr.", "May.", "Jun.",
+    "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+  ];
+  const dowLabels = ["S", "M", "T", "W", "T", "F", "S"];
+
+  function getJapaneseHolidays(year) {
+    const holidays = {};
+    const add = (m, d, name) => {
+      const key = `${year}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      holidays[key] = name;
+    };
+
+    const nthMonday = (m, n) => {
+      const firstDow = new Date(year, m - 1, 1).getDay();
+      return 1 + ((8 - firstDow) % 7) + (n - 1) * 7;
+    };
+
+    const vernalEquinox = Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    const autumnalEquinox = Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+
+    add(1, 1, "元日");
+    add(1, nthMonday(1, 2), "成人の日");
+    add(2, 11, "建国記念の日");
+    if (year >= 2020) add(2, 23, "天皇誕生日");
+    add(3, vernalEquinox, "春分の日");
+    add(4, 29, "昭和の日");
+    add(5, 3, "憲法記念日");
+    add(5, 4, "みどりの日");
+    add(5, 5, "こどもの日");
+    add(7, nthMonday(7, 3), "海の日");
+    if (year >= 2016) add(8, 11, "山の日");
+    add(9, nthMonday(9, 3), "敬老の日");
+    add(9, autumnalEquinox, "秋分の日");
+    add(10, nthMonday(10, 2), "スポーツの日");
+    add(11, 3, "文化の日");
+    add(11, 23, "勤労感謝の日");
+
+    if (autumnalEquinox - nthMonday(9, 3) === 2) {
+      add(9, nthMonday(9, 3) + 1, "国民の休日");
+    }
+
+    const baseKeys = Object.keys(holidays).sort();
+    baseKeys.forEach(key => {
+      const [y, m, d] = key.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      if (dt.getDay() === 0) {
+        let nextDt = new Date(y, m - 1, d + 1);
+        while (true) {
+          const nextKey = `${nextDt.getFullYear()}-${String(nextDt.getMonth() + 1).padStart(2, "0")}-${String(nextDt.getDate()).padStart(2, "0")}`;
+          if (!holidays[nextKey]) {
+            holidays[nextKey] = "振替休日";
+            break;
+          }
+          nextDt.setDate(nextDt.getDate() + 1);
+        }
+      }
+    });
+
+    return holidays;
+  }
+
+  function renderCalendar(startYear, startMonthIndex) {
+    const container = document.getElementById("calendar-container");
+    container.innerHTML = "";
+
+    const holidayMap = {
+      ...getJapaneseHolidays(startYear),
+      ...getJapaneseHolidays(startYear + 1)
+    };
+
+    for (let i = 0; i < 12; i++) {
+      const current = new Date(startYear, startMonthIndex + i, 1);
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const monthDisplay = month + 1;
+
+      const firstDayOfWeek = current.getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const card = document.createElement("div");
+      card.className = "month-card";
+
+      const header = document.createElement("div");
+      header.className = "month-header";
+      header.innerHTML = `
+        <span class="month-num">${monthDisplay}</span>
+        <div class="month-meta">
+          <span class="month-en">${monthNamesEn[month]}</span>
+          <span class="month-year">${year}</span>
+        </div>
+      `;
+      card.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.className = "calendar-grid";
+
+      dowLabels.forEach((label, idx) => {
+        const dowEl = document.createElement("div");
+        dowEl.className = "dow";
+        if (idx === 0) dowEl.classList.add("sun");
+        if (idx === 6) dowEl.classList.add("sat");
+        dowEl.textContent = label;
+        grid.appendChild(dowEl);
+      });
+
+      for (let empty = 0; empty < firstDayOfWeek; empty++) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "day";
+        grid.appendChild(emptyEl);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+        dayEl.textContent = d;
+
+        const dow = (firstDayOfWeek + d - 1) % 7;
+        const dateStr = `${year}-${String(monthDisplay).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+        if (dow === 0) dayEl.classList.add("sun");
+        if (dow === 6) dayEl.classList.add("sat");
+        if (holidayMap[dateStr]) {
+          dayEl.classList.add("holiday");
+          dayEl.title = holidayMap[dateStr];
+        }
+
+        grid.appendChild(dayEl);
+      }
+
+      card.appendChild(grid);
+      container.appendChild(card);
+    }
+  }
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const yearSelect = document.getElementById("start-year");
+  const monthSelect = document.getElementById("start-month");
+
+  for (let y = currentYear - 1; y <= currentYear + 5; y++) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = `${y}年`;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+
+  for (let m = 0; m < 12; m++) {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = `${m + 1}月始まり`;
+    if (m === currentMonth) opt.selected = true;
+    monthSelect.appendChild(opt);
+  }
+
+  const update = () => {
+    renderCalendar(Number(yearSelect.value), Number(monthSelect.value));
+  };
+
+  yearSelect.addEventListener("change", update);
+  monthSelect.addEventListener("change", update);
+
+  update();
+</script>
+
+</body>
+</html>
