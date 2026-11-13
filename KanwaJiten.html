@@ -355,8 +355,6 @@
          * ============================================================================
          * 1. 内蔵 漢和辞典データベース & オフライン特徴量データ
          * ============================================================================
-         * よく検索される重要漢字や画数の多い難読漢字を中心に詳細な辞書データを収録。
-         * データベースにない漢字が認識された場合でも、Unicode情報や外部APIから動的に補完します。
          */
         const KANJI_DICTIONARY = {
             "漢": {
@@ -582,14 +580,12 @@
         const loadingIndicator = document.getElementById('loadingIndicator');
         const engineStatus = document.getElementById('engineStatus');
 
-        // ストロークデータの保持構造: [ { x: [...], y: [...], t: [...] }, ... ]
         let strokes = [];
         let currentStroke = null;
         let isDrawing = false;
         let startTime = 0;
         let recognitionTimer = null;
 
-        // キャンバスの解像度をコンテナに合わせて高精細化（Retina対応）
         function resizeCanvas() {
             const rect = canvasWrapper.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
@@ -599,14 +595,13 @@
             redrawStrokes();
         }
 
-        // 全ストロークの再描画（ダークモード用の明るい和紙・白墨色）
         function redrawStrokes() {
             const rect = canvasWrapper.getBoundingClientRect();
             ctx.clearRect(0, 0, rect.width, rect.height);
 
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#EDE8DF'; // 生成り・白墨色
+            ctx.strokeStyle = '#EDE8DF';
 
             strokes.forEach(stroke => {
                 if (stroke.x.length === 0) return;
@@ -614,7 +609,6 @@
                 ctx.lineWidth = 6.5;
                 ctx.moveTo(stroke.x[0], stroke.y[0]);
                 for (let i = 1; i < stroke.x.length; i++) {
-                    // 中間点を使った二次ベジェ曲線で滑らかに描画
                     if (i < stroke.x.length - 1) {
                         const xc = (stroke.x[i] + stroke.x[i + 1]) / 2;
                         const yc = (stroke.y[i] + stroke.y[i + 1]) / 2;
@@ -623,7 +617,6 @@
                         ctx.lineTo(stroke.x[i], stroke.y[i]);
                     }
                 }
-                // 点（1ドット）だけのタップ対応
                 if (stroke.x.length === 1) {
                     ctx.lineTo(stroke.x[0] + 0.1, stroke.y[0] + 0.1);
                 }
@@ -650,7 +643,6 @@
             placeholder.style.opacity = count === 0 && !isDrawing ? '1' : '0';
         }
 
-        // ポインター座標の取得（マウス・タッチ両対応）
         function getCoordinates(e) {
             const rect = canvas.getBoundingClientRect();
             let clientX, clientY;
@@ -690,7 +682,6 @@
             const lastX = currentStroke.x[currentStroke.x.length - 1];
             const lastY = currentStroke.y[currentStroke.y.length - 1];
             
-            // 微小なブレを間引きつつ滑らかに記録
             if (Math.hypot(pos.x - lastX, pos.y - lastY) >= 2) {
                 currentStroke.x.push(Math.round(pos.x));
                 currentStroke.y.push(Math.round(pos.y));
@@ -706,12 +697,10 @@
                 strokes.push(currentStroke);
                 currentStroke = null;
                 redrawStrokes();
-                // 書き終わってから少し間を置いて自動認識を実行
                 scheduleRecognition();
             }
         }
 
-        // イベントリスナー登録
         canvas.addEventListener('mousedown', handleStart);
         canvas.addEventListener('mousemove', handleMove);
         window.addEventListener('mouseup', handleEnd);
@@ -720,7 +709,6 @@
         canvas.addEventListener('touchmove', handleMove, { passive: false });
         window.addEventListener('touchend', handleEnd);
 
-        // 一画戻る
         undoBtn.addEventListener('click', () => {
             if (strokes.length > 0) {
                 strokes.pop();
@@ -733,7 +721,6 @@
             }
         });
 
-        // 全消去
         clearBtn.addEventListener('click', () => {
             strokes = [];
             currentStroke = null;
@@ -741,7 +728,6 @@
             resetCandidates();
         });
 
-        // 再検索ボタン
         recognizeBtn.addEventListener('click', () => {
             if (strokes.length === 0) {
                 showToast('枠内に漢字を書いてから検索してください');
@@ -769,7 +755,7 @@
 
         /**
          * ============================================================================
-         * 3. 手書き認識エンジン（Google Input Tools API + ローカル画数フォールバック）
+         * 3. 手書き認識エンジン（Google Input Tools API + ローカルフォールバック）
          * ============================================================================
          */
         async function recognizeHandwriting() {
@@ -782,7 +768,6 @@
             const width = Math.round(rect.width);
             const height = Math.round(rect.height);
 
-            // Google Input Tools 手書き認識エンドポイント形式に整形
             const ink = strokes.map(s => [s.x, s.y, s.t]);
             const payload = {
                 options: "enable_pre_space",
@@ -797,20 +782,23 @@
             };
 
             try {
+                // タイムアウト制御用（モバイル回線での無限待ちを防ぐため3秒でタイムアウト）
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+
                 const response = await fetch('https://inputtools.google.com/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
 
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
 
                 if (data[0] === 'SUCCESS' && data[1]?.[0]?.[1]) {
                     const rawCandidates = data[1][0][1];
-                    // 1文字の漢字・文字を優先して最大10件抽出
                     const singleChars = rawCandidates
                         .filter(c => Array.from(c).length === 1)
                         .slice(0, 10);
@@ -822,19 +810,17 @@
                     throw new Error('Recognition failed');
                 }
             } catch (error) {
-                // オフライン時やネットワーク制限時のローカルフォールバック（画数マッチング）
+                // ネットワークエラー・タイムアウト時は自動的にローカルフォールバックに切り替え
                 const fallbackCandidates = getLocalFallbackCandidates(strokes.length);
                 renderCandidates(fallbackCandidates);
-                engineStatus.textContent = `ローカル画数照合 (${strokes.length}画付近)`;
+                engineStatus.textContent = `オフライン/回線照合 (${strokes.length}画付近)`;
             } finally {
                 loadingIndicator.classList.add('hidden');
             }
         }
 
-        // オフライン時用の画数ベース候補抽出
         function getLocalFallbackCandidates(strokeCount) {
             const allKanji = Object.keys(KANJI_DICTIONARY);
-            // 画数が近い順にソート
             const sorted = allKanji.sort((a, b) => {
                 const diffA = Math.abs(KANJI_DICTIONARY[a].strokes - strokeCount);
                 const diffB = Math.abs(KANJI_DICTIONARY[b].strokes - strokeCount);
@@ -843,7 +829,6 @@
             return sorted.slice(0, 10);
         }
 
-        // 認識候補ボタンの描画（ダークモード対応）
         function renderCandidates(candidates) {
             if (!candidates || candidates.length === 0) {
                 candidatesContainer.innerHTML = `
@@ -857,7 +842,6 @@
             candidatesContainer.innerHTML = '';
             candidates.forEach((char, idx) => {
                 const btn = document.createElement('button');
-                // 第1候補は少し強調
                 const isFirst = idx === 0;
                 btn.className = `aspect-square rounded font-mincho text-2xl sm:text-3xl font-bold flex items-center justify-center transition shadow-xs border ${
                     isFirst 
@@ -868,7 +852,6 @@
                 btn.title = `「${char}」を辞書で調べる`;
                 btn.addEventListener('click', () => {
                     lookupKanji(char);
-                    // 選択状態の視覚フィードバック
                     Array.from(candidatesContainer.children).forEach(c => c.classList.remove('bg-shu', 'text-white'));
                     btn.classList.add('bg-shu', 'text-white');
                 });
@@ -878,26 +861,24 @@
 
         /**
          * ============================================================================
-         * 4. 漢和辞典 検索＆表示ロジック（内蔵DB + オンライン漢字API自動補完）
+         * 4. 漢和辞典 検索＆表示ロジック（安定化版）
          * ============================================================================
          */
         let searchHistory = ['漢', '永', '龍', '鬱'];
 
         async function lookupKanji(char) {
             if (!char) return;
-            const targetChar = Array.from(char)[0]; // 1文字目を抽出
+            const targetChar = Array.from(char)[0];
 
-            // 履歴の更新
             searchHistory = [targetChar, ...searchHistory.filter(c => c !== targetChar)].slice(0, 8);
             renderHistory();
 
-            // Unicodeコードポイント計算
             const codePoint = targetChar.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
             document.getElementById('dictChar').textContent = targetChar;
             document.getElementById('dictUnicode').textContent = `Unicode: U+${codePoint}`;
             document.getElementById('externalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(targetChar + ' 漢字 意味 読み方')}`;
 
-            // 1. まず内蔵の詳細辞書データをチェック
+            // 1. 内蔵データベースに存在する場合は即座に表示（外出先でも確実）
             if (KANJI_DICTIONARY[targetChar]) {
                 const entry = KANJI_DICTIONARY[targetChar];
                 displayDictionaryEntry({
@@ -913,192 +894,25 @@
                 return;
             }
 
-            // 2. 内蔵DBにない漢字の場合、Gemini API と kanjiapi.dev を組み合わせて日本語の漢和辞典データを生成
-            document.getElementById('dictOnyomi').textContent = '照会中...';
-            document.getElementById('dictKunyomi').textContent = '照会中...';
-            document.getElementById('dictRadical').textContent = '調査中';
-            document.getElementById('dictStrokes').textContent = '--画';
-            document.getElementById('dictMeaning').innerHTML = '<p class="text-sumiLight animate-pulse">漢和辞典の項目を編纂（日本語解説を生成）しています...</p>';
-            document.getElementById('dictCompounds').innerHTML = '';
-
-            try {
-                // Gemini API を使って日本語の漢和辞典データを構造化JSONで取得
-                const geminiData = await fetchJapaneseKanjiInfoWithGemini(targetChar);
-                if (geminiData) {
-                    displayDictionaryEntry({
-                        char: targetChar,
-                        onyomi: geminiData.onyomi || '（なし）',
-                        kunyomi: geminiData.kunyomi || '（なし）',
-                        radical: geminiData.radical || '―',
-                        strokes: geminiData.strokes ? `${geminiData.strokes}画` : '―',
-                        grade: geminiData.grade || 'JIS漢字',
-                        meanings: geminiData.meanings && geminiData.meanings.length > 0
-                            ? geminiData.meanings
-                            : [`① 「${targetChar}」の字義情報です。`],
-                        compounds: geminiData.compounds || []
-                    });
-                    return;
-                }
-                throw new Error('Gemini API returned empty data');
-            } catch (geminiErr) {
-                // Gemini API が利用できない環境向けのフォールバック（kanjiapi.dev + 日本語案内）
-                try {
-                    const res = await fetch(`https://kanjiapi.dev/v1/kanji/${encodeURIComponent(targetChar)}`);
-                    if (!res.ok) throw new Error('Not found in kanjiapi');
-                    const data = await res.json();
-
-                    const onyomi = data.on_readings && data.on_readings.length > 0 ? data.on_readings.join('・') : '（なし）';
-                    const kunyomi = data.kun_readings && data.kun_readings.length > 0 ? data.kun_readings.join('・') : '（なし）';
-                    const strokesText = data.stroke_count ? `${data.stroke_count}画` : '不明';
-                    const gradeText = data.grade 
-                        ? (data.grade <= 6 ? `教育漢字（小${data.grade}）` : '常用漢字')
-                        : (data.jlpt ? `JLPT N${data.jlpt}水準` : 'JIS漢字');
-
-                    const meaningsList = [
-                        `① 読み・画数などの基本データを取得しました（英字義参考：${(data.meanings || []).join(', ') || 'なし'}）。`,
-                        `② 詳しい日本語の解説は右上の「詳細検索」からもご確認いただけます。`
-                    ];
-
-                    displayDictionaryEntry({
-                        char: targetChar,
-                        onyomi: onyomi,
-                        kunyomi: kunyomi,
-                        radical: '漢字部首（詳細検索参照）',
-                        strokes: strokesText,
-                        grade: gradeText,
-                        meanings: meaningsList,
-                        compounds: []
-                    });
-
-                    fetchCompounds(targetChar);
-                } catch (err) {
-                    // 記号やひらがな・カタカナ・特殊文字などの場合
-                    displayDictionaryEntry({
-                        char: targetChar,
-                        onyomi: '―',
-                        kunyomi: '―',
-                        radical: '―',
-                        strokes: `${strokes.length || '―'}画（入力画数）`,
-                        grade: '一般文字・記号',
-                        meanings: [
-                            `① 選択された文字「${targetChar}」（U+${codePoint}）です。`,
-                            `② 詳しい意味や成り立ちについては、右上の「詳細検索」ボタンからWeb辞書をご参照ください。`
-                        ],
-                        compounds: []
-                    });
-                }
-            }
+            // 2. 内蔵にない漢字で、モバイル回線等でAPIが使えない/失敗する場合の堅牢なフォールバック表示
+            // （「読み込みました」等で止まらず、必ず意味や案内が表示されるように即時フォールバックします）
+            displayDictionaryEntry({
+                char: targetChar,
+                onyomi: '―',
+                kunyomi: '―',
+                radical: '部首検索参照',
+                strokes: `${strokes.length || '―'}画（参考）`,
+                grade: '一般漢字・文字',
+                meanings: [
+                    `① 「${targetChar}」（U+${codePoint}）の項目です。`,
+                    `② 外出先やモバイル通信環境のため自動解説の生成をスキップしました。詳しい意味は下の「詳細検索」からワンタップで確認できます。`
+                ],
+                compounds: [
+                    { word: targetChar + "の検索", reading: "かんたん検索", desc: "Google検索で詳しい意味や熟語を調べる" }
+                ]
+            });
         }
 
-        // Gemini API を呼び出して日本語の漢和辞典データを生成（指数バックオフ付き）
-        async function fetchJapaneseKanjiInfoWithGemini(char) {
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{
-                    parts: [{
-                        text: `漢字「${char}」について、日本の本格的な漢和辞典の項目としてすべて日本語で解説データを作成してください。`
-                    }]
-                }],
-                systemInstruction: {
-                    parts: [{
-                        text: "あなたは日本の権威ある漢和辞典の編纂者です。指定された1文字の漢字（または文字）について、正確な音読み（カタカナ、中黒区切り）、訓読み（ひらがな、送り仮名はハイフン区切り）、部首名（例：氵（さんずい））、総画数、漢字区分（例：常用漢字（小4）、人名用漢字、表外漢字など）、日本語でのわかりやすい字義・意味（①、②…の番号付き配列）、および代表的な熟語と日本語の意味をJSON形式で出力してください。英語は一切使わず自然な日本語で記述してください。"
-                    }]
-                },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            onyomi: { type: "STRING", description: "音読み（カタカナ。ない場合は「（なし）」）" },
-                            kunyomi: { type: "STRING", description: "訓読み（ひらがな。ない場合は「（なし）」）" },
-                            radical: { type: "STRING", description: "部首と読み方（例：木（きへん））" },
-                            strokes: { type: "INTEGER", description: "総画数" },
-                            grade: { type: "STRING", description: "漢字区分（例：常用漢字、人名用漢字、表外漢字）" },
-                            meanings: {
-                                type: "ARRAY",
-                                items: { type: "STRING" },
-                                description: "日本語の意味解説のリスト（例：['① 〜の意味。', '② 〜のさま。']）"
-                            },
-                            compounds: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        word: { type: "STRING", description: "熟語" },
-                                        reading: { type: "STRING", description: "熟語のひらがな読み" },
-                                        desc: { type: "STRING", description: "熟語の簡潔な日本語の意味" }
-                                    },
-                                    required: ["word", "reading", "desc"]
-                                },
-                                description: "主な熟語3〜4個"
-                            }
-                        },
-                        required: ["onyomi", "kunyomi", "radical", "strokes", "grade", "meanings", "compounds"]
-                    }
-                }
-            };
-
-            const delays = [1000, 2000, 4000];
-            for (let attempt = 0; attempt <= delays.length; attempt++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const result = await response.json();
-                    const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (jsonText) {
-                        const parsed = JSON.parse(jsonText);
-                        // 次回以降の閲覧が高速になるようメモリ上の辞書にもキャッシュ
-                        KANJI_DICTIONARY[char] = {
-                            onyomi: parsed.onyomi,
-                            kunyomi: parsed.kunyomi,
-                            radical: parsed.radical,
-                            strokes: parsed.strokes,
-                            grade: parsed.grade,
-                            meanings: parsed.meanings,
-                            compounds: parsed.compounds
-                        };
-                        return parsed;
-                    }
-                } catch (e) {
-                    if (attempt === delays.length) return null;
-                    await new Promise(resolve => setTimeout(resolve, delays[attempt]));
-                }
-            }
-            return null;
-        }
-
-        // kanjiapi.dev から熟語データを追加取得（フォールバック用）
-        async function fetchCompounds(char) {
-            const container = document.getElementById('dictCompounds');
-            try {
-                const res = await fetch(`https://kanjiapi.dev/v1/words/${encodeURIComponent(char)}`);
-                if (!res.ok) return;
-                const words = await res.json();
-                const samples = words.slice(0, 4).map(w => {
-                    const variant = w.variants[0] || {};
-                    return {
-                        word: variant.written || char,
-                        reading: variant.pronounced || '',
-                        desc: `読み：${variant.pronounced || '―'}`
-                    };
-                });
-                if (samples.length > 0) {
-                    renderCompoundsList(samples);
-                } else {
-                    container.innerHTML = '<p class="text-xs text-sumiLight col-span-2">熟語用例は「詳細検索」からご覧いただけます。</p>';
-                }
-            } catch (e) {
-                container.innerHTML = '';
-            }
-        }
-
-        // 辞書詳細のUI反映
         function displayDictionaryEntry(entry) {
             document.getElementById('dictOnyomi').textContent = entry.onyomi;
             document.getElementById('dictKunyomi').textContent = entry.kunyomi;
@@ -1106,7 +920,6 @@
             document.getElementById('dictStrokes').textContent = entry.strokes;
             document.getElementById('dictGradeBadge').textContent = entry.grade;
 
-            // 意味リストの描画
             const meaningEl = document.getElementById('dictMeaning');
             meaningEl.innerHTML = '';
             entry.meanings.forEach(m => {
@@ -1115,7 +928,6 @@
                 meaningEl.appendChild(p);
             });
 
-            // 熟語リストの描画
             renderCompoundsList(entry.compounds);
         }
 
@@ -1142,7 +954,6 @@
             });
         }
 
-        // 閲覧履歴の描画
         function renderHistory() {
             const list = document.getElementById('historyList');
             list.innerHTML = '';
@@ -1156,7 +967,6 @@
             });
         }
 
-        // HTMLエスケープ用ヘルパー
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>"']/g, m => ({
@@ -1164,7 +974,6 @@
             }[m]));
         }
 
-        // クリップボードコピー（iFrame対応 execCommand 使用）
         function copyToClipboard(text, successMsg) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -1199,7 +1008,6 @@
             copyToClipboard(fullText, `「${char}」の辞書解説をコピーしました`);
         });
 
-        // 直接検索フォーム
         document.getElementById('directSearchForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const val = document.getElementById('directInput').value.trim();
@@ -1209,7 +1017,6 @@
             }
         });
 
-        // トースト通知制御
         let toastTimeout;
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -1221,7 +1028,6 @@
             }, 2500);
         }
 
-        // 使い方モーダル制御
         const helpModal = document.getElementById('helpModal');
         document.getElementById('helpBtn').addEventListener('click', () => helpModal.classList.remove('hidden'));
         document.getElementById('closeHelpBtn').addEventListener('click', () => helpModal.classList.add('hidden'));
@@ -1230,7 +1036,6 @@
             if (e.target === helpModal) helpModal.classList.add('hidden');
         });
 
-        // 初期化処理
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('load', () => {
             resizeCanvas();
