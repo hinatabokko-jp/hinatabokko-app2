@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calligraphy Studio — 英文筆記体プレビュー</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: UI用(Noto Sans JP / Inter) + 筆記体フォント8種 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Dancing+Script:wght@500;600&family=Great+Vibes&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Parisienne&family=Pinyon+Script&family=Sacramento&family=Tangerine:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', '"Noto Sans JP"', 'sans-serif'],
+                        'great-vibes': ['"Great Vibes"', 'cursive'],
+                        'alex-brush': ['"Alex Brush"', 'cursive'],
+                        'parisienne': ['"Parisienne"', 'cursive'],
+                        'sacramento': ['"Sacramento"', 'cursive'],
+                        'allura': ['"Allura"', 'cursive'],
+                        'pinyon': ['"Pinyon Script"', 'cursive'],
+                        'tangerine': ['"Tangerine"', 'cursive'],
+                        'dancing': ['"Dancing Script"', 'cursive'],
+                    },
+                    colors: {
+                        ivory: '#FAF8F5',
+                        paper: '#FFFFFF',
+                        brass: '#B08D57',
+                        'brass-dark': '#8E6F3E',
+                        ink: '#1E242B',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* カスタムスクロールバーと微細なテクスチャ */
+        body {
+            background-color: #F6F3EC;
+            background-image: radial-gradient(#E2DCD0 0.75px, transparent 0.75px);
+            background-size: 20px 20px;
+            color: #1E242B;
+        }
+
+        /* プレビュー用紙のスタイル定義 */
+        .paper-white {
+            background-color: #FFFFFF;
+            box-shadow: 0 18px 40px -10px rgba(30, 36, 43, 0.08), 0 4px 12px -2px rgba(30, 36, 43, 0.04);
+        }
+
+        .paper-cream {
+            background-color: #FDF8EE;
+            background-image: linear-gradient(to bottom right, rgba(255,255,255,0.5), rgba(232, 219, 195, 0.35));
+            box-shadow: 0 18px 40px -10px rgba(139, 115, 85, 0.14), 0 4px 12px -2px rgba(139, 115, 85, 0.06);
+        }
+
+        .paper-ruled {
+            background-color: #FFFFFF;
+            background-image: linear-gradient(#E2E8F0 1px, transparent 1px);
+            background-size: 100% 3.4rem;
+            background-position: 0 2.2rem;
+            box-shadow: 0 18px 40px -10px rgba(30, 36, 43, 0.08);
+        }
+
+        .paper-dark {
+            background-color: #131B2E;
+            background-image: radial-gradient(circle at top right, #1D2944, #0F1524);
+            box-shadow: 0 20px 45px -10px rgba(10, 15, 28, 0.45);
+        }
+
+        /* カスタムスクロールバー（右サイドバー＆キャンバス内） */
+        .studio-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .studio-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .studio-scroll::-webkit-scrollbar-thumb {
+            background: rgba(176, 141, 87, 0.3);
+            border-radius: 999px;
+        }
+        .studio-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(176, 141, 87, 0.55);
+        }
+
+        /* レンジスライダーのカスタムデザイン */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: #E5DFD3;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #B08D57;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin-top: -5.5px;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #8E6F3E;
+        }
+
+        /* 筆記体の文字切れ防止とインク定着トランジション */
+        .cursive-render-area {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            transition: font-size 0.15s ease, color 0.2s ease, line-height 0.15s ease, filter 0.25s ease;
+        }
+
+        /* 入力直後の微細なインク滲み・定着アニメーション */
+        @keyframes inkSettle {
+            0% {
+                filter: blur(0.6px);
+                transform: scale(1.003);
+            }
+            100% {
+                filter: blur(0px);
+                transform: scale(1);
+            }
+        }
+        .ink-writing-pulse {
+            animation: inkSettle 0.28s ease-out;
+        }
+
+        /* ペン先アイコンの執筆モーション */
+        @keyframes nibWrite {
+            0%, 100% { transform: rotate(0deg) translate(0, 0); }
+            25% { transform: rotate(-12deg) translate(-2px, 1px); }
+            75% { transform: rotate(8deg) translate(2px, -1px); }
+        }
+        .nib-active {
+            animation: nibWrite 0.35s ease-in-out infinite;
+        }
+
+        /* トーストアニメーション */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translate(-50%, 16px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .toast-enter {
+            animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col antialiased selection:bg-brass/20 selection:text-ink">
+
+    <!-- コンパクトなスタジオヘッダー -->
+    <header class="w-full h-14 shrink-0 border-b border-[#E5DFD3] bg-white/85 backdrop-blur-md z-30 px-4 sm:px-6 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A065] to-[#8F6D38] flex items-center justify-center text-white shadow-xs">
+                <i data-lucide="feather" class="w-4 h-4"></i>
+            </div>
+            <div class="flex items-baseline gap-2.5">
+                <h1 class="text-base font-bold tracking-tight text-ink">Calligraphy Studio</h1>
+                <span class="hidden sm:inline-block text-xs text-stone-500 border-l border-stone-300 pl-2.5">リアルタイム英文筆記体工房</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs">
+            <span id="liveStatusBadge" class="inline-flex items-center gap-1.5 bg-[#F5F1E8] border border-[#E6DEC8] px-3 py-1 rounded-full text-stone-600 transition-colors">
+                <span id="liveStatusDot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span id="liveStatusText">リアルタイム同期中</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- メイン2カラム・ワークスペース（デスクトップ: 100vh内収容 / モバイル: 縦積み） -->
+    <main class="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+
+        <!-- ============================================================ -->
+        <!-- 左カラム (65%): リアルタイム筆記体プレビューキャンバス           -->
+        <!-- ============================================================ -->
+        <section class="w-full lg:w-[65%] flex flex-col min-h-[420px] lg:h-full p-4 sm:p-6 lg:p-8 justify-between gap-4 relative">
+            
+            <!-- キャンバス上部ステータスバー（書体名・文字数・ペン先インジケーター） -->
+            <div class="flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div id="nibIndicator" class="w-7 h-7 rounded-full bg-white border border-[#E2DBD0] flex items-center justify-center text-brass shadow-2xs transition-transform">
+                        <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-stone-500 uppercase tracking-wider">Font:</span>
+                            <span id="currentFontBadge" class="text-sm font-bold text-ink">Great Vibes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 text-xs text-stone-500 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-full border border-[#E5DFD3]">
+                    <span id="charCount" class="font-mono font-medium text-stone-700">0 chars</span>
+                    <span class="text-stone-300">|</span>
+                    <span id="wordCount" class="font-mono font-medium text-stone-700">0 words</span>
+                </div>
+            </div>
+
+            <!-- 中央：エレガントな用紙キャンバス本体 -->
+            <div id="previewCard" class="paper-white studio-scroll relative flex-1 w-full rounded-2xl border border-[#DFD8CA] flex flex-col justify-center p-6 sm:p-10 lg:p-14 overflow-y-auto transition-all duration-300">
+                
+                <!-- 装飾コーナーフレーム（ステーショナリー風の真鍮ライン） -->
+                <div class="pointer-events-none absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-brass/35 rounded-tl-sm"></div>
+                <div class="pointer-events-none absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-brass/35 rounded-tr-sm"></div>
+                <div class="pointer-events-none absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-brass/35 rounded-bl-sm"></div>
+                <div class="pointer-events-none absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-brass/35 rounded-br-sm"></div>
+
+                <!-- 実際の筆記体レンダリング出力先 -->
+                <div class="my-auto w-full">
+                    <div 
+                        id="cursiveOutput" 
+                        class="cursive-render-area w-full text-center select-all whitespace-pre-wrap"
+                        style="font-family: 'Great Vibes', cursive; font-size: 62px; line-height: 1.45; color: #1A1F26;"
+                    >Hello, Beautiful World</div>
+
+                    <!-- 未入力時のヒントラベル -->
+                    <p id="placeholderHint" class="mt-4 text-center text-xs text-stone-400 transition-opacity">
+                        右側のテキストボックスに英文を入力すると、ここにリアルタイムで筆記体が描かれます
+                    </p>
+                </div>
+            </div>
+
+            <!-- キャンバス下部アクションバー（コピー・高解像度PNGダウンロード） -->
+            <div class="flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <p class="text-xs text-stone-500 hidden sm:block">
+                    ※ 用紙・インク・書体の設定をそのまま高画質画像として保存できます
+                </p>
+                <div class="flex items-center gap-2.5 ml-auto">
+                    <button id="copyTextBtn" type="button" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl bg-white border border-[#DED7C8] text-ink hover:bg-[#F9F6F0] active:scale-95 transition-all shadow-2xs">
+                        <i data-lucide="copy" class="w-4 h-4 text-stone-600"></i>
+                        テキストをコピー
+                    </button>
+                    <button id="downloadPngBtn" type="button" class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B89258] to-[#96733E] text-white hover:from-[#A68149] hover:to-[#836232] active:scale-95 transition-all shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        PNG画像として保存
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- 右カラム (35%): 入力＆カスタマイズ・コントロールパネル         -->
+        <!-- ============================================================ -->
+        <aside class="w-full lg:w-[35%] lg:h-full bg-white border-t lg:border-t-0 lg:border-l border-[#E5DFD3] flex flex-col min-h-0">
+            <div class="studio-scroll flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+
+                <!-- 1. 英文テキスト入力エリア -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label for="englishInput" class="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                            <i data-lucide="pen-line" class="w-3.5 h-3.5 text-brass"></i>
+                            1. 英文テキスト入力
+                        </label>
+                        <button id="clearBtn" type="button" class="text-xs font-medium text-stone-400 hover:text-rose-600 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-rose-50 transition-colors">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                            クリア
+                        </button>
+                    </div>
+
+                    <textarea 
+                        id="englishInput" 
+                        rows="3" 
+                        placeholder="ここに英文を入力してください...&#10;例: Love is the beauty of the soul."
+                        class="w-full rounded-xl border border-[#DED7C8] bg-[#FCFBF9] px-3.5 py-2.5 text-sm sm:text-base text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brass/40 focus:border-brass focus:bg-white transition-all resize-y"
+                        spellcheck="false"
+                    ></textarea>
+
+                    <!-- サンプルフレーズチップ -->
+                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                        <button type="button" data-sample="Hello, Beautiful World" class="sample-btn text-[11px] bg-[#F6F2EA] hover:bg-[#EAE2D3] text-stone-700 px-2.5 py-1 rounded-full transition-colors border border-[#E6DEC8]">
+                            Hello, Beautiful World
+                        </button>
+                        <button type="button" data-sample="Carpe Diem" class="sample-btn text-[11px] bg-[#F6F2EA] hover:bg-[#EAE2D3] text-stone-700 px-2.5 py-1 rounded-full transition-colors border border-[#E6DEC8]">
+                            Carpe Diem
+                        </button>
+                        <button type="button" data-sample="With All My Love" class="sample-btn text-[11px] bg-[#F6F2EA] hover:bg-[#EAE2D3] text-stone-700 px-2.5 py-1 rounded-full transition-colors border border-[#E6DEC8]">
+                            With All My Love
+                        </button>
+                        <button type="button" data-sample="Happy Wedding Day!" class="sample-btn text-[11px] bg-[#F6F2EA] hover:bg-[#EAE2D3] text-stone-700 px-2.5 py-1 rounded-full transition-colors border border-[#E6DEC8]">
+                            Happy Wedding
+                        </button>
+                        <button type="button" data-sample="Thank you for everything." class="sample-btn text-[11px] bg-[#F6F2EA] hover:bg-[#EAE2D3] text-stone-700 px-2.5 py-1 rounded-full transition-colors border border-[#E6DEC8]">
+                            Thank you
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="border-[#EFECE6]">
+
+                <!-- 2. 書体（フォント）選択ボタン（8種類） -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                            <i data-lucide="type" class="w-3.5 h-3.5 text-brass"></i>
+                            2. 書体（カリグラフィーフォント）
+                        </h2>
+                        <span class="text-[11px] text-stone-400">全8種</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2" id="fontGrid">
+                        <!-- JavaScriptで8種類の書体ボタンを生成 -->
+                    </div>
+                </div>
+
+                <hr class="border-[#EFECE6]">
+
+                <!-- 3. タイポグラフィ調整（サイズ・行間・文字揃え） -->
+                <div class="space-y-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-brass"></i>
+                        3. タイポグラフィ調整
+                    </h2>
+
+                    <!-- 文字サイズスライダー -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-medium text-stone-600">文字サイズ</span>
+                            <span id="fontSizeValue" class="font-mono font-semibold text-brass bg-[#F7F3EB] px-2 py-0.5 rounded">62px</span>
+                        </div>
+                        <input type="range" id="fontSizeSlider" min="24" max="110" value="62" class="w-full">
+                    </div>
+
+                    <!-- 行間スライダー -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-medium text-stone-600">行間（ラインハイト）</span>
+                            <span id="lineHeightValue" class="font-mono font-semibold text-brass bg-[#F7F3EB] px-2 py-0.5 rounded">1.45</span>
+                        </div>
+                        <input type="range" id="lineHeightSlider" min="1.0" max="2.4" step="0.05" value="1.45" class="w-full">
+                    </div>
+
+                    <!-- 文字揃え（左・中央・右） -->
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs font-medium text-stone-600">文字揃え</span>
+                        <div class="inline-flex rounded-xl bg-[#F5F2EB] p-1 border border-[#E6DEC8]">
+                            <button type="button" data-align="left" class="align-btn px-3 py-1.5 rounded-lg text-stone-500 hover:text-ink transition-all flex items-center gap-1 text-xs" title="左寄せ">
+                                <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" data-align="center" class="align-btn px-3 py-1.5 rounded-lg bg-white text-ink shadow-2xs transition-all flex items-center gap-1 text-xs" title="中央寄せ">
+                                <i data-lucide="align-center" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" data-align="right" class="align-btn px-3 py-1.5 rounded-lg text-stone-500 hover:text-ink transition-all flex items-center gap-1 text-xs" title="右寄せ">
+                                <i data-lucide="align-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-[#EFECE6]">
+
+                <!-- 4. インク色＆用紙スタイル -->
+                <div class="space-y-4 pb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                        <i data-lucide="palette" class="w-3.5 h-3.5 text-brass"></i>
+                        4. 万年筆インク ＆ 用紙スタイル
+                    </h2>
+
+                    <!-- インク色プリセット -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-medium text-stone-600">インクカラー</span>
+                            <span id="inkNameLabel" class="text-stone-500 text-[11px]">クラシックブラック</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2.5" id="inkPresets">
+                            <button type="button" data-color="#1A1F26" data-name="クラシックブラック" class="ink-btn w-7 h-7 rounded-full bg-[#1A1F26] ring-2 ring-offset-2 ring-brass transition-transform hover:scale-110" title="クラシックブラック"></button>
+                            <button type="button" data-color="#172554" data-name="ミッドナイトブルー" class="ink-btn w-7 h-7 rounded-full bg-[#172554] ring-offset-2 hover:scale-110 transition-transform" title="ミッドナイトブルー"></button>
+                            <button type="button" data-color="#5C4033" data-name="セピアブラウン" class="ink-btn w-7 h-7 rounded-full bg-[#5C4033] ring-offset-2 hover:scale-110 transition-transform" title="セピアブラウン"></button>
+                            <button type="button" data-color="#7F1D1D" data-name="バーガンディ" class="ink-btn w-7 h-7 rounded-full bg-[#7F1D1D] ring-offset-2 hover:scale-110 transition-transform" title="バーガンディ"></button>
+                            <button type="button" data-color="#14532D" data-name="フォレストグリーン" class="ink-btn w-7 h-7 rounded-full bg-[#14532D] ring-offset-2 hover:scale-110 transition-transform" title="フォレストグリーン"></button>
+                            <button type="button" data-color="#C59B48" data-name="アンティークゴールド" class="ink-btn w-7 h-7 rounded-full bg-[#C59B48] ring-offset-2 hover:scale-110 transition-transform" title="アンティークゴールド"></button>
+                            
+                            <!-- カスタムカラーピッカー -->
+                            <label class="relative w-7 h-7 rounded-full border border-stone-300 overflow-hidden cursor-pointer flex items-center justify-center bg-gradient-to-tr from-rose-200 via-amber-200 to-sky-200 hover:scale-110 transition-transform" title="カスタムカラー">
+                                <input type="color" id="customColorPicker" value="#1A1F26" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                                <i data-lucide="pipette" class="w-3.5 h-3.5 text-stone-700 pointer-events-none"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 用紙テーマ選択 -->
+                    <div class="space-y-2">
+                        <span class="block text-xs font-medium text-stone-600">用紙テーマ</span>
+                        <div class="grid grid-cols-2 gap-2" id="paperPresets">
+                            <button type="button" data-paper="white" class="paper-btn text-xs py-2 px-3 rounded-xl border-2 border-brass bg-white text-ink font-medium flex items-center gap-2 transition-all">
+                                <span class="w-3.5 h-3.5 rounded-full bg-white border border-stone-300 shrink-0"></span>
+                                ホワイトペーパー
+                            </button>
+                            <button type="button" data-paper="cream" class="paper-btn text-xs py-2 px-3 rounded-xl border border-[#DED7C8] bg-[#FDF8EE] text-stone-700 font-medium hover:border-brass/60 flex items-center gap-2 transition-all">
+                                <span class="w-3.5 h-3.5 rounded-full bg-[#F5EBD6] border border-[#D8C8A8] shrink-0"></span>
+                                クリーム羊皮紙
+                            </button>
+                            <button type="button" data-paper="ruled" class="paper-btn text-xs py-2 px-3 rounded-xl border border-[#DED7C8] bg-white text-stone-700 font-medium hover:border-brass/60 flex items-center gap-2 transition-all">
+                                <span class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-slate-300 shrink-0"></span>
+                                クラシック罫線
+                            </button>
+                            <button type="button" data-paper="dark" class="paper-btn text-xs py-2 px-3 rounded-xl border border-slate-700 bg-[#131B2E] text-slate-200 font-medium hover:border-brass flex items-center gap-2 transition-all">
+                                <span class="w-3.5 h-3.5 rounded-full bg-[#131B2E] border border-slate-500 shrink-0"></span>
+                                ダークネイビー
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- トースト通知用コンテナ -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2 bg-ink text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-full shadow-lg">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMessage">コピーしました</span>
+    </div>
+
+    <!-- 画像エクスポート用の非表示Canvas -->
+    <canvas id="exportCanvas" class="hidden"></canvas>
+
+    <script>
+        // アイコンの初期化
+        lucide.createIcons();
+
+        // フォント定義リスト（8種類の厳選カリグラフィー・筆記体）
+        const FONTS = [
+            {
+                id: 'great-vibes',
+                name: 'Great Vibes',
+                family: "'Great Vibes', cursive",
+                desc: '王道・優雅な正統派',
+                sampleSize: '23px'
+            },
+            {
+                id: 'alex-brush',
+                name: 'Alex Brush',
+                family: "'Alex Brush', cursive",
+                desc: '流れるようなクラシック',
+                sampleSize: '23px'
+            },
+            {
+                id: 'parisienne',
+                name: 'Parisienne',
+                family: "'Parisienne', cursive",
+                desc: '華やかでロマンチック',
+                sampleSize: '21px'
+            },
+            {
+                id: 'sacramento',
+                name: 'Sacramento',
+                family: "'Sacramento', cursive",
+                desc: '細身で洗練された線画',
+                sampleSize: '23px'
+            },
+            {
+                id: 'allura',
+                name: 'Allura',
+                family: "'Allura', cursive",
+                desc: '柔らかく読みやすい書体',
+                sampleSize: '24px'
+            },
+            {
+                id: 'pinyon',
+                name: 'Pinyon Script',
+                family: "'Pinyon Script', cursive",
+                desc: '気品ある傾斜カリグラフィ',
+                sampleSize: '22px'
+            },
+            {
+                id: 'tangerine',
+                name: 'Tangerine',
+                family: "'Tangerine', cursive",
+                desc: '縦長で気高い羽根ペン風',
+                sampleSize: '27px'
+            },
+            {
+                id: 'dancing',
+                name: 'Dancing Script',
+                family: "'Dancing Script', cursive",
+                desc: '軽やかで親しみのある手書き',
+                sampleSize: '20px'
+            }
+        ];
+
+        // アプリケーション状態
+        const state = {
+            text: '',
+            defaultPlaceholder: 'Hello, Beautiful World',
+            selectedFont: FONTS[0],
+            fontSize: 62,
+            lineHeight: 1.45,
+            inkColor: '#1A1F26',
+            paperStyle: 'white', // 'white' | 'cream' | 'ruled' | 'dark'
+            textAlign: 'center'
+        };
+
+        // DOM要素の参照
+        const englishInput = document.getElementById('englishInput');
+        const cursiveOutput = document.getElementById('cursiveOutput');
+        const placeholderHint = document.getElementById('placeholderHint');
+        const charCount = document.getElementById('charCount');
+        const wordCount = document.getElementById('wordCount');
+        const clearBtn = document.getElementById('clearBtn');
+        const fontGrid = document.getElementById('fontGrid');
+        const currentFontBadge = document.getElementById('currentFontBadge');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const lineHeightSlider = document.getElementById('lineHeightSlider');
+        const lineHeightValue = document.getElementById('lineHeightValue');
+        const inkNameLabel = document.getElementById('inkNameLabel');
+        const customColorPicker = document.getElementById('customColorPicker');
+        const previewCard = document.getElementById('previewCard');
+        const copyTextBtn = document.getElementById('copyTextBtn');
+        const downloadPngBtn = document.getElementById('downloadPngBtn');
+        const nibIndicator = document.getElementById('nibIndicator');
+        const liveStatusText = document.getElementById('liveStatusText');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // 執筆アニメーションの制御タイマー
+        let writingTimer;
+        function triggerWritingFeedback() {
+            // ペン先アイコンのアニメーション
+            nibIndicator.classList.add('nib-active', 'border-brass', 'bg-[#FDF9F0]');
+            liveStatusText.textContent = '執筆中...';
+
+            // テキストの微細なインク定着アニメーション
+            cursiveOutput.classList.remove('ink-writing-pulse');
+            void cursiveOutput.offsetWidth; // リフロー強制
+            cursiveOutput.classList.add('ink-writing-pulse');
+
+            clearTimeout(writingTimer);
+            writingTimer = setTimeout(() => {
+                nibIndicator.classList.remove('nib-active', 'border-brass', 'bg-[#FDF9F0]');
+                liveStatusText.textContent = 'リアルタイム同期中';
+            }, 450);
+        }
+
+        // トースト通知表示関数
+        let toastTimeout;
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex', 'toast-enter');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex', 'toast-enter');
+            }, 2600);
+        }
+
+        // フォント選択カードの描画
+        function renderFontCards() {
+            fontGrid.innerHTML = '';
+            FONTS.forEach(font => {
+                const isSelected = font.id === state.selectedFont.id;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `group text-left px-3 py-2.5 rounded-xl border transition-all flex flex-col justify-between min-h-[70px] ${
+                    isSelected 
+                    ? 'border-brass bg-[#FDFBF7] ring-2 ring-brass/25 shadow-2xs' 
+                    : 'border-[#E6E0D4] bg-white hover:border-brass/60 hover:bg-[#FAF8F4]'
+                }`;
+                
+                btn.innerHTML = `
+                    <span class="block text-ink truncate w-full leading-tight" style="font-family: ${font.family}; font-size: ${font.sampleSize};">
+                        ${font.name}
+                    </span>
+                    <span class="block text-[10px] mt-1 truncate ${isSelected ? 'text-brass-dark font-semibold' : 'text-stone-400 group-hover:text-stone-600'}">
+                        ${font.desc}
+                    </span>
+                `;
+
+                btn.addEventListener('click', () => {
+                    state.selectedFont = font;
+                    currentFontBadge.textContent = font.name;
+                    renderFontCards();
+                    updatePreview();
+                    triggerWritingFeedback();
+                });
+
+                fontGrid.appendChild(btn);
+            });
+        }
+
+        // プレビューエリアの更新処理
+        function updatePreview() {
+            const rawText = state.text;
+            const isEmpty = rawText.trim().length === 0;
+
+            // テキスト内容の反映（空の場合は美しいプレースホルダーを表示）
+            cursiveOutput.textContent = isEmpty ? state.defaultPlaceholder : rawText;
+            
+            // 未入力時は少し透過させてプレースホルダー感を演出
+            cursiveOutput.style.opacity = isEmpty ? '0.42' : '1';
+            placeholderHint.style.opacity = isEmpty ? '1' : '0';
+            placeholderHint.style.pointerEvents = isEmpty ? 'auto' : 'none';
+
+            // フォント・サイズ・行間・配置の適用
+            cursiveOutput.style.fontFamily = state.selectedFont.family;
+            cursiveOutput.style.fontSize = `${state.fontSize}px`;
+            cursiveOutput.style.lineHeight = state.lineHeight;
+            cursiveOutput.style.textAlign = state.textAlign;
+            cursiveOutput.style.color = state.inkColor;
+
+            // 文字数・単語数カウント更新
+            charCount.textContent = `${rawText.length} chars`;
+            const words = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
+            wordCount.textContent = `${words} words`;
+        }
+
+        // 用紙スタイルの適用
+        function applyPaperStyle(styleKey) {
+            state.paperStyle = styleKey;
+            previewCard.classList.remove('paper-white', 'paper-cream', 'paper-ruled', 'paper-dark');
+            previewCard.classList.add(`paper-${styleKey}`);
+
+            // ダークネイビー選択時、インクが暗い色のままなら自動的にゴールドへ切り替えて視認性を確保
+            if (styleKey === 'dark' && state.inkColor.toLowerCase() === '#1a1f26') {
+                setInkColor('#E5C17B', 'シャンパンゴールド（ダーク用）');
+            } else if (styleKey !== 'dark' && state.inkColor.toLowerCase() === '#e5c17b') {
+                setInkColor('#1A1F26', 'クラシックブラック');
+            }
+
+            // ボタンのアクティブ状態更新
+            document.querySelectorAll('.paper-btn').forEach(btn => {
+                const isTarget = btn.dataset.paper === styleKey;
+                if (isTarget) {
+                    btn.classList.add('border-2', 'border-brass');
+                    btn.classList.remove('border', 'border-[#DED7C8]', 'border-slate-700');
+                } else {
+                    btn.classList.remove('border-2', 'border-brass');
+                    btn.classList.add('border', btn.dataset.paper === 'dark' ? 'border-slate-700' : 'border-[#DED7C8]');
+                }
+            });
+        }
+
+        // インクカラーの適用
+        function setInkColor(hex, name) {
+            state.inkColor = hex;
+            inkNameLabel.textContent = name;
+            customColorPicker.value = hex;
+
+            document.querySelectorAll('.ink-btn').forEach(btn => {
+                if (btn.dataset.color.toLowerCase() === hex.toLowerCase()) {
+                    btn.classList.add('ring-2', 'ring-brass');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-brass');
+                }
+            });
+
+            updatePreview();
+        }
+
+        // イベントリスナー登録：テキスト入力
+        englishInput.addEventListener('input', (e) => {
+            state.text = e.target.value;
+            updatePreview();
+            triggerWritingFeedback();
+        });
+
+        // クリアボタン
+        clearBtn.addEventListener('click', () => {
+            state.text = '';
+            englishInput.value = '';
+            englishInput.focus();
+            updatePreview();
+        });
+
+        // サンプルフレーズボタン
+        document.querySelectorAll('.sample-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sample = btn.dataset.sample;
+                state.text = sample;
+                englishInput.value = sample;
+                updatePreview();
+                triggerWritingFeedback();
+            });
+        });
+
+        // 文字サイズスライダー
+        fontSizeSlider.addEventListener('input', (e) => {
+            state.fontSize = parseInt(e.target.value, 10);
+            fontSizeValue.textContent = `${state.fontSize}px`;
+            updatePreview();
+        });
+
+        // 行間スライダー
+        lineHeightSlider.addEventListener('input', (e) => {
+            state.lineHeight = parseFloat(e.target.value);
+            lineHeightValue.textContent = state.lineHeight.toFixed(2);
+            updatePreview();
+        });
+
+        // インクプリセットボタン
+        document.querySelectorAll('.ink-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setInkColor(btn.dataset.color, btn.dataset.name);
+            });
+        });
+
+        // カスタムカラーピッカー
+        customColorPicker.addEventListener('input', (e) => {
+            setInkColor(e.target.value, `カスタム (${e.target.value.toUpperCase()})`);
+        });
+
+        // 用紙スタイルボタン
+        document.querySelectorAll('.paper-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyPaperStyle(btn.dataset.paper);
+            });
+        });
+
+        // テキスト配置ボタン
+        document.querySelectorAll('.align-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.textAlign = btn.dataset.align;
+                document.querySelectorAll('.align-btn').forEach(b => {
+                    if (b.dataset.align === state.textAlign) {
+                        b.classList.add('bg-white', 'text-ink', 'shadow-2xs');
+                        b.classList.remove('text-stone-500');
+                    } else {
+                        b.classList.remove('bg-white', 'text-ink', 'shadow-2xs');
+                        b.classList.add('text-stone-500');
+                    }
+                });
+                updatePreview();
+            });
+        });
+
+        // クリップボードへコピー（iFrame互換のexecCommand使用）
+        copyTextBtn.addEventListener('click', () => {
+            const textToCopy = state.text.trim().length > 0 ? state.text : state.defaultPlaceholder;
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.opacity = '0';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('英文テキストをクリップボードにコピーしました');
+            } catch (err) {
+                showToast('コピーに失敗しました');
+            }
+            document.body.removeChild(tempTextarea);
+        });
+
+        // PNG画像としてダウンロード（高解像度Canvas描画）
+        downloadPngBtn.addEventListener('click', async () => {
+            const textToRender = state.text.trim().length > 0 ? state.text : state.defaultPlaceholder;
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // フォントが完全にロードされていることを保証
+            try {
+                await document.fonts.load(`${state.fontSize}px "${state.selectedFont.name}"`);
+            } catch (e) {
+                console.warn('Font load check:', e);
+            }
+
+            // 高解像度（Retina 2x相当）設定
+            const scale = 2;
+            const exportFontSize = Math.max(state.fontSize, 48);
+            const lineHeight = exportFontSize * state.lineHeight;
+            const paddingX = 100;
+            const paddingY = 90;
+
+            // 仮計測用フォント設定
+            ctx.font = `${exportFontSize}px "${state.selectedFont.name}", cursive`;
+
+            // 改行および長い行の折り返し計算
+            const maxLineWidth = 1000;
+            const rawParagraphs = textToRender.split('\n');
+            const wrappedLines = [];
+
+            rawParagraphs.forEach(paragraph => {
+                if (paragraph === '') {
+                    wrappedLines.push('');
+                    return;
+                }
+                const words = paragraph.split(' ');
+                let currentLine = '';
+
+                words.forEach(word => {
+                    const testLine = currentLine ? `${currentLine} ${word}` : word;
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxLineWidth && currentLine !== '') {
+                        wrappedLines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = testLine;
+                    }
+                });
+                wrappedLines.push(currentLine);
+            });
+
+            // 最も長い行の幅を算出（筆記体の左右の装飾はみ出し分として余裕を持たせる）
+            let maxMeasuredWidth = 360;
+            wrappedLines.forEach(line => {
+                const w = ctx.measureText(line).width;
+                if (w > maxMeasuredWidth) maxMeasuredWidth = w;
+            });
+
+            const canvasWidth = Math.ceil(maxMeasuredWidth + paddingX * 2);
+            const canvasHeight = Math.ceil(wrappedLines.length * lineHeight + paddingY * 2);
+
+            canvas.width = canvasWidth * scale;
+            canvas.height = canvasHeight * scale;
+            ctx.scale(scale, scale);
+
+            // 背景の描画（選択中の用紙スタイルに合わせる）
+            if (state.paperStyle === 'dark') {
+                ctx.fillStyle = '#131B2E';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            } else if (state.paperStyle === 'cream') {
+                ctx.fillStyle = '#FDF8EE';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            } else {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+
+            // 罫線スタイルの場合は横線を描画
+            if (state.paperStyle === 'ruled') {
+                ctx.strokeStyle = '#E2E8F0';
+                ctx.lineWidth = 1.5;
+                for (let y = paddingY + lineHeight * 0.85; y < canvasHeight - paddingY * 0.4; y += lineHeight) {
+                    ctx.beginPath();
+                    ctx.moveTo(40, y);
+                    ctx.lineTo(canvasWidth - 40, y);
+                    ctx.stroke();
+                }
+            }
+
+            // 上品なゴールドの枠線アクセント
+            ctx.strokeStyle = 'rgba(176, 141, 87, 0.35)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(20, 20, canvasWidth - 40, canvasHeight - 40);
+
+            // テキストの描画設定
+            ctx.font = `${exportFontSize}px "${state.selectedFont.name}", cursive`;
+            ctx.fillStyle = state.inkColor;
+            ctx.textBaseline = 'middle';
+
+            let drawX = canvasWidth / 2;
+            if (state.textAlign === 'left') {
+                ctx.textAlign = 'left';
+                drawX = paddingX;
+            } else if (state.textAlign === 'right') {
+                ctx.textAlign = 'right';
+                drawX = canvasWidth - paddingX;
+            } else {
+                ctx.textAlign = 'center';
+                drawX = canvasWidth / 2;
+            }
+
+            // 各行をレンダリング
+            wrappedLines.forEach((line, index) => {
+                const drawY = paddingY + (index + 0.5) * lineHeight;
+                ctx.fillText(line, drawX, drawY);
+            });
+
+            // PNGとしてダウンロード実行
+            const link = document.createElement('a');
+            const safeFontName = state.selectedFont.name.toLowerCase().replace(/\s+/g, '-');
+            link.download = `calligraphy-${safeFontName}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            showToast('筆記体画像をPNGとして保存しました');
+        });
+
+        // 初期描画実行
+        renderFontCards();
+        updatePreview();
+    </script>
+</body>
+</html>
