@@ -2044,37 +2044,81 @@
   </script>
 
   <!-- モジュールJavaScriptファイルの読み込み -->
-  <script type="module" src="js/config.js"></script>
-  <script type="module" src="js/auth.js"></script>
-  <script type="module" src="js/memo.js"></script>
-  <script type="module" src="js/calendar.js"></script>
-  <script type="module">
-    import { db, messagesRef, stampHistoryRef } from "./js/config.js";
-    import { initStampModal } from "./js/stamp-modal.js";
-    
-    const dummyUserSelect = { value: "ユーザー" };
-    
-    initStampModal({ 
-      db, 
-      messagesRef, 
-      stampHistoryRef, 
-      userSelect: document.getElementById('user-select') || dummyUserSelect 
-    });
+  <script>
+    // プレビュー環境（blob: や srcdoc 等）で相対パス ./js/*.js が解決できない場合のフォールバック処理
+    (async () => {
+      const isNonHierarchical = window.location.protocol === 'blob:' || window.location.protocol === 'about:' || !window.location.origin || window.location.origin === 'null';
+      if (isNonHierarchical) return;
+
+      const modules = [
+        './js/config.js',
+        './js/auth.js',
+        './js/memo.js',
+        './js/calendar.js',
+        './js/period-modal.js',
+        './js/monthly-modal.js'
+      ];
+
+      for (const modPath of modules) {
+        try {
+          await import(modPath);
+        } catch (err) {
+          console.warn(`Optional module skipped (${modPath}):`, err);
+        }
+      }
+
+      try {
+        const config = await import('./js/config.js');
+        const { initStampModal } = await import('./js/stamp-modal.js');
+        const dummyUserSelect = { value: "ユーザー" };
+        initStampModal({
+          db: config.db,
+          messagesRef: config.messagesRef,
+          stampHistoryRef: config.stampHistoryRef,
+          userSelect: document.getElementById('user-select') || dummyUserSelect
+        });
+      } catch (err) {
+        console.warn('Stamp modal initialization skipped:', err);
+      }
+    })();
   </script>
-  <!-- 生理記録モーダル用スクリプト -->
-  <script type="module" src="js/period-modal.js"></script>
-  <!-- 月ごとの予定（ToDoList）用分離モジュールスクリプト（Firebase同期対応） -->
-  <script type="module" src="js/monthly-modal.js"></script>
 
   <!-- =========================================================
        スマート家計簿モーダル制御＆Firebase Realtime Database同期スクリプト
        ========================================================= -->
   <script type="module">
-    import { db } from "./js/config.js";
-    import { ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    let configModule = {};
+    try {
+      const isNonHierarchical = window.location.protocol === 'blob:' || window.location.protocol === 'about:' || !window.location.origin || window.location.origin === 'null';
+      if (!isNonHierarchical) {
+        configModule = await import("./js/config.js");
+      }
+    } catch (e) {
+      console.warn("Running in standalone preview mode without ./js/config.js:", e);
+    }
 
-    // MEMO.htmlと同じFirebaseデータベースの "kakeibo" ノードに保存
-    const kakeiboRef = ref(db, "kakeibo");
+    const db = configModule.db || null;
+
+    // config.js と完全に同一バージョンの firebase-database モジュールを取得して SDK 競合を防止
+    async function loadMatchingFirebaseDb() {
+      if (configModule.ref && configModule.onValue && configModule.push && configModule.set && configModule.update && configModule.remove) {
+        return configModule;
+      }
+      const loadedDbResource = performance
+        .getEntriesByType("resource")
+        .find((entry) => entry.name.includes("firebase-database"));
+      const sdkUrl = loadedDbResource
+        ? loadedDbResource.name
+        : "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+      return await import(sdkUrl);
+    }
+
+    const fbDb = await loadMatchingFirebaseDb();
+    const { ref, push, set, update, remove, onValue } = fbDb;
+
+    // MEMO.htmlと同じFirebaseデータベースの "kakeibo" ノードに保存（単体プレビュー時はlocalStorageフォールバック）
+    const kakeiboRef = db ? ref(db, "kakeibo") : null;
+    const LOCAL_FALLBACK_KEY = "smart_kakeibo_preview_entries_v1";
 
     // --- アプリケーション状態 ---
     let entries = [];
@@ -2212,28 +2256,47 @@
       pendingModalAction = null;
     }
 
-    // --- Firebase Realtime Database リアルタイム購読 ---
-    onValue(kakeiboRef, (snapshot) => {
-      const val = snapshot.val();
-      if (val) {
-        entries = Object.entries(val).map(([key, item]) => ({
-          id: key,
-          ...item
-        }));
-      } else {
+    // --- Firebase Realtime Database リアルタイム購読 (未接続時はlocalStorageフォールバック) ---
+    function saveLocalFallback() {
+      try {
+        localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(entries));
+      } catch (e) {}
+    }
+
+    if (kakeiboRef) {
+      onValue(kakeiboRef, (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          entries = Object.entries(val).map(([key, item]) => ({
+            id: key,
+            ...item
+          }));
+        } else {
+          entries = [];
+        }
+        if (syncStatusEl) {
+          syncStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Firebase 同期完了 (${entries.length}件)`;
+        }
+        renderAll();
+      }, (error) => {
+        console.error('Firebase Kakeibo sync error:', error);
+        if (syncStatusEl) {
+          syncStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>同期待機中 (ログイン後に同期)`;
+          syncStatusEl.className = 'text-[11px] text-amber-400 flex items-center gap-1.5';
+        }
+      });
+    } else {
+      try {
+        const saved = localStorage.getItem(LOCAL_FALLBACK_KEY);
+        entries = saved ? JSON.parse(saved) : [];
+      } catch (e) {
         entries = [];
       }
       if (syncStatusEl) {
-        syncStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Firebase 同期完了 (${entries.length}件)`;
-      }
-      renderAll();
-    }, (error) => {
-      console.error('Firebase Kakeibo sync error:', error);
-      if (syncStatusEl) {
-        syncStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>同期待機中 (ログイン後に同期)`;
+        syncStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>プレビューモード (ローカル保存)`;
         syncStatusEl.className = 'text-[11px] text-amber-400 flex items-center gap-1.5';
       }
-    });
+    }
 
     // --- フォーム管理 ---
     function setEntryType(type) {
@@ -2289,7 +2352,13 @@
         `「${target.date} / ${target.category || '食費'} / ${target.store} (${formatJPY(target.amount)})」をExcelシートから削除しますか？`,
         async () => {
           try {
-            await remove(ref(db, `kakeibo/${id}`));
+            if (db) {
+              await remove(ref(db, `kakeibo/${id}`));
+            } else {
+              entries = entries.filter(e => e.id !== id);
+              saveLocalFallback();
+              renderAll();
+            }
             if (editEntryIdInput.value === id) resetForm();
             showToast('明細を削除しました');
           } catch (err) {
@@ -2685,14 +2754,23 @@
       ];
 
       try {
-        for (let idx = 0; idx < samples.length; idx++) {
-          const newRef = push(kakeiboRef);
-          await set(newRef, {
-            ...samples[idx],
-            createdAt: Date.now() + idx
+        if (kakeiboRef) {
+          for (let idx = 0; idx < samples.length; idx++) {
+            const newRef = push(kakeiboRef);
+            await set(newRef, {
+              ...samples[idx],
+              createdAt: Date.now() + idx
+            });
+          }
+          showToast(`${baseMonth.replace('-', '年')}月のサンプルデータをFirebaseに保存しました`);
+        } else {
+          samples.forEach((s, idx) => {
+            entries.push({ id: 'sample_' + Date.now() + '_' + idx, ...s, createdAt: Date.now() + idx });
           });
+          saveLocalFallback();
+          renderAll();
+          showToast(`${baseMonth.replace('-', '年')}月のサンプルデータを追加しました`);
         }
-        showToast(`${baseMonth.replace('-', '年')}月のサンプルデータをFirebaseに保存しました`);
       } catch (err) {
         console.error(err);
         showToast('サンプルデータの保存に失敗しました。DBルールを確認してください', 'error');
@@ -2727,27 +2805,51 @@
       const editId = editEntryIdInput.value;
       try {
         if (editId) {
-          await update(ref(db, `kakeibo/${editId}`), {
-            date: dateVal,
-            type: typeVal,
-            category: categoryVal,
-            store: storeVal,
-            amount: amountVal,
-            memo: memoVal
-          });
+          if (db) {
+            await update(ref(db, `kakeibo/${editId}`), {
+              date: dateVal,
+              type: typeVal,
+              category: categoryVal,
+              store: storeVal,
+              amount: amountVal,
+              memo: memoVal
+            });
+          } else {
+            const idx = entries.findIndex(item => item.id === editId);
+            if (idx !== -1) {
+              entries[idx] = { ...entries[idx], date: dateVal, type: typeVal, category: categoryVal, store: storeVal, amount: amountVal, memo: memoVal };
+              saveLocalFallback();
+              renderAll();
+            }
+          }
           showToast('明細を更新し、Firebase＆Excelプレビューに反映しました');
         } else {
-          const newRef = push(kakeiboRef);
-          await set(newRef, {
-            date: dateVal,
-            type: typeVal,
-            category: categoryVal,
-            store: storeVal,
-            amount: amountVal,
-            memo: memoVal,
-            createdAt: Date.now()
-          });
-          showToast('Firebaseに保存し、Excelシートに追加しました');
+          if (kakeiboRef) {
+            const newRef = push(kakeiboRef);
+            await set(newRef, {
+              date: dateVal,
+              type: typeVal,
+              category: categoryVal,
+              store: storeVal,
+              amount: amountVal,
+              memo: memoVal,
+              createdAt: Date.now()
+            });
+          } else {
+            entries.push({
+              id: 'entry_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+              date: dateVal,
+              type: typeVal,
+              category: categoryVal,
+              store: storeVal,
+              amount: amountVal,
+              memo: memoVal,
+              createdAt: Date.now()
+            });
+            saveLocalFallback();
+            renderAll();
+          }
+          showToast('保存し、Excelシートに追加しました');
         }
 
         if (selectedMonth && !dateVal.startsWith(selectedMonth)) {
@@ -2786,10 +2888,16 @@
       }
       openConfirmModal(
         '全データの削除',
-        'Firebaseに保存されているすべての家計簿データを完全に削除します。よろしいですか？',
+        '保存されているすべての家計簿データを完全に削除します。よろしいですか？',
         async () => {
           try {
-            await remove(kakeiboRef);
+            if (kakeiboRef) {
+              await remove(kakeiboRef);
+            } else {
+              entries = [];
+              saveLocalFallback();
+              renderAll();
+            }
             resetForm();
             showToast('すべてのデータを削除しました');
           } catch (err) {
