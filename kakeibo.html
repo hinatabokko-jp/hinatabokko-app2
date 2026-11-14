@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スマート家計簿 - Excelプレビュー＆収支管理</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Noto Sans JP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS (xlsx) for real Excel (.xlsx) export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        obsidian: '#0D0D0F',
+                        surface: '#16161A',
+                        excelGreen: '#107C41',
+                        excelGreenLight: '#E6F4EA',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0D0D0F;
+            color: #F4F4F6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        input[type="month"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        .glass-card {
+            background: rgba(24, 24, 29, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* 実際のExcelスプレッドシートを再現するスタイル */
+        .excel-grid {
+            border-collapse: collapse;
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            font-variant-numeric: tabular-nums;
+        }
+        .excel-grid th, .excel-grid td {
+            border: 1px solid #D1D5DB;
+        }
+        .excel-col-header {
+            background-color: #F3F4F6;
+            color: #374151;
+            font-weight: 600;
+            font-size: 11px;
+            text-align: center;
+            user-select: none;
+        }
+        .excel-row-num {
+            background-color: #F3F4F6;
+            color: #4B5563;
+            font-weight: 600;
+            font-size: 11px;
+            text-align: center;
+            width: 36px;
+            min-width: 36px;
+            user-select: none;
+        }
+        .excel-table-header {
+            background-color: #107C41;
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .excel-cell-hover:hover {
+            outline: 2px solid #107C41;
+            outline-offset: -2px;
+        }
+        /* トースト通知アニメーション */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .toast-enter {
+            animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-emerald-500 selection:text-white pb-12">
+
+    <!-- ヘッダー -->
+    <header class="sticky top-0 z-30 glass-card border-b border-white/10">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-600/20">
+                    <!-- Excel風スプレッドシートSVGアイコン -->
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">スマート家計簿 <span class="text-xs font-normal text-emerald-400 ml-1">Excelライブプレビュー</span></h1>
+                    <p class="text-xs text-zinc-400">右側で入力 → 左側のExcelシートに即時反映＆ワンクリック出力</p>
+                </div>
+            </div>
+
+            <!-- 月別フィルター & エクスポート操作バー -->
+            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="flex items-center gap-2 bg-zinc-900/90 border border-white/10 rounded-xl px-3 py-1.5">
+                    <label for="monthFilter" class="text-xs font-medium text-zinc-400 whitespace-nowrap">対象月:</label>
+                    <input type="month" id="monthFilter" class="bg-transparent text-sm font-semibold text-white focus:outline-none">
+                    <button id="showAllMonthsBtn" type="button" class="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition whitespace-nowrap cursor-pointer">
+                        全期間
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="exportExcelBtn" type="button" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#107C41] hover:bg-[#14964f] active:scale-95 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-900/30 transition cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        <span>Excel出力 (.xlsx)</span>
+                    </button>
+                    <button id="exportCsvBtn" type="button" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 active:scale-95 border border-white/10 text-zinc-200 text-xs sm:text-sm font-medium transition cursor-pointer" title="CSV形式でダウンロード">
+                        <span>CSV</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メイン2カラムレイアウト (左側: Excelプレビュー / 右側: 収支入力画面) -->
+    <main class="max-w-[1440px] mx-auto px-4 sm:px-6 pt-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- ==========================================
+                 左カラム: Excel出力プレビューエリア (7カラム)
+                 ========================================== -->
+            <div class="lg:col-span-7 xl:col-span-8 space-y-5">
+
+                <!-- 上部サマリーカード (収入合計・支出合計・収支差額) -->
+                <section aria-label="収支サマリー" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-zinc-400 mb-1 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                収入合計 (<span class="period-label">今月</span>)
+                            </p>
+                            <p id="totalIncomeDisplay" class="text-xl sm:text-2xl font-bold text-emerald-400 tracking-tight">¥0</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-zinc-400 mb-1 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                                支出合計 (<span class="period-label">今月</span>)
+                            </p>
+                            <p id="totalExpenseDisplay" class="text-xl sm:text-2xl font-bold text-rose-400 tracking-tight">¥0</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 014.306 6.43l.776 2.898m0 0l3.182-5.511m-3.182 5.51l-5.511-3.181"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-zinc-400 mb-1 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                収支差額 (<span class="period-label">今月</span>)
+                            </p>
+                            <p id="balanceDisplay" class="text-xl sm:text-2xl font-bold text-white tracking-tight">¥0</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Excelスプレッドシート リアルタイムプレビューウィンドウ -->
+                <section class="rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white text-zinc-900">
+                    
+                    <!-- Excel風ウィンドウタイトルバー & 数式バー -->
+                    <div class="bg-[#107C41] text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-white/20 text-[11px] font-bold tracking-wider">EXCEL PREVIEW</span>
+                            <span id="excelFileNamePreview" class="text-xs sm:text-sm font-semibold truncate">家計簿_2026-11.xlsx</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[11px] text-emerald-100">
+                            <span>※ 行をクリックで右側フォームに読込・編集</span>
+                        </div>
+                    </div>
+
+                    <!-- Excel風 数式バー (fx) -->
+                    <div class="bg-[#F3F4F6] border-b border-gray-300 px-3 py-1.5 flex items-center gap-2 text-xs">
+                        <div id="activeCellRef" class="bg-white border border-gray-300 px-2.5 py-0.5 rounded text-gray-700 font-semibold w-14 text-center select-none">
+                            A1
+                        </div>
+                        <span class="text-gray-400 italic font-serif font-bold px-1 select-none">fx</span>
+                        <div id="formulaBarText" class="bg-white border border-gray-300 px-2.5 py-0.5 rounded text-gray-700 flex-1 truncate font-mono text-[11px]">
+                            =SUM(E2:E2)
+                        </div>
+                    </div>
+
+                    <!-- シート1: 収支明細 プレビュー -->
+                    <div id="sheet1Container" class="overflow-x-auto max-h-[540px] overflow-y-auto bg-white">
+                        <table class="w-full excel-grid text-xs sm:text-[13px]">
+                            <thead class="sticky top-0 z-10">
+                                <!-- Excel列ヘッダー (A〜G) -->
+                                <tr>
+                                    <th class="excel-row-num border-b border-gray-300"></th>
+                                    <th class="excel-col-header py-1 w-12">A</th>
+                                    <th class="excel-col-header py-1 w-28">B</th>
+                                    <th class="excel-col-header py-1 w-32">C</th>
+                                    <th class="excel-col-header py-1 w-28">D</th>
+                                    <th class="excel-col-header py-1 w-28">E</th>
+                                    <th class="excel-col-header py-1 min-w-[160px]">F</th>
+                                    <th class="excel-col-header py-1 w-20 text-gray-400" title="操作列はExcel出力時には含まれません">操作(画面用)</th>
+                                </tr>
+                                <!-- 1行目: テーブル見出し -->
+                                <tr>
+                                    <td class="excel-row-num">1</td>
+                                    <th class="excel-table-header py-2 px-2 text-center">No</th>
+                                    <th class="excel-table-header py-2 px-3 text-left">日付</th>
+                                    <th class="excel-table-header py-2 px-3 text-left">店名</th>
+                                    <th class="excel-table-header py-2 px-3 text-right">収入 (円)</th>
+                                    <th class="excel-table-header py-2 px-3 text-right">支出 (円)</th>
+                                    <th class="excel-table-header py-2 px-3 text-left">メモ</th>
+                                    <th class="bg-gray-200 text-gray-600 font-semibold text-[11px] py-2 px-2 text-center">編集/削除</th>
+                                </tr>
+                            </thead>
+                            <tbody id="excelSheet1Body">
+                                <!-- JSで動的に描画 -->
+                            </tbody>
+                            <tfoot id="excelSheet1Foot" class="sticky bottom-0 z-10">
+                                <!-- JSで動的に合計行を描画 -->
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- シート2: 月次・店名集計 プレビュー -->
+                    <div id="sheet2Container" class="hidden overflow-x-auto max-h-[540px] overflow-y-auto bg-white">
+                        <table class="w-full excel-grid text-xs sm:text-[13px]">
+                            <thead class="sticky top-0 z-10">
+                                <tr>
+                                    <th class="excel-row-num"></th>
+                                    <th class="excel-col-header py-1 w-24">A</th>
+                                    <th class="excel-col-header py-1 w-36">B</th>
+                                    <th class="excel-col-header py-1 w-20">C</th>
+                                    <th class="excel-col-header py-1 w-32">D</th>
+                                    <th class="excel-col-header py-1 w-24">E</th>
+                                </tr>
+                                <tr>
+                                    <td class="excel-row-num">1</td>
+                                    <th class="excel-table-header py-2 px-3 text-center">区分</th>
+                                    <th class="excel-table-header py-2 px-3 text-left">店名</th>
+                                    <th class="excel-table-header py-2 px-3 text-right">件数</th>
+                                    <th class="excel-table-header py-2 px-3 text-right">合計金額 (円)</th>
+                                    <th class="excel-table-header py-2 px-3 text-right">構成比</th>
+                                </tr>
+                            </thead>
+                            <tbody id="excelSheet2Body">
+                                <!-- JSで動的に描画 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Excel下部 シート切り替えタブバー -->
+                    <div class="bg-[#E5E7EB] border-t border-gray-300 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 select-none">
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="tabSheet1Btn" class="px-3.5 py-1.5 text-xs font-bold rounded-t-md bg-white text-[#107C41] border-b-2 border-[#107C41] shadow-sm transition cursor-pointer">
+                                シート1: 収支明細
+                            </button>
+                            <button type="button" id="tabSheet2Btn" class="px-3.5 py-1.5 text-xs font-medium rounded-t-md bg-gray-200/80 hover:bg-gray-100 text-gray-600 transition cursor-pointer">
+                                シート2: 月次・店名集計
+                            </button>
+                        </div>
+                        <div class="text-[11px] text-gray-600 font-medium">
+                            <span id="sheetStatusInfo">表示件数: 0件</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ==========================================
+                 右カラム: 収支入力エリア (5カラム・追従固定)
+                 ========================================== -->
+            <aside class="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-20 space-y-4">
+                <section class="glass-card rounded-2xl p-5 sm:p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 id="formTitle" class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                            <span class="w-1.5 h-5 rounded-full bg-emerald-500"></span>
+                            収支の入力
+                        </h2>
+                        <button id="cancelEditBtn" type="button" class="hidden text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition cursor-pointer">
+                            編集キャンセル
+                        </button>
+                    </div>
+
+                    <form id="entryForm" class="space-y-4">
+                        <input type="hidden" id="editEntryId" value="">
+
+                        <!-- 区分トグル (支出 / 収入) -->
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">区分</label>
+                            <div class="grid grid-cols-2 gap-2 p-1 bg-zinc-950/90 rounded-xl border border-white/5">
+                                <button type="button" id="typeExpenseBtn" class="py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-sm cursor-pointer">
+                                    <span>支出</span>
+                                </button>
+                                <button type="button" id="typeIncomeBtn" class="py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200 cursor-pointer">
+                                    <span>収入</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="entryType" value="支出">
+                        </div>
+
+                        <!-- 日付 -->
+                        <div>
+                            <label for="entryDate" class="block text-xs font-medium text-zinc-400 mb-1.5">日付</label>
+                            <input type="date" id="entryDate" required class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                        </div>
+
+                        <!-- 店名 (リスト選択 ＋ 手入力可能) -->
+                        <div>
+                            <label for="entryStore" class="block text-xs font-medium text-zinc-400 mb-1.5">店名 (リスト選択または手入力)</label>
+                            <div class="relative">
+                                <input type="text" id="entryStore" list="storeListOptions" placeholder="例: マツモト または 新規店名" required class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                                <datalist id="storeListOptions">
+                                    <option value="マツモト">
+                                    <option value="フレッシュバザール">
+                                    <option value="CAINZ">
+                                    <option value="Enejet">
+                                    <option value="ドラッグユタカ">
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <!-- 金額 -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="entryAmount" class="text-xs font-medium text-zinc-400">金額 (円)</label>
+                                <button type="button" id="clearAmountBtn" class="text-[11px] text-zinc-500 hover:text-zinc-300 transition cursor-pointer">
+                                    クリア
+                                </button>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 font-semibold">¥</span>
+                                <input type="number" id="entryAmount" inputmode="numeric" min="1" step="1" placeholder="0" required class="w-full pl-8 pr-4 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                            </div>
+                        </div>
+
+                        <!-- メモ -->
+                        <div>
+                            <label for="entryMemo" class="block text-xs font-medium text-zinc-400 mb-1.5">メモ・内容</label>
+                            <input type="text" id="entryMemo" placeholder="例: 食材まとめ買い、ガソリン満タン" class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900/90 border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+                        </div>
+
+                        <!-- 登録ボタン -->
+                        <button type="submit" id="submitBtn" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 transition cursor-pointer flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                            </svg>
+                            <span id="submitBtnText">Excelシートに追加・保存</span>
+                        </button>
+                    </form>
+
+                    <!-- データ管理ユーティリティ (サンプル読込・全削除) -->
+                    <div class="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-2">
+                        <span class="text-[11px] text-zinc-500">自動保存済み (localStorage)</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="loadSampleBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-white/10 transition cursor-pointer">
+                                サンプル読込
+                            </button>
+                            <button type="button" id="clearAllBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition cursor-pointer">
+                                全削除
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+        </div>
+    </main>
+
+    <!-- カスタム確認モーダル (confirm()の代替) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="glass-card rounded-2xl max-w-sm w-full p-6 border border-white/15 shadow-2xl">
+            <h3 id="modalTitle" class="text-lg font-bold text-white mb-2">確認</h3>
+            <p id="modalMessage" class="text-sm text-zinc-300 mb-6 leading-relaxed">本当に実行しますか？</p>
+            <div class="flex items-center justify-end gap-3">
+                <button id="modalCancelBtn" type="button" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sm font-medium text-zinc-300 transition cursor-pointer">
+                    キャンセル
+                </button>
+                <button id="modalConfirmBtn" type="button" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition cursor-pointer">
+                    実行する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知コンテナ -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        /**
+         * スマート家計簿 (店名対応版)
+         */
+
+        // --- 定数・ストレージキー ---
+        const STORAGE_KEY = 'smart_kakeibo_entries_store_v1';
+        const CUSTOM_STORE_STORAGE_KEY = 'smart_kakeibo_custom_stores_v1';
+
+        const DEFAULT_STORES = ['マツモト', 'フレッシュバザール', 'CAINZ', 'Enejet', 'ドラッグユタカ'];
+
+        // --- アプリケーション状態 ---
+        let entries = [];
+        let customStores = [];
+        let selectedMonth = ''; // 'YYYY-MM' または '' (全期間)
+        let activeSheet = 'sheet1'; // 'sheet1' | 'sheet2'
+        let pendingModalAction = null;
+
+        // --- DOM要素の取得 ---
+        const entryForm = document.getElementById('entryForm');
+        const editEntryIdInput = document.getElementById('editEntryId');
+        const entryTypeInput = document.getElementById('entryType');
+        const typeExpenseBtn = document.getElementById('typeExpenseBtn');
+        const typeIncomeBtn = document.getElementById('typeIncomeBtn');
+        const entryDateInput = document.getElementById('entryDate');
+        const entryStoreInput = document.getElementById('entryStore');
+        const storeListOptions = document.getElementById('storeListOptions');
+        const entryAmountInput = document.getElementById('entryAmount');
+        const clearAmountBtn = document.getElementById('clearAmountBtn');
+        const entryMemoInput = document.getElementById('entryMemo');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const formTitle = document.getElementById('formTitle');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+        const monthFilterInput = document.getElementById('monthFilter');
+        const showAllMonthsBtn = document.getElementById('showAllMonthsBtn');
+        const totalIncomeDisplay = document.getElementById('totalIncomeDisplay');
+        const totalExpenseDisplay = document.getElementById('totalExpenseDisplay');
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const periodLabels = document.querySelectorAll('.period-label');
+
+        const excelFileNamePreview = document.getElementById('excelFileNamePreview');
+        const activeCellRef = document.getElementById('activeCellRef');
+        const formulaBarText = document.getElementById('formulaBarText');
+        const sheet1Container = document.getElementById('sheet1Container');
+        const sheet2Container = document.getElementById('sheet2Container');
+        const excelSheet1Body = document.getElementById('excelSheet1Body');
+        const excelSheet1Foot = document.getElementById('excelSheet1Foot');
+        const excelSheet2Body = document.getElementById('excelSheet2Body');
+        const tabSheet1Btn = document.getElementById('tabSheet1Btn');
+        const tabSheet2Btn = document.getElementById('tabSheet2Btn');
+        const sheetStatusInfo = document.getElementById('sheetStatusInfo');
+
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const exportCsvBtn = document.getElementById('exportCsvBtn');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+
+        const confirmModal = document.getElementById('confirmModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+        // --- ユーティリティ関数 ---
+
+        function getTodayString() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatJPY(amount) {
+            return '¥' + Number(amount).toLocaleString('ja-JP');
+        }
+
+        function formatNumber(amount) {
+            return Number(amount).toLocaleString('ja-JP');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error'
+                ? 'bg-rose-600/95 border-rose-400/30 text-white'
+                : 'bg-zinc-800/95 border-white/15 text-white';
+
+            toast.className = `toast-enter px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-xs sm:text-sm font-medium flex items-center gap-2 ${bgClass}`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-white' : 'bg-emerald-400'}"></span>
+                <span>${escapeHtml(message)}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                toast.style.transition = 'all 0.2s ease';
+                setTimeout(() => toast.remove(), 220);
+            }, 2600);
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            pendingModalAction = onConfirm;
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            confirmModal.classList.add('hidden');
+            confirmModal.classList.remove('flex');
+            pendingModalAction = null;
+        }
+
+        // --- データ永続化 ---
+
+        function loadFromStorage() {
+            try {
+                const rawEntries = localStorage.getItem(STORAGE_KEY);
+                entries = rawEntries ? JSON.parse(rawEntries) : [];
+                if (!Array.isArray(entries)) entries = [];
+
+                const rawStores = localStorage.getItem(CUSTOM_STORE_STORAGE_KEY);
+                if (rawStores) {
+                    const parsed = JSON.parse(rawStores);
+                    customStores = Array.isArray(parsed) ? parsed : [];
+                }
+            } catch (e) {
+                console.error('ストレージ読込エラー:', e);
+                entries = [];
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+                localStorage.setItem(CUSTOM_STORE_STORAGE_KEY, JSON.stringify(customStores));
+            } catch (e) {
+                console.error('ストレージ保存エラー:', e);
+                showToast('ブラウザへの保存に失敗しました', 'error');
+            }
+        }
+
+        // --- フォーム管理 ---
+
+        function updateStoreDatalist() {
+            // 既存の入力済み店名とカスタム店名、デフォルト店名を統合
+            const allStores = [...DEFAULT_STORES, ...customStores];
+            entries.forEach(e => {
+                if (e.store) allStores.push(e.store);
+            });
+            const uniqueStores = [...new Set(allStores)];
+            storeListOptions.innerHTML = uniqueStores.map(s => `<option value="${escapeHtml(s)}">`).join('');
+        }
+
+        function setEntryType(type) {
+            entryTypeInput.value = type;
+            if (type === '支出') {
+                typeExpenseBtn.className = 'py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-sm cursor-pointer';
+                typeIncomeBtn.className = 'py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200 cursor-pointer';
+            } else {
+                typeIncomeBtn.className = 'py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm cursor-pointer';
+                typeExpenseBtn.className = 'py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-1.5 text-zinc-400 hover:text-zinc-200 cursor-pointer';
+            }
+        }
+
+        function resetForm() {
+            editEntryIdInput.value = '';
+            setEntryType('支出');
+            entryDateInput.value = getTodayString();
+            entryStoreInput.value = '';
+            entryAmountInput.value = '';
+            entryMemoInput.value = '';
+            formTitle.innerHTML = `<span class="w-1.5 h-5 rounded-full bg-emerald-500"></span>収支の入力`;
+            submitBtnText.textContent = 'Excelシートに追加・保存';
+            cancelEditBtn.classList.add('hidden');
+            updateStoreDatalist();
+        }
+
+        window.startEditEntry = function(id) {
+            const target = entries.find(item => item.id === id);
+            if (!target) return;
+
+            editEntryIdInput.value = target.id;
+            setEntryType(target.type);
+            entryDateInput.value = target.date;
+            entryStoreInput.value = target.store || '';
+            entryAmountInput.value = target.amount;
+            entryMemoInput.value = target.memo || '';
+
+            formTitle.innerHTML = `<span class="w-1.5 h-5 rounded-full bg-amber-500"></span>明細の編集 (No.${getEntryRowNumber(id)})`;
+            submitBtnText.textContent = '変更をExcelに反映する';
+            cancelEditBtn.classList.remove('hidden');
+
+            if (window.innerWidth < 1024) {
+                entryForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        window.confirmDeleteEntry = function(id) {
+            const target = entries.find(e => e.id === id);
+            if (!target) return;
+            openConfirmModal(
+                '明細行の削除',
+                `「${target.date} / ${target.store} (${formatJPY(target.amount)})」をExcelシートから削除しますか？`,
+                () => {
+                    entries = entries.filter(e => e.id !== id);
+                    saveToStorage();
+                    if (editEntryIdInput.value === id) resetForm();
+                    renderAll();
+                    showToast('明細を削除しました');
+                }
+            );
+        };
+
+        // --- 集計・Excelプレビュー描画ロジック ---
+
+        function getSortedFilteredEntries() {
+            return entries
+                .filter(item => {
+                    if (selectedMonth && !item.date.startsWith(selectedMonth)) {
+                        return false;
+                    }
+                    return true;
+                })
+                .sort((a, b) => {
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return (a.createdAt || 0) - (b.createdAt || 0);
+                });
+        }
+
+        function getEntryRowNumber(id) {
+            const list = getSortedFilteredEntries();
+            const idx = list.findIndex(item => item.id === id);
+            return idx !== -1 ? idx + 1 : '-';
+        }
+
+        function buildStoreSummaryData(filteredEntries) {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const map = {};
+
+            filteredEntries.forEach(item => {
+                const amt = Number(item.amount) || 0;
+                if (item.type === '収入') totalIncome += amt;
+                else totalExpense += amt;
+
+                const storeName = (item.store || '未指定').trim();
+                const key = `${item.type}__${storeName}`;
+                if (!map[key]) {
+                    map[key] = { type: item.type, store: storeName, count: 0, amount: 0 };
+                }
+                map[key].count += 1;
+                map[key].amount += amt;
+            });
+
+            const rows = Object.values(map).sort((a, b) => {
+                if (a.type !== b.type) return a.type === '収入' ? -1 : 1;
+                return b.amount - a.amount;
+            }).map(row => {
+                const baseTotal = row.type === '収入' ? totalIncome : totalExpense;
+                const ratio = baseTotal > 0 ? ((row.amount / baseTotal) * 100).toFixed(1) + '%' : '0.0%';
+                return { ...row, ratio };
+            });
+
+            return { rows, totalIncome, totalExpense, balance: totalIncome - totalExpense };
+        }
+
+        window.inspectCell = function(cellRef, formulaValue) {
+            activeCellRef.textContent = cellRef;
+            formulaBarText.textContent = formulaValue;
+        };
+
+        function renderAll() {
+            const periodText = selectedMonth ? `${selectedMonth.replace('-', '年')}月` : '全期間';
+            periodLabels.forEach(el => el.textContent = periodText);
+
+            const periodSuffix = selectedMonth ? selectedMonth : '全期間';
+            excelFileNamePreview.textContent = `家計簿_${periodSuffix}.xlsx`;
+
+            if (!selectedMonth) {
+                showAllMonthsBtn.classList.add('bg-emerald-600', 'text-white');
+                showAllMonthsBtn.classList.remove('bg-zinc-800', 'text-zinc-300');
+            } else {
+                showAllMonthsBtn.classList.remove('bg-emerald-600', 'text-white');
+                showAllMonthsBtn.classList.add('bg-zinc-800', 'text-zinc-300');
+            }
+
+            const filteredEntries = getSortedFilteredEntries();
+            const summary = buildStoreSummaryData(filteredEntries);
+
+            totalIncomeDisplay.textContent = formatJPY(summary.totalIncome);
+            totalExpenseDisplay.textContent = formatJPY(summary.totalExpense);
+            balanceDisplay.textContent = (summary.balance < 0 ? '-' : '') + formatJPY(Math.abs(summary.balance));
+            balanceDisplay.className = `text-xl sm:text-2xl font-bold tracking-tight ${
+                summary.balance > 0 ? 'text-emerald-400' : summary.balance < 0 ? 'text-rose-400' : 'text-white'
+            }`;
+
+            renderSheet1(filteredEntries, summary);
+            renderSheet2(summary);
+            updateStoreDatalist();
+
+            sheetStatusInfo.textContent = `明細: ${filteredEntries.length}件 | 収入: ${formatJPY(summary.totalIncome)} | 支出: ${formatJPY(summary.totalExpense)}`;
+        }
+
+        /** シート1: 収支明細 (No, 日付, 店名, 収入(円), 支出(円), メモ, 操作) */
+        function renderSheet1(filteredEntries, summary) {
+            if (filteredEntries.length === 0) {
+                excelSheet1Body.innerHTML = `
+                    <tr>
+                        <td class="excel-row-num py-8">2</td>
+                        <td colspan="7" class="py-10 px-4 text-center text-gray-400 bg-white">
+                            この期間のデータはまだありません。右側のフォームから入力するか「サンプル読込」をお試しください。
+                        </td>
+                    </tr>
+                `;
+                excelSheet1Foot.innerHTML = `
+                    <tr class="bg-gray-100 font-bold text-gray-800">
+                        <td class="excel-row-num">3</td>
+                        <td colspan="3" class="py-2 px-3 text-right">合計 (=SUM)</td>
+                        <td class="py-2 px-3 text-right font-mono text-emerald-700">0</td>
+                        <td class="py-2 px-3 text-right font-mono text-rose-700">0</td>
+                        <td colspan="2" class="py-2 px-3 text-gray-400 text-xs"></td>
+                    </tr>
+                `;
+                activeCellRef.textContent = 'D3';
+                formulaBarText.textContent = '=SUM(D2:D2)';
+                return;
+            }
+
+            excelSheet1Body.innerHTML = filteredEntries.map((item, idx) => {
+                const no = idx + 1;
+                const excelRow = idx + 2;
+                const isIncome = item.type === '収入';
+                const isEditing = editEntryIdInput.value === item.id;
+
+                const incomeValStr = isIncome ? formatNumber(item.amount) : '';
+                const expenseValStr = !isIncome ? formatNumber(item.amount) : '';
+
+                return `
+                    <tr class="${isEditing ? 'bg-amber-50' : 'bg-white hover:bg-emerald-50/40'} transition group">
+                        <td class="excel-row-num">${excelRow}</td>
+                        <td onclick="inspectCell('A${excelRow}', '${no}')" class="excel-cell-hover py-2 px-2 text-center text-gray-500 cursor-cell">${no}</td>
+                        <td onclick="inspectCell('B${excelRow}', '${escapeHtml(item.date)}')" class="excel-cell-hover py-2 px-3 text-gray-800 whitespace-nowrap cursor-cell">${escapeHtml(item.date)}</td>
+                        <td onclick="inspectCell('C${excelRow}', '${escapeHtml(item.store || '')}')" class="excel-cell-hover py-2 px-3 text-gray-800 whitespace-nowrap cursor-cell">${escapeHtml(item.store || '')}</td>
+                        <td onclick="inspectCell('D${excelRow}', '${isIncome ? item.amount : ''}')" class="excel-cell-hover py-2 px-3 text-right font-semibold whitespace-nowrap cursor-cell text-emerald-700">
+                            ${incomeValStr}
+                        </td>
+                        <td onclick="inspectCell('E${excelRow}', '${!isIncome ? item.amount : ''}')" class="excel-cell-hover py-2 px-3 text-right font-semibold whitespace-nowrap cursor-cell text-gray-900">
+                            ${expenseValStr}
+                        </td>
+                        <td onclick="inspectCell('F${excelRow}', '${escapeHtml(item.memo || '')}')" class="excel-cell-hover py-2 px-3 text-gray-600 max-w-[220px] truncate cursor-cell">${escapeHtml(item.memo || '')}</td>
+                        <td class="py-1.5 px-2 text-center whitespace-nowrap bg-gray-50/80">
+                            <div class="inline-flex items-center gap-1">
+                                <button type="button" onclick="startEditEntry('${item.id}')" class="px-1.5 py-0.5 rounded text-[11px] font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer" title="編集">
+                                    編集
+                                </button>
+                                <button type="button" onclick="confirmDeleteEntry('${item.id}')" class="px-1.5 py-0.5 rounded text-[11px] font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition cursor-pointer" title="削除">
+                                    削除
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const lastDataRow = filteredEntries.length + 1;
+            const totalRowNum = filteredEntries.length + 2;
+            const sumIncomeFormula = `=SUM(D2:D${lastDataRow})`;
+            const sumExpenseFormula = `=SUM(E2:E${lastDataRow})`;
+
+            excelSheet1Foot.innerHTML = `
+                <tr class="bg-[#E6F4EA] font-bold text-gray-900 border-t-2 border-[#107C41]">
+                    <td class="excel-row-num">${totalRowNum}</td>
+                    <td colspan="3" onclick="inspectCell('C${totalRowNum}', '合計')" class="py-2.5 px-3 text-right text-[#107C41] cursor-cell">
+                        合計
+                    </td>
+                    <td onclick="inspectCell('D${totalRowNum}', '${sumIncomeFormula}')" class="excel-cell-hover py-2.5 px-3 text-right text-sm text-emerald-800 cursor-cell">
+                        ${formatNumber(summary.totalIncome)}
+                    </td>
+                    <td onclick="inspectCell('E${totalRowNum}', '${sumExpenseFormula}')" class="excel-cell-hover py-2.5 px-3 text-right text-sm text-rose-700 cursor-cell">
+                        ${formatNumber(summary.totalExpense)}
+                    </td>
+                    <td colspan="2" class="py-2.5 px-3 text-[11px] font-normal text-gray-600">
+                        差額: ${summary.balance < 0 ? '-' : ''}${formatNumber(Math.abs(summary.balance))}円
+                    </td>
+                </tr>
+            `;
+
+            if (activeSheet === 'sheet1') {
+                activeCellRef.textContent = `D${totalRowNum}`;
+                formulaBarText.textContent = sumIncomeFormula;
+            }
+        }
+
+        /** シート2: 月次・店名集計テーブルを描画 */
+        function renderSheet2(summary) {
+            if (summary.rows.length === 0) {
+                excelSheet2Body.innerHTML = `
+                    <tr>
+                        <td class="excel-row-num py-8">2</td>
+                        <td colspan="5" class="py-10 px-4 text-center text-gray-400">
+                            集計対象のデータがありません
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = summary.rows.map((row, idx) => {
+                const excelRow = idx + 2;
+                const isIncome = row.type === '収入';
+                return `
+                    <tr class="bg-white hover:bg-emerald-50/40">
+                        <td class="excel-row-num">${excelRow}</td>
+                        <td onclick="inspectCell('A${excelRow}', '${row.type}')" class="excel-cell-hover py-2 px-3 text-center cursor-cell">
+                            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                            }">
+                                ${escapeHtml(row.type)}
+                            </span>
+                        </td>
+                        <td onclick="inspectCell('B${excelRow}', '${escapeHtml(row.store)}')" class="excel-cell-hover py-2 px-3 font-medium text-gray-800 cursor-cell">${escapeHtml(row.store)}</td>
+                        <td onclick="inspectCell('C${excelRow}', '${row.count}')" class="excel-cell-hover py-2 px-3 text-right text-gray-600 cursor-cell">${row.count}件</td>
+                        <td onclick="inspectCell('D${excelRow}', '${row.amount}')" class="excel-cell-hover py-2 px-3 text-right font-semibold cursor-cell ${
+                            isIncome ? 'text-emerald-700' : 'text-gray-900'
+                        }">${formatNumber(row.amount)}</td>
+                        <td onclick="inspectCell('E${excelRow}', '${row.ratio}')" class="excel-cell-hover py-2 px-3 text-right text-gray-600 cursor-cell">${row.ratio}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const nextRow = summary.rows.length + 2;
+            html += `
+                <tr class="bg-gray-100 font-bold text-gray-800">
+                    <td class="excel-row-num">${nextRow}</td>
+                    <td colspan="3" class="py-2 px-3 text-right">収入合計</td>
+                    <td class="py-2 px-3 text-right text-emerald-700">${formatNumber(summary.totalIncome)}</td>
+                    <td class="py-2 px-3 text-right text-gray-500">100.0%</td>
+                </tr>
+                <tr class="bg-gray-100 font-bold text-gray-800">
+                    <td class="excel-row-num">${nextRow + 1}</td>
+                    <td colspan="3" class="py-2 px-3 text-right">支出合計</td>
+                    <td class="py-2 px-3 text-right text-rose-700">${formatNumber(summary.totalExpense)}</td>
+                    <td class="py-2 px-3 text-right text-gray-500">100.0%</td>
+                </tr>
+                <tr class="bg-[#E6F4EA] font-bold text-[#107C41]">
+                    <td class="excel-row-num">${nextRow + 2}</td>
+                    <td colspan="3" class="py-2.5 px-3 text-right">収支差額 (収入 - 支出)</td>
+                    <td class="py-2.5 px-3 text-right">${summary.balance < 0 ? '-' : ''}${formatNumber(Math.abs(summary.balance))}</td>
+                    <td class="py-2.5 px-3 text-right">—</td>
+                </tr>
+            `;
+
+            excelSheet2Body.innerHTML = html;
+        }
+
+        function switchSheetTab(sheetName) {
+            activeSheet = sheetName;
+            if (sheetName === 'sheet1') {
+                sheet1Container.classList.remove('hidden');
+                sheet2Container.classList.add('hidden');
+                tabSheet1Btn.className = 'px-3.5 py-1.5 text-xs font-bold rounded-t-md bg-white text-[#107C41] border-b-2 border-[#107C41] shadow-sm transition cursor-pointer';
+                tabSheet2Btn.className = 'px-3.5 py-1.5 text-xs font-medium rounded-t-md bg-gray-200/80 hover:bg-gray-100 text-gray-600 transition cursor-pointer';
+            } else {
+                sheet1Container.classList.add('hidden');
+                sheet2Container.classList.remove('hidden');
+                tabSheet2Btn.className = 'px-3.5 py-1.5 text-xs font-bold rounded-t-md bg-white text-[#107C41] border-b-2 border-[#107C41] shadow-sm transition cursor-pointer';
+                tabSheet1Btn.className = 'px-3.5 py-1.5 text-xs font-medium rounded-t-md bg-gray-200/80 hover:bg-gray-100 text-gray-600 transition cursor-pointer';
+                activeCellRef.textContent = 'D2';
+                formulaBarText.textContent = '=SUMIFS(収支明細!D:D, 収支明細!C:C, B2)';
+            }
+        }
+
+        // --- Excel (.xlsx) & CSV 出力機能 ---
+
+        function exportToExcel() {
+            const filteredEntries = getSortedFilteredEntries();
+            if (filteredEntries.length === 0) {
+                showToast('出力するデータがありません', 'error');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                showToast('Excel出力ライブラリの読込に失敗しました。CSV出力をお試しください', 'error');
+                return;
+            }
+
+            try {
+                const summary = buildStoreSummaryData(filteredEntries);
+
+                // シート1: 収支明細
+                const sheet1Rows = filteredEntries.map((item, idx) => {
+                    const isIncome = item.type === '収入';
+                    return {
+                        'No': idx + 1,
+                        '日付': item.date,
+                        '店名': item.store || '',
+                        '収入 (円)': isIncome ? Number(item.amount) : '',
+                        '支出 (円)': !isIncome ? Number(item.amount) : '',
+                        'メモ': item.memo || ''
+                    };
+                });
+
+                sheet1Rows.push({
+                    'No': '',
+                    '日付': '',
+                    '店名': '合計',
+                    '収入 (円)': summary.totalIncome,
+                    '支出 (円)': summary.totalExpense,
+                    'メモ': `収支差額: ${summary.balance}円`
+                });
+
+                const ws1 = XLSX.utils.json_to_sheet(sheet1Rows);
+                ws1['!cols'] = [
+                    { wch: 6 },  // A: No
+                    { wch: 14 }, // B: 日付
+                    { wch: 20 }, // C: 店名
+                    { wch: 15 }, // D: 収入
+                    { wch: 15 }, // E: 支出
+                    { wch: 34 }  // F: メモ
+                ];
+
+                // シート2: 月次・店名集計
+                const sheet2Rows = summary.rows.map(r => ({
+                    '区分': r.type,
+                    '店名': r.store,
+                    '件数': r.count,
+                    '合計金額 (円)': r.amount,
+                    '構成比': r.ratio
+                }));
+
+                sheet2Rows.push(
+                    { '区分': '集計', '店名': '収入合計', '件数': '', '合計金額 (円)': summary.totalIncome, '構成比': '100.0%' },
+                    { '区分': '集計', '店名': '支出合計', '件数': '', '合計金額 (円)': summary.totalExpense, '構成比': '100.0%' },
+                    { '区分': '集計', '店名': '収支差額', '件数': '', '合計金額 (円)': summary.balance, '構成比': '-' }
+                );
+
+                const ws2 = XLSX.utils.json_to_sheet(sheet2Rows);
+                ws2['!cols'] = [
+                    { wch: 10 },
+                    { wch: 22 },
+                    { wch: 10 },
+                    { wch: 16 },
+                    { wch: 12 }
+                ];
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws1, '収支明細');
+                XLSX.utils.book_append_sheet(wb, ws2, '月次・店名集計');
+
+                const periodSuffix = selectedMonth ? selectedMonth : '全期間';
+                const fileName = `家計簿_${periodSuffix}.xlsx`;
+
+                XLSX.writeFile(wb, fileName);
+                showToast(`Excelファイル（${fileName}）を出力しました`);
+            } catch (err) {
+                console.error('Excel出力エラー:', err);
+                showToast('Excelファイルの生成中にエラーが発生しました', 'error');
+            }
+        }
+
+        function exportToCSV() {
+            const filteredEntries = getSortedFilteredEntries();
+            if (filteredEntries.length === 0) {
+                showToast('出力するデータがありません', 'error');
+                return;
+            }
+
+            const headers = ['No', '日付', '店名', '収入', '支出', 'メモ'];
+            const csvLines = [
+                headers.join(','),
+                ...filteredEntries.map((item, idx) => {
+                    const isIncome = item.type === '収入';
+                    const storeEscaped = `"${String(item.store || '').replace(/"/g, '""')}"`;
+                    const memoEscaped = `"${String(item.memo || '').replace(/"/g, '""')}"`;
+                    return [
+                        idx + 1,
+                        item.date,
+                        storeEscaped,
+                        isIncome ? Number(item.amount) : '',
+                        !isIncome ? Number(item.amount) : '',
+                        memoEscaped
+                    ].join(',');
+                })
+            ];
+
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([bom, csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const periodSuffix = selectedMonth ? selectedMonth : '全期間';
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `家計簿_${periodSuffix}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast('CSVファイルを出力しました');
+        }
+
+        // --- サンプルデータ読込 ---
+        function loadSampleData() {
+            const baseMonth = selectedMonth || getTodayString().slice(0, 7);
+            const samples = [
+                { date: `${baseMonth}-01`, type: '支出', store: 'マツモト', memo: '食材・お惣菜購入', amount: 3420 },
+                { date: `${baseMonth}-03`, type: '支出', store: 'Enejet', memo: 'ガソリン満タン給油', amount: 6200 },
+                { date: `${baseMonth}-05`, type: '支出', store: 'フレッシュバザール', memo: '野菜・乳製品', amount: 2180 },
+                { date: `${baseMonth}-08`, type: '支出', store: 'ドラッグユタカ', memo: '洗剤・日用品・常備薬', amount: 1850 },
+                { date: `${baseMonth}-10`, type: '支出', store: 'CAINZ', memo: '収納ケース・インテリア雑貨', amount: 4500 },
+                { date: `${baseMonth}-15`, type: '収入', store: '給与', memo: '月例給与振込', amount: 295000 },
+                { date: `${baseMonth}-20`, type: '支出', store: 'マツモト', memo: '週末のまとめ買い', amount: 6890 }
+            ];
+
+            const newRecords = samples.map((s, idx) => ({
+                id: 'sample_' + Date.now() + '_' + idx,
+                ...s,
+                createdAt: Date.now() + idx
+            }));
+
+            entries = [...entries, ...newRecords];
+            
+            // 新規店名をカスタムストアに追加登録
+            samples.forEach(s => {
+                if (s.store && !DEFAULT_STORES.includes(s.store) && !customStores.includes(s.store)) {
+                    customStores.push(s.store);
+                }
+            });
+
+            saveToStorage();
+            renderAll();
+            showToast(`${baseMonth.replace('-', '年')}月のサンプルデータを追加しました`);
+        }
+
+        // --- イベントリスナー設定 ---
+
+        typeExpenseBtn.addEventListener('click', () => setEntryType('支出'));
+        typeIncomeBtn.addEventListener('click', () => setEntryType('収入'));
+        cancelEditBtn.addEventListener('click', resetForm);
+
+        clearAmountBtn.addEventListener('click', () => {
+            entryAmountInput.value = '';
+            entryAmountInput.focus();
+        });
+
+        entryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const dateVal = entryDateInput.value;
+            const typeVal = entryTypeInput.value;
+            const storeVal = entryStoreInput.value.trim();
+            const amountVal = parseInt(entryAmountInput.value, 10);
+            const memoVal = entryMemoInput.value.trim();
+
+            if (!dateVal || !storeVal || isNaN(amountVal) || amountVal <= 0) {
+                showToast('日付、店名、1円以上の金額を正しく入力してください', 'error');
+                return;
+            }
+
+            // 新規手入力された店名であればカスタムストアに保存
+            if (storeVal && !DEFAULT_STORES.includes(storeVal) && !customStores.includes(storeVal)) {
+                customStores.push(storeVal);
+            }
+
+            const editId = editEntryIdInput.value;
+            if (editId) {
+                const idx = entries.findIndex(item => item.id === editId);
+                if (idx !== -1) {
+                    entries[idx] = {
+                        ...entries[idx],
+                        date: dateVal,
+                        type: typeVal,
+                        store: storeVal,
+                        amount: amountVal,
+                        memo: memoVal
+                    };
+                    showToast('明細を更新し、Excelプレビューに反映しました');
+                }
+            } else {
+                entries.push({
+                    id: 'entry_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                    date: dateVal,
+                    type: typeVal,
+                    store: storeVal,
+                    amount: amountVal,
+                    memo: memoVal,
+                    createdAt: Date.now()
+                });
+                showToast('Excelシートに追加・保存しました');
+            }
+
+            saveToStorage();
+
+            if (selectedMonth && !dateVal.startsWith(selectedMonth)) {
+                selectedMonth = dateVal.slice(0, 7);
+                monthFilterInput.value = selectedMonth;
+            }
+
+            resetForm();
+            renderAll();
+        });
+
+        monthFilterInput.addEventListener('change', (e) => {
+            selectedMonth = e.target.value;
+            renderAll();
+        });
+
+        showAllMonthsBtn.addEventListener('click', () => {
+            selectedMonth = '';
+            monthFilterInput.value = '';
+            renderAll();
+        });
+
+        tabSheet1Btn.addEventListener('click', () => switchSheetTab('sheet1'));
+        tabSheet2Btn.addEventListener('click', () => switchSheetTab('sheet2'));
+
+        exportExcelBtn.addEventListener('click', exportToExcel);
+        exportCsvBtn.addEventListener('click', exportToCSV);
+
+        loadSampleBtn.addEventListener('click', loadSampleData);
+
+        clearAllBtn.addEventListener('click', () => {
+            if (entries.length === 0) {
+                showToast('削除するデータがありません', 'error');
+                return;
+            }
+            openConfirmModal(
+                '全データの削除',
+                '保存されているすべての家計簿データを完全に削除します。よろしいですか？',
+                () => {
+                    entries = [];
+                    saveToStorage();
+                    resetForm();
+                    renderAll();
+                    showToast('すべてのデータを削除しました');
+                }
+            );
+        });
+
+        modalCancelBtn.addEventListener('click', closeConfirmModal);
+        modalConfirmBtn.addEventListener('click', () => {
+            if (typeof pendingModalAction === 'function') pendingModalAction();
+            closeConfirmModal();
+        });
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) closeConfirmModal();
+        });
+
+        function initApp() {
+            const today = getTodayString();
+            entryDateInput.value = today;
+            selectedMonth = today.slice(0, 7);
+            monthFilterInput.value = selectedMonth;
+
+            loadFromStorage();
+            setEntryType('支出');
+            renderAll();
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
