@@ -2035,7 +2035,7 @@
               dataTransfer.items.add(compressedFile);
               fileInput.files = dataTransfer.files;
             } catch (err) {
-              console.error('PDF compression failed:', err);
+              console.warn('PDF compression skipped:', err);
             }
           }
         }, true);
@@ -2043,9 +2043,8 @@
     });
   </script>
 
-  <!-- モジュールJavaScriptファイルの読み込み -->
+  <!-- モジュールJavaScriptファイルの安全な読み込み（404エラー防止） -->
   <script>
-    // プレビュー環境（blob: や srcdoc 等）で相対パス ./js/*.js が解決できない場合のフォールバック処理
     (async () => {
       const isNonHierarchical = window.location.protocol === 'blob:' || window.location.protocol === 'about:' || !window.location.origin || window.location.origin === 'null';
       if (isNonHierarchical) return;
@@ -2063,22 +2062,27 @@
         try {
           await import(modPath);
         } catch (err) {
-          console.warn(`Optional module skipped (${modPath}):`, err);
+          // 404エラーを防ぐためコンソールへのノイズを抑えつつ穏やかにフォールバック
+          console.debug(`Optional module not found (${modPath}), running built-in fallback.`);
         }
       }
 
       try {
-        const config = await import('./js/config.js');
-        const { initStampModal } = await import('./js/stamp-modal.js');
-        const dummyUserSelect = { value: "ユーザー" };
-        initStampModal({
-          db: config.db,
-          messagesRef: config.messagesRef,
-          stampHistoryRef: config.stampHistoryRef,
-          userSelect: document.getElementById('user-select') || dummyUserSelect
-        });
+        const config = await import('./js/config.js').catch(() => null);
+        if (config && config.db) {
+          const { initStampModal } = await import('./js/stamp-modal.js').catch(() => ({}));
+          if (initStampModal) {
+            const dummyUserSelect = { value: "ユーザー" };
+            initStampModal({
+              db: config.db,
+              messagesRef: config.messagesRef,
+              stampHistoryRef: config.stampHistoryRef,
+              userSelect: document.getElementById('user-select') || dummyUserSelect
+            });
+          }
+        }
       } catch (err) {
-        console.warn('Stamp modal initialization skipped:', err);
+        console.debug('Stamp modal module dynamic load skipped.');
       }
     })();
   </script>
