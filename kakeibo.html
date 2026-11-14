@@ -98,7 +98,6 @@
         .toast-enter {
             animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        /* ログイン・モーダル用カスタム変数 */
         :root {
             --text-muted: #a1a1aa;
             --danger-color: #f43f5e;
@@ -587,7 +586,13 @@
             appId: "MTo1NDI5MzU4NDAyNjQ6d2ViOjA1NWQ2NGZiZjMxMGI1MzdmNDAzYmQ="
         };
 
-        const decodeB64 = (str) => decodeURIComponent(escape(atob(str)));
+        // 安全なUTF-8対応Base64デコード関数
+        const decodeB64 = (b64) => {
+            const binString = atob(b64);
+            const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
+            return new TextDecoder().decode(bytes);
+        };
+
         const firebaseConfig = {
             apiKey: decodeB64(encodedConfig.apiKey),
             authDomain: decodeB64(encodedConfig.authDomain),
