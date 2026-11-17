@@ -8,13 +8,13 @@
 <style>
   :root {
     --bg: #121212; --card: #1e1e1e; --text: #e0e0e0;
-    --accent: #4dabf7; --border: #333;
+    --accent: #4dabf7; --border: #333; --success: #51cf66;
   }
   body {
     font-family: sans-serif; background: var(--bg); color: var(--text);
     margin: 0; padding: 16px; line-height: 1.5;
   }
-  h1 { font-size: 1.2rem; margin: 0 0 12px; }
+  h1 { font-size: 1.2rem; margin: 0 0 12px; color: var(--accent); }
   .box {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 8px; padding: 12px; margin-bottom: 14px;
@@ -26,41 +26,45 @@
   }
   button.secondary { background: #444; color: #fff; }
   input[type="file"], input[type="text"] {
-    width: 100%; box-sizing: border-box; padding: 8px;
+    width: 100%; box-sizing: border-box; padding: 10px;
     background: #2a2a2a; color: #fff; border: 1px solid var(--border);
-    border-radius: 4px; margin-top: 6px;
+    border-radius: 6px; margin-top: 6px; font-size: 1rem;
   }
-  #reader { width: 100%; border-radius: 8px; overflow: hidden; }
+  #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
   .result-row {
-    border-bottom: 1px solid var(--border); padding: 6px 0;
-    display: flex; justify-content: space-between; gap: 12px;
+    border-bottom: 1px solid var(--border); padding: 8px 0;
+    display: flex; flex-direction: column; gap: 2px;
   }
-  .result-label { color: #999; font-size: 0.85rem; flex-shrink: 0; }
-  .result-val { font-weight: bold; text-align: right; word-break: break-all; }
+  .result-label { color: #999; font-size: 0.75rem; }
+  .result-val { font-weight: bold; font-size: 1rem; word-break: break-all; color: #fff; }
   .status { font-size: 0.85rem; color: #aaa; margin-top: 6px; }
+  .highlight-val { color: var(--success); font-size: 1.1rem; }
 </style>
 </head>
 <body>
 
 <h1>医療材料バーコード検索</h1>
 
+<!-- 1. CSVデータ読み込み -->
 <div class="box">
-  <label>① マスタCSVを選択（B列＝コード）</label>
+  <label><strong>① マスタCSVを選択</strong>（B列＝商品コード）</label>
   <input type="file" id="csvFile" accept=".csv">
-  <div id="dbStatus" class="status">データ未読み込み</div>
+  <div id="dbStatus" class="status">データ未読み込み（CSVを選択してください）</div>
 </div>
 
+<!-- 2. カメラ＆手動検索 -->
 <div class="box">
   <div id="reader"></div>
   <button id="startBtn">カメラでスキャン開始</button>
   <button id="stopBtn" class="secondary" style="display:none;">カメラ停止</button>
   
-  <div style="margin-top:12px;">
-    <label>手動入力 / 読み取り結果（B列検索）</label>
+  <div style="margin-top:14px;">
+    <label><strong>手動入力 / 読み取り結果（B列検索）</strong></label>
     <input type="text" id="searchInput" placeholder="コードを入力またはスキャン">
   </div>
 </div>
 
+<!-- 3. 検索結果表示 -->
 <div id="resultArea" class="box" style="display:none;"></div>
 
 <script>
@@ -68,17 +72,22 @@ let headers = [];
 let rows = [];
 let html5QrCode = null;
 
+// 保存済みデータの復元（ブラウザのローカルストレージ）
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('med_material_db');
+  const saved = localStorage.getItem('med_material_db_v2');
   if (saved) {
-    const parsed = JSON.parse(saved);
-    headers = parsed.headers;
-    rows = parsed.rows;
-    document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件`;
+    try {
+      const parsed = JSON.parse(saved);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件（準備完了）`;
+    } catch(e) {
+      console.error(e);
+    }
   }
 });
 
-// CSV読み込み（文字化け防止のためShift-JIS/CP932を優先デコード）
+// CSV読み込み（文字化け完全防止：UTF-8 / Shift-JIS自動切り替え）
 document.getElementById('csvFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -87,11 +96,19 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
   reader.onload = (ev) => {
     const buffer = ev.target.result;
     let text = "";
+    
+    // まずUTF-8（BOM付き含む）で試す、ダメならShift-JIS(CP932)でデコード
     try {
-      // 日本のExcel等で出力されるShift-JISを優先的に正しくデコード
-      text = new TextDecoder('shift-jis').decode(buffer);
+      const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
+      text = decoderUtf8.decode(buffer);
     } catch (err) {
-      text = new TextDecoder('utf-8').decode(buffer);
+      try {
+        const decoderSjis = new TextDecoder('shift-jis');
+        text = decoderSjis.decode(buffer);
+      } catch (err2) {
+        const decoderCp932 = new TextDecoder('cp932');
+        text = decoderCp932.decode(buffer);
+      }
     }
     parseCSV(text);
   };
@@ -99,22 +116,48 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
 });
 
 function parseCSV(text) {
+  // 改行で分割（CRLF/LF対応）
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-  if (lines.length < 2) return;
+  if (lines.length < 2) {
+    alert("CSVのデータ行が少なすぎるか、形式が正しくありません。");
+    return;
+  }
 
-  const splitLine = (line) => line.split(',').map(cell => cell.replace(/^"|"$/g, '').trim());
-  headers = splitLine(lines[0]);
-  rows = lines.slice(1).map(splitLine);
+  // 簡易CSVパース（ダブルクォーテーションやカンマを考慮）
+  const parseLine = (line) => {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        inQuotes = !inQuotes;
+      } else if (c === ',' && !inQuotes) {
+        result.push(cur.trim().replace(/^"|"$/g, ''));
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    result.push(cur.trim().replace(/^"|"$/g, ''));
+    return result;
+  };
 
-  localStorage.setItem('med_material_db', JSON.stringify({ headers, rows }));
-  document.getElementById('dbStatus').textContent = `読み込み完了: ${rows.length} 件（端末に保存しました）`;
+  headers = parseLine(lines[0]);
+  rows = lines.slice(1).map(parseLine);
+
+  localStorage.setItem('med_material_db_v2', JSON.stringify({ headers, rows }));
+  document.getElementById('dbStatus').textContent = `読み込み成功: ${rows.length} 件（端末に保存しました）`;
+  alert(`CSVの読み込みが完了しました (${rows.length}件)`);
 }
 
+// B列（インデックス1）での検索処理
 function searchByColB(scannedCode) {
   const cleanCode = scannedCode.trim();
   document.getElementById('searchInput').value = cleanCode;
   if (!cleanCode || rows.length === 0) return;
 
+  // GS1コード（先頭の(01)や付加情報）が含まれていてもB列のコードが部分一致するように判定
   const hit = rows.find(row => {
     const colB = (row[1] || '').trim();
     if (!colB) return false;
@@ -125,35 +168,42 @@ function searchByColB(scannedCode) {
   resultArea.style.display = 'block';
 
   if (!hit) {
-    resultArea.innerHTML = `<div style="color:#ff6b6b;">該当データなし: ${cleanCode}</div>`;
+    resultArea.innerHTML = `<div style="color:#ff6b6b; font-weight:bold;">該当データなし</div><div style="font-size:0.85rem; color:#aaa; margin-top:4px;">コード: ${cleanCode}</div>`;
     return;
   }
 
-  let html = `<div style="color:#51cf66; font-weight:bold; margin-bottom:8px;">検索ヒット</div>`;
+  // ヒットした行の情報をわかりやすくカード形式で表示
+  let html = `<div style="color:var(--success); font-weight:bold; margin-bottom:10px; font-size:1.05rem;">✔ 該当材料が見つかりました</div>`;
+  
   headers.forEach((h, i) => {
+    const val = hit[i] || '-';
+    // 商品名や金額などは少し目立たせる
+    const isImportant = h.includes('商品名') || h.includes('償還金額') || h.includes('材料名称');
     html += `
       <div class="result-row">
-        <span class="result-label">${h || `列${i+1}`}</span>
-        <span class="result-val">${hit[i] || '-'}</span>
+        <span class="result-label">${h.replace(/\n/g, ' ')}</span>
+        <span class="result-val ${isImportant ? 'highlight-val' : ''}">${val}</span>
       </div>`;
   });
   resultArea.innerHTML = html;
 }
 
+// 手動入力時のリアルタイム検索
 document.getElementById('searchInput').addEventListener('input', (e) => {
   searchByColB(e.target.value);
 });
 
+// カメラ起動処理
 document.getElementById('startBtn').addEventListener('click', () => {
-  // HTTPS環境またはlocalhost以外での警告
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    alert("注意: スマホのカメラ機能は通常HTTPS環境（またはGitHub Pages等の公開環境）が必要です。動かない場合はローカルサーバー等をご利用ください。");
+  if (rows.length === 0) {
+    alert("先に「① マスタCSV」を読み込んでください。");
+    return;
   }
 
   html5QrCode = new Html5Qrcode("reader");
   html5QrCode.start(
     { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 260, height: 140 } },
+    { fps: 10, qrbox: { width: 280, height: 140 } },
     (decodedText) => {
       searchByColB(decodedText);
       if (navigator.vibrate) navigator.vibrate(100);
@@ -163,7 +213,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
     document.getElementById('startBtn').style.display = 'none';
     document.getElementById('stopBtn').style.display = 'block';
   }).catch(err => {
-    alert("カメラを起動できませんでした: " + err + "\n\n※スマホのブラウザ設定でカメラ権限が許可されているか、HTTPS環境で開いているかご確認ください。");
+    alert("カメラを起動できませんでした: " + err + "\n\n※ブラウザのカメラ権限が許可されているか、HTTPS環境かご確認ください。");
   });
 });
 
@@ -181,13 +231,3 @@ document.getElementById('stopBtn').addEventListener('click', stopCamera);
 </script>
 </body>
 </html>
-```[cite: 1]
-
----
-
-<ElicitationsGroup message="アプリの動作に関して、ほかに調整したい点はありますか？">
-  <Elicitation label="GitHub Pagesへの簡単なアップロード方法を知りたい" query="作成したHTMLファイルをGitHub Pagesにアップロードして、スマホからHTTPSで安全にアクセスできるようにする手順を教えて。"/>
-  <Elicitation label="CSV以外のデータ形式や検索列を変更したい" query="CSVの読み込み列（B列以外）を指定できるようにカスタマイズする方法を教えて。"/>
-</ElicitationsGroup>
-
-<FollowUp label="カメラのバーコード読み取り精度やGS1コードの処理をもっと最適化したいですか？" query="医療材料のGS1-128コードからGTIN（14桁の商品コード）部分だけを正確に切り出してB列と突合するロジックに改良したい。"/>
