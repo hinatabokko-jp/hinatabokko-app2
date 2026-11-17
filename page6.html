@@ -206,7 +206,7 @@
     <script>
         function combinedApp() {
             return {
-                currentTab: 'd2b', // 初期タブ: 'd2b', 'igel', 'work', 'calc'
+                currentTab: 'd2b', // 初期タブ: 'd2b', 'igel', 'anesthesia', 'work', 'calc'
 
                 toast: {
                     show: false,
@@ -387,7 +387,70 @@
                     };
                 },
 
-                // 3. Work Time App State & Functions
+                // 3. Anesthesia Time App State & Functions (麻酔時間)
+                anesthesia: {
+                    jikoku1: '', // 項目１．全身麻酔
+                    jikoku2: '', // 項目２．気腹開始
+                    jikoku3: '', // 項目３．気腹終了
+                    jikoku4: '', // 項目４．麻酔終了
+                    isNextDay: false,
+                    clear() {
+                        this.jikoku1 = '';
+                        this.jikoku2 = '';
+                        this.jikoku3 = '';
+                        this.jikoku4 = '';
+                        this.isNextDay = false;
+                    }
+                },
+                get anesthesiaResult() {
+                    const s1 = this.formatDisplay(this.anesthesia.jikoku1);
+                    const s2 = this.formatDisplay(this.anesthesia.jikoku2);
+                    const s3 = this.formatDisplay(this.anesthesia.jikoku3);
+                    const s4 = this.formatDisplay(this.anesthesia.jikoku4);
+
+                    if (!/^\d{2}:\d{2}$/.test(s1) || !/^\d{2}:\d{2}$/.test(s2) || !/^\d{2}:\d{2}$/.test(s3) || !/^\d{2}:\d{2}$/.test(s4)) {
+                        return { valid: false, text: '全ての項目に数字4桁を入力してください' };
+                    }
+
+                    const toMin = (str) => {
+                        const [h, m] = str.split(':').map(Number);
+                        return h * 60 + m;
+                    };
+
+                    let m1 = toMin(s1);
+                    let m2 = toMin(s2);
+                    let m3 = toMin(s3);
+                    let m4 = toMin(s4);
+
+                    if (this.anesthesia.isNextDay) {
+                        if (m2 < m1) m2 += 1440;
+                        if (m3 < m1) m3 += 1440;
+                        if (m4 < m1) m4 += 1440;
+                    }
+
+                    // 項目５．閉鎖循環式全身麻酔４（腹腔鏡下手術）の時間: fukukuukyou = jikoku3 - jikoku2
+                    const fukukuukyou = m3 - m2;
+                    // 全麻酔時間: jikoku4 - jikoku1
+                    const totalAnesth = m4 - m1;
+                    // 項目６．閉鎖循環式全身麻酔５（その他）の時間: heisa = (jikoku4 - jikoku1) - fukukuukyou
+                    const heisa = totalAnesth - fukukuukyou;
+
+                    if (totalAnesth < 0 || fukukuukyou < 0 || heisa < 0) {
+                        return { valid: false, text: '時刻の前後関係（同日・翌日）を確認してください' };
+                    }
+
+                    return {
+                        valid: true,
+                        fukukuukyou: fukukuukyou,
+                        fukukuukyouHM: this.minsToHM(fukukuukyou),
+                        heisa: heisa,
+                        heisaHM: this.minsToHM(heisa),
+                        totalAnesth: totalAnesth,
+                        totalAnesthHM: this.minsToHM(totalAnesth)
+                    };
+                },
+
+                // 4. Work Time App State & Functions
                 work: {
                     startRaw: '0852',
                     endRaw: '1607',
@@ -458,7 +521,7 @@
                     };
                 },
 
-                // 4. Time Calculator App State & Functions (筆算)
+                // 5. Time Calculator App State & Functions (筆算)
                 calc: {
                     mode: 'time',
                     h1: '',
@@ -701,6 +764,11 @@
                         <i class="fa-solid fa-rotate-left"></i> リセット
                     </button>
                 </template>
+                <template x-if="currentTab === 'anesthesia'">
+                    <button @click="anesthesia.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> クリア
+                    </button>
+                </template>
                 <template x-if="currentTab === 'work'">
                     <button @click="work.clear(); showToast('クリアしました')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
                         <i class="fa-solid fa-rotate-left"></i> クリア
@@ -713,8 +781,8 @@
                 </template>
             </div>
 
-            <!-- Tab Navigation Buttons -->
-            <nav class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+            <!-- Tab Navigation Buttons (5タブ構成: i-gelの次に麻酔時間) -->
+            <nav class="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] sm:text-xs font-bold">
                 <button @click="currentTab = 'd2b'"
                         :class="currentTab === 'd2b' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
                         class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
@@ -726,6 +794,12 @@
                         class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
                     <i class="fa-solid fa-lungs text-sm"></i>
                     <span>i-gel</span>
+                </button>
+                <button @click="currentTab = 'anesthesia'"
+                        :class="currentTab === 'anesthesia' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+                        class="py-2 rounded-lg transition flex flex-col sm:flex-row items-center justify-center gap-1 text-center">
+                    <i class="fa-solid fa-syringe text-sm"></i>
+                    <span>麻酔時間</span>
                 </button>
                 <button @click="currentTab = 'work'"
                         :class="currentTab === 'work' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
@@ -979,7 +1053,147 @@
         </div>
 
         <!-- ==================================================== -->
-        <!-- 3. Work Time Calculator -->
+        <!-- 3. Anesthesia Time Calculator (麻酔時間) -->
+        <!-- ==================================================== -->
+        <div x-show="currentTab === 'anesthesia'" x-transition:enter="transition ease-out duration-150">
+            <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-950/90 text-slate-200 px-5 py-2.5 flex justify-between items-center border-b border-slate-800">
+                    <span class="text-xs sm:text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-cyan-400"></i> 数字4桁を入力 (例: 1200)
+                    </span>
+                    <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+                        <button @click="anesthesia.isNextDay = false" :class="!anesthesia.isNextDay ? 'bg-cyan-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-0.5 rounded text-[11px] transition">同日</button>
+                        <button @click="anesthesia.isNextDay = true" :class="anesthesia.isNextDay ? 'bg-amber-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-2 py-0.5 rounded text-[11px] transition flex items-center gap-1">
+                            <span>翌日跨ぎ</span><span class="text-[9px] bg-amber-950 px-1 rounded border border-amber-500/30">+24h</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-5 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <!-- 項目１．全身麻酔 (jikoku1) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 tracking-wider">1. 全身麻酔</label>
+                                <span class="text-xs font-mono font-bold text-cyan-400" x-text="formatDisplay(anesthesia.jikoku1) ? '認識: ' + formatDisplay(anesthesia.jikoku1) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="anesthesia.jikoku1" placeholder="1200"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-2xl font-mono focus:outline-none focus:border-cyan-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="anesthesia.jikoku1" @click="anesthesia.jikoku1 = ''" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 項目２．気腹開始 (jikoku2) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 tracking-wider">2. 気腹開始</label>
+                                <span class="text-xs font-mono font-bold text-cyan-400" x-text="formatDisplay(anesthesia.jikoku2) ? '認識: ' + formatDisplay(anesthesia.jikoku2) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="anesthesia.jikoku2" placeholder="1230"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-2xl font-mono focus:outline-none focus:border-cyan-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="anesthesia.jikoku2" @click="anesthesia.jikoku2 = ''" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 項目３．気腹終了 (jikoku3) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 tracking-wider">3. 気腹終了</label>
+                                <span class="text-xs font-mono font-bold text-cyan-400" x-text="formatDisplay(anesthesia.jikoku3) ? '認識: ' + formatDisplay(anesthesia.jikoku3) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="anesthesia.jikoku3" placeholder="1400"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-2xl font-mono focus:outline-none focus:border-cyan-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="anesthesia.jikoku3" @click="anesthesia.jikoku3 = ''" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 項目４．麻酔終了 (jikoku4) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-bold text-slate-400 tracking-wider">4. 麻酔終了</label>
+                                <span class="text-xs font-mono font-bold text-cyan-400" x-text="formatDisplay(anesthesia.jikoku4) ? '認識: ' + formatDisplay(anesthesia.jikoku4) : ''"></span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" inputmode="numeric" pattern="[0-9]*" x-model="anesthesia.jikoku4" placeholder="1430"
+                                       class="w-full bg-slate-950 font-bold text-white border border-slate-700 rounded-xl pl-4 pr-10 py-2 text-2xl font-mono focus:outline-none focus:border-cyan-500 transition shadow-inner placeholder-slate-700 tracking-wider">
+                                <button x-show="anesthesia.jikoku4" @click="anesthesia.jikoku4 = ''" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+                                    <i class="fa-solid fa-circle-xmark text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Result (項目5 & 項目6) -->
+                    <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/30 rounded-2xl p-4 sm:p-5 text-white shadow-2xl border border-slate-800 relative overflow-hidden mt-2">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span class="bg-cyan-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">計算結果 (麻酔時間)</span>
+                            <template x-if="anesthesiaResult.valid">
+                                <button @click="copyText(`閉鎖循環式全身麻酔4（腹腔鏡下手術）: ${anesthesiaResult.fukukuukyou}分 (${anesthesiaResult.fukukuukyouHM}) / 閉鎖循環式全身麻酔5（その他）: ${anesthesiaResult.heisa}分 (${anesthesiaResult.heisaHM})`)" 
+                                        class="bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i> 結果をコピー
+                                </button>
+                            </template>
+                        </div>
+
+                        <template x-if="!anesthesiaResult.valid">
+                            <div class="text-slate-500 text-sm font-bold py-5 text-center" x-text="anesthesiaResult.text"></div>
+                        </template>
+
+                        <template x-if="anesthesiaResult.valid">
+                            <div class="pt-3 space-y-3">
+                                <!-- 項目５．閉鎖循環式全身麻酔４（腹腔鏡下手術）の時間 (fukukuukyou) -->
+                                <div class="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-bold text-cyan-300 tracking-wider">5. 閉鎖循環式全身麻酔４（腹腔鏡下手術）</div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">気腹終了 － 気腹開始</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="flex items-baseline justify-end gap-1.5">
+                                            <span class="text-3xl sm:text-4xl font-black font-mono text-cyan-300" x-text="anesthesiaResult.fukukuukyou"></span>
+                                            <span class="text-sm font-bold text-slate-300">分</span>
+                                        </div>
+                                        <div class="text-xs text-cyan-400/90 font-bold mt-0.5" x-text="`(${anesthesiaResult.fukukuukyouHM})`"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 項目６．閉鎖循環式全身麻酔５（その他）の時間 (heisa) -->
+                                <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-bold text-emerald-300 tracking-wider">6. 閉鎖循環式全身麻酔５（その他）</div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">(麻酔終了 － 全身麻酔) － 腹腔鏡時間</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="flex items-baseline justify-end gap-1.5">
+                                            <span class="text-3xl sm:text-4xl font-black font-mono text-emerald-300" x-text="anesthesiaResult.heisa"></span>
+                                            <span class="text-sm font-bold text-slate-300">分</span>
+                                        </div>
+                                        <div class="text-xs text-emerald-400/90 font-bold mt-0.5" x-text="`(${anesthesiaResult.heisaHM})`"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2 flex justify-between items-center mt-2">
+                            <span x-show="anesthesiaResult.valid" x-text="`総麻酔時間: ${anesthesiaResult.totalAnesth}分 (${anesthesiaResult.totalAnesthHM})`"></span>
+                            <span x-show="!anesthesiaResult.valid">※ 4桁の時刻（例: 1200 → 12:00）を入力</span>
+                            <span x-show="anesthesia.isNextDay" class="text-amber-400 font-bold">※ 翌日跨ぎ適用中 (+24h)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- 4. Work Time Calculator -->
         <!-- ==================================================== -->
         <div x-show="currentTab === 'work'" x-transition:enter="transition ease-out duration-150" class="space-y-3">
             
@@ -1117,7 +1331,7 @@
         </div>
 
         <!-- ==================================================== -->
-        <!-- 4. Time Calculator (筆算モード) -->
+        <!-- 5. Time Calculator (筆算モード) -->
         <!-- ==================================================== -->
         <div x-show="currentTab === 'calc'" x-transition:enter="transition ease-out duration-150" class="space-y-4">
             <section class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
