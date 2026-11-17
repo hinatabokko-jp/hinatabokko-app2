@@ -32,9 +32,8 @@
   }
   #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
   
-  /* 検索結果エリア：全項目がしっかりスクロールして見えるように調整 */
   #resultArea {
-    max-height: 70vh;
+    max-height: 75vh;
     overflow-y: auto;
   }
   .result-card {
@@ -47,7 +46,7 @@
   }
   .result-row:last-child { border-bottom: none; }
   .result-label { color: #8ab4f8; font-size: 0.8rem; font-weight: bold; }
-  .result-val { font-weight: bold; font-size: 1.05rem; word-break: break-all; color: #fff; }
+  .result-val { font-weight: bold; font-size: 1.05rem; word-break: break-all; color: #fff; white-space: pre-wrap; }
   .status { font-size: 0.85rem; color: #aaa; margin-top: 6px; }
   
   .highlight-val { color: var(--success); font-size: 1.2rem; }
@@ -87,20 +86,20 @@ let html5QrCode = null;
 
 // 保存済みデータの復元
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('med_material_db_v4');
+  const saved = localStorage.getItem('med_material_db_v5');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       headers = parsed.headers;
       rows = parsed.rows;
-      document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件（全10項目対応）`;
+      document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件（全項目対応完了）`;
     } catch(e) {
       console.error(e);
     }
   }
 });
 
-// CSV読み込み（文字化け完全防止）
+// CSV読み込み（改行を含むセルやダブルクォーテーションを正しく解釈する本格パーサー）
 document.getElementById('csvFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -118,43 +117,77 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
         text = new TextDecoder('cp932').decode(buffer);
       }
     }
-    parseCSV(text);
+    parseCSVProperly(text);
   };
   reader.readAsArrayBuffer(file);
 });
 
-function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-  if (lines.length < 2) {
+function parseCSVProperly(text) {
+  let rowsAll = [];
+  let row = [];
+  let curVal = '';
+  let inQuotes = false;
+  
+  // 1文字ずつ走査して、ダブルクォーテーション内の改行やカンマを安全に処理する
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const nextC = text[i + 1];
+    
+    if (inQuotes) {
+      if (c === '"') {
+        if (nextC === '"') {
+          curVal += '"';
+          i++; // エスケープされたクォーテーションをスキップ
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        curVal += c;
+      }
+    } else {
+      if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        row.push(curVal.trim());
+        curVal = '';
+      } else if (c === '\r') {
+        // 改行処理（\r\n または \r）
+        if (nextC === '\n') i++;
+        row.push(curVal.trim());
+        if (row.length > 1 || (row.length === 1 && row[0] !== '')) {
+          rowsAll.push(row);
+        }
+        row = [];
+        curVal = '';
+      } else if (c === '\n') {
+        row.push(curVal.trim());
+        if (row.length > 1 || (row.length === 1 && row[0] !== '')) {
+          rowsAll.push(row);
+        }
+        row = [];
+        curVal = '';
+      } else {
+        curVal += c;
+      }
+    }
+  }
+  // 最後の行の追加
+  if (curVal !== '' || row.length > 0) {
+    row.push(curVal.trim());
+    if (row.length > 0) rowsAll.push(row);
+  }
+
+  if (rowsAll.length < 2) {
     alert("CSVのデータ行が少なすぎるか、形式が正しくありません。");
     return;
   }
 
-  const parseLine = (line) => {
-    const result = [];
-    let cur = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') {
-        inQuotes = !inQuotes;
-      } else if (c === ',' && !inQuotes) {
-        result.push(cur.trim().replace(/^"|"$/g, ''));
-        cur = '';
-      } else {
-        cur += c;
-      }
-    }
-    result.push(cur.trim().replace(/^"|"$/g, ''));
-    return result;
-  };
+  headers = rowsAll[0].map(h => h.replace(/^"|"$/g, '').trim());
+  rows = rowsAll.slice(1).map(r => r.map(cell => cell.replace(/^"|"$/g, '').trim()));
 
-  headers = parseLine(lines[0]);
-  rows = lines.slice(1).map(parseLine);
-
-  localStorage.setItem('med_material_db_v4', JSON.stringify({ headers, rows }));
-  document.getElementById('dbStatus').textContent = `読み込み成功: ${rows.length} 件（全10項目を保存しました）`;
-  alert(`CSVの読み込みが完了しました (${rows.length}件、項目数: ${headers.length})`);
+  localStorage.setItem('med_material_db_v5', JSON.stringify({ headers, rows }));
+  document.getElementById('dbStatus').textContent = `読み込み成功: ${rows.length} 件（全項目を完全保存しました）`;
+  alert(`CSVの読み込みが完了しました！\n総データ件数: ${rows.length}件\n項目数: ${headers.length}項目`);
 }
 
 // B列（インデックス1）での検索処理
@@ -177,7 +210,7 @@ function searchByColB(scannedCode) {
     return;
   }
 
-  // ヘッダーに含まれる全項目を確実に出力
+  // 10項目すべてを上から順番にリスト化して表示
   let html = `<div style="color:var(--success); font-weight:bold; margin-bottom:8px; font-size:1.1rem;">✔ 該当材料が見つかりました（全${headers.length}項目）</div>`;
   html += `<div class="result-card">`;
   
@@ -194,7 +227,7 @@ function searchByColB(scannedCode) {
 
     html += `
       <div class="result-row">
-        <span class="result-label">[ ${h.replace(/\n/g, ' / ')} ]</span>
+        <span class="result-label">[ ${h.replace(/\n/g, ' ｜ ')} ]</span>
         <span class="result-val ${valClass}">${val}</span>
       </div>`;
   });
@@ -220,7 +253,6 @@ document.getElementById('startBtn').addEventListener('click', () => {
     (decodedText) => {
       searchByColB(decodedText);
       if (navigator.vibrate) navigator.vibrate(100);
-      stopCommand = true;
       stopCamera();
     }
   ).then(() => {
@@ -245,3 +277,4 @@ document.getElementById('stopBtn').addEventListener('click', stopCamera);
 </script>
 </body>
 </html>
+[cite: 1]
