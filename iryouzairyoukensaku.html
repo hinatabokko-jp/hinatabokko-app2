@@ -31,14 +31,22 @@
     border-radius: 6px; margin-top: 6px; font-size: 1rem;
   }
   #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .result-card {
+    background: #252525; border: 1px solid #444; border-radius: 6px;
+    padding: 10px; margin-top: 10px;
+  }
   .result-row {
-    border-bottom: 1px solid var(--border); padding: 8px 0;
+    border-bottom: 1px solid #333; padding: 8px 0;
     display: flex; flex-direction: column; gap: 2px;
   }
-  .result-label { color: #999; font-size: 0.75rem; }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { color: #aaa; font-size: 0.8rem; }
   .result-val { font-weight: bold; font-size: 1rem; word-break: break-all; color: #fff; }
   .status { font-size: 0.85rem; color: #aaa; margin-top: 6px; }
-  .highlight-val { color: var(--success); font-size: 1.1rem; }
+  
+  /* 金額や商品名などを強調表示 */
+  .highlight-val { color: var(--success); font-size: 1.15rem; }
+  .name-val { color: #ffd43b; font-size: 1.1rem; }
 </style>
 </head>
 <body>
@@ -72,22 +80,22 @@ let headers = [];
 let rows = [];
 let html5QrCode = null;
 
-// 保存済みデータの復元（ブラウザのローカルストレージ）
+// 保存済みデータの復元
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('med_material_db_v2');
+  const saved = localStorage.getItem('med_material_db_v3');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       headers = parsed.headers;
       rows = parsed.rows;
-      document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件（準備完了）`;
+      document.getElementById('dbStatus').textContent = `保存済みデータ: ${rows.length} 件（全項目反映済み）`;
     } catch(e) {
       console.error(e);
     }
   }
 });
 
-// CSV読み込み（文字化け完全防止：UTF-8 / Shift-JIS自動切り替え）
+// CSV読み込み（文字化け完全防止）
 document.getElementById('csvFile').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -96,18 +104,13 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
   reader.onload = (ev) => {
     const buffer = ev.target.result;
     let text = "";
-    
-    // まずUTF-8（BOM付き含む）で試す、ダメならShift-JIS(CP932)でデコード
     try {
-      const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
-      text = decoderUtf8.decode(buffer);
+      text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
     } catch (err) {
       try {
-        const decoderSjis = new TextDecoder('shift-jis');
-        text = decoderSjis.decode(buffer);
+        text = new TextDecoder('shift-jis').decode(buffer);
       } catch (err2) {
-        const decoderCp932 = new TextDecoder('cp932');
-        text = decoderCp932.decode(buffer);
+        text = new TextDecoder('cp932').decode(buffer);
       }
     }
     parseCSV(text);
@@ -116,14 +119,13 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
 });
 
 function parseCSV(text) {
-  // 改行で分割（CRLF/LF対応）
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
   if (lines.length < 2) {
     alert("CSVのデータ行が少なすぎるか、形式が正しくありません。");
     return;
   }
 
-  // 簡易CSVパース（ダブルクォーテーションやカンマを考慮）
+  // カンマ区切り＆ダブルクォーテーションを考慮した厳密なパース
   const parseLine = (line) => {
     const result = [];
     let cur = '';
@@ -146,8 +148,8 @@ function parseCSV(text) {
   headers = parseLine(lines[0]);
   rows = lines.slice(1).map(parseLine);
 
-  localStorage.setItem('med_material_db_v2', JSON.stringify({ headers, rows }));
-  document.getElementById('dbStatus').textContent = `読み込み成功: ${rows.length} 件（端末に保存しました）`;
+  localStorage.setItem('med_material_db_v3', JSON.stringify({ headers, rows }));
+  document.getElementById('dbStatus').textContent = `読み込み成功: ${rows.length} 件（全項目を保存しました）`;
   alert(`CSVの読み込みが完了しました (${rows.length}件)`);
 }
 
@@ -157,7 +159,7 @@ function searchByColB(scannedCode) {
   document.getElementById('searchInput').value = cleanCode;
   if (!cleanCode || rows.length === 0) return;
 
-  // GS1コード（先頭の(01)や付加情報）が含まれていてもB列のコードが部分一致するように判定
+  // バーコードの付加情報（GS1等）が含まれていてもB列のコードに部分一致すればヒットさせる
   const hit = rows.find(row => {
     const colB = (row[1] || '').trim();
     if (!colB) return false;
@@ -172,19 +174,30 @@ function searchByColB(scannedCode) {
     return;
   }
 
-  // ヒットした行の情報をわかりやすくカード形式で表示
-  let html = `<div style="color:var(--success); font-weight:bold; margin-bottom:10px; font-size:1.05rem;">✔ 該当材料が見つかりました</div>`;
+  // CSVに含まれるすべての項目（headers）を順番に展開して表示
+  let html = `<div style="color:var(--success); font-weight:bold; margin-bottom:8px; font-size:1.05rem;">✔ 該当材料が見つえました</div>`;
+  html += `<div class="result-card">`;
   
   headers.forEach((h, i) => {
-    const val = hit[i] || '-';
-    // 商品名や金額などは少し目立たせる
-    const isImportant = h.includes('商品名') || h.includes('償還金額') || h.includes('材料名称');
+    const val = hit[i] !== undefined && hit[i] !== '' ? hit[i] : '-';
+    
+    // 項目名に応じたデザイン調整（金額、商品名など）
+    let valClass = '';
+    const headerName = h.replace(/\n/g, '');
+    if (headerName.includes('金額') || headerName.includes('価格')) {
+      valClass = 'highlight-val';
+    } else if (headerName.includes('商品名')) {
+      valClass = 'name-val';
+    }
+
     html += `
       <div class="result-row">
-        <span class="result-label">${h.replace(/\n/g, ' ')}</span>
-        <span class="result-val ${isImportant ? 'highlight-val' : ''}">${val}</span>
+        <span class="result-label">${h.replace(/\n/g, ' ｜ ')}</span>
+        <span class="result-val ${valClass}">${val}</span>
       </div>`;
   });
+  
+  html += `</div>`;
   resultArea.innerHTML = html;
 }
 
