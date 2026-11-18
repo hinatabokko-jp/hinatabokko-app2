@@ -35,8 +35,6 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
-    <!-- Tesseract.js (OCRライブラリ) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -372,15 +370,6 @@
             will-change: transform;
             touch-action: none;
         }
-        /* スキャンラインアニメーション */
-        @keyframes scanLine {
-            0% { top: 8%; opacity: 0.3; }
-            50% { top: 88%; opacity: 0.9; }
-            100% { top: 8%; opacity: 0.3; }
-        }
-        .scan-line-anim {
-            animation: scanLine 2.4s ease-in-out infinite;
-        }
     </style>
 </head>
 <body class="h-full flex flex-col justify-between overflow-hidden select-none">
@@ -479,9 +468,9 @@
 
         <!-- フッター/ナビゲーション -->
         <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
-            <!-- 左下：ホームボタン廃止 → 無音カメラOCRボタンを配置 -->
-            <button id="btn-open-ocr-camera" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="無音カメラで文字を読み取る">
-                <i class="fa-solid fa-camera text-lg"></i>
+            <!-- 左下：ホームボタンを廃止し、スタイリッシュなカメラ撮影ボタンを配置 -->
+            <button id="btn-open-camera-modal" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="アプリ内カメラで撮影">
+                <i class="fa-solid fa-camera-retro text-lg"></i>
                 <span class="text-[10px]">カメラ</span>
             </button>
             <label for="footer-upload-input" class="cursor-pointer p-2 hover:text-white transition flex flex-col items-center gap-0.5">
@@ -489,114 +478,34 @@
                 <span class="text-[10px]">追加</span>
             </label>
             <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
-            <button id="btn-reset-demo" class="p-2 hover:text-red-400 transition flex flex-col items-center gap-0.5" title="全画像をクリア">
-                <i class="fa-solid fa-rotate-left text-lg"></i>
-                <span class="text-[10px]">全削除</span>
-            </button>
+            <!-- 右下：「全削除」ボタンを廃止し、MEMOへの戻るボタンを配置 -->
+            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/MEMO.html" class="p-2 text-gray-400 hover:text-indigo-400 transition flex flex-col items-center gap-0.5" title="MEMOへ戻る">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+                <span class="text-[10px]">MEMO</span>
+            </a>
         </footer>
     </div>
 
-    <!-- 無音ライブカメラ & テキストOCRモーダル -->
-    <div id="ocr-camera-modal" class="fixed inset-0 z-50 bg-darkBg/95 hidden flex-col max-w-md mx-auto w-full h-full backdrop-blur-md">
-        <!-- モーダルヘッダー -->
-        <div class="px-4 py-3 border-b border-gray-800/80 flex justify-between items-center bg-darkBg/90">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs">
-                    <i class="fa-solid fa-expand"></i>
-                </div>
-                <span class="font-bold text-sm text-gray-100">文字スキャン（無音モード）</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="btn-toggle-saved-texts" class="bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition border border-gray-700/60">
-                    <i class="fa-solid fa-file-lines text-indigo-400"></i>
-                    <span>保存一覧</span>
-                    <span id="saved-texts-badge" class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.2 rounded-full">0</span>
-                </button>
-                <button id="btn-close-ocr-camera" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center transition">
+    <!-- アプリ内無音カメラモーダル -->
+    <div id="camera-modal" class="fixed inset-0 z-50 bg-black/90 hidden flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative w-full max-w-md bg-cardBg border border-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+            <div class="px-4 py-3 bg-darkBg/90 border-b border-gray-800 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-200 flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-indigo-400"></i> アプリ内カメラ撮影（無音）
+                </span>
+                <button id="close-camera-modal" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-        </div>
-
-        <!-- カメラプレビュービュー -->
-        <div id="ocr-camera-view" class="flex-1 flex flex-col justify-between overflow-y-auto no-scrollbar p-4 gap-3">
-            <!-- ライブ映像枠 -->
-            <div class="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden border border-gray-800 shadow-2xl flex items-center justify-center">
-                <video id="ocr-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                
-                <!-- 読み取りガイド枠（中央の文章に合わせる） -->
-                <div id="ocr-guide-box" class="absolute inset-x-6 top-[22%] bottom-[22%] border-2 border-indigo-400/80 rounded-xl pointer-events-none shadow-[0_0_0_9999px_rgba(11,15,23,0.52)]">
-                    <!-- 四隅のアクセント -->
-                    <div class="absolute -top-0.5 -left-0.5 w-4 h-4 border-t-4 border-l-4 border-indigo-400 rounded-tl-md"></div>
-                    <div class="absolute -top-0.5 -right-0.5 w-4 h-4 border-t-4 border-r-4 border-indigo-400 rounded-tr-md"></div>
-                    <div class="absolute -bottom-0.5 -left-0.5 w-4 h-4 border-b-4 border-l-4 border-indigo-400 rounded-bl-md"></div>
-                    <div class="absolute -bottom-0.5 -right-0.5 w-4 h-4 border-b-4 border-r-4 border-indigo-400 rounded-br-md"></div>
-                    <!-- スキャンライン -->
-                    <div class="scan-line-anim absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent"></div>
-                </div>
-
-                <!-- ガイドメッセージ -->
-                <div class="absolute top-3 inset-x-0 flex justify-center pointer-events-none">
-                    <span class="bg-black/65 backdrop-blur-sm text-gray-200 text-[11px] px-3 py-1 rounded-full border border-white/10">
-                        枠内に文章を合わせて無音撮影
-                    </span>
-                </div>
-
-                <!-- 言語切り替えピル -->
-                <div class="absolute bottom-3 inset-x-0 flex justify-center gap-2 z-10">
-                    <button type="button" data-lang="jpn+eng" class="ocr-lang-btn bg-indigo-600 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow transition">日本語＋英語</button>
-                    <button type="button" data-lang="jpn" class="ocr-lang-btn bg-gray-900/80 text-gray-300 text-[11px] font-medium px-3 py-1 rounded-full border border-gray-700 transition">日本語のみ</button>
-                    <button type="button" data-lang="eng" class="ocr-lang-btn bg-gray-900/80 text-gray-300 text-[11px] font-medium px-3 py-1 rounded-full border border-gray-700 transition">英語のみ</button>
-                </div>
-
-                <!-- OCR解析中オーバーレイ -->
-                <div id="ocr-processing-overlay" class="absolute inset-0 bg-darkBg/85 backdrop-blur-sm hidden flex-col items-center justify-center p-6 text-center z-20">
-                    <div class="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-3"></div>
-                    <p id="ocr-status-text" class="text-sm font-semibold text-gray-100 mb-1">画像を最適化して文字を解析中...</p>
-                    <p id="ocr-progress-text" class="text-xs text-indigo-400">準備中 (0%)</p>
-                </div>
+            <div class="relative w-full aspect-[3/4] bg-black flex items-center justify-center overflow-hidden">
+                <video id="camera-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                <!-- 撮影用Canvas（非表示） -->
+                <canvas id="camera-canvas" class="hidden"></canvas>
             </div>
-
-            <!-- 無音シャッターアクションエリア -->
-            <div class="flex flex-col items-center gap-2 py-1">
-                <button id="btn-silent-capture" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-98 transition">
-                    <i class="fa-solid fa-camera text-base"></i>
-                    <span>シャッター音なしで撮影・テキスト化</span>
+            <div class="p-4 bg-darkBg/90 border-t border-gray-800 flex justify-center items-center">
+                <button id="shutter-btn" class="w-16 h-16 rounded-full bg-white border-4 border-indigo-600 shadow-lg flex items-center justify-center active:scale-95 transition">
+                    <div class="w-12 h-12 rounded-full bg-indigo-600"></div>
                 </button>
-            </div>
-
-            <!-- 認識結果エディタエリア（撮影後に表示） -->
-            <div id="ocr-result-box" class="hidden bg-cardBg border border-gray-800 rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-xl">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> 読み取り結果（編集可能）
-                    </span>
-                    <button id="btn-copy-ocr-text" class="text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
-                        <i class="fa-regular fa-copy"></i> コピー
-                    </button>
-                </div>
-                <textarea id="ocr-result-textarea" rows="5" class="w-full bg-darkBg border border-gray-700/80 rounded-xl p-3 text-sm text-gray-100 leading-relaxed focus:outline-none focus:border-indigo-500 select-text" placeholder="ここに読み取ったテキストが表示されます..."></textarea>
-                <div class="flex gap-2">
-                    <button id="btn-save-ocr-text" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20">
-                        <i class="fa-solid fa-bookmark"></i> アプリ内に保存
-                    </button>
-                    <button id="btn-download-ocr-txt" class="bg-gray-800 hover:bg-gray-700 text-gray-200 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 border border-gray-700">
-                        <i class="fa-solid fa-download"></i> .txt保存
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 保存済みテキスト一覧ビュー -->
-        <div id="ocr-saved-list-view" class="hidden flex-1 flex flex-col overflow-hidden p-4 gap-3">
-            <div class="flex justify-between items-center">
-                <h3 class="text-sm font-bold text-gray-200">保存したテキストメモ</h3>
-                <button id="btn-back-to-camera" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-camera"></i> カメラに戻る
-                </button>
-            </div>
-            <div id="saved-texts-container" class="flex-1 overflow-y-auto no-scrollbar space-y-3">
-                <!-- JSで保存済みテキスト一覧を描画 -->
             </div>
         </div>
     </div>
@@ -728,332 +637,79 @@
     <script type="module" src="js/auth_2.js"></script>
     <script type="module" src="js/gallery.js"></script>
 
-    <!-- 無音ライブカメラ & 高精度OCRスクリプト -->
+    <!-- アプリ内無音カメラ & 自動投稿スクリプト -->
     <script>
         (function() {
-            const STORAGE_KEY = 'gallery_saved_ocr_texts_v1';
-            let mediaStream = null;
-            let selectedLang = 'jpn+eng';
+            let cameraStream = null;
+            const btnOpenCam = document.getElementById('btn-open-camera-modal');
+            const camModal = document.getElementById('camera-modal');
+            const btnCloseCam = document.getElementById('close-camera-modal');
+            const videoEl = document.getElementById('camera-video');
+            const canvasEl = document.getElementById('camera-canvas');
+            const shutterBtn = document.getElementById('shutter-btn');
 
-            const btnOpenCamera = document.getElementById('btn-open-ocr-camera');
-            const btnCloseCamera = document.getElementById('btn-close-ocr-camera');
-            const ocrModal = document.getElementById('ocr-camera-modal');
-            const videoEl = document.getElementById('ocr-video');
-            const btnSilentCapture = document.getElementById('btn-silent-capture');
-            const processingOverlay = document.getElementById('ocr-processing-overlay');
-            const statusText = document.getElementById('ocr-status-text');
-            const progressText = document.getElementById('ocr-progress-text');
-
-            const resultBox = document.getElementById('ocr-result-box');
-            const resultTextarea = document.getElementById('ocr-result-textarea');
-            const btnCopyText = document.getElementById('btn-copy-ocr-text');
-            const btnSaveText = document.getElementById('btn-save-ocr-text');
-            const btnDownloadTxt = document.getElementById('btn-download-ocr-txt');
-
-            const cameraView = document.getElementById('ocr-camera-view');
-            const savedListView = document.getElementById('ocr-saved-list-view');
-            const btnToggleSaved = document.getElementById('btn-toggle-saved-texts');
-            const btnBackToCamera = document.getElementById('btn-back-to-camera');
-            const savedTextsContainer = document.getElementById('saved-texts-container');
-            const savedTextsBadge = document.getElementById('saved-texts-badge');
-
-            function showLocalToast(msg) {
-                const container = document.getElementById('toast-container');
-                if (!container) return;
-                const toast = document.createElement('div');
-                toast.className = 'bg-gray-900/95 border border-indigo-500/40 text-gray-100 text-xs font-medium px-4 py-2.5 rounded-full shadow-xl backdrop-blur-md transition-opacity duration-300';
-                toast.textContent = msg;
-                container.appendChild(toast);
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    setTimeout(() => toast.remove(), 300);
-                }, 2200);
-            }
-
-            function getSavedTexts() {
-                try {
-                    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-                } catch {
-                    return [];
-                }
-            }
-
-            function updateBadge() {
-                const items = getSavedTexts();
-                if (savedTextsBadge) savedTextsBadge.textContent = items.length;
-            }
-
-            // ライブカメラ起動（WebRTCストリーミング再生）
-            async function startSilentCamera() {
+            async function startCamera() {
                 try {
                     stopCamera();
-                    const constraints = {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
                         audio: false,
-                        video: {
-                            facingMode: { ideal: 'environment' },
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 }
-                        }
-                    };
-                    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    videoEl.srcObject = mediaStream;
+                        video: { facingMode: { ideal: 'environment' } }
+                    });
+                    videoEl.srcObject = cameraStream;
                     await videoEl.play();
-
-                    // 対応デバイスなら連続オートフォーカスを有効化
-                    const track = mediaStream.getVideoTracks()[0];
-                    if (track && track.getCapabilities) {
-                        const caps = track.getCapabilities();
-                        if (caps.focusMode && caps.focusMode.includes('continuous')) {
-                            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
-                        }
-                    }
                 } catch (err) {
                     console.error('カメラ起動エラー:', err);
-                    showLocalToast('カメラを起動できませんでした（権限を確認してください）');
+                    alert('カメラを起動できませんでした（権限や設定をご確認ください）。');
                 }
             }
 
             function stopCamera() {
-                if (mediaStream) {
-                    mediaStream.getTracks().forEach(track => track.stop());
-                    mediaStream = null;
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    cameraStream = null;
                 }
                 if (videoEl) {
                     videoEl.srcObject = null;
                 }
             }
 
-            // ガイド枠内のフレームを切り出し＋OCR精度向上用の前処理（グレースケール＆コントラスト強調）
-            function captureAndPreprocessFrame() {
-                const vw = videoEl.videoWidth;
-                const vh = videoEl.videoHeight;
-                if (!vw || !vh) return null;
-
-                // ガイド枠（上下22%・左右マージン除外）に対応する領域を切り出し
-                const cropX = Math.floor(vw * 0.08);
-                const cropY = Math.floor(vh * 0.22);
-                const cropW = Math.floor(vw * 0.84);
-                const cropH = Math.floor(vh * 0.56);
-
-                // 小さい文字を読みやすくするため拡大（最大幅1600px程度）
-                const scale = Math.min(2, 1600 / cropW);
-                const outW = Math.floor(cropW * scale);
-                const outH = Math.floor(cropH * scale);
-
-                const canvas = document.createElement('canvas');
-                canvas.width = outW;
-                canvas.height = outH;
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-                ctx.drawImage(videoEl, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
-
-                // ピクセル単位でグレースケール化＋コントラスト強調
-                const imgData = ctx.getImageData(0, 0, outW, outH);
-                const data = imgData.data;
-                const contrast = 1.45; // コントラスト係数
-                const intercept = 128 * (1 - contrast);
-
-                for (let i = 0; i < data.length; i += 4) {
-                    // 輝度計算
-                    const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                    let enhanced = gray * contrast + intercept;
-                    enhanced = enhanced < 0 ? 0 : (enhanced > 255 ? 255 : enhanced);
-                    data[i] = enhanced;
-                    data[i + 1] = enhanced;
-                    data[i + 2] = enhanced;
-                }
-                ctx.putImageData(imgData, 0, 0);
-
-                return canvas.toDataURL('image/png');
-            }
-
-            // 無音撮影＆OCR実行
-            async function runSilentOcrCapture() {
-                if (!videoEl.videoWidth) {
-                    showLocalToast('カメラ映像の準備中です');
-                    return;
-                }
-                if (typeof Tesseract === 'undefined') {
-                    showLocalToast('OCRエンジンの読み込み中です。数秒後にお試しください');
-                    return;
-                }
-
-                // シャッター音なしでフレーム切り出し
-                const processedDataUrl = captureAndPreprocessFrame();
-                if (!processedDataUrl) return;
-
-                processingOverlay.classList.remove('hidden');
-                processingOverlay.classList.add('flex');
-                statusText.textContent = '文字を解析しています...';
-                progressText.textContent = '準備中 (0%)';
-
-                try {
-                    const result = await Tesseract.recognize(processedDataUrl, selectedLang, {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                const pct = Math.round((m.progress || 0) * 100);
-                                statusText.textContent = 'テキストを抽出中...';
-                                progressText.textContent = `${pct}%`;
-                            } else if (m.status && m.status.includes('loading')) {
-                                statusText.textContent = '言語データを読み込み中...';
-                            }
-                        }
-                    });
-
-                    let extracted = (result && result.data && result.data.text) ? result.data.text : '';
-                    // 日本語文字間の不要な半角スペースを整形
-                    extracted = extracted
-                        .replace(/([\u3000-\u30FF\u4E00-\u9FAF])\s+([\u3000-\u30FF\u4E00-\u9FAF])/g, '$1$2')
-                        .trim();
-
-                    resultBox.classList.remove('hidden');
-                    resultTextarea.value = extracted || '文字を検出できませんでした。明るくピントが合った状態で再度お試しください。';
-                    showLocalToast('テキスト抽出が完了しました');
-                } catch (err) {
-                    console.error('OCRエラー:', err);
-                    showLocalToast('文字の読み取りに失敗しました');
-                } finally {
-                    processingOverlay.classList.add('hidden');
-                    processingOverlay.classList.remove('flex');
-                }
-            }
-
-            function renderSavedList() {
-                const items = getSavedTexts();
-                updateBadge();
-                savedTextsContainer.innerHTML = '';
-
-                if (items.length === 0) {
-                    savedTextsContainer.innerHTML = `
-                        <div class="text-center text-gray-500 text-xs py-12">
-                            保存されたテキストはまだありません
-                        </div>
-                    `;
-                    return;
-                }
-
-                items.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-cardBg border border-gray-800 rounded-xl p-3.5 flex flex-col gap-2';
-                    card.innerHTML = `
-                        <div class="flex justify-between items-center text-[11px] text-gray-400">
-                            <span>${item.date}</span>
-                            <div class="flex items-center gap-2">
-                                <button class="copy-item-btn text-indigo-400 hover:text-indigo-300 font-medium">コピー</button>
-                                <button class="delete-item-btn text-red-400 hover:text-red-300 font-medium">削除</button>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-200 whitespace-pre-wrap break-words leading-relaxed select-text">${escapeHtml(item.text)}</p>
-                    `;
-
-                    card.querySelector('.copy-item-btn').addEventListener('click', () => {
-                        navigator.clipboard.writeText(item.text).then(() => showLocalToast('コピーしました'));
-                    });
-
-                    card.querySelector('.delete-item-btn').addEventListener('click', () => {
-                        const updated = getSavedTexts().filter(x => x.id !== item.id);
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                        renderSavedList();
-                        showLocalToast('削除しました');
-                    });
-
-                    savedTextsContainer.appendChild(card);
+            if (btnOpenCam) {
+                btnOpenCam.addEventListener('click', () => {
+                    camModal.classList.remove('hidden');
+                    camModal.classList.add('flex');
+                    startCamera();
                 });
             }
 
-            function escapeHtml(str) {
-                return str.replace(/[&<>"']/g, m => ({
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-                }[m]));
-            }
-
-            // イベントリスナー設定
-            if (btnOpenCamera) {
-                btnOpenCamera.addEventListener('click', () => {
-                    ocrModal.classList.remove('hidden');
-                    ocrModal.classList.add('flex');
-                    cameraView.classList.remove('hidden');
-                    savedListView.classList.add('hidden');
-                    updateBadge();
-                    startSilentCamera();
-                });
-            }
-
-            if (btnCloseCamera) {
-                btnCloseCamera.addEventListener('click', () => {
+            if (btnCloseCam) {
+                btnCloseCam.addEventListener('click', () => {
                     stopCamera();
-                    ocrModal.classList.add('hidden');
-                    ocrModal.classList.remove('flex');
+                    camModal.classList.add('hidden');
+                    camModal.classList.remove('flex');
                 });
             }
 
-            if (btnSilentCapture) {
-                btnSilentCapture.addEventListener('click', runSilentOcrCapture);
-            }
+            if (shutterBtn) {
+                shutterBtn.addEventListener('click', () => {
+                    if (!videoEl.videoWidth) return;
+                    canvasEl.width = videoEl.videoWidth;
+                    canvasEl.height = videoEl.videoHeight;
+                    const ctx = canvasEl.getContext('2d');
+                    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
 
-            // 言語切り替え
-            document.querySelectorAll('.ocr-lang-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    selectedLang = btn.dataset.lang;
-                    document.querySelectorAll('.ocr-lang-btn').forEach(b => {
-                        b.className = 'ocr-lang-btn bg-gray-900/80 text-gray-300 text-[11px] font-medium px-3 py-1 rounded-full border border-gray-700 transition';
-                    });
-                    btn.className = 'ocr-lang-btn bg-indigo-600 text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow transition';
-                });
-            });
+                    // 無音でキャプチャした画像をDataURL（JPEG）に変換
+                    const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85);
 
-            if (btnCopyText) {
-                btnCopyText.addEventListener('click', () => {
-                    const txt = resultTextarea.value.trim();
-                    if (!txt) return;
-                    navigator.clipboard.writeText(txt).then(() => showLocalToast('クリップボードにコピーしました'));
-                });
-            }
+                    // 撮影後にカメラを閉じる
+                    stopCamera();
+                    camModal.classList.add('hidden');
+                    camModal.classList.remove('flex');
 
-            if (btnSaveText) {
-                btnSaveText.addEventListener('click', () => {
-                    const txt = resultTextarea.value.trim();
-                    if (!txt) return;
-                    const items = getSavedTexts();
-                    const now = new Date();
-                    const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                    items.unshift({ id: Date.now(), date: dateStr, text: txt });
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-                    updateBadge();
-                    showLocalToast('テキストを保存しました');
+                    // gallery.js側の既存の画像追加関数（またはinput経由のハンドラ）へ渡す、あるいはカスタムイベントでアップロード処理を呼び出す
+                    // 既存のGalleryアプリの仕組みに合わせて処理をディスパッチ
+                    window.dispatchEvent(new CustomEvent('gallery-capture-image', { detail: dataUrl }));
                 });
             }
-
-            if (btnDownloadTxt) {
-                btnDownloadTxt.addEventListener('click', () => {
-                    const txt = resultTextarea.value.trim();
-                    if (!txt) return;
-                    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `scan_${Date.now()}.txt`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                });
-            }
-
-            if (btnToggleSaved) {
-                btnToggleSaved.addEventListener('click', () => {
-                    cameraView.classList.add('hidden');
-                    savedListView.classList.remove('hidden');
-                    renderSavedList();
-                });
-            }
-
-            if (btnBackToCamera) {
-                btnBackToCamera.addEventListener('click', () => {
-                    savedListView.classList.add('hidden');
-                    cameraView.classList.remove('hidden');
-                });
-            }
-
-            updateBadge();
         })();
     </script>
 </body>
