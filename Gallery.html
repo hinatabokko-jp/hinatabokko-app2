@@ -468,7 +468,7 @@
 
         <!-- フッター/ナビゲーション -->
         <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
-            <!-- 左下：ホームボタンを廃止し、スタイリッシュなカメラ撮影ボタンを配置 -->
+            <!-- 左下：ホームボタンを廃止し、カメラのアイコンを用いたスタイリッシュな無音撮影ボタン -->
             <button id="btn-open-camera-modal" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="アプリ内カメラで撮影">
                 <i class="fa-solid fa-camera-retro text-lg"></i>
                 <span class="text-[10px]">カメラ</span>
@@ -478,7 +478,7 @@
                 <span class="text-[10px]">追加</span>
             </label>
             <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
-            <!-- 右下：「全削除」ボタンを廃止し、MEMOへの戻るボタンを配置 -->
+            <!-- 右下：「全削除」ボタンを廃止し、MEMOへ戻る「← MEMO」ボタン -->
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/MEMO.html" class="p-2 text-gray-400 hover:text-indigo-400 transition flex flex-col items-center gap-0.5" title="MEMOへ戻る">
                 <i class="fa-solid fa-arrow-left text-lg"></i>
                 <span class="text-[10px]">MEMO</span>
@@ -638,79 +638,95 @@
     <script type="module" src="js/gallery.js"></script>
 
     <!-- アプリ内無音カメラ & 自動投稿スクリプト -->
-    <script>
-        (function() {
-            let cameraStream = null;
-            const btnOpenCam = document.getElementById('btn-open-camera-modal');
-            const camModal = document.getElementById('camera-modal');
-            const btnCloseCam = document.getElementById('close-camera-modal');
-            const videoEl = document.getElementById('camera-video');
-            const canvasEl = document.getElementById('camera-canvas');
-            const shutterBtn = document.getElementById('shutter-btn');
+    <script type="module">
+        import { db } from "./js/config.js";
+        import { ref, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-            async function startCamera() {
+        let cameraStream = null;
+        const btnOpenCam = document.getElementById('btn-open-camera-modal');
+        const camModal = document.getElementById('camera-modal');
+        const btnCloseCam = document.getElementById('close-camera-modal');
+        const videoEl = document.getElementById('camera-video');
+        const canvasEl = document.getElementById('camera-canvas');
+        const shutterBtn = document.getElementById('shutter-btn');
+
+        async function startCamera() {
+            try {
+                stopCamera();
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: { facingMode: { ideal: 'environment' } }
+                });
+                videoEl.srcObject = cameraStream;
+                await videoEl.play();
+            } catch (err) {
+                console.error('カメラ起動エラー:', err);
+                alert('カメラを起動できませんでした（権限や設定をご確認ください）。');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            if (videoEl) {
+                videoEl.srcObject = null;
+            }
+        }
+
+        if (btnOpenCam) {
+            btnOpenCam.addEventListener('click', () => {
+                camModal.classList.remove('hidden');
+                camModal.classList.add('flex');
+                startCamera();
+            });
+        }
+
+        if (btnCloseCam) {
+            btnCloseCam.addEventListener('click', () => {
+                stopCamera();
+                camModal.classList.add('hidden');
+                camModal.classList.remove('flex');
+            });
+        }
+
+        if (shutterBtn) {
+            shutterBtn.addEventListener('click', async () => {
+                if (!videoEl.videoWidth) return;
+                canvasEl.width = videoEl.videoWidth;
+                canvasEl.height = videoEl.videoHeight;
+                const ctx = canvasEl.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+                // 無音でキャプチャした画像をDataURL（JPEG）に変換
+                const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85);
+
+                // 撮影後にカメラを閉じる
+                stopCamera();
+                camModal.classList.add('hidden');
+                camModal.classList.remove('flex');
+
+                // Firebaseへ直接保存してギャラリーに自動反映
                 try {
-                    stopCamera();
-                    cameraStream = await navigator.mediaDevices.getUserMedia({
-                        audio: false,
-                        video: { facingMode: { ideal: 'environment' } }
-                    });
-                    videoEl.srcObject = cameraStream;
-                    await videoEl.play();
+                    const now = new Date();
+                    const dateStr = `${now.getMonth() + 1}月${now.getDate()}日 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    const newId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                    
+                    const newItem = {
+                        id: newId,
+                        src: dataUrl,
+                        name: `カメラ撮影 - ${dateStr}`,
+                        timestamp: Date.now()
+                    };
+
+                    await set(ref(db, 'gallery_images/' + newId), newItem);
                 } catch (err) {
-                    console.error('カメラ起動エラー:', err);
-                    alert('カメラを起動できませんでした（権限や設定をご確認ください）。');
+                    console.error('Firebase保存エラー:', err);
+                    alert('画像の保存に失敗しました。');
                 }
-            }
-
-            function stopCamera() {
-                if (cameraStream) {
-                    cameraStream.getTracks().forEach(track => track.stop());
-                    cameraStream = null;
-                }
-                if (videoEl) {
-                    videoEl.srcObject = null;
-                }
-            }
-
-            if (btnOpenCam) {
-                btnOpenCam.addEventListener('click', () => {
-                    camModal.classList.remove('hidden');
-                    camModal.classList.add('flex');
-                    startCamera();
-                });
-            }
-
-            if (btnCloseCam) {
-                btnCloseCam.addEventListener('click', () => {
-                    stopCamera();
-                    camModal.classList.add('hidden');
-                    camModal.classList.remove('flex');
-                });
-            }
-
-            if (shutterBtn) {
-                shutterBtn.addEventListener('click', () => {
-                    if (!videoEl.videoWidth) return;
-                    canvasEl.width = videoEl.videoWidth;
-                    canvasEl.height = videoEl.videoHeight;
-                    const ctx = canvasEl.getContext('2d');
-                    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
-
-                    // 無音でキャプチャした画像をDataURL（JPEG）に変換
-                    const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85);
-
-                    // 撮影後にカメラを閉じる
-                    stopCamera();
-                    camModal.classList.add('hidden');
-                    camModal.classList.remove('flex');
-
-                    // gallery.js側の既存の画像追加関数（またはinput経由のハンドラ）へ渡す、あるいはカスタムイベントでアップロード処理を呼び出す
-                    // 既存のGalleryアプリの仕組みに合わせて処理をディスパッチ
-                    window.dispatchEvent(new CustomEvent('gallery-capture-image', { detail: dataUrl }));
-                });
-            }
-        })();
+            });
+        }
     </script>
 </body>
 </html>
