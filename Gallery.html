@@ -632,16 +632,112 @@
     <!-- トースト通知 -->
     <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-2 w-full max-w-xs"></div>
 
+    <!-- 廃止された旧ボタン（全削除・ホーム等）へのgallery.jsからのnull参照エラーを防ぐ非表示互換要素 -->
+    <div class="hidden" aria-hidden="true">
+        <button id="clear-all-btn"></button>
+        <button id="delete-all-btn"></button>
+        <button id="reset-all-btn"></button>
+        <button id="home-btn"></button>
+        <button id="nav-home-btn"></button>
+        <button id="scroll-top-btn"></button>
+    </div>
+
     <!-- モジュールJavaScriptファイルの読み込み -->
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/auth_2.js"></script>
     <script type="module" src="js/gallery.js"></script>
 
-    <!-- アプリ内無音カメラ & 自動投稿スクリプト -->
+    <!-- アプリ内無音カメラ & 自動投稿スクリプト & 投稿削除確実動作ハンドラ -->
     <script type="module">
         import { db } from "./js/config.js";
-        import { ref, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { ref, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // 1. 投稿削除機能の確実な動作保証
+        const feedContainer = document.getElementById('feed-container');
+        const deleteModal = document.getElementById('delete-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        let pendingDeleteId = null;
+
+        function extractPostIdFromElement(el) {
+            if (!el) return null;
+            // ボタン自身や親要素のdata属性・id・onclick等から投稿IDを抽出
+            const targetWithData = el.closest('[data-id], [data-post-id], [data-key], [id^="post-"], [id^="card-"], [id^="img_"]');
+            if (targetWithData) {
+                const rawId = targetWithData.getAttribute('data-id')
+                    || targetWithData.getAttribute('data-post-id')
+                    || targetWithData.getAttribute('data-key')
+                    || targetWithData.id;
+                if (rawId) {
+                    return rawId.replace(/^(post-|card-|item-)/, '');
+                }
+            }
+            const onclickAttr = el.getAttribute('onclick') || '';
+            const match = onclickAttr.match(/['"](img_[^'"]+|[^'"]+)['"]/);
+            if (match) return match[1];
+            return null;
+        }
+
+        // フィード内の削除ボタン押下をキャプチャフェーズで検知して削除対象IDを確実に保持
+        if (feedContainer) {
+            feedContainer.addEventListener('click', (e) => {
+                const deleteTrigger = e.target.closest('button, [role="button"], .delete-btn, [data-action="delete"]');
+                if (!deleteTrigger) return;
+
+                const isDeleteAction =
+                    deleteTrigger.classList.contains('delete-btn') ||
+                    deleteTrigger.getAttribute('data-action') === 'delete' ||
+                    (deleteTrigger.title && deleteTrigger.title.includes('削除')) ||
+                    (deleteTrigger.getAttribute('aria-label') && deleteTrigger.getAttribute('aria-label').includes('削除')) ||
+                    deleteTrigger.querySelector('.fa-trash, .fa-trash-can') !== null;
+
+                if (isDeleteAction) {
+                    const id = extractPostIdFromElement(deleteTrigger);
+                    if (id) {
+                        pendingDeleteId = id;
+                        if (deleteModal) {
+                            deleteModal.dataset.targetId = id;
+                            deleteModal.classList.remove('hidden');
+                            deleteModal.classList.add('flex');
+                        }
+                    }
+                }
+            }, true);
+        }
+
+        if (cancelDeleteBtn && deleteModal) {
+            cancelDeleteBtn.addEventListener('click', () => {
+                pendingDeleteId = null;
+                delete deleteModal.dataset.targetId;
+                deleteModal.classList.add('hidden');
+                deleteModal.classList.remove('flex');
+            });
+        }
+
+        if (confirmDeleteBtn && deleteModal) {
+            confirmDeleteBtn.addEventListener('click', async () => {
+                const targetId = pendingDeleteId || deleteModal.dataset.targetId;
+                if (targetId) {
+                    try {
+                        await remove(ref(db, 'gallery_images/' + targetId));
+                        // UI上からも即座に削除反映（gallery.jsのリアルタイム監視と併用）
+                        const cardEl = document.querySelector(`[data-id="${targetId}"], [data-post-id="${targetId}"], #${CSS.escape(targetId)}, #post-${CSS.escape(targetId)}, #card-${CSS.escape(targetId)}`);
+                        if (cardEl) {
+                            cardEl.remove();
+                        }
+                    } catch (err) {
+                        console.error('投稿削除エラー:', err);
+                        alert('投稿の削除に失敗しました。');
+                    }
+                }
+                pendingDeleteId = null;
+                delete deleteModal.dataset.targetId;
+                deleteModal.classList.add('hidden');
+                deleteModal.classList.remove('flex');
+            });
+        }
+
+        // 2. アプリ内無音カメラ & 自動投稿スクリプト
         let cameraStream = null;
         const btnOpenCam = document.getElementById('btn-open-camera-modal');
         const camModal = document.getElementById('camera-modal');
