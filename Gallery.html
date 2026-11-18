@@ -468,7 +468,7 @@
 
         <!-- フッター/ナビゲーション -->
         <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
-            <!-- 左下：ホームボタンを廃止し、カメラのアイコンを用いたスタイリッシュな無音撮影ボタン -->
+            <!-- 左下：カメラのアイコンを用いたスタイリッシュな無音撮影ボタン -->
             <button id="btn-open-camera-modal" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="アプリ内カメラで撮影">
                 <i class="fa-solid fa-camera-retro text-lg"></i>
                 <span class="text-[10px]">カメラ</span>
@@ -478,12 +478,60 @@
                 <span class="text-[10px]">追加</span>
             </label>
             <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
-            <!-- 右下：「全削除」ボタンを廃止し、MEMOへ戻る「← MEMO」ボタン -->
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/MEMO.html" class="p-2 text-gray-400 hover:text-indigo-400 transition flex flex-col items-center gap-0.5" title="MEMOへ戻る">
-                <i class="fa-solid fa-arrow-left text-lg"></i>
-                <span class="text-[10px]">MEMO</span>
-            </a>
+            <!-- 右下：戻るボタン（MEMO）を削除し、マイクアイコンの録音ボタン（REC）を配置 -->
+            <button id="btn-open-record-modal" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="音声を録音して投稿">
+                <i class="fa-solid fa-microphone text-lg"></i>
+                <span class="text-[10px]">REC</span>
+            </button>
         </footer>
+    </div>
+
+    <!-- アプリ内音声録音モーダル -->
+    <div id="record-modal" class="fixed inset-0 z-50 bg-black/90 hidden flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative w-full max-w-md bg-cardBg border border-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+            <div class="px-4 py-3 bg-darkBg/90 border-b border-gray-800 flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-200 flex items-center gap-2">
+                    <i class="fa-solid fa-microphone text-indigo-400"></i> アプリ内音声録音
+                </span>
+                <button id="close-record-modal" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 flex flex-col items-center justify-center gap-5">
+                <!-- ステータスと経過時間 -->
+                <div class="text-center">
+                    <p id="recordingStatus" class="text-xs font-semibold text-gray-400 tracking-wider uppercase mb-1">待機中</p>
+                    <p id="recordingTime" class="text-4xl font-mono font-bold text-gray-100 tracking-widest">00:00</p>
+                </div>
+
+                <!-- 録音・停止コントロールボタン -->
+                <div class="flex items-center justify-center gap-6 my-1">
+                    <button id="startButton" class="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 disabled:opacity-30 disabled:pointer-events-none text-white shadow-lg shadow-rose-600/30 flex items-center justify-center transition active:scale-95" title="録音開始">
+                        <i class="fa-solid fa-microphone text-2xl"></i>
+                    </button>
+                    <button id="stopButton" disabled class="w-16 h-16 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 disabled:pointer-events-none text-white shadow-lg flex items-center justify-center transition active:scale-95" title="録音停止">
+                        <i class="fa-solid fa-stop text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- 試聴プレイヤー -->
+                <div id="audioPreviewWrapper" class="w-full hidden flex-col items-center gap-2 pt-2 border-t border-gray-800/80">
+                    <span class="text-[11px] text-gray-400">録音プレビュー</span>
+                    <audio id="audioPlayback" controls class="w-full h-10 rounded-lg"></audio>
+                </div>
+            </div>
+
+            <!-- 投稿・保存アクションフッター -->
+            <div class="p-4 bg-darkBg/90 border-t border-gray-800 flex justify-between items-center gap-3">
+                <button id="downloadButton" disabled class="flex-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none text-gray-200 py-2.5 px-4 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> 端末に保存
+                </button>
+                <button id="postAudioButton" disabled class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white py-2.5 px-4 rounded-xl text-xs font-semibold transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-paper-plane"></i> 投稿する
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- アプリ内無音カメラモーダル -->
@@ -642,6 +690,7 @@
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/auth_2.js"></script>
     <script type="module" src="js/gallery.js"></script>
+    <script type="module" src="js/record.js"></script>
 
     <!-- アプリ内無音カメラ & 自動投稿スクリプト -->
     <script type="module">
