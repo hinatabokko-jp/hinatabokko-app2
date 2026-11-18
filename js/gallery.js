@@ -8,7 +8,7 @@ let cachedImages = [];
 // ピンチイン・ピンチアウト / ズーム・パン用変数
 let currentScale = 1;
 let minScale = 1;
-let maxScale = 4;
+let maxScale = 5;
 let translateX = 0;
 let translateY = 0;
 let isDragging = false;
@@ -16,6 +16,7 @@ let startX = 0;
 let startY = 0;
 let initialPinchDistance = 0;
 let initialScale = 1;
+let lastTapTime = 0;
 
 // 認証解除（アンロック）後にGalleryのデータを読み込み開始
 window.initGalleryApp = function() {
@@ -54,6 +55,7 @@ function renderFeed(items) {
     const container = document.getElementById('feed-container');
     const emptyState = document.getElementById('empty-state');
 
+    if (!container || !emptyState) return;
     container.innerHTML = '';
 
     if (!items || items.length === 0) {
@@ -136,7 +138,10 @@ function createCardElement(item) {
     return card;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initGalleryEvents() {
+    if (window._galleryEventsBound) return;
+    window._galleryEventsBound = true;
+
     const inputs = ['image-upload-input', 'empty-upload-input', 'footer-upload-input'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
@@ -145,33 +150,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-scroll-top').addEventListener('click', () => {
-        document.getElementById('feed-container').scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    const scrollTopBtn = document.getElementById('btn-scroll-top');
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', () => {
+            const feed = document.getElementById('feed-container');
+            if (feed) feed.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
-    document.getElementById('btn-reset-demo').addEventListener('click', async () => {
-        if (confirm('保存されているすべての画像を完全に削除しますか？')) {
-            await remove(imagesRef);
-            showToast('すべての画像を削除しました', 'delete');
-        }
-    });
+    const resetDemoBtn = document.getElementById('btn-reset-demo');
+    if (resetDemoBtn) {
+        resetDemoBtn.addEventListener('click', async () => {
+            if (confirm('保存されているすべての画像を完全に削除しますか？')) {
+                await remove(imagesRef);
+                showToast('すべての画像を削除しました', 'delete');
+            }
+        });
+    }
 
-    document.getElementById('close-modal-btn').addEventListener('click', closeModal);
-    document.getElementById('fullmodal').addEventListener('click', (e) => {
-        if (e.target.id === 'fullmodal' || e.target.id === 'modal-viewport') closeModal();
-    });
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeModal();
+        });
+    }
 
-    document.getElementById('cancel-delete-btn').addEventListener('click', closeDeleteModal);
-    document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-        if (itemToDeleteId) {
-            await remove(ref(db, 'gallery_images/' + itemToDeleteId));
-            closeDeleteModal();
-            showToast('画像を削除しました', 'delete');
-        }
-    });
+    const fullModal = document.getElementById('fullmodal');
+    if (fullModal) {
+        fullModal.addEventListener('click', (e) => {
+            if (currentScale === 1 && (e.target.id === 'fullmodal' || e.target.id === 'modal-viewport')) {
+                closeModal();
+            }
+        });
+    }
+
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    }
+
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (itemToDeleteId) {
+                await remove(ref(db, 'gallery_images/' + itemToDeleteId));
+                closeDeleteModal();
+                showToast('画像を削除しました', 'delete');
+            }
+        });
+    }
 
     setupImageZoomAndPan();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGalleryEvents);
+} else {
+    initGalleryEvents();
+}
 
 async function handleFileSelect(e) {
     const files = Array.from(e.target.files);
@@ -336,40 +373,58 @@ function openFullModal(src, filename) {
     const img = document.getElementById('modal-img');
     const dlBtn = document.getElementById('modal-download-btn');
 
-    img.src = src;
-    dlBtn.onclick = () => downloadImageAsJpg(src, filename);
+    if (!modal || !img || !src) return;
 
-    resetZoom();
+    img.src = src;
+    if (dlBtn) {
+        dlBtn.onclick = (e) => {
+            e.stopPropagation();
+            downloadImageAsJpg(src, filename || 'gallery_image.jpg');
+        };
+    }
+
+    if (typeof window.resetZoom === 'function') {
+        window.resetZoom();
+    }
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         modal.classList.remove('opacity-0');
-    }, 10);
+        modal.classList.add('opacity-100');
+    });
 }
 
 function closeModal() {
     const modal = document.getElementById('fullmodal');
+    const img = document.getElementById('modal-img');
+    if (!modal) return;
+
+    modal.classList.remove('opacity-100');
     modal.classList.add('opacity-0');
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-        document.getElementById('modal-img').src = '';
-        resetZoom();
-    }, 300);
+        if (img) img.src = '';
+        if (typeof window.resetZoom === 'function') {
+            window.resetZoom();
+        }
+    }, 250);
 }
 
-/* ピンチイン・ピンチアウト & PC Ctrl+ホイール拡大/ドラッグ移動制御 */
+/* ピンチイン・ピンチアウト & ダブルタップ & ホイール拡大/ドラッグ移動制御 */
 function setupImageZoomAndPan() {
     const modalImg = document.getElementById('modal-img');
     const viewport = document.getElementById('modal-viewport');
+    if (!modalImg || !viewport) return;
 
-    function updateTransform() {
+    function updateTransform(withTransition = false) {
         if (currentScale <= 1) {
             translateX = 0;
             translateY = 0;
         }
-        modalImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+        modalImg.style.transition = withTransition ? 'transform 0.2s ease-out' : 'transform 0.04s linear';
+        modalImg.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${currentScale})`;
     }
 
     function resetZoom() {
@@ -377,70 +432,104 @@ function setupImageZoomAndPan() {
         translateX = 0;
         translateY = 0;
         isDragging = false;
-        updateTransform();
+        updateTransform(false);
     }
 
     window.resetZoom = resetZoom;
 
-    // PC Ctrl + Wheel 拡大縮小
+    function getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    }
+
+    // PCマウスホイールでのズーム操作
     viewport.addEventListener('wheel', (e) => {
-        if (!e.ctrlKey) return;
         e.preventDefault();
-
-        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-        const newScale = Math.min(Math.max(currentScale * zoomFactor, minScale), maxScale);
-
-        currentScale = newScale;
-        updateTransform();
+        const delta = e.deltaY < 0 ? 0.25 : -0.25;
+        currentScale = Math.min(Math.max(currentScale + delta, minScale), maxScale);
+        if (currentScale === 1) {
+            translateX = 0;
+            translateY = 0;
+        }
+        updateTransform(true);
     }, { passive: false });
 
-    // タッチ操作（ピンチイン・ピンチアウト & ドラッグ）
+    // タッチ開始（ピンチ開始・ドラッグ開始・ダブルタップ判定）
     viewport.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            initialPinchDistance = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            initialScale = currentScale;
-        } else if (e.touches.length === 1 && currentScale > 1) {
-            isDragging = true;
-            startX = e.touches[0].clientX - translateX;
-            startY = e.touches[0].clientY - translateY;
-        }
-    }, { passive: true });
-
-    viewport.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
             e.preventDefault();
-            const currentDist = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            if (initialPinchDistance > 0) {
-                const scale = (currentDist / initialPinchDistance) * initialScale;
-                currentScale = Math.min(Math.max(scale, minScale), maxScale);
-                updateTransform();
+            isDragging = false;
+            initialPinchDistance = getTouchDistance(e.touches);
+            initialScale = currentScale;
+        } else if (e.touches.length === 1) {
+            const now = Date.now();
+            if (now - lastTapTime < 280) {
+                e.preventDefault();
+                if (currentScale > 1.05) {
+                    currentScale = 1;
+                    translateX = 0;
+                    translateY = 0;
+                } else {
+                    currentScale = 2.5;
+                    translateX = 0;
+                    translateY = 0;
+                }
+                updateTransform(true);
+                lastTapTime = 0;
+                return;
             }
+            lastTapTime = now;
+
+            if (currentScale > 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        }
+    }, { passive: false });
+
+    // タッチ移動（ピンチイン・ピンチアウト & 拡大中のパン移動）
+    viewport.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialPinchDistance > 0) {
+            e.preventDefault();
+            const currentDist = getTouchDistance(e.touches);
+            const nextScale = Math.min(Math.max(initialScale * (currentDist / initialPinchDistance), minScale), maxScale);
+            currentScale = nextScale;
+            if (currentScale <= 1.02) {
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+            }
+            updateTransform(false);
         } else if (e.touches.length === 1 && isDragging && currentScale > 1) {
             e.preventDefault();
             translateX = e.touches[0].clientX - startX;
             translateY = e.touches[0].clientY - startY;
-            updateTransform();
+            updateTransform(false);
         }
     }, { passive: false });
 
+    // タッチ終了
     viewport.addEventListener('touchend', (e) => {
         if (e.touches.length < 2) {
             initialPinchDistance = 0;
         }
         if (e.touches.length === 0) {
             isDragging = false;
+            if (currentScale <= 1) {
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform(true);
+            }
         }
     });
 
     // マウスドラッグ操作（PCで拡大時）
     viewport.addEventListener('mousedown', (e) => {
         if (currentScale > 1) {
+            e.preventDefault();
             isDragging = true;
             startX = e.clientX - translateX;
             startY = e.clientY - translateY;
@@ -452,7 +541,7 @@ function setupImageZoomAndPan() {
         if (isDragging && currentScale > 1) {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
-            updateTransform();
+            updateTransform(false);
         }
     });
 
@@ -464,6 +553,7 @@ function setupImageZoomAndPan() {
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
     
     const icon = type === 'delete' ? 'fa-trash-can' : 'fa-circle-check';
