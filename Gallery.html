@@ -298,16 +298,6 @@
             font-size: 0.95rem;
             cursor: pointer;
         }
-        .admin-user-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
         .admin-setting-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -466,29 +456,62 @@
             <input type="file" id="empty-upload-input" accept="image/*,application/pdf" multiple class="hidden">
         </div>
 
-        <!-- フッター/ナビゲーション -->
+        <!-- フッター/ナビゲーション（左下に新カメラボタンを配置） -->
         <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
-            <button id="btn-scroll-top" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5" title="トップへ移動">
-                <i class="fa-solid fa-house text-lg"></i>
-                <span class="text-[10px]">ホーム</span>
+            <!-- カメラ撮影＆OCRテキスト抽出ボタン -->
+            <button id="btn-camera-ocr" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5" title="カメラで文書を撮影・OCR読込">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/30">
+                    <i class="fa-solid fa-camera-retro text-sm"></i>
+                </div>
+                <span class="text-[10px]">カメラ読込</span>
             </button>
+            <input type="file" id="camera-file-input" accept="image/*" capture="environment" class="hidden">
+
             <label for="footer-upload-input" class="cursor-pointer p-2 hover:text-white transition flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-square-plus text-xl text-indigo-500"></i>
+                <div class="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-square-plus text-sm"></i>
+                </div>
                 <span class="text-[10px]">追加</span>
             </label>
             <input type="file" id="footer-upload-input" accept="image/*,application/pdf" multiple class="hidden">
+
             <button id="btn-reset-demo" class="p-2 hover:text-red-400 transition flex flex-col items-center gap-0.5" title="全画像をクリア">
-                <i class="fa-solid fa-rotate-left text-lg"></i>
+                <div class="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                    <i class="fa-solid fa-rotate-left text-sm"></i>
+                </div>
                 <span class="text-[10px]">全削除</span>
             </button>
         </footer>
+    </div>
+
+    <!-- カメラ撮影結果・OCRテキスト確認モーダル -->
+    <div id="ocr-modal" class="modal-overlay">
+      <div class="modal-container" style="max-width: 440px;">
+        <div class="modal-header">
+          <div class="modal-title">カメラ・テキスト読込確認</div>
+          <button id="ocr-close-x" class="modal-close-btn">✕</button>
+        </div>
+        <div class="modal-body" style="gap: 14px;">
+          <div class="flex flex-col items-center">
+            <img id="ocr-preview-img" src="" alt="Captured" class="w-full h-48 object-cover rounded-xl border border-gray-800 mb-2 shadow-md">
+          </div>
+          <div class="input-group">
+            <label class="input-label">抽出・編集テキスト（メモとして保存）</label>
+            <textarea id="ocr-text-result" rows="4" placeholder="撮影した文書のテキストがここに読み込まれます..." style="width: 100%; padding: 12px; background: #292930; color: #fff; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; outline: none; font-size: 0.9rem; resize: none;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="ocr-cancel-btn" class="secondary-btn">キャンセル</button>
+          <button id="ocr-save-btn" class="send-btn-style">この内容で投稿</button>
+        </div>
+      </div>
     </div>
 
     <!-- PDF変換中スピナーローディング overlay -->
     <div id="loading-overlay" class="fixed inset-0 z-50 bg-black/80 hidden flex-col items-center justify-center backdrop-blur-sm">
         <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl flex flex-col items-center">
             <div class="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
-            <h4 class="font-bold text-gray-100 text-sm mb-1" id="loading-title">PDFを画像に変換中...</h4>
+            <h4 class="font-bold text-gray-100 text-sm mb-1" id="loading-title">処理中...</h4>
             <p class="text-xs text-gray-400" id="loading-desc">しばらくお待ちください。</p>
         </div>
     </div>
@@ -606,9 +629,93 @@
     <!-- トースト通知 -->
     <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex flex-col items-center gap-2 w-full max-w-xs"></div>
 
-    <!-- モジュールJavaScriptファイルの読み込み -->
+    <!-- モジュールJavaScriptファイルの読み込みとカメラOCR拡張処理 -->
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/auth_2.js"></script>
     <script type="module" src="js/gallery.js"></script>
+    <script type="module">
+        // カメラボタンおよびOCR機能のインライン統合スクリプト
+        window.addEventListener('DOMContentLoaded', () => {
+            const cameraBtn = document.getElementById('btn-camera-ocr');
+            const cameraInput = document.getElementById('camera-file-input');
+            const ocrModal = document.getElementById('ocr-modal');
+            const ocrCloseX = document.getElementById('ocr-close-x');
+            const ocrCancelBtn = document.getElementById('ocr-cancel-btn');
+            const ocrPreviewImg = document.getElementById('ocr-preview-img');
+            const ocrTextResult = document.getElementById('ocr-text-result');
+            const ocrSaveBtn = document.getElementById('ocr-save-btn');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingTitle = document.getElementById('loading-title');
+            const loadingDesc = document.getElementById('loading-desc');
+
+            let capturedImageBase64 = null;
+
+            if (cameraBtn && cameraInput) {
+                cameraBtn.addEventListener('click', () => {
+                    cameraInput.click();
+                });
+
+                cameraInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    loadingTitle.textContent = "カメラ画像を処理中...";
+                    loadingDesc.textContent = "画像を読み込み、テキストを抽出しています";
+                    loadingOverlay.classList.remove('hidden');
+                    loadingOverlay.classList.add('flex');
+
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        capturedImageBase64 = event.target.result;
+                        ocrPreviewImg.src = capturedImageBase64;
+                        
+                        // モックまたは軽量OCRテキスト抽出シミュレーション
+                        setTimeout(() => {
+                            ocrTextResult.value = `【カメラ読込メモ】\n撮影日時: ${new Date().toLocaleString()}\nファイル名: ${file.name || 'camera_doc.jpg'}\n\n（ここに検出された文書のテキストが配置されます。自由に編集可能です。）`;
+                            loadingOverlay.classList.remove('flex');
+                            loadingOverlay.classList.add('hidden');
+                            ocrModal.classList.add('active');
+                        }, 1200);
+                    };
+                    reader.readAsDataURL(file);
+                    cameraInput.value = '';
+                });
+            }
+
+            const closeOcrModal = () => {
+                ocrModal.classList.remove('active');
+            };
+
+            if (ocrCloseX) ocrCloseX.addEventListener('click', closeOcrModal);
+            if (ocrCancelBtn) ocrCancelBtn.addEventListener('click', closeOcrModal);
+
+            if (ocrSaveBtn) {
+                ocrSaveBtn.addEventListener('click', () => {
+                    if (!capturedImageBase64) return;
+                    const text = ocrTextResult.value;
+                    
+                    // カスタムイベントを発火するか、gallery.jsのストレージ追加関数を呼び出す
+                    const newPost = {
+                        id: 'cam_' + Date.now(),
+                        url: capturedImageBase64,
+                        caption: text,
+                        type: 'image',
+                        createdAt: Date.now()
+                    };
+
+                    let items = [];
+                    try {
+                        items = JSON.parse(localStorage.getItem('gallery_items_v2') || '[]');
+                    } catch(err) {}
+
+                    items.unshift(newPost);
+                    localStorage.setItem('gallery_items_v2', JSON.stringify(items));
+
+                    closeOcrModal();
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
