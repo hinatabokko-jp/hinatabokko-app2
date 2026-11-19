@@ -290,7 +290,7 @@
         </section>
     </main>
 
-    <!-- JSON Manager Modal (2カラムレイアウトで左に追加・編集、右に収録済みリストと検索を配置) -->
+    <!-- JSON Manager Modal -->
     <div id="json-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-bordercolor rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b border-bordercolor flex items-center justify-between bg-slate-900/50">
@@ -303,7 +303,7 @@
             <div class="p-4 flex-grow overflow-y-auto">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     
-                    <!-- 左側：新規追加・編集フォーム (5カラム分) -->
+                    <!-- 左側：新規追加・編集フォーム -->
                     <div class="lg:col-span-5 bg-slate-900 p-4 rounded-xl border border-bordercolor flex flex-col gap-3 sticky top-0">
                         <div class="flex items-center justify-between border-b border-bordercolor pb-2">
                             <h4 id="form-title" class="text-xs font-bold text-cyan-400 uppercase tracking-wider">新規用語の追加</h4>
@@ -360,16 +360,21 @@
                         </div>
                     </div>
 
-                    <!-- 右側：既に収録されている用語の検索・一覧・エクスポート (7カラム分) -->
+                    <!-- 右側：既に収録されている用語の検索・一覧・エクスポート -->
                     <div class="lg:col-span-7 bg-slate-900 p-4 rounded-xl border border-bordercolor flex flex-col gap-3">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-bordercolor pb-3">
                             <div>
                                 <h4 class="text-xs font-bold text-slate-200">収録済みデータ一覧</h4>
                                 <p class="text-[11px] text-slate-400">登録されている用語の検索・編集・削除を行います。</p>
                             </div>
-                            <button id="export-json-btn" class="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shrink-0">
-                                <i class="fa-solid fa-download"></i> JSON出力
-                            </button>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button id="reload-json-btn" class="px-3 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 border border-bordercolor text-cyan-300 font-medium flex items-center gap-1.5" title="dictionary.json から最新データを再読み込み">
+                                    <i class="fa-solid fa-rotate"></i> JSON再読込
+                                </button>
+                                <button id="export-json-btn" class="px-3 py-1.5 rounded-lg text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> JSON出力
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 収録済みデータ専用の検索バー -->
@@ -410,357 +415,6 @@
         </div>
     </footer>
 
-    <script>
-        // サイドバー制御
-        const hamburgerBtn = document.getElementById("hamburgerBtn");
-        const sidebar = document.getElementById("sidebar");
-        const sidebarOverlay = document.getElementById("sidebarOverlay");
-        const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
-
-        function toggleSidebar() {
-            if (sidebar.classList.contains("active")) { closeSidebar(); } else { openSidebar(); }
-        }
-        function openSidebar() { sidebar.classList.add("active"); sidebarOverlay.classList.add("active"); }
-        function closeSidebar() { sidebar.classList.remove("active"); sidebarOverlay.classList.remove("active"); }
-
-        hamburgerBtn.addEventListener("click", toggleSidebar);
-        sidebarOverlay.addEventListener("click", closeSidebar);
-        sidebarCloseBtn.addEventListener("click", closeSidebar);
-
-        // モーダル制御
-        const jsonModal = document.getElementById("json-modal");
-        const openManagerBtn = document.getElementById("open-manager-btn");
-        const closeManagerBtn = document.getElementById("close-manager-btn");
-
-        openManagerBtn.addEventListener("click", () => { jsonModal.classList.remove("hidden"); renderAdminTable(); });
-        closeManagerBtn.addEventListener("click", () => { jsonModal.classList.add("hidden"); });
-
-        // 辞書データ配列
-        let dictionaryData = [];
-
-        // UI要素
-        const termsGrid = document.getElementById("terms-grid");
-        const emptyState = document.getElementById("empty-state");
-        const totalCountEl = document.getElementById("total-count");
-        const resultCountEl = document.getElementById("result-count");
-        const searchInput = document.getElementById("search-input");
-        const clearSearchBtn = document.getElementById("clear-search");
-        const initialButtonsContainer = document.getElementById("initial-buttons");
-        const categoryFilterContainer = document.getElementById("category-filters");
-        const filterStatusText = document.getElementById("filter-status-text");
-        const resetInitialBtn = document.getElementById("reset-initial");
-
-        // 管理画面用検索
-        const adminSearchInput = document.getElementById("admin-search-input");
-        const adminClearSearchBtn = document.getElementById("admin-clear-search");
-        let adminSearchQuery = "";
-
-        let currentCategory = "ALL";
-        let currentInitial = "ALL";
-        let searchQuery = "";
-
-        // 外部JSON読み込み処理
-        async function loadDictionary() {
-            try {
-                const saved = localStorage.getItem("medical_dictionary_data");
-                if (saved) {
-                    dictionaryData = JSON.parse(saved);
-                } else {
-                    const response = await fetch("dictionary.json");
-                    if (!response.ok) throw new Error("外部JSONの読み込みに失敗しました");
-                    dictionaryData = await response.json();
-                }
-            } catch (e) {
-                console.warn("外部JSONファイルが見つからないかfetchできない環境のため、内蔵デフォルトデータを使用します。", e);
-                dictionaryData = getDefaultData();
-            }
-            initAlphabetButtons();
-            render();
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem("medical_dictionary_data", JSON.stringify(dictionaryData, null, 2));
-        }
-
-        function initAlphabetButtons() {
-            const alphabets = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")];
-            let html = `<button data-initial="ALL" class="init-btn active px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-500 border border-cyan-400 text-slate-950 shadow-sm transition-all">ALL</button>`;
-
-            alphabets.forEach(letter => {
-                const count = dictionaryData.filter(d => d.initial === letter).length;
-                const hasItem = count > 0;
-                html += `
-                    <button data-initial="${letter}" ${!hasItem ? 'disabled' : ''} 
-                        class="init-btn px-2 py-1 rounded-md text-xs font-semibold transition-all border 
-                        ${hasItem ? 'bg-slate-800 border-bordercolor text-slate-200 hover:border-cyan-500 hover:text-cyan-400 cursor-pointer' : 'bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'}">
-                        ${letter}
-                    </button>
-                `;
-            });
-            initialButtonsContainer.innerHTML = html;
-        }
-
-        function filterTerms() {
-            return dictionaryData.filter(item => {
-                const matchCategory = (currentCategory === "ALL") || (item.category === currentCategory);
-                const matchInitial = (currentInitial === "ALL") || (item.initial === currentInitial);
-                const q = searchQuery.toLowerCase().trim();
-                const matchSearch = !q || 
-                    item.term.toLowerCase().includes(q) ||
-                    item.reading.toLowerCase().includes(q) ||
-                    item.fullName.toLowerCase().includes(q) ||
-                    item.meaning.toLowerCase().includes(q);
-                return matchCategory && matchInitial && matchSearch;
-            });
-        }
-
-        function render() {
-            const filtered = filterTerms();
-            totalCountEl.textContent = dictionaryData.length;
-            resultCountEl.textContent = `${filtered.length}件`;
-
-            let statusParts = [];
-            if (currentCategory !== "ALL") {
-                const catNames = { PCI: "PCI", CARD: "心臓病名", CHART: "カルテ略語", TL: "経過記録", ERCP: "ERCP" };
-                statusParts.push(`カテゴリ: ${catNames[currentCategory] || currentCategory}`);
-            }
-            if (currentInitial !== "ALL") { statusParts.push(`イニシャル: ${currentInitial}`); }
-            if (searchQuery) { statusParts.push(`検索: "${searchQuery}"`); }
-            filterStatusText.textContent = statusParts.length > 0 ? `表示中: ${statusParts.join(" / ")}` : "表示中: すべての用語";
-
-            termsGrid.innerHTML = "";
-            if (filtered.length === 0) {
-                emptyState.classList.remove("hidden");
-                return;
-            } else {
-                emptyState.classList.add("hidden");
-            }
-
-            filtered.forEach(item => {
-                const card = document.createElement("div");
-                card.className = "bg-cardbg rounded-2xl border border-bordercolor p-5 shadow-lg hover:border-cyan-500/50 transition-all flex flex-col justify-between";
-
-                let catBadgeClass = "bg-blue-950 text-blue-400 border-blue-800";
-                let catBadgeText = "PCI";
-                if (item.category === "CARD") { catBadgeClass = "bg-rose-950 text-rose-400 border-rose-800"; catBadgeText = "心臓病名"; }
-                else if (item.category === "CHART") { catBadgeClass = "bg-amber-950 text-amber-400 border-amber-800"; catBadgeText = "カルテ略語"; }
-                else if (item.category === "TL") { catBadgeClass = "bg-purple-950 text-purple-400 border-purple-800"; catBadgeText = "経過記録"; }
-                else if (item.category === "ERCP") { catBadgeClass = "bg-emerald-950 text-emerald-400 border-emerald-800"; catBadgeText = "ERCP"; }
-
-                const formattedMeaning = item.meaning ? item.meaning.replace(/\n/g, '<br>') : '';
-
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-start justify-between gap-2 mb-2">
-                            <div>
-                                <span class="text-[10px] tracking-wider font-semibold text-slate-400 block uppercase">${item.reading}</span>
-                                <h3 class="text-xl font-bold text-cyan-300 tracking-wide">${item.term}</h3>
-                            </div>
-                            <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${catBadgeClass}">
-                                ${catBadgeText}
-                            </span>
-                        </div>
-                        <p class="text-xs font-mono text-slate-400 mb-3 border-b border-bordercolor/60 pb-2">${item.fullName}</p>
-                        <p class="text-sm text-slate-200 leading-relaxed">${formattedMeaning}</p>
-                    </div>
-                `;
-                termsGrid.appendChild(card);
-            });
-        }
-
-        // 管理画面テーブル描画（検索フィルター対応）
-        function renderAdminTable() {
-            const tbody = document.getElementById("admin-table-body");
-            tbody.innerHTML = "";
-            
-            const q = adminSearchQuery.toLowerCase().trim();
-            dictionaryData.forEach((item, index) => {
-                if (q && !item.term.toLowerCase().includes(q) && !item.reading.toLowerCase().includes(q) && !item.meaning.toLowerCase().includes(q) && !item.category.toLowerCase().includes(q)) {
-                    return; // 検索条件に一致しないものはスキップ
-                }
-
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-slate-800/50";
-                tr.innerHTML = `
-                    <td class="p-2.5 font-bold text-cyan-300">${item.term}<br><span class="text-[10px] text-slate-400 font-normal">${item.reading}</span></td>
-                    <td class="p-2.5"><span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-bordercolor">${item.category}</span></td>
-                    <td class="p-2.5 text-slate-300 text-xs max-w-xs truncate">${item.meaning}</td>
-                    <td class="p-2.5 text-right whitespace-nowrap">
-                        <button onclick="editTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded text-[11px] mr-1" title="編集"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteTerm(${index})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded text-[11px]" title="削除"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.editTerm = function(index) {
-            const item = dictionaryData[index];
-            document.getElementById("edit-index").value = index;
-            document.getElementById("input-id").value = item.id;
-            document.getElementById("input-term").value = item.term;
-            document.getElementById("input-reading").value = item.reading;
-            document.getElementById("input-fullname").value = item.fullName;
-            document.getElementById("input-category").value = item.category;
-            document.getElementById("input-initial").value = item.initial;
-            document.getElementById("input-meaning").value = item.meaning;
-            document.getElementById("form-title").textContent = "用語の編集 (index: " + index + ")";
-            document.getElementById("cancel-edit-btn").classList.remove("hidden");
-        };
-
-        window.deleteTerm = function(index) {
-            if (confirm(`「${dictionaryData[index].term}」を削除してもよろしいですか？`)) {
-                dictionaryData.splice(index, 1);
-                saveToLocalStorage();
-                initAlphabetButtons();
-                render();
-                renderAdminTable();
-            }
-        };
-
-        document.getElementById("cancel-edit-btn").addEventListener("click", () => {
-            resetForm();
-        });
-
-        function resetForm() {
-            document.getElementById("edit-index").value = "-1";
-            document.getElementById("input-id").value = "";
-            document.getElementById("input-term").value = "";
-            document.getElementById("input-reading").value = "";
-            document.getElementById("input-fullname").value = "";
-            document.getElementById("input-category").value = "PCI";
-            document.getElementById("input-initial").value = "";
-            document.getElementById("input-meaning").value = "";
-            document.getElementById("form-title").textContent = "新規用語の追加";
-            document.getElementById("cancel-edit-btn").classList.add("hidden");
-        }
-
-        // 追加・更新保存
-        document.getElementById("save-term-btn").addEventListener("click", () => {
-            const index = parseInt(document.getElementById("edit-index").value);
-            const newItem = {
-                id: document.getElementById("input-id").value.trim() || "item_" + Date.now(),
-                term: document.getElementById("input-term").value.trim(),
-                reading: document.getElementById("input-reading").value.trim(),
-                fullName: document.getElementById("input-fullname").value.trim(),
-                category: document.getElementById("input-category").value,
-                initial: document.getElementById("input-initial").value.trim().toUpperCase() || "A",
-                meaning: document.getElementById("input-meaning").value
-            };
-
-            if (!newItem.term) {
-                alert("用語名を入力してください。");
-                return;
-            }
-
-            if (index === -1) {
-                dictionaryData.push(newItem);
-            } else {
-                dictionaryData[index] = newItem;
-            }
-
-            saveToLocalStorage();
-            initAlphabetButtons();
-            render();
-            renderAdminTable();
-            resetForm();
-            alert("保存しました。");
-        });
-
-        // JSONファイルとしてエクスポート
-        document.getElementById("export-json-btn").addEventListener("click", () => {
-            const jsonString = JSON.stringify(dictionaryData, null, 2);
-            const blob = new Blob([jsonString], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "dictionary.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        });
-
-        // イベントリスナー設定
-        function setupEventListeners() {
-            searchInput.addEventListener("input", (e) => {
-                searchQuery = e.target.value;
-                clearSearchBtn.classList.toggle("hidden", !searchQuery);
-                render();
-            });
-
-            clearSearchBtn.addEventListener("click", () => {
-                searchInput.value = "";
-                searchQuery = "";
-                clearSearchBtn.classList.add("hidden");
-                render();
-            });
-
-            // 管理画面用検索イベント
-            adminSearchInput.addEventListener("input", (e) => {
-                adminSearchQuery = e.target.value;
-                adminClearSearchBtn.classList.toggle("hidden", !adminSearchQuery);
-                renderAdminTable();
-            });
-
-            adminClearSearchBtn.addEventListener("click", () => {
-                adminSearchInput.value = "";
-                adminSearchQuery = "";
-                adminClearSearchBtn.classList.add("hidden");
-                renderAdminTable();
-            });
-
-            initialButtonsContainer.addEventListener("click", (e) => {
-                const btn = e.target.closest(".init-btn");
-                if (!btn || btn.disabled) return;
-                document.querySelectorAll(".init-btn").forEach(b => {
-                    b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                    b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-200");
-                });
-                btn.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                btn.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-200");
-                currentInitial = btn.dataset.initial;
-                render();
-            });
-
-            categoryFilterContainer.addEventListener("click", (e) => {
-                const btn = e.target.closest(".cat-btn");
-                if (!btn) return;
-                document.querySelectorAll(".cat-btn").forEach(b => {
-                    b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                    b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-300");
-                });
-                btn.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                btn.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-300");
-                currentCategory = btn.dataset.category;
-                render();
-            });
-
-            resetInitialBtn.addEventListener("click", () => {
-                currentInitial = "ALL";
-                document.querySelectorAll(".init-btn").forEach(b => {
-                    if (b.dataset.initial === "ALL") {
-                        b.classList.add("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                        b.classList.remove("bg-slate-800", "border-bordercolor", "text-slate-200");
-                    } else {
-                        b.classList.remove("active", "bg-cyan-500", "border-cyan-400", "text-slate-950");
-                        b.classList.add("bg-slate-800", "border-bordercolor", "text-slate-200");
-                    }
-                });
-                render();
-            });
-        }
-
-        // デフォルトデータフォールバック
-        function getDefaultData() {
-            return [
-                { id: "anamne", term: "アナムネ", reading: "アナムネ / あなむねーぜ", fullName: "Anamnese", category: "CHART", initial: "A", meaning: "医療における「アナムネ（正式名称：アナムネーゼ / Anamnese）」とは、患者から病歴や既往歴、生活状況などの情報を聴取すること、またはその記録を指す言葉です。\nドイツ語の「Anamnese（過去を思い出すこと・病歴）」が語源となっています。" },
-                { id: "muntella", term: "ムンテラ", reading: "ムンテラ / むんてら", fullName: "Mundtherapie", category: "CHART", initial: "M", meaning: "ムンテラとは、医師が患者やその家族に対して病状や治療方針などを説明することです。\n現在では医師と患者が対等な立場で情報共有するインフォームド・コンセントが主流になっています。" }
-            ];
-        }
-
-        window.addEventListener("DOMContentLoaded", () => {
-            setupEventListeners();
-            loadDictionary();
-        });
-    </script>
+    <script src="dictionary-app.js"></script>
 </body>
 </html>
