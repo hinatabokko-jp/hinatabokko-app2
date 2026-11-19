@@ -5,382 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI CHAT</title>
   <style>
-    :root {
-      --bg-color: #0b0f19;
-      --surface-color: #131b2e;
-      --surface-glass: rgba(19, 27, 46, 0.75);
-      --primary-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
-      --accent-purple: #a855f7;
-      --accent-pink: #ec4899;
-      --accent-blue: #3b82f6;
-      --danger-color: #f43f5e;
-      --text-color: #f1f5f9;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(168, 85, 247, 0.3);
-      --my-msg-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
-      --medical-msg-gradient: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
-      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.15);
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-    }
-
-    header {
-      background-color: var(--surface-glass);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      z-index: 10;
-      box-shadow: var(--shadow-sm);
-      flex-wrap: wrap;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .header-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      background: var(--primary-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: 0.04em;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      padding: 7px 14px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-
-    .tab-btn:hover {
-      background: rgba(168, 85, 247, 0.12);
-      color: var(--text-color);
-      border-color: var(--border-glow);
-    }
-
-    .tab-btn.active {
-      background: var(--primary-gradient);
-      border-color: transparent;
-      color: #ffffff;
-      font-weight: 700;
-      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
-    }
-
-    .btn-clear {
-      background: rgba(244, 63, 94, 0.12);
-      border: 1px solid rgba(244, 63, 94, 0.3);
-      color: #fda4af;
-      padding: 7px 14px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-
-    .btn-clear:hover {
-      background: rgba(244, 63, 94, 0.22);
-      color: #ffffff;
-    }
-
-    .space {
-      display: none;
-      flex: 1;
-      flex-direction: column;
-      overflow: hidden;
-      width: 100%;
-    }
-
-    .space.active {
-      display: flex;
-    }
-
-    .chat-space {
-      background: radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.05), transparent 60%);
-    }
-
-    .scope-banner {
-      max-width: 860px;
-      width: 100%;
-      margin: 12px auto 0;
-      padding: 0 20px;
-    }
-
-    .scope-banner-box {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: var(--radius-md);
-      padding: 10px 14px;
-      font-size: 0.8rem;
-      color: #cbd5e1;
-      line-height: 1.5;
-    }
-
-    .scope-banner-box strong {
-      color: #93c5fd;
-    }
-
-    .chat-box {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      scroll-behavior: smooth;
-      max-width: 860px;
-      width: 100%;
-      margin: 0 auto;
-    }
-
-    .message {
-      max-width: 82%;
-      display: flex;
-      flex-direction: column;
-      animation: fadeIn 0.25s ease-out;
-    }
-
-    .message.user {
-      align-self: flex-end;
-    }
-
-    .message.ai {
-      align-self: flex-start;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .bubble {
-      padding: 12px 16px;
-      border-radius: var(--radius-lg);
-      font-size: 0.95rem;
-      line-height: 1.6;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-
-    .message.user .bubble {
-      background: var(--my-msg-gradient);
-      color: #ffffff;
-      border-bottom-right-radius: 4px;
-      box-shadow: 0 4px 15px rgba(147, 51, 234, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    #medicalSpace .message.user .bubble {
-      background: var(--medical-msg-gradient);
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
-    }
-
-    .message.ai .bubble {
-      background: var(--surface-color);
-      color: var(--text-color);
-      border-bottom-left-radius: 4px;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .timestamp {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-top: 5px;
-      padding: 0 6px;
-      align-self: flex-end;
-    }
-
-    .message.ai .timestamp {
-      align-self: flex-start;
-    }
-
-    footer {
-      background-color: var(--surface-glass);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      padding: 14px 20px;
-      border-top: 1px solid var(--border-color);
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .footer-inner {
-      max-width: 860px;
-      width: 100%;
-      margin: 0 auto;
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-    }
-
-    textarea {
-      flex: 1;
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 10px 16px;
-      color: #fff;
-      font-size: 0.95rem;
-      outline: none;
-      resize: none;
-      height: 44px;
-      max-height: 140px;
-      font-family: inherit;
-      line-height: 1.4;
-      transition: var(--transition);
-    }
-
-    textarea:focus, input:focus, select:focus {
-      border-color: var(--accent-purple);
-      background-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
-    }
-
-    .send-btn-style {
-      background: var(--primary-gradient);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-md);
-      padding: 0 20px;
-      height: 44px;
-      font-weight: 700;
-      font-size: 0.92rem;
-      cursor: pointer;
-      transition: var(--transition);
-      flex-shrink: 0;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .send-btn-style:hover:not(:disabled) {
-      opacity: 0.95;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .send-btn-style:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #settingsSpace {
-      overflow-y: auto;
-      padding: 24px 20px;
-    }
-
-    .settings-card {
-      max-width: 680px;
-      width: 100%;
-      margin: 0 auto;
-      background-color: var(--surface-color);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      box-shadow: var(--shadow-lg);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .settings-heading {
-      font-size: 1rem;
-      font-weight: 700;
-      background: var(--primary-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .input-label {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 0.04em;
-    }
-
-    .input-field, .select-field {
-      width: 100%;
-      background-color: #0b0f19;
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 12px 14px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      outline: none;
-      transition: var(--transition);
-    }
-
-    #personaInput {
-      min-height: 200px;
-      line-height: 1.6;
-      resize: vertical;
-    }
-
-    .settings-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding-top: 6px;
-    }
-
-    .status-text {
-      font-size: 0.85rem;
-      color: #c084fc;
-      font-weight: 600;
-    }
+    :root{--bg-color:#0b0f19;--surface-color:#131b2e;--surface-glass:rgba(19,27,46,0.75);--primary-gradient:linear-gradient(135deg,#a855f7 0%,#ec4899 50%,#3b82f6 100%);--accent-purple:#a855f7;--accent-pink:#ec4899;--accent-blue:#3b82f6;--danger-color:#f43f5e;--text-color:#f1f5f9;--text-muted:#94a3b8;--border-color:rgba(255,255,255,0.08);--border-glow:rgba(168,85,247,0.3);--my-msg-gradient:linear-gradient(135deg,#9333ea 0%,#db2777 100%);--medical-msg-gradient:linear-gradient(135deg,#7c3aed 0%,#2563eb 100%);--shadow-sm:0 4px 12px rgba(0,0,0,0.3);--shadow-lg:0 10px 30px rgba(0,0,0,0.5),0 0 20px rgba(168,85,247,0.15);--radius-sm:8px;--radius-md:14px;--radius-lg:20px;--transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background-color:var(--bg-color);color:var(--text-color);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+    .login-overlay{position:fixed;inset:0;background:radial-gradient(circle at top right,rgba(168,85,247,0.14),transparent 55%),radial-gradient(circle at bottom left,rgba(59,130,246,0.12),transparent 55%),var(--bg-color);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
+    .login-overlay.active{display:flex}
+    .login-card{max-width:420px;width:100%;background-color:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:28px 24px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:18px}
+    .login-title{font-size:1.25rem;font-weight:800;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;letter-spacing:0.04em}
+    .login-subtitle{font-size:0.82rem;color:var(--text-muted);text-align:center;line-height:1.5}
+    .login-actions{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+    .secondary-btn-style{background:rgba(255,255,255,0.05);color:var(--text-color);border:1px solid var(--border-color);border-radius:var(--radius-md);height:42px;padding:0 16px;font-size:0.88rem;font-weight:600;cursor:pointer;transition:var(--transition)}
+    .secondary-btn-style:hover{background:rgba(168,85,247,0.12);border-color:var(--border-glow)}
+    .login-error{font-size:0.82rem;color:#fda4af;min-height:18px;line-height:1.4}
+    header{background-color:var(--surface-glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:12px 20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:10;box-shadow:var(--shadow-sm);flex-wrap:wrap}
+    .header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .header-title{font-size:1.15rem;font-weight:800;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.04em}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border-color);color:var(--text-muted);padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:0.85rem;font-weight:600;transition:var(--transition)}
+    .tab-btn:hover{background:rgba(168,85,247,0.12);color:var(--text-color);border-color:var(--border-glow)}
+    .tab-btn.active{background:var(--primary-gradient);border-color:transparent;color:#fff;font-weight:700;box-shadow:0 4px 14px rgba(168,85,247,0.3)}
+    .btn-clear{background:rgba(244,63,94,0.12);border:1px solid rgba(244,63,94,0.3);color:#fda4af;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:0.82rem;font-weight:600;transition:var(--transition)}
+    .btn-clear:hover{background:rgba(244,63,94,0.22);color:#fff}
+    .btn-logout{background:rgba(255,255,255,0.05);border:1px solid var(--border-color);color:var(--text-muted);padding:7px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:0.8rem;font-weight:600;transition:var(--transition)}
+    .btn-logout:hover{background:rgba(168,85,247,0.12);color:var(--text-color);border-color:var(--border-glow)}
+    .space{display:none;flex:1;flex-direction:column;overflow:hidden;width:100%}
+    .space.active{display:flex}
+    .chat-space{background:radial-gradient(circle at bottom right,rgba(168,85,247,0.05),transparent 60%)}
+    .scope-banner{max-width:860px;width:100%;margin:12px auto 0;padding:0 20px}
+    .scope-banner-box{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-md);padding:10px 14px;font-size:0.8rem;color:#cbd5e1;line-height:1.5}
+    .scope-banner-box strong{color:#93c5fd}
+    .chat-box{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;max-width:860px;width:100%;margin:0 auto}
+    .message{max-width:82%;display:flex;flex-direction:column;animation:fadeIn 0.25s ease-out}
+    .message.user{align-self:flex-end}
+    .message.ai{align-self:flex-start}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .bubble{padding:12px 16px;border-radius:var(--radius-lg);font-size:0.95rem;line-height:1.6;word-break:break-word;white-space:pre-wrap}
+    .message.user .bubble{background:var(--my-msg-gradient);color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 15px rgba(147,51,234,0.25);border:1px solid rgba(255,255,255,0.1)}
+    #medicalSpace .message.user .bubble{background:var(--medical-msg-gradient);box-shadow:0 4px 15px rgba(37,99,235,0.25)}
+    .message.ai .bubble{background:var(--surface-color);color:var(--text-color);border-bottom-left-radius:4px;border:1px solid var(--border-color);box-shadow:var(--shadow-sm)}
+    .timestamp{font-size:0.7rem;color:var(--text-muted);margin-top:5px;padding:0 6px;align-self:flex-end}
+    .message.ai .timestamp{align-self:flex-start}
+    footer{background-color:var(--surface-glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 20px;border-top:1px solid var(--border-color);box-shadow:0 -4px 20px rgba(0,0,0,0.2)}
+    .footer-inner{max-width:860px;width:100%;margin:0 auto;display:flex;align-items:flex-end;gap:10px}
+    textarea{flex:1;background-color:rgba(255,255,255,0.05);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:10px 16px;color:#fff;font-size:0.95rem;outline:none;resize:none;height:44px;max-height:140px;font-family:inherit;line-height:1.4;transition:var(--transition)}
+    textarea:focus,input:focus,select:focus{border-color:var(--accent-purple);background-color:rgba(255,255,255,0.08);box-shadow:0 0 12px rgba(168,85,247,0.2)}
+    .send-btn-style{background:var(--primary-gradient);color:#fff;border:none;border-radius:var(--radius-md);padding:0 20px;height:44px;font-weight:700;font-size:0.92rem;cursor:pointer;transition:var(--transition);flex-shrink:0;box-shadow:var(--shadow-sm)}
+    .send-btn-style:hover:not(:disabled){opacity:0.95;transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+    .send-btn-style:disabled{opacity:0.5;cursor:not-allowed}
+    #settingsSpace{overflow-y:auto;padding:24px 20px}
+    .settings-card{max-width:680px;width:100%;margin:0 auto;background-color:var(--surface-color);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:18px}
+    .settings-heading{font-size:1rem;font-weight:700;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .input-group{display:flex;flex-direction:column;gap:8px}
+    .input-label{font-size:0.78rem;font-weight:700;color:var(--text-muted);letter-spacing:0.04em}
+    .input-field,.select-field{width:100%;background-color:#0b0f19;color:var(--text-color);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px 14px;font-size:0.95rem;font-family:inherit;outline:none;transition:var(--transition)}
+    #personaInput{min-height:200px;line-height:1.6;resize:vertical}
+    .settings-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px}
+    .status-text{font-size:0.85rem;color:#c084fc;font-weight:600}
   </style>
 </head>
 <body>
-
+  <div id="loginOverlay" class="login-overlay active">
+    <form id="loginForm" class="login-card">
+      <div class="login-title">AI CHAT ログイン</div>
+      <div class="login-subtitle">MEMO.htmlと同じアカウントでサインインしてください</div>
+      <div class="input-group">
+        <label for="loginEmail" class="input-label">メールアドレス</label>
+        <input type="email" id="loginEmail" class="input-field" placeholder="example@example.com" autocomplete="email" required />
+      </div>
+      <div class="input-group">
+        <label for="loginPassword" class="input-label">パスワード</label>
+        <input type="password" id="loginPassword" class="input-field" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <div id="loginError" class="login-error"></div>
+      <div class="login-actions">
+        <button type="submit" id="signInBtn" class="send-btn-style">ログイン</button>
+        <button type="button" id="signUpBtn" class="secondary-btn-style">新規登録</button>
+      </div>
+    </form>
+  </div>
   <header>
     <div class="header-left">
       <div class="header-title">AI CHAT</div>
@@ -390,10 +93,11 @@
         <button id="tabSettings" class="tab-btn">⚙️ 固定設定</button>
       </div>
     </div>
-    <button id="clearChatBtn" class="btn-clear">会話クリア</button>
+    <div class="header-right">
+      <button id="clearChatBtn" class="btn-clear">会話クリア</button>
+      <button id="logoutBtn" class="btn-logout">ログアウト</button>
+    </div>
   </header>
-
-  <!-- スペース1：おしゃべり用（Firebase Realtime Databaseに保存・固定設定を反映） -->
   <main id="chatSpace" class="space chat-space active">
     <div id="chat-box" class="chat-box"></div>
     <footer>
@@ -403,8 +107,6 @@
       </div>
     </footer>
   </main>
-
-  <!-- スペース2：医療事務の質問用（指定2サイトのみ検索・引用ルールを適用） -->
   <main id="medicalSpace" class="space chat-space">
     <div class="scope-banner">
       <div class="scope-banner-box">
@@ -421,22 +123,17 @@
       </div>
     </footer>
   </main>
-
-  <!-- スペース3：固定設定用（Firebase Realtime Database & localStorageに永続保存） -->
   <section id="settingsSpace" class="space">
     <div class="settings-card">
       <div class="settings-heading">固定設定（会話クリアを押しても消えません）</div>
-
       <div class="input-group" id="userNameGroup" style="display: none;">
         <label for="userNameInput" class="input-label">チャットユーザー名</label>
         <input type="text" id="userNameInput" class="input-field" value="" placeholder="" />
       </div>
-
       <div class="input-group">
         <label for="apiKeyInput" class="input-label">GEMINI API キー（このブラウザにのみ保存）</label>
         <input type="password" id="apiKeyInput" class="input-field" placeholder="AIza..." autocomplete="off" />
       </div>
-
       <div class="input-group">
         <label for="modelSelect" class="input-label">モデル</label>
         <select id="modelSelect" class="select-field">
@@ -445,362 +142,296 @@
           <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
         </select>
       </div>
-
       <div class="input-group">
         <label for="personaInput" class="input-label">おしゃべり用の呼び名・口調・ルール（毎回AIに送信されます）</label>
         <textarea id="personaInput" class="input-field"></textarea>
       </div>
-
       <div class="settings-actions">
         <span id="saveStatus" class="status-text"></span>
         <button id="saveSettingsBtn" class="send-btn-style">設定を保存する</button>
       </div>
     </div>
   </section>
-
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { initializeApp as _0x1a } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth as _0x2b, signInWithEmailAndPassword as _0x3c, createUserWithEmailAndPassword as _0x4d, signOut as _0x5e, onAuthStateChanged as _0x6f } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase as _0x7g, ref as _0x8h, push as _0x9i, set as _0x0j, remove as _0xak, onValue as _0xbl } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // MEMO.htmlと同じFirebaseデータベース設定を入力してください
-    const MEMO_FIREBASE_CONFIG = {
-      apiKey: "YOUR_MEMO_FIREBASE_API_KEY",
-      authDomain: "YOUR_MEMO_FIREBASE_AUTH_DOMAIN",
-      databaseURL: "YOUR_MEMO_FIREBASE_DATABASE_URL",
-      projectId: "YOUR_MEMO_FIREBASE_PROJECT_ID",
-      storageBucket: "YOUR_MEMO_FIREBASE_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MEMO_FIREBASE_MESSAGING_SENDER_ID",
-      appId: "YOUR_MEMO_FIREBASE_APP_ID"
+    const _0xdc = [
+      "AIzaSyCPkZxnMh79D1OxIxYZbBbLLBi2wlyaa8Y",
+      "memo-32979.firebaseapp.com",
+      "https://memo-32979-default-rtdb.firebaseio.com",
+      "memo-32979",
+      "memo-32979.firebasestorage.app",
+      "798457900857",
+      "1:798457900857:web:8b5ac2812aee8c3c8402e8",
+      "G-7ZFJFTTHNW"
+    ];
+
+    const _0xfc = {
+      apiKey: _0xdc[0],
+      authDomain: _0xdc[1],
+      databaseURL: _0xdc[2],
+      projectId: _0xdc[3],
+      storageBucket: _0xdc[4],
+      messagingSenderId: _0xdc[5],
+      appId: _0xdc[6],
+      measurementId: _0xdc[7]
     };
 
-    const app = initializeApp(MEMO_FIREBASE_CONFIG);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+    const _0xap = _0x1a(_0xfc);
+    const _0xau = _0x2b(_0xap);
+    const _0xdb = _0x7g(_0xap);
 
-    const STORAGE_KEYS = {
-      API_KEY: "ai_chat_api_key_v1",
-      MODEL: "ai_chat_model_v1",
-      PERSONA: "ai_chat_persona_v1",
-      USER_NAME: "ai_chat_user_name_v1"
+    const _0xsk = {
+      k: "ai_chat_api_key_v1",
+      m: "ai_chat_model_v1",
+      p: "ai_chat_persona_v1",
+      u: "ai_chat_user_name_v1"
     };
 
-    // デフォルトユーザー名は null（空欄・非表示）
-    const DEFAULT_USER_NAME = null;
-
-    // デフォルト呼び名を「るみ」に設定
-    const DEFAULT_PERSONA = [
-      "・ユーザーの呼び名：るみ",
-      "・関係性と口調：気さくな友人同士のような親しみやすいタメ口",
-      "・返答の長さ：2〜3文くらいでテンポよく短めに返す",
-      "・ルール：説教や長い解説はせず、まずは共感や相槌を大切にする"
+    const _0xdu = null;
+    const _0xdp = [
+      "\u30fb\u30e6\u30fc\u30b6\u30fc\u306e\u547c\u3073\u540d\uff1a\u308b\u307f",
+      "\u30fb\u95a2\u4fc2\u6027\u3068\u53e3\u8abf\uff1a\u6c17\u3055\u304f\u306a\u53cb\u4eba\u540c\u58eb\u306e\u3088\u3046\u306a\u89aa\u3057\u307f\u3084\u3059\u3044\u30bf\u30e1\u53e3",
+      "\u30fb\u8fd4\u7b54\u306e\u9577\u3055\uff1a2\uff5e3\u6587\u304f\u3089\u3044\u3067\u30c6\u30f3\u30dd\u3088\u304f\u77ed\u3081\u306b\u8fd4\u3059",
+      "\u30fb\u30eb\u30fc\u30eb\uff1a\u8aac\u6559\u3084\u9577\u3044\u89e3\u8aac\u306f\u305b\u305a\u3001\u307e\u305a\u306f\u5171\u611f\u3084\u76f8\u618c\u3092\u5927\u5207\u306b\u3059\u308b"
     ].join("\n");
 
-    function buildMedicalSystemInstruction(personaText) {
+    function _0xbmi(_0xp) {
       return [
-        "あなたは医療事務のアシスタントです。",
-        "【厳守すべき情報源・引用ルール】",
-        "1. 回答の作成・検索・引用は、必ず以下の2つのURLのみを情報源としてください。",
-        "   - しろぼんネット: https://shirobon.net/",
+        "\u3042\u306a\u305f\u306f\u533b\u7642\u4e8b\u52d9\u306e\u30a2\u30b7\u30b9\u30bf\u30f3\u30c8\u3067\u3059\u3002",
+        "\u3010\u53b3\u5b88\u3059\u3079\u304d\u60c5\u5831\u6e90\u30fb\u5f15\u7528\u30eb\u30fc\u30eb\u3011",
+        "1. \u56de\u7b54\u306e\u4f5c\u6210\u30fb\u691c\u7d22\u30fb\u5f15\u7528\u306f\u3001\u5fc5\u305a\u4ee5\u4e0b\u306e2\u3064\u306eURL\u306e\u307f\u3092\u60c5\u5831\u6e90\u3068\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+        "   - \u3057\u308d\u307c\u3093\u30cd\u30c3\u30c8: https://shirobon.net/",
         "   - https://mavisone.jp/worth.html",
-        "2. 上記2つのURL以外の外部サイトや一般的な記憶・推測から事実を補完・引用しないでください。",
-        "3. 上記2つのURLから確認・引用できない事項については、推測せず「指定された参照元（しろぼんネット / https://mavisone.jp/worth.html）からは確認できません」と明記してください。",
-        "4. 回答時には、どの参照元（しろぼんネット https://shirobon.net/ または https://mavisone.jp/worth.html）に基づく内容か、引用・参照元を明示してください。",
-        personaText ? `【ユーザー設定参考】\n${personaText}` : ""
+        "2. \u4e0a\u8a182\u3064\u306eURL\u4ee5\u5916\u306e\u5916\u90e8\u30b5\u30a4\u30c8\u3084\u4e00\u822c\u7684\u306a\u8a18\u61b6\u30fb\u63a8\u6e2c\u304b\u3089\u4e8b\u5b9f\u3092\u88dc\u5b8c\u30fb\u5f15\u7528\u3057\u306a\u3044\u3067\u304f\u3060\u3055\u3044\u3002",
+        "3. \u4e0a\u8a182\u3064\u306eURL\u304b\u3089\u78ba\u8a8d\u30fb\u5f15\u7528\u3067\u304d\u306a\u3044\u4e8b\u9805\u306b\u3064\u3044\u3066\u306f\u3001\u63a8\u6e2c\u305b\u305a\u300c\u6307\u5b9a\u3055\u308c\u305f\u53c2\u7167\u5143\uff08\u3057\u308d\u307c\u3093\u30cd\u30c3\u30c8 / https://mavisone.jp/worth.html\uff09\u304b\u3089\u306f\u78ba\u8a8d\u3067\u304d\u307e\u305b\u3093\u300d\u3068\u660e\u8a18\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+        "4. \u56de\u7b54\u6642\u306b\u306f\u3001\u3069\u306e\u53c2\u7167\u5143\uff08\u3057\u308d\u307c\u3093\u30cd\u30c3\u30c8 https://shirobon.net/ \u307e\u305f\u306f https://mavisone.jp/worth.html\uff09\u306b\u57fa\u3065\u304f\u5185\u5bb9\u304b\u3001\u5f15\u7528\u30fb\u53c2\u7167\u5143\u3092\u660e\u793a\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+        _0xp ? `\u3010\u30e6\u30fc\u30b6\u30fc\u8a2d\u5b9a\u53c2\u8003\u3011\n${_0xp}` : ""
       ].filter(Boolean).join("\n");
     }
 
-    // DOM参照
-    const tabChat = document.getElementById("tabChat");
-    const tabMedical = document.getElementById("tabMedical");
-    const tabSettings = document.getElementById("tabSettings");
+    const _0x$ = (_0xi) => document.getElementById(_0xi);
+    const _0xlo = _0x$("loginOverlay"), _0xlf = _0x$("loginForm"), _0xle = _0x$("loginEmail"), _0xlp = _0x$("loginPassword");
+    const _0xsib = _0x$("signInBtn"), _0xsub = _0x$("signUpBtn"), _0xler = _0x$("loginError"), _0xlob = _0x$("logoutBtn");
+    const _0xtc = _0x$("tabChat"), _0xtm = _0x$("tabMedical"), _0xts = _0x$("tabSettings");
+    const _0xcs = _0x$("chatSpace"), _0xms = _0x$("medicalSpace"), _0xss = _0x$("settingsSpace"), _0xccb = _0x$("clearChatBtn");
+    const _0xung = _0x$("userNameGroup"), _0xuni = _0x$("userNameInput"), _0xaki = _0x$("apiKeyInput");
+    const _0xmsel = _0x$("modelSelect"), _0xpi = _0x$("personaInput"), _0xssb = _0x$("saveSettingsBtn"), _0xsst = _0x$("saveStatus");
 
-    const chatSpace = document.getElementById("chatSpace");
-    const medicalSpace = document.getElementById("medicalSpace");
-    const settingsSpace = document.getElementById("settingsSpace");
-    const clearChatBtn = document.getElementById("clearChatBtn");
-
-    const userNameGroup = document.getElementById("userNameGroup");
-    const userNameInput = document.getElementById("userNameInput");
-    const apiKeyInput = document.getElementById("apiKeyInput");
-    const modelSelect = document.getElementById("modelSelect");
-    const personaInput = document.getElementById("personaInput");
-    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
-    const saveStatus = document.getElementById("saveStatus");
-
-    const spaces = {
-      chat: {
-        tab: tabChat,
-        el: chatSpace,
-        box: document.getElementById("chat-box"),
-        input: document.getElementById("chat-input"),
-        sendBtn: document.getElementById("chat-send-btn"),
-        history: [],
-        dbPath: "ai_chat/chat"
-      },
-      medical: {
-        tab: tabMedical,
-        el: medicalSpace,
-        box: document.getElementById("medical-box"),
-        input: document.getElementById("medical-input"),
-        sendBtn: document.getElementById("medical-send-btn"),
-        history: [],
-        dbPath: "ai_chat/medical"
-      }
+    const _0xsp = {
+      chat: { tab: _0xtc, el: _0xcs, box: _0x$("chat-box"), input: _0x$("chat-input"), sendBtn: _0x$("chat-send-btn"), history: [], dbPath: "ai_chat/chat" },
+      medical: { tab: _0xtm, el: _0xms, box: _0x$("medical-box"), input: _0x$("medical-input"), sendBtn: _0x$("medical-send-btn"), history: [], dbPath: "ai_chat/medical" }
     };
 
-    let activeTab = "chat";
-    let currentUser = null;
+    let _0xat = "chat", _0xcu = null, _0xla = false;
 
-    function formatTime(dateObj = new Date()) {
-      return dateObj.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+    const _0xft = (_0xd = new Date()) => _0xd.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+
+    function _0xaun(_0xv) {
+      const _0xn = (_0xv === null || _0xv === undefined || String(_0xv).trim() === "") ? null : String(_0xv).trim();
+      _0xuni.value = _0xn ?? "";
+      _0xung.style.display = _0xn ? "flex" : "none";
+      return _0xn;
     }
 
-    function applyUserNameState(val) {
-      const normalized = (val === null || val === undefined || String(val).trim() === "") ? null : String(val).trim();
-      userNameInput.value = normalized ?? "";
-      userNameGroup.style.display = normalized ? "flex" : "none";
-      return normalized;
+    function _0xls() {
+      _0xaki.value = localStorage.getItem(_0xsk.k) || "";
+      _0xmsel.value = localStorage.getItem(_0xsk.m) || "gemini-3.8-flash";
+      const _0xspv = localStorage.getItem(_0xsk.p);
+      _0xpi.value = (_0xspv !== null && _0xspv.trim() !== "") ? _0xspv : _0xdp;
+      const _0xsuv = localStorage.getItem(_0xsk.u);
+      _0xaun(_0xsuv !== null ? _0xsuv : _0xdu);
     }
 
-    function loadSettings() {
-      apiKeyInput.value = localStorage.getItem(STORAGE_KEYS.API_KEY) || "";
-      modelSelect.value = localStorage.getItem(STORAGE_KEYS.MODEL) || "gemini-3.8-flash";
-      const savedPersona = localStorage.getItem(STORAGE_KEYS.PERSONA);
-      personaInput.value = (savedPersona !== null && savedPersona.trim() !== "")
-        ? savedPersona
-        : DEFAULT_PERSONA;
-
-      const savedUserName = localStorage.getItem(STORAGE_KEYS.USER_NAME);
-      applyUserNameState(savedUserName !== null ? savedUserName : DEFAULT_USER_NAME);
+    async function _0xsmd(_0xk, _0xr, _0xt, _0xti) {
+      if (!_0xcu) return;
+      const _0xmr = _0x9i(_0x8h(_0xdb, _0xsp[_0xk].dbPath));
+      await _0x0j(_0xmr, { role: _0xr, text: _0xt, time: _0xti, createdAt: Date.now(), uid: _0xcu.uid });
     }
 
-    async function saveMessageToDb(spaceKey, role, text, timeStr) {
-      if (!currentUser) return;
-      const target = spaces[spaceKey];
-      const msgRef = push(ref(db, target.dbPath));
-      await set(msgRef, {
-        role,
-        text,
-        time: timeStr,
-        createdAt: Date.now(),
-        uid: currentUser.uid
+    function _0xrsm(_0xk, _0xl) {
+      const _0xtg = _0xsp[_0xk];
+      _0xtg.box.innerHTML = "";
+      _0xtg.history = [];
+      _0xl.forEach((_0x1) => {
+        _0xam(_0xtg.box, _0x1.role, _0x1.text, _0x1.time);
+        if (_0x1.role === "user") _0xtg.history.push({ role: "user", parts: [{ text: _0x1.text }] });
+        else if (_0x1.role === "ai" && !_0x1.text.startsWith("\u30a8\u30e9\u30fc:")) _0xtg.history.push({ role: "model", parts: [{ text: _0x1.text }] });
       });
     }
 
-    function renderSpaceMessages(spaceKey, messagesList) {
-      const target = spaces[spaceKey];
-      target.box.innerHTML = "";
-      target.history = [];
-
-      messagesList.forEach((item) => {
-        appendMessage(target.box, item.role, item.text, item.time);
-        if (item.role === "user") {
-          target.history.push({ role: "user", parts: [{ text: item.text }] });
-        } else if (item.role === "ai" && !item.text.startsWith("エラー:")) {
-          target.history.push({ role: "model", parts: [{ text: item.text }] });
-        }
-      });
-    }
-
-    function subscribeToDatabase() {
-      Object.entries(spaces).forEach(([key, cfg]) => {
-        const spaceRef = ref(db, cfg.dbPath);
-        onValue(spaceRef, (snapshot) => {
-          const val = snapshot.val();
-          if (!val) {
-            renderSpaceMessages(key, []);
-            return;
-          }
-          const list = Object.values(val).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-          renderSpaceMessages(key, list);
+    function _0xsdb() {
+      if (_0xla) return;
+      _0xla = true;
+      Object.entries(_0xsp).forEach(([_0xk, _0xc]) => {
+        _0xbl(_0x8h(_0xdb, _0xc.dbPath), (_0xs) => {
+          const _0xv = _0xs.val();
+          if (!_0xv) { _0xrsm(_0xk, []); return; }
+          _0xrsm(_0xk, Object.values(_0xv).sort((_0xa, _0xb) => (_0xa.createdAt || 0) - (_0xb.createdAt || 0)));
         });
       });
-
-      const settingsRef = ref(db, "ai_chat_settings");
-      onValue(settingsRef, (snapshot) => {
-        const val = snapshot.val();
-        if (!val) return;
-        if (typeof val.model === "string" && val.model) {
-          modelSelect.value = val.model;
-          localStorage.setItem(STORAGE_KEYS.MODEL, val.model);
-        }
-        if (typeof val.persona === "string" && val.persona.trim() !== "") {
-          personaInput.value = val.persona;
-          localStorage.setItem(STORAGE_KEYS.PERSONA, val.persona);
-        }
-        const resolvedName = applyUserNameState(val.userName !== undefined ? val.userName : DEFAULT_USER_NAME);
-        if (resolvedName === null) {
-          localStorage.removeItem(STORAGE_KEYS.USER_NAME);
-        } else {
-          localStorage.setItem(STORAGE_KEYS.USER_NAME, resolvedName);
-        }
+      _0xbl(_0x8h(_0xdb, "ai_chat_settings"), (_0xs) => {
+        const _0xv = _0xs.val();
+        if (!_0xv) return;
+        if (typeof _0xv.model === "string" && _0xv.model) { _0xmsel.value = _0xv.model; localStorage.setItem(_0xsk.m, _0xv.model); }
+        if (typeof _0xv.persona === "string" && _0xv.persona.trim() !== "") { _0xpi.value = _0xv.persona; localStorage.setItem(_0xsk.p, _0xv.persona); }
+        const _0xrn = _0xaun(_0xv.userName !== undefined ? _0xv.userName : _0xdu);
+        if (_0xrn === null) localStorage.removeItem(_0xsk.u);
+        else localStorage.setItem(_0xsk.u, _0xrn);
       });
     }
 
-    saveSettingsBtn.addEventListener("click", async () => {
-      const trimmedKey = apiKeyInput.value.trim();
-      const selectedModel = modelSelect.value;
-      const trimmedPersona = personaInput.value.trim() || DEFAULT_PERSONA;
-      const resolvedUserName = applyUserNameState(userNameInput.value);
-
-      localStorage.setItem(STORAGE_KEYS.API_KEY, trimmedKey);
-      localStorage.setItem(STORAGE_KEYS.MODEL, selectedModel);
-      localStorage.setItem(STORAGE_KEYS.PERSONA, trimmedPersona);
-      if (resolvedUserName === null) {
-        localStorage.removeItem(STORAGE_KEYS.USER_NAME);
-      } else {
-        localStorage.setItem(STORAGE_KEYS.USER_NAME, resolvedUserName);
+    _0xssb.addEventListener("click", async () => {
+      const _0xtk = _0xaki.value.trim(), _0xsm = _0xmsel.value, _0xtp = _0xpi.value.trim() || _0xdp;
+      const _0xrn = _0xaun(_0xuni.value);
+      localStorage.setItem(_0xsk.k, _0xtk);
+      localStorage.setItem(_0xsk.m, _0xsm);
+      localStorage.setItem(_0xsk.p, _0xtp);
+      if (_0xrn === null) localStorage.removeItem(_0xsk.u);
+      else localStorage.setItem(_0xsk.u, _0xrn);
+      if (_0xcu) {
+        await _0x0j(_0x8h(_0xdb, "ai_chat_settings"), { userName: _0xrn, model: _0xsm, persona: _0xtp, updatedAt: Date.now() });
       }
-
-      if (currentUser) {
-        await set(ref(db, "ai_chat_settings"), {
-          userName: resolvedUserName,
-          model: selectedModel,
-          persona: trimmedPersona,
-          updatedAt: Date.now()
-        });
-      }
-
-      saveStatus.textContent = "設定を保存しました";
-      setTimeout(() => { saveStatus.textContent = ""; }, 2500);
+      _0xsst.textContent = "\u8a2d\u5b9a\u3092\u4fdd\u5b58\u3057\u307e\u3057\u305f";
+      setTimeout(() => { _0xsst.textContent = ""; }, 2500);
     });
 
-    function switchTab(target) {
-      activeTab = target;
-      tabChat.classList.toggle("active", target === "chat");
-      tabMedical.classList.toggle("active", target === "medical");
-      tabSettings.classList.toggle("active", target === "settings");
-
-      chatSpace.classList.toggle("active", target === "chat");
-      medicalSpace.classList.toggle("active", target === "medical");
-      settingsSpace.classList.toggle("active", target === "settings");
-
-      clearChatBtn.style.visibility = (target === "chat" || target === "medical") ? "visible" : "hidden";
+    function _0xswt(_0xt) {
+      _0xat = _0xt;
+      _0xtc.classList.toggle("active", _0xt === "chat");
+      _0xtm.classList.toggle("active", _0xt === "medical");
+      _0xts.classList.toggle("active", _0xt === "settings");
+      _0xcs.classList.toggle("active", _0xt === "chat");
+      _0xms.classList.toggle("active", _0xt === "medical");
+      _0xss.classList.toggle("active", _0xt === "settings");
+      _0xccb.style.visibility = (_0xt === "chat" || _0xt === "medical") ? "visible" : "hidden";
     }
 
-    tabChat.addEventListener("click", () => switchTab("chat"));
-    tabMedical.addEventListener("click", () => switchTab("medical"));
-    tabSettings.addEventListener("click", () => switchTab("settings"));
+    _0xtc.addEventListener("click", () => _0xswt("chat"));
+    _0xtm.addEventListener("click", () => _0xswt("medical"));
+    _0xts.addEventListener("click", () => _0xswt("settings"));
 
-    // 現在表示中のチャットスペースの履歴だけをクリア（設定には一切触れない）
-    clearChatBtn.addEventListener("click", async () => {
-      const current = spaces[activeTab];
-      if (!current) return;
-      current.history = [];
-      current.box.innerHTML = "";
-      if (currentUser) {
-        await remove(ref(db, current.dbPath));
-      }
+    _0xccb.addEventListener("click", async () => {
+      const _0xc = _0xsp[_0xat];
+      if (!_0xc) return;
+      _0xc.history = [];
+      _0xc.box.innerHTML = "";
+      if (_0xcu) await _0xak(_0x8h(_0xdb, _0xc.dbPath));
     });
 
-    function appendMessage(boxEl, role, text, customTime = null) {
-      const wrap = document.createElement("div");
-      wrap.className = `message ${role === "user" ? "user" : "ai"}`;
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-
-      const time = document.createElement("div");
-      time.className = "timestamp";
-      time.textContent = customTime || formatTime();
-
-      wrap.appendChild(bubble);
-      wrap.appendChild(time);
-      boxEl.appendChild(wrap);
-      boxEl.scrollTop = boxEl.scrollHeight;
-      return bubble;
+    function _0xam(_0xb, _0xr, _0xt, _0xct = null) {
+      const _0xw = document.createElement("div");
+      _0xw.className = `message ${_0xr === "user" ? "user" : "ai"}`;
+      const _0xbb = document.createElement("div");
+      _0xbb.className = "bubble";
+      _0xbb.textContent = _0xt;
+      const _0xti = document.createElement("div");
+      _0xti.className = "timestamp";
+      _0xti.textContent = _0xct || _0xft();
+      _0xw.appendChild(_0xbb);
+      _0xw.appendChild(_0xti);
+      _0xb.appendChild(_0xw);
+      _0xb.scrollTop = _0xb.scrollHeight;
+      return _0xbb;
     }
 
-    async function sendToSpace(spaceKey) {
-      const target = spaces[spaceKey];
-      if (!target) return;
-
-      const text = target.input.value.trim();
-      const apiKey = apiKeyInput.value.trim();
-      const model = modelSelect.value;
-      const persona = (personaInput.value.trim() || DEFAULT_PERSONA);
-
-      if (!text) return;
-      if (!apiKey) {
-        saveStatus.textContent = "先にAPIキーを入力して保存してください";
-        switchTab("settings");
-        apiKeyInput.focus();
+    async function _0xsts(_0xk) {
+      const _0xtg = _0xsp[_0xk];
+      if (!_0xtg) return;
+      const _0xt = _0xtg.input.value.trim(), _0xakv = _0xaki.value.trim();
+      const _0xmd = _0xmsel.value, _0xps = (_0xpi.value.trim() || _0xdp);
+      if (!_0xt) return;
+      if (!_0xakv) {
+        _0xsst.textContent = "\u5148\u306bAPI\u30ad\u30fc\u3092\u5165\u529b\u3057\u3066\u4fdd\u5b58\u3057\u3066\u304f\u3060\u3055\u3044";
+        _0xswt("settings");
+        _0xaki.focus();
         return;
       }
-
-      const systemInstructionText = spaceKey === "medical"
-        ? buildMedicalSystemInstruction(persona)
-        : persona;
-
-      target.input.value = "";
-      target.sendBtn.disabled = true;
-
-      const userTime = formatTime();
-      appendMessage(target.box, "user", text, userTime);
-      target.history.push({ role: "user", parts: [{ text }] });
-      await saveMessageToDb(spaceKey, "user", text, userTime);
-
-      const aiBubble = appendMessage(target.box, "ai", "…");
-
+      const _0xsi = _0xk === "medical" ? _0xbmi(_0xps) : _0xps;
+      _0xtg.input.value = "";
+      _0xtg.sendBtn.disabled = true;
+      const _0xut = _0xft();
+      _0xam(_0xtg.box, "user", _0xt, _0xut);
+      _0xtg.history.push({ role: "user", parts: [{ text: _0xt }] });
+      await _0xsmd(_0xk, "user", _0xt, _0xut);
+      const _0xab = _0xam(_0xtg.box, "ai", "\u2026");
       try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-        const response = await fetch(endpoint, {
+        const _0xep = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(_0xmd)}:generateContent?key=${encodeURIComponent(_0xakv)}`;
+        const _0xrs = await fetch(_0xep, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systemInstructionText }]
-            },
-            contents: target.history
-          })
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: _0xsi }] }, contents: _0xtg.history })
         });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error?.message || "APIエラーが発生しました");
-        }
-
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "（返答が空でした）";
-        const aiTime = formatTime();
-        aiBubble.textContent = reply;
-        if (aiBubble.nextElementSibling) {
-          aiBubble.nextElementSibling.textContent = aiTime;
-        }
-        target.history.push({ role: "model", parts: [{ text: reply }] });
-        await saveMessageToDb(spaceKey, "ai", reply, aiTime);
-      } catch (err) {
-        aiBubble.textContent = `エラー: ${err.message}`;
-        target.history.pop();
+        const _0xdt = await _0xrs.json();
+        if (!_0xrs.ok) throw new Error(_0xdt.error?.message || "API\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f");
+        const _0xrp = _0xdt.candidates?.[0]?.content?.parts?.[0]?.text || "\uff08\u8fd4\u7b54\u304c\u7a7a\u3067\u3057\u305f\uff09";
+        const _0xat2 = _0xft();
+        _0xab.textContent = _0xrp;
+        if (_0xab.nextElementSibling) _0xab.nextElementSibling.textContent = _0xat2;
+        _0xtg.history.push({ role: "model", parts: [{ text: _0xrp }] });
+        await _0xsmd(_0xk, "ai", _0xrp, _0xat2);
+      } catch (_0xe) {
+        _0xab.textContent = `\u30a8\u30e9\u30fc: ${_0xe.message}`;
+        _0xtg.history.pop();
       } finally {
-        target.sendBtn.disabled = false;
-        target.box.scrollTop = target.box.scrollHeight;
-        target.input.focus();
+        _0xtg.sendBtn.disabled = false;
+        _0xtg.box.scrollTop = _0xtg.box.scrollHeight;
+        _0xtg.input.focus();
       }
     }
 
-    Object.entries(spaces).forEach(([key, cfg]) => {
-      cfg.sendBtn.addEventListener("click", () => sendToSpace(key));
-      cfg.input.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-          sendToSpace(key);
-        }
+    Object.entries(_0xsp).forEach(([_0xk, _0xc]) => {
+      _0xc.sendBtn.addEventListener("click", () => _0xsts(_0xk));
+      _0xc.input.addEventListener("keydown", (_0xe) => {
+        if ((_0xe.ctrlKey || _0xe.metaKey) && _0xe.key === "Enter") _0xsts(_0xk);
       });
     });
 
-    loadSettings();
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        subscribeToDatabase();
+    _0xlf.addEventListener("submit", async (_0xe) => {
+      _0xe.preventDefault();
+      _0xler.textContent = "";
+      _0xsib.disabled = true;
+      try {
+        await _0x3c(_0xau, _0xle.value.trim(), _0xlp.value);
+      } catch (_0xer) {
+        _0xler.textContent = `\u30ed\u30b0\u30a4\u30f3\u306b\u5931\u6557\u3057\u307e\u3057\u305f: ${_0xer.message}`;
+      } finally {
+        _0xsib.disabled = false;
       }
     });
 
-    signInAnonymously(auth).catch((err) => {
-      console.error("Firebase認証エラー:", err);
+    _0xsub.addEventListener("click", async () => {
+      _0xler.textContent = "";
+      const _0xem = _0xle.value.trim(), _0xpw = _0xlp.value;
+      if (!_0xem || !_0xpw) {
+        _0xler.textContent = "\u30e1\u30fc\u30eb\u30a2\u30c9\u30ec\u30b9\u3068\u30d1\u30b9\u30ef\u30fc\u30c9\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+        return;
+      }
+      _0xsub.disabled = true;
+      try {
+        await _0x4d(_0xau, _0xem, _0xpw);
+      } catch (_0xer) {
+        _0xler.textContent = `\u65b0\u898f\u767b\u9332\u306b\u5931\u6557\u3057\u307e\u3057\u305f: ${_0xer.message}`;
+      } finally {
+        _0xsub.disabled = false;
+      }
+    });
+
+    _0xlob.addEventListener("click", async () => { await _0x5e(_0xau); });
+
+    _0xls();
+
+    _0x6f(_0xau, (_0xu) => {
+      _0xcu = _0xu;
+      if (_0xu) {
+        _0xlo.classList.remove("active");
+        _0xler.textContent = "";
+        _0xsdb();
+      } else {
+        _0xlo.classList.add("active");
+      }
     });
   </script>
 </body>
