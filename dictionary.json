@@ -1501,7 +1501,7 @@
     "category": "PCI",
     "initial": "K",
     "meaning": "主に冠動脈の分岐部病変（2つの血管が分かれる部分の狭窄）の治療に用いられる手技や概念です。\n・　2本のバルーンを同時拡張：主血管（メインベッセル）と側枝（サイドブランチ）の両方にそれぞれバルーンカテーテルを配置し、同時にふくらませます。\n・　プラークシフトの防止・修正：片方の血管を治療する際にもう片方へプラーク（動脈硬化巣）が押し出されて狭くなる現象（プラークシフト）を防いだり、変形した分岐部の形状を整えたりします。\n・　血流の確保：ステント留置後などに、両方の血管の血流を最適化し、血管の閉塞や狭小化を防ぐために行われます（ファイナルキッシングインフレーション：FKI など）。"
-  }
+  },
   {
     "id": "c-o",
     "term": "c/o",
@@ -1888,5 +1888,490 @@
     "category": "CHART",
     "initial": "S",
     "meaning": "安定を意味します。癌治療などにおいて、病変が一定以上縮小も増大もしていない状態を示す治療効果判定の用語です。"
+  },
+    "id": "failure",
+    "term": "failure",
+    "reading": "フェイラー / ふぇいる",
+    "fullName": "Failure",
+    "category": "CHART",
+    "initial": "F",
+    "meaning": "不成功、失敗、機能不全などを意味します。医療記録では、予定した処置や手技が成功しなかった場合、治療効果が得られなかった場合、臓器などの機能が失われた場合にも使用されます。<br>例：Procedure failure（処置不成功）、Intubation failure（挿管不成功）、Renal failure（腎不全）。手術を途中で断念した場合は、Failed attempt（試みたが不成功）、Unable to complete（完遂できず）、Abandoned（断念・中止）などの表現も使用されます。"
+  },
+  {
+    "id": "failed-attempt",
+    "term": "Failed attempt",
+    "reading": "フェイルド アテンプト",
+    "fullName": "Failed Attempt",
+    "category": "CHART",
+    "initial": "F",
+    "meaning": "試みたものの成功しなかったことを意味します。手術や処置において、目的の操作を試みたが達成できなかった場合に使用されます。<br>例：Failed attempt of ureteral stent insertion（尿管ステント留置を試みたが不成功）。"
+  },
+  {
+    "id": "abandoned",
+    "term": "Abandoned",
+    "reading": "アバンドンド",
+    "fullName": "Abandoned",
+    "category": "CHART",
+    "initial": "A",
+    "meaning": "断念した、中止した、放棄したという意味です。手術や処置を開始したものの、解剖学的な問題や安全上の理由などにより、予定していた操作を断念した場合に使用されます。"
+  },
+  {
+    "id": "unable-to-complete",
+    "term": "Unable to complete",
+    "reading": "アンエイブル トゥ コンプリート",
+    "fullName": "Unable to Complete",
+    "category": "CHART",
+    "initial": "U",
+    "meaning": "完遂できなかったことを意味します。予定していた手術や処置の全工程を終了できなかった場合に使用されます。"
+  },
+  {
+    "id": "conversion",
+    "term": "Conversion",
+    "reading": "コンバージョン",
+    "fullName": "Conversion",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "手術方法の変更、転換を意味します。腹腔鏡手術やロボット支援手術から開腹手術へ変更する場合などに使用されます。<br>例：Conversion to open surgery（開腹手術への移行）。"
+  },
+  {
+    "id": "difficulty",
+    "term": "Difficulty",
+    "reading": "ディフィカルティ",
+    "fullName": "Difficulty",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "困難、難渋を意味します。手術操作や処置が容易に進まなかった場合などに使用されます。<br>例：Technical difficulty（手技上の困難）、Difficult dissection（剥離操作に難渋）。"
+  },
+  {
+    "id": "adhesion",
+    "term": "Adhesion",
+    "reading": "アドヒージョン",
+    "fullName": "Adhesion",
+    "category": "CHART",
+    "initial": "A",
+    "meaning": "癒着を意味します。炎症や手術などの影響で、本来は離れている組織や臓器同士がくっついた状態です。癒着が強い場合、手術操作が困難になることがあります。"
+  },
+  {
+    "id": "stenosis",
+    "term": "Stenosis",
+    "reading": "ステノーシス",
+    "fullName": "Stenosis",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "狭窄を意味します。血管、消化管、尿管などの通り道が狭くなった状態です。<br>例：Ureteral stenosis（尿管狭窄）、Spinal stenosis（脊柱管狭窄）。"
+  },
+  {
+    "id": "obstruction",
+    "term": "Obstruction",
+    "reading": "オブストラクション",
+    "fullName": "Obstruction",
+    "category": "CHART",
+    "initial": "O",
+    "meaning": "閉塞を意味します。管腔臓器などの通路が塞がれ、内容物が通過できなくなった状態です。<br>例：Bowel obstruction（腸閉塞）、Ureteral obstruction（尿管閉塞）。"
+  },
+  {
+    "id": "perforation",
+    "term": "Perforation",
+    "reading": "パーフォレーション",
+    "fullName": "Perforation",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "穿孔を意味します。消化管などの臓器の壁に穴が開いた状態です。胃穿孔や腸管穿孔などがあり、腹膜炎の原因となることがあります。"
+  },
+  {
+    "id": "invasion",
+    "term": "Invasion",
+    "reading": "インベージョン",
+    "fullName": "Invasion",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "浸潤を意味します。悪性腫瘍が周囲の組織や臓器に入り込んで広がることです。<br>例：Serosal invasion（漿膜浸潤）、Adjacent organ invasion（隣接臓器浸潤）。"
+  },
+  {
+    "id": "tumor",
+    "term": "Tumor",
+    "reading": "チューマー / チューモア",
+    "fullName": "Tumor",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "腫瘍を意味します。細胞が異常に増殖して形成された組織のかたまりです。良性・悪性の両方を含む表現です。"
+  },
+  {
+    "id": "mass",
+    "term": "Mass",
+    "reading": "マス",
+    "fullName": "Mass",
+    "category": "CHART",
+    "initial": "M",
+    "meaning": "腫瘤、かたまりを意味します。画像検査や診察で認められた異常な組織のかたまりを表します。必ずしも悪性腫瘍を意味するものではありません。"
+  },
+  {
+    "id": "lesion",
+    "term": "Lesion",
+    "reading": "リージョン",
+    "fullName": "Lesion",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "病変を意味します。正常ではない組織の変化や損傷などを広く表す言葉です。良性・悪性を問わず使用されます。"
+  },
+  {
+    "id": "swelling",
+    "term": "Swelling",
+    "reading": "スウェリング",
+    "fullName": "Swelling",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "腫脹、腫れを意味します。炎症や浮腫、腫瘍などによって組織が腫れた状態です。<br>例：LN swelling（リンパ節腫大）。"
+  },
+  {
+    "id": "enlargement",
+    "term": "Enlargement",
+    "reading": "エンラージメント",
+    "fullName": "Enlargement",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "拡大、腫大を意味します。臓器や組織が通常より大きくなった状態です。<br>例：Prostate enlargement（前立腺腫大）。"
+  },
+  {
+    "id": "progression",
+    "term": "Progression",
+    "reading": "プログレッション",
+    "fullName": "Progression",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "進行、病勢の悪化を意味します。疾患が時間の経過とともに進んでいる状態です。<br>例：Tumor progression（腫瘍の進行）。"
+  },
+  {
+    "id": "recurrence",
+    "term": "Recurrence",
+    "reading": "リカレンス",
+    "fullName": "Recurrence",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "再発を意味します。一度治療によって消失・改善した疾患が再び出現することです。<br>例：Local recurrence（局所再発）。"
+  },
+  {
+    "id": "exacerbation",
+    "term": "Exacerbation",
+    "reading": "エグザサベーション",
+    "fullName": "Exacerbation",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "増悪を意味します。症状や疾患の状態が以前より悪化することです。<br>例：Pain exacerbation（疼痛増悪）。"
+  },
+  {
+    "id": "remission",
+    "term": "Remission",
+    "reading": "リミッション",
+    "fullName": "Remission",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "寛解を意味します。疾患の症状や所見が軽減または消失した状態です。必ずしも完全に治癒したことを意味するわけではありません。"
+  },
+  {
+    "id": "indication",
+    "term": "Indication",
+    "reading": "インディケーション",
+    "fullName": "Indication",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "適応を意味します。特定の手術や治療、検査を行う医学的な理由や条件を指します。<br>例：Surgical indication（手術適応）。"
+  },
+  {
+    "id": "preoperative",
+    "term": "Preoperative",
+    "reading": "プレオペラティブ",
+    "fullName": "Preoperative",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "術前を意味します。手術を行う前の状態や検査、診断などに使用されます。<br>例：Preoperative diagnosis（術前診断）、Preoperative evaluation（術前評価）。"
+  },
+  {
+    "id": "postoperative",
+    "term": "Postoperative",
+    "reading": "ポストオペラティブ",
+    "fullName": "Postoperative",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "術後を意味します。手術後の状態や経過、診断などに使用されます。<br>例：Postoperative course（術後経過）。"
+  },
+  {
+    "id": "intraoperative",
+    "term": "Intraoperative",
+    "reading": "イントラオペラティブ",
+    "fullName": "Intraoperative",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "術中を意味します。手術を行っている最中の状態や所見を表します。<br>例：Intraoperative findings（術中所見）。"
+  },
+  {
+    "id": "findings",
+    "term": "Findings",
+    "reading": "ファインディングス",
+    "fullName": "Findings",
+    "category": "CHART",
+    "initial": "F",
+    "meaning": "所見を意味します。診察・検査・手術などによって確認された状態や異常を指します。<br>例：CT findings（CT所見）、Operative findings（術中所見）。"
+  },
+  {
+    "id": "dissection",
+    "term": "Dissection",
+    "reading": "ディセクション",
+    "fullName": "Dissection",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "剥離を意味します。手術において、臓器や組織を周囲から分離する操作です。<br>例：Difficult dissection（剥離操作に難渋）。"
+  },
+  {
+    "id": "resection",
+    "term": "Resection",
+    "reading": "リセクション",
+    "fullName": "Resection",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "切除を意味します。病変や臓器の一部または全部を外科的に取り除くことです。<br>例：Tumor resection（腫瘍切除）。"
+  },
+  {
+    "id": "anastomosis",
+    "term": "Anastomosis",
+    "reading": "アナストモーシス",
+    "fullName": "Anastomosis",
+    "category": "CHART",
+    "initial": "A",
+    "meaning": "吻合を意味します。切除した消化管や血管などの断端をつなぎ合わせる操作です。<br>例：Bowel anastomosis（腸管吻合）。"
+  },
+  {
+    "id": "hemostasis",
+    "term": "Hemostasis",
+    "reading": "ヘモステイシス",
+    "fullName": "Hemostasis",
+    "category": "CHART",
+    "initial": "H",
+    "meaning": "止血を意味します。出血している部位の血液を止める処置です。<br>例：Hemostasis achieved（止血を確認）。"
+  },
+  {
+    "id": "adhesiolysis",
+    "term": "Adhesiolysis",
+    "reading": "アドヒージオリシス",
+    "fullName": "Adhesiolysis",
+    "category": "CHART",
+    "initial": "A",
+    "meaning": "癒着剥離を意味します。過去の手術や炎症などによって生じた癒着を剥がして分離する操作です。"
+  },
+  {
+    "id": "drainage",
+    "term": "Drainage",
+    "reading": "ドレナージ",
+    "fullName": "Drainage",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "排液、排膿、ドレナージを意味します。体内に貯留した血液・膿・体液などを体外に排出することです。"
+  },
+  {
+    "id": "placement",
+    "term": "Placement",
+    "reading": "プレイスメント",
+    "fullName": "Placement",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "留置、設置を意味します。カテーテルやステント、ドレーンなどを所定の位置に入れることです。<br>例：Stent placement（ステント留置）。"
+  },
+  {
+    "id": "insertion",
+    "term": "Insertion",
+    "reading": "インサーション",
+    "fullName": "Insertion",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "挿入を意味します。カテーテルや内視鏡、器具などを体内に入れる操作です。<br>例：Ureteral stent insertion（尿管ステント挿入）。"
+  },
+  {
+    "id": "removal",
+    "term": "Removal",
+    "reading": "リムーバル",
+    "fullName": "Removal",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "除去、抜去を意味します。体内に留置されている器具や病変などを取り除くことです。<br>例：Stent removal（ステント抜去）。"
+  },
+  {
+    "id": "exchange",
+    "term": "Exchange",
+    "reading": "エクスチェンジ",
+    "fullName": "Exchange",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "交換を意味します。尿管ステントやカテーテルなどを新しいものに入れ替えることです。<br>例：Ureteral stent exchange（尿管ステント交換）。"
+  },
+  {
+    "id": "conversion-open",
+    "term": "Open conversion",
+    "reading": "オープン コンバージョン",
+    "fullName": "Conversion to Open Surgery",
+    "category": "CHART",
+    "initial": "O",
+    "meaning": "腹腔鏡手術やロボット支援手術などから開腹手術へ移行することです。癒着や出血、解剖学的な問題などにより、安全性を考慮して術式を変更する場合があります。"
+  },
+  {
+    "id": "t-a-p-p",
+    "term": "TAPP",
+    "reading": "タップ",
+    "fullName": "Transabdominal Preperitoneal Repair",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "腹腔鏡下鼠径ヘルニア修復術の術式の一つです。腹腔内から腹膜を切開し、腹膜前腔にメッシュを留置してヘルニアを修復します。"
+  },
+  {
+    "id": "t-e-p",
+    "term": "TEP",
+    "reading": "テップ",
+    "fullName": "Totally Extraperitoneal Repair",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "腹腔鏡下鼠径ヘルニア修復術の術式の一つです。腹腔内に入らず、腹膜の外側にある腹膜前腔からメッシュを留置してヘルニアを修復します。"
+  },
+  {
+    "id": "i-h",
+    "term": "IH",
+    "reading": "アイエイチ",
+    "fullName": "Inguinal Hernia",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "鼠径ヘルニアを意味する略語です。鼠径部から腹腔内の臓器や脂肪などが突出する状態です。"
+  },
+  {
+    "id": "u-h",
+    "term": "UH",
+    "reading": "ユーエイチ",
+    "fullName": "Umbilical Hernia",
+    "category": "CHART",
+    "initial": "U",
+    "meaning": "臍ヘルニアを意味する略語です。へその部分から腹腔内の組織などが突出する状態です。"
+  },
+  {
+    "id": "i-l-h",
+    "term": "Incisional hernia",
+    "reading": "インシジョナル ヘルニア",
+    "fullName": "Incisional Hernia",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "腹壁瘢痕ヘルニアを意味します。過去の手術でできた傷跡の部分の腹壁が弱くなり、腹腔内の組織などが突出する状態です。"
+  },
+  {
+    "id": "b-o",
+    "term": "BO",
+    "reading": "ビーオー",
+    "fullName": "Bowel Obstruction",
+    "category": "CHART",
+    "initial": "B",
+    "meaning": "腸閉塞を意味する略語として使用されます。腸管の通過障害によって内容物が正常に移動できなくなった状態です。施設によっては別の意味で使用される場合もあります。"
+  },
+  {
+    "id": "i-l-e-u-s",
+    "term": "Ileus",
+    "reading": "イレウス",
+    "fullName": "Ileus",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "イレウスを意味します。腸管内容物の通過が障害された状態です。腸管の機械的な閉塞だけでなく、腸の動きが低下する麻痺性イレウスなども含まれます。"
+  },
+  {
+    "id": "h-y-d-r-o",
+    "term": "Hydronephrosis",
+    "reading": "ハイドロネフローシス",
+    "fullName": "Hydronephrosis",
+    "category": "CHART",
+    "initial": "H",
+    "meaning": "水腎症を意味します。尿の流れが妨げられることで、腎盂や腎杯が拡張した状態です。尿管結石や尿管狭窄などが原因となることがあります。"
+  },
+  {
+    "id": "u-r-s",
+    "term": "URS",
+    "reading": "ユーアールエス",
+    "fullName": "Ureteroscopy",
+    "category": "CHART",
+    "initial": "U",
+    "meaning": "尿管鏡を用いた検査・治療を意味します。尿管内に内視鏡を挿入し、結石や腫瘍などを確認・治療します。尿管結石の内視鏡治療などで使用されます。"
+  },
+  {
+    "id": "t-u-l",
+    "term": "TUL",
+    "reading": "ティーユーエル",
+    "fullName": "Transurethral Ureterolithotripsy",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "経尿道的尿管結石破砕術を意味します。尿道から内視鏡を挿入し、尿管内の結石をレーザーなどで破砕・除去する手術です。"
+  },
+  {
+    "id": "d-j",
+    "term": "DJ",
+    "reading": "ディージェイ",
+    "fullName": "Double-J Stent",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "ダブルJステントの略称です。尿管内に留置する細い管で、両端がJ字状に曲がっています。尿の通過を確保する目的で使用されます。"
+  },
+  {
+    "id": "t-u-r-b-t",
+    "term": "TUR-Bt",
+    "reading": "ティーユーアールビーティー",
+    "fullName": "Transurethral Resection of Bladder Tumor",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "経尿道的膀胱腫瘍切除術を意味します。尿道から内視鏡を挿入し、膀胱内の腫瘍を電気メスなどで切除する手術です。"
+  },
+  {
+    "id": "r-a-r-p",
+    "term": "RARP",
+    "reading": "アールエーアールピー",
+    "fullName": "Robot-Assisted Radical Prostatectomy",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "ロボット支援前立腺全摘除術を意味します。手術支援ロボットを用いて前立腺を摘出する手術です。主に前立腺癌に対して行われます。"
+  },
+  {
+    "id": "r-a-g",
+    "term": "RAG",
+    "reading": "アールエージー",
+    "fullName": "Robot-Assisted Gastrectomy",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "ロボット支援胃切除術を意味します。手術支援ロボットを用いて胃の一部または全部を切除する手術です。"
+  },
+  {
+    "id": "d-g",
+    "term": "DG",
+    "reading": "ディージー",
+    "fullName": "Distal Gastrectomy",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "幽門側胃切除術を意味します。胃の下部を中心に切除する手術です。胃癌などに対して行われます。"
+  },
+  {
+    "id": "t-g",
+    "term": "TG",
+    "reading": "ティージー",
+    "fullName": "Total Gastrectomy",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "胃全摘術を意味します。胃を全て摘出する手術です。胃癌などに対して行われます。"
+  },
+  {
+    "id": "d-i",
+    "term": "DI",
+    "reading": "ディーアイ",
+    "fullName": "Duodenal Injury",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "十二指腸損傷を表す略語として使用されることがあります。ただし、DIは他の意味にも使用されるため、前後の記載や診療科を確認する必要があります。"
+  },
+  {
+    "id": "p-o-c",
+    "term": "POC",
+    "reading": "ピーオーシー",
+    "fullName": "Postoperative Course",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "術後経過を意味する略語として使用されることがあります。施設や文脈によって別の意味もあるため注意が必要です。"
   }
 ]
