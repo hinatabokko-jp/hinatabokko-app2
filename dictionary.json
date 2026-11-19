@@ -90,7 +90,7 @@
     "meaning": "鋭縁枝・小枝。心臓を包む「右冠動脈（RCA）」から分岐する細い枝（血管）のことです。"
   },
   {
-    "id": "rca_new",
+    "id": "rca",
     "term": "RCA",
     "reading": "アールシーエー / うかんどうみゃく",
     "fullName": "Right Coronary Artery",
@@ -267,7 +267,7 @@
     "fullName": "Bare Metal Stent",
     "category": "PCI",
     "initial": "B",
-    "meaning": "ベアメタルステント。薬剤が付着していない金属生のステント。近年はDESが主流。"
+    "meaning": "ベアメタルステント。薬剤が付着していない金属製のステント。近年はDESが主流。"
   },
   {
     "id": "branch",
@@ -295,15 +295,6 @@
     "category": "PCI",
     "initial": "C",
     "meaning": "冠動脈造影検査。カテーテルから造影剤を注入し、心臓表面の冠動脈の走行や狭窄・閉塞部位をレントゲン撮影する。"
-  },
-  {
-    "id": "calcification",
-    "term": "calcification / Calcification",
-    "reading": "カルシフィケーション / せっかいか",
-    "fullName": "Vascular Calcification",
-    "category": "PCI",
-    "initial": "C",
-    "meaning": "石灰化。血管壁などにカルシウムが沈着して岩のように硬くなっている状態。"
   },
   {
     "id": "cannulation",
@@ -358,15 +349,6 @@
     "category": "ERCP",
     "initial": "C",
     "meaning": "胆管造影写真。造影剤を胆管内に注入して得られるX線画像。"
-  },
-  {
-    "id": "co",
-    "term": "c/o",
-    "reading": "シーオー / しゅそう・うったえ",
-    "fullName": "complains of",
-    "category": "CHART",
-    "initial": "C",
-    "meaning": "〜を訴える（主訴）。患者が自覚症状として訴えている内容を示すカルテ記載。"
   },
   {
     "id": "complication",
@@ -612,15 +594,6 @@
     "meaning": "血流。冠動脈内を流れる血液の状態（TIMIグレード等で評価）。"
   },
   {
-    "id": "fu",
-    "term": "f/u",
-    "reading": "フォローアップ / けいかかんさつ",
-    "fullName": "follow up",
-    "category": "CHART",
-    "initial": "F",
-    "meaning": "経過観察・継続フォロー。治療後や診断確定後の患者の状態を継続的に診察・検査していくこと。"
-  },
-  {
     "id": "gb",
     "term": "GB",
     "reading": "ジービー / たんのう",
@@ -673,15 +646,6 @@
     "category": "CARD",
     "initial": "H",
     "meaning": "肥大型心筋症。高血圧などの明確な原因がないにもかかわらず、心筋（主に左心室壁）が不釣り合いに肥大する病態。"
-  },
-  {
-    "id": "hemostasis",
-    "term": "hemostasis",
-    "reading": "ヘモスタシス / しけつ",
-    "fullName": "Hemostasis",
-    "category": "TL",
-    "initial": "H",
-    "meaning": "止血。シース抜去後や穿刺部位などからの出血を圧迫等により止めること。"
   },
   {
     "id": "heparin",
@@ -765,42 +729,6 @@
     "meaning": "血管内結石破砕術（ショックウェーブ）。音響衝撃波を発射し血管壁の重度石灰化を破砕する最新PCI治療法。"
   },
   {
-    "id": "ivus",
-    "term": "IVUS",
-    "reading": "アイバス",
-    "fullName": "Intravascular Ultrasound",
-    "category": "PCI",
-    "initial": "I",
-    "meaning": "血管内超音波。カテーテル先端の超音波センサーで血管壁の断層画像を取得・観察する。"
-  },
-  {
-    "id": "lad",
-    "term": "LAD",
-    "reading": "エルエーディー / ぜんこうし",
-    "fullName": "Left Anterior Descending branch",
-    "category": "PCI",
-    "initial": "L",
-    "meaning": "左前降枝（左冠動脈の枝 #6-10）。心臓の前面・心尖部に血液を送る最重要動脈の一つ。"
-  },
-  {
-    "id": "lcx",
-    "term": "LCX",
-    "reading": "エルシーエックス / かいせんし",
-    "fullName": "Left Circumflex branch",
-    "category": "PCI",
-    "initial": "L",
-    "meaning": "左回旋枝（左冠動脈の枝 #11-15）。心臓の側面や後面に血液を送る動脈。"
-  },
-  {
-    "id": "lesion",
-    "term": "lesion",
-    "reading": "レジョン / びょうへん",
-    "fullName": "Target Lesion",
-    "category": "PCI",
-    "initial": "L",
-    "meaning": "病変。冠動脈の狭窄・閉塞などの治療対象となる部位。"
-  },
-  {
     "id": "lmt",
     "term": "LMT / LMA",
     "reading": "エルエムティー / しゅかんぶ",
@@ -855,15 +783,6 @@
     "meaning": "非高順応性（硬質）バルーン。高圧をかけても膨らみにくく、強固な病変やステント後拡張で用いる。"
   },
   {
-    "id": "npo",
-    "term": "n.p.o. / NPO",
-    "reading": "エヌピーオー / ぜんいんしょく",
-    "fullName": "non per os (nothing by mouth)",
-    "category": "CHART",
-    "initial": "N",
-    "meaning": "絶飲食・経口摂取禁止。検査・手術前などに水分・食事の摂取を禁止する指示。"
-  },
-  {
     "id": "nsteacs",
     "term": "NSTE-ACS",
     "reading": "エヌエステーイー エーシーエス",
@@ -871,15 +790,6 @@
     "category": "PCI",
     "initial": "N",
     "meaning": "非ST上昇型急性冠症候群。心電図上でST上昇を伴わない急性冠症候群。NSTEMIおよびUAが含まれる。"
-  },
-  {
-    "id": "nstemi",
-    "term": "NSTEMI",
-    "reading": "エヌステミ / ひえすてぃーじょうしょうがかしんきんこうそく",
-    "fullName": "Non-ST-segment Elevation Myocardial Infarction",
-    "category": "PCI",
-    "initial": "N",
-    "meaning": "非ST上昇型心筋梗塞。心電図でST上昇は見られないが、心筋逸脱酵素上昇により心筋壊死が確認される心筋梗塞。"
   },
   {
     "id": "ntg",
@@ -907,15 +817,6 @@
     "category": "PCI",
     "initial": "O",
     "meaning": "閉塞。血管が完全またはほぼ完全に塞がっている状態。"
-  },
-  {
-    "id": "oct",
-    "term": "OCT / OFDI",
-    "reading": "オーシーティー / オーエフディーアイ",
-    "fullName": "Optical Coherence Tomography",
-    "category": "PCI",
-    "initial": "O",
-    "meaning": "光干渉断層撮影。赤外線光を用いて血管内壁を高精細に撮影する装置。"
   },
   {
     "id": "ofdi",
@@ -981,15 +882,6 @@
     "meaning": "開存性。血管が開いて血流が正常に保たれている状態。"
   },
   {
-    "id": "pci",
-    "term": "PCI",
-    "reading": "ピーシーアイ",
-    "fullName": "Percutaneous Coronary Intervention",
-    "category": "PCI",
-    "initial": "P",
-    "meaning": "経皮的冠動脈形成術。バルーンやステントを用いて心臓の冠動脈狭窄を広げる治療の総称。"
-  },
-  {
     "id": "pcps",
     "term": "PCPS / VA-ECMO",
     "reading": "ピーシーピーエス / ぶいえーエクセモ",
@@ -1008,15 +900,6 @@
     "meaning": "ERCP後膵炎。ERCP手技後に発生する主要偶発症で膵臓の急激な炎症。"
   },
   {
-    "id": "perforation",
-    "term": "perforation",
-    "reading": "パーフォレーション / せんこう",
-    "fullName": "Coronary / Vessel Perforation",
-    "category": "PCI",
-    "initial": "P",
-    "meaning": "穿孔。血管壁や消化管壁に穴が開いてしまう偶発症。"
-  },
-  {
     "id": "po",
     "term": "p.o. / PO",
     "reading": "ピーオー / けいこうとうよ",
@@ -1024,15 +907,6 @@
     "category": "CHART",
     "initial": "P",
     "meaning": "経口投与・内服。薬剤をお口から服用させる指示。"
-  },
-  {
-    "id": "poba",
-    "term": "POBA",
-    "reading": "ポバ",
-    "fullName": "Plain Old Balloon Angioplasty",
-    "category": "PCI",
-    "initial": "P",
-    "meaning": "通常バルーン血管形成術。ステントを使わずバルーン（風船）拡張のみを行う手技。"
   },
   {
     "id": "position",
@@ -1116,15 +990,6 @@
     "meaning": "橈骨動脈の・橈骨動脈アプローチの（TRI）。手首の橈骨動脈からカテーテルを挿入する方法。"
   },
   {
-    "id": "rca",
-    "term": "RCA",
-    "reading": "アールシーエー / うかんどうみゃく",
-    "fullName": "Right Coronary Artery",
-    "category": "PCI",
-    "initial": "R",
-    "meaning": "右冠動脈（#1-4）。心臓の下壁や右心室へ血液を供給する動脈。"
-  },
-  {
     "id": "recanalization",
     "term": "recanalization",
     "reading": "リカナリゼーション / さいかいつう",
@@ -1170,24 +1035,6 @@
     "meaning": "回収する。体内に残った不具合デバイスや外れた器具などを回収すること。"
   },
   {
-    "id": "rotablator",
-    "term": "Rotablator",
-    "reading": "ロータブレーター",
-    "fullName": "Rotational Atherectomy System",
-    "category": "PCI",
-    "initial": "R",
-    "meaning": "高速回転式アテローム切除術。微小ダイヤモンドバーを毎分15〜19万回転させて硬い石灰化を削る。"
-  },
-  {
-    "id": "ro",
-    "term": "r/o",
-    "reading": "ルールアウト / じょがい・うたがい",
-    "fullName": "rule out",
-    "category": "CHART",
-    "initial": "R",
-    "meaning": "〜の疑い・除外診断。該当する病気を疑って確認・除外検査を進める状態。"
-  },
-  {
     "id": "sap",
     "term": "SAP",
     "reading": "エスエーピー / あんていきょうしんしょう",
@@ -1224,15 +1071,6 @@
     "meaning": "シース。血管内にカテーテルを出入させるための弁付き外筒管。"
   },
   {
-    "id": "so",
-    "term": "s/o",
-    "reading": "エスオー / 〜のうたがい",
-    "fullName": "suspect of",
-    "category": "CHART",
-    "initial": "S",
-    "meaning": "〜の疑い（サスペクト・オブ）。病名や状態の確定前、疑わしい時に用いるカルテ略語。"
-  },
-  {
     "id": "spasm",
     "term": "spasm / Spasm",
     "reading": "スパズム / かんけいれん",
@@ -1249,33 +1087,6 @@
     "category": "PCI",
     "initial": "S",
     "meaning": "ステント内バルーン拡張術。ステント留置後の再拡張やステント再狭窄（ISR）病変の治療手技。"
-  },
-  {
-    "id": "stemi",
-    "term": "STEMI",
-    "reading": "ステミ / えすてぃーじょうしょうがかしんきんこうそく",
-    "fullName": "ST-segment Elevation Myocardial Infarction",
-    "category": "PCI",
-    "initial": "S",
-    "meaning": "ST上昇型心筋梗塞。心電図でST上昇を認める緊急性の高い完全閉塞性心筋梗塞。迅速な再開通PCIを要する。"
-  },
-  {
-    "id": "stenosis",
-    "term": "stenosis",
-    "reading": "ステノーシス / きょうさく",
-    "fullName": "Vascular Stenosis",
-    "category": "PCI",
-    "initial": "S",
-    "meaning": "狭窄。動脈硬化等により血管内腔が狭くなっている状態。"
-  },
-  {
-    "id": "stent",
-    "term": "stent",
-    "reading": "ステント",
-    "fullName": "Coronary Stent",
-    "category": "PCI",
-    "initial": "S",
-    "meaning": "ステント。血管内に留置して内側から血管壁を支える網目状の金属筒デバイス。"
   },
   {
     "id": "successful",
@@ -1377,15 +1188,6 @@
     "meaning": "遅延した順行性血流。造影剤が末梢まで到達するが、正常血管に比べて造影・消失が遅い状態。"
   },
   {
-    "id": "timi_3",
-    "term": "TIMI 3",
-    "reading": "TIMI 3",
-    "fullName": "TIMI Grade 3 Flow",
-    "category": "PCI",
-    "initial": "T",
-    "meaning": "正常な順行性血流。造影剤が正常な速さで末梢まで完全に流れる状態。"
-  },
-  {
     "id": "torque",
     "term": "torque",
     "reading": "トルク / かいてん",
@@ -1420,15 +1222,6 @@
     "category": "PCI",
     "initial": "T",
     "meaning": "橈骨動脈アプローチ。手首の橈骨動脈からカテーテルを入れる手法。止血が容易で負担が少ない。"
-  },
-  {
-    "id": "ua",
-    "term": "UA",
-    "reading": "ユーエー / ふあんていきょうしんしょう",
-    "fullName": "Unstable Angina",
-    "category": "PCI",
-    "initial": "U",
-    "meaning": "不安定狭心症。安静時にも発作が生じる等、急性心筋梗塞へ移行するリスクが非常に高い危険な状態。"
   },
   {
     "id": "vf",
@@ -1500,7 +1293,7 @@
     "fullName": "Kissing Balloon Technique",
     "category": "PCI",
     "initial": "K",
-    "meaning": "主に冠動脈の分岐部病変（2つの血管が分かれる部分の狭窄）の治療に用いられる手技や概念です。\n・　2本のバルーンを同時拡張：主血管（メインベッセル）と側枝（サイドブランチ）の両方にそれぞれバルーンカテーテルを配置し、同時にふくらませます。\n・　プラークシフトの防止・修正：片方の血管を治療する際にもう片方へプラーク（動脈硬化巣）が押し出されて狭くなる現象（プラークシフト）を防いだり、変形した分岐部の形状を整えたりします。\n・　血流の確保：ステント留置後などに、両方の血管の血流を最適化し、血管の閉塞や狭小化を防ぐために行われます（ファイナルキッシングインフレーション：FKI など）。"
+    "meaning": "主に冠動脈の分岐部病変（2つの血管が分かれる部分の狭窄）の治療に用いられる手技や概念です。<br>・2本のバルーンを同時拡張：主血管（メインベッセル）と側枝（サイドブランチ）の両方にそれぞれバルーンカテーテルを配置し、同時にふくらませます。<br>・プラークシフトの防止・修正：片方の血管を治療する際にもう片方へプラーク（動脈硬化巣）が押し出されて狭くなる現象（プラークシフト）を防いだり、変形した分岐部の形状を整えたりします。<br>・血流の確保：ステント留置後などに、両方の血管の血流を最適化し、血管の閉塞や狭小化を防ぐために行われます（ファイナルキッシングインフレーション：FKI など）。"
   },
   {
     "id": "c-o",
@@ -1889,7 +1682,7 @@
     "initial": "S",
     "meaning": "安定を意味します。癌治療などにおいて、病変が一定以上縮小も増大もしていない状態を示す治療効果判定の用語です。"
   },
-   {
+  {
     "id": "failure",
     "term": "failure",
     "reading": "フェイラー / ふぇいる",
@@ -2115,7 +1908,7 @@
     "meaning": "所見を意味します。診察・検査・手術などによって確認された状態や異常を指します。<br>例：CT findings（CT所見）、Operative findings（術中所見）。"
   },
   {
-    "id": "dissection",
+    "id": "dissection_surgery",
     "term": "Dissection",
     "reading": "ディセクション",
     "fullName": "Dissection",
@@ -2374,5 +2167,248 @@
     "category": "CHART",
     "initial": "P",
     "meaning": "術後経過を意味する略語として使用されることがあります。施設や文脈によって別の意味もあるため注意が必要です。"
+  },
+  {
+    "id": "stemi",
+    "term": "STEMI",
+    "reading": "ステミ",
+    "fullName": "ST-Elevation Myocardial Infarction",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "ST上昇型心筋梗塞<br>心電図でST上昇を認める急性心筋梗塞。冠動脈の急激な閉塞を伴うことが多く、緊急の再灌流療法が必要となる。"
+  },
+  {
+    "id": "nstemi",
+    "term": "NSTEMI",
+    "reading": "エヌステミ",
+    "fullName": "Non-ST-Elevation Myocardial Infarction",
+    "category": "CHART",
+    "initial": "N",
+    "meaning": "非ST上昇型心筋梗塞<br>心電図で明らかなST上昇を認めない心筋梗塞。心筋トロポニンなどの心筋障害マーカーが上昇する。"
+  },
+  {
+    "id": "ua",
+    "term": "UA",
+    "reading": "ユーエー",
+    "fullName": "Unstable Angina",
+    "category": "CHART",
+    "initial": "U",
+    "meaning": "不安定狭心症<br>安静時にも胸痛が起こる、症状が増悪するなど、心筋梗塞へ進展する危険性が高い狭心症。"
+  },
+  {
+    "id": "sa",
+    "term": "SA",
+    "reading": "エスエー",
+    "fullName": "Stable Angina",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "安定狭心症<br>労作時など一定の条件で胸痛が出現し、休息や硝酸薬で改善することが多い狭心症。"
+  },
+  {
+    "id": "oldmi",
+    "term": "Old MI",
+    "reading": "オールドエムアイ",
+    "fullName": "Old Myocardial Infarction",
+    "category": "CHART",
+    "initial": "O",
+    "meaning": "陳旧性心筋梗塞<br>過去に発症した心筋梗塞。"
+  },
+  {
+    "id": "chd_heart",
+    "term": "CHD",
+    "reading": "シーエイチディー",
+    "fullName": "Coronary Heart Disease",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "冠動脈性心疾患<br>冠動脈の異常によって起こる心疾患。文脈によって先天性心疾患（Congenital Heart Disease）を意味する場合もある。"
+  },
+  {
+    "id": "vas",
+    "term": "VSA",
+    "reading": "ブイエスエー",
+    "fullName": "Vasospastic Angina",
+    "category": "CHART",
+    "initial": "V",
+    "meaning": "冠攣縮性狭心症<br>冠動脈が一時的に痙攣・収縮することで血流が低下し、胸痛が起こる狭心症。"
+  },
+  {
+    "id": "effortap",
+    "term": "Effort AP",
+    "reading": "エフォートエーピー",
+    "fullName": "Effort Angina Pectoris",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "労作性狭心症<br>歩行や階段昇降など、身体を動かしたときに胸痛が出現する狭心症。"
+  },
+  {
+    "id": "coronary",
+    "term": "Coronary",
+    "reading": "コロナリー",
+    "fullName": "Coronary Artery",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "冠動脈<br>心臓の筋肉に酸素や栄養を供給する血管。"
+  },
+  {
+    "id": "lad",
+    "term": "LAD",
+    "reading": "エルエーディー",
+    "fullName": "Left Anterior Descending Artery",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "左前下行枝<br>左冠動脈から分岐する主要な冠動脈。前壁や中隔などの心筋に血液を供給する。"
+  },
+  {
+    "id": "lcx",
+    "term": "LCX",
+    "reading": "エルシーエックス",
+    "fullName": "Left Circumflex Artery",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "左回旋枝<br>左冠動脈から分岐する冠動脈。主に心臓の側壁や後壁などに血液を供給する。"
+  },
+  {
+    "id": "lm",
+    "term": "LM",
+    "reading": "エルエム",
+    "fullName": "Left Main Coronary Artery",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "左冠動脈主幹部<br>左冠動脈の起始部。LADとLCXに分岐する。"
+  },
+  {
+    "id": "calcification",
+    "term": "Calcification",
+    "reading": "カルシフィケーション",
+    "fullName": "Calcification",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "石灰化<br>冠動脈の壁などにカルシウムが沈着した状態。高度な石灰化はカテーテル治療を難しくすることがある。"
+  },
+  {
+    "id": "plaque",
+    "term": "Plaque",
+    "reading": "プラーク",
+    "fullName": "Atherosclerotic Plaque",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "プラーク<br>動脈硬化によって血管壁に形成される脂質などを含む病変。"
+  },
+  {
+    "id": "pci",
+    "term": "PCI",
+    "reading": "ピーシーアイ",
+    "fullName": "Percutaneous Coronary Intervention",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "経皮的冠動脈インターベンション<br>カテーテルを用いて冠動脈の狭窄・閉塞を治療する方法。バルーン拡張やステント留置などを行う。"
+  },
+  {
+    "id": "ptca",
+    "term": "PTCA",
+    "reading": "ピーティーシーエー",
+    "fullName": "Percutaneous Transluminal Coronary Angioplasty",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "経皮的冠動脈形成術<br>カテーテルとバルーンを用いて冠動脈の狭窄部を拡張する治療。現在はPCIという名称が広く使われる。"
+  },
+  {
+    "id": "cabg",
+    "term": "CABG",
+    "reading": "キャブジー",
+    "fullName": "Coronary Artery Bypass Grafting",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "冠動脈バイパス術<br>狭窄・閉塞した冠動脈を迂回する血管をつなぎ、心筋への血流を確保する手術。"
+  },
+  {
+    "id": "ivus",
+    "term": "IVUS",
+    "reading": "アイバス",
+    "fullName": "Intravascular Ultrasound",
+    "category": "CHART",
+    "initial": "I",
+    "meaning": "血管内超音波検査<br>カテーテル先端の超音波装置で血管内を観察し、血管径やプラークの状態などを評価する。"
+  },
+  {
+    "id": "oct",
+    "term": "OCT",
+    "reading": "オーシーティー",
+    "fullName": "Optical Coherence Tomography",
+    "category": "CHART",
+    "initial": "O",
+    "meaning": "光干渉断層法<br>光を利用して血管内の構造を高解像度で観察する検査。冠動脈のプラークやステントの状態などを評価する。"
+  },
+  {
+    "id": "stent",
+    "term": "Stent",
+    "reading": "ステント",
+    "fullName": "Stent",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "ステント<br>血管内に留置して、狭窄・閉塞した部分を内側から広げて保つ金属製などの筒状器具。"
+  },
+  {
+    "id": "poba",
+    "term": "POBA",
+    "reading": "ポバ",
+    "fullName": "Plain Old Balloon Angioplasty",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "バルーン単独冠動脈形成術<br>ステントを留置せず、バルーン拡張のみで冠動脈の狭窄部を広げる治療。"
+  },
+  {
+    "id": "rotablator",
+    "term": "Rotablator",
+    "reading": "ロータブレーター",
+    "fullName": "Rotational Atherectomy",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "ロータブレーター<br>高速回転する器具で高度石灰化病変を削り、バルーンやステント治療を行いやすくする方法。"
+  },
+  {
+    "id": "timi",
+    "term": "TIMI",
+    "reading": "ティミ",
+    "fullName": "Thrombolysis in Myocardial Infarction",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "TIMI血流分類<br>冠動脈造影で血流の程度を評価する分類。Grade 0～3で表し、3は正常に近い血流を示す。"
+  },
+  {
+    "id": "timi3",
+    "term": "TIMI 3",
+    "reading": "ティミスリー",
+    "fullName": "TIMI Grade 3 Flow",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "TIMI血流グレード3<br>冠動脈内の血流が正常に再開している状態。"
+  },
+  {
+    "id": "culprit",
+    "term": "Culprit Lesion",
+    "reading": "カルプリットリージョン",
+    "fullName": "Culprit Lesion",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "責任病変<br>急性心筋梗塞などの原因となった冠動脈の病変。"
+  },
+  {
+    "id": "culpritvessel",
+    "term": "Culprit Vessel",
+    "reading": "カルプリットベッセル",
+    "fullName": "Culprit Vessel",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "責任血管<br>急性冠症候群などの原因となった冠動脈。"
+  },
+  {
+    "id": "syntax",
+    "term": "SYNTAX",
+    "reading": "シンタックス",
+    "fullName": "Synergy Between PCI With Taxus and Cardiac Surgery",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "SYNTAXスコア<br>冠動脈病変の複雑さや重症度を評価する指標。PCIとCABGの治療選択などに用いられる。"
   }
 ]
