@@ -322,10 +322,6 @@
                 <i class="fa-regular fa-calendar-days sidebar-link-icon"></i>
                 <span>カレンダー</span>
             </a>
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page10.html" class="sidebar-link">
-                <i class="fa-solid fa-stopwatch sidebar-link-icon"></i>
-                <span>タイマー</span>
-            </a>
            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page3.html" class="sidebar-link">
                 <i class="fa-solid fa-coins sidebar-link-icon"></i>
                 <span>負担額</span>
@@ -333,14 +329,6 @@
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page6.html" class="sidebar-link">
                 <i class="fa-solid fa-hourglass-half sidebar-link-icon"></i>
                 <span>時間計算</span>
-            </a>
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page7.html" class="sidebar-link">
-                <i class="fa-solid fa-calendar-check sidebar-link-icon"></i>
-                <span>和暦西暦</span>
-            </a>
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page8.html" class="sidebar-link">
-                <i class="fa-solid fa-calculator sidebar-link-icon"></i>
-                <span>電卓</span>
             </a>
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page9.html" class="sidebar-link">
                 <i class="fa-solid fa-book-medical sidebar-link-icon"></i>
@@ -350,16 +338,6 @@
             <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page2.html" class="sidebar-link">
                 <i class="fa-solid fa-calendar-day sidebar-link-icon text-blue-400"></i>
                 <span>日数計算</span>
-            </a>
-            <!-- 追加指定リンク 2 -->
-            
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page20.html" class="sidebar-link">
-                <i class="fa-solid fa-file-arrow-down sidebar-link-icon text-emerald-400"></i>
-                <span>Air Bridge</span>
-            </a>
-            <a href="https://hinatabokko-jp.github.io/hinatabokko-app2/page1.html" class="sidebar-link">
-                <i class="fa-solid fa-file-arrow-down sidebar-link-icon text-emerald-400"></i>
-                <span>データDL</span>
             </a>
         </nav>
     </aside>
@@ -597,8 +575,8 @@
                                 </span>
                             </div>
                             <div class="my-2">
-                                <div class="text-2xl sm:text-3xl font-extrabold text-sky-300 flex items-baseline">
-                                    <span id="result-gendo-gaku" class="tracking-tight">-</span>
+                                <div class="flex items-baseline">
+                                    <span id="result-gendo-gaku" class="text-2xl sm:text-3xl font-extrabold text-sky-300 tracking-tight">-</span>
                                 </div>
                             </div>
                         </div>
@@ -616,8 +594,8 @@
                                 </span>
                             </div>
                             <div class="my-2">
-                                <div class="text-2xl sm:text-3xl font-extrabold text-indigo-300 flex items-baseline">
-                                    <span id="result-tasu-gaitou" class="tracking-tight">-</span>
+                                <div class="flex items-baseline">
+                                    <span id="result-tasu-gaitou" class="text-2xl sm:text-3xl font-extrabold text-indigo-300 tracking-tight">-</span>
                                 </div>
                             </div>
                         </div>
@@ -668,7 +646,7 @@
                         <!-- 要素7 食費単価 -->
                         <div class="sm:col-span-5 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
                             <span class="text-[11px] text-slate-400 block mb-1">要素７．1食あたり単価</span>
-                            <div class="text-base font-semibold text-white">
+                            <div class="text-base font-semibold text-slate-400">
                                 <span id="result-shokuhi-tanka">-</span>
                             </div>
                         </div>
@@ -791,6 +769,21 @@
         const gendoFormulaDesc = document.getElementById('gendo-formula-desc');
         const dougetunaiFormulaDesc = document.getElementById('dougetunai-formula-desc');
         const summaryEstimate = document.getElementById('summary-estimate');
+
+        function applyResultValueStyle(el, text, normalColorClass, activeColorClass) {
+            const isNotApplicable = text === '（適用なし）';
+            el.textContent = text;
+            el.classList.remove(
+                'text-2xl', 'sm:text-3xl', 'font-extrabold',
+                'text-base', 'sm:text-lg', 'font-normal',
+                normalColorClass, activeColorClass
+            );
+            if (isNotApplicable) {
+                el.classList.add('text-base', 'sm:text-lg', 'font-normal', normalColorClass);
+            } else {
+                el.classList.add('text-2xl', 'sm:text-3xl', 'font-extrabold', activeColorClass);
+            }
+        }
 
         // ==========================================
         // 3. ホイールピッカーの実装
@@ -1089,20 +1082,14 @@
             // --- 要素5: 負担限度額 (gendogaku) ---
             const gendoRes = calculateGendoGaku(categoryName, state.tensuu);
             const gendogaku = gendoRes.val;
-            if (gendogaku !== null) {
-                resGendoGaku.textContent = gendogaku.toLocaleString() + ' 円';
-            } else {
-                resGendoGaku.textContent = '（適用なし）';
-            }
+            const gendoText = (gendogaku !== null) ? gendogaku.toLocaleString() + ' 円' : '（適用なし）';
+            applyResultValueStyle(resGendoGaku, gendoText, 'text-slate-400', 'text-sky-300');
             gendoFormulaDesc.textContent = gendoRes.formula;
 
             // --- 要素6: 多数該当 ---
             const tasuGaitouVal = calculateTasuGaitou(categoryName);
-            if (tasuGaitouVal !== null) {
-                resTasuGaitou.textContent = tasuGaitouVal.toLocaleString() + ' 円';
-            } else {
-                resTasuGaitou.textContent = '（適用なし）';
-            }
+            const tasuText = (tasuGaitouVal !== null) ? tasuGaitouVal.toLocaleString() + ' 円' : '（適用なし）';
+            applyResultValueStyle(resTasuGaitou, tasuText, 'text-slate-400', 'text-indigo-300');
 
             // --- 同月内入院があった場合の負担額 ---
             const dougetunaiRes = calculateDougetunaiFutan(gendogaku, state.dougetunai, jikoFutan);
