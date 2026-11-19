@@ -1502,4 +1502,391 @@
     "initial": "K",
     "meaning": "主に冠動脈の分岐部病変（2つの血管が分かれる部分の狭窄）の治療に用いられる手技や概念です。\n・　2本のバルーンを同時拡張：主血管（メインベッセル）と側枝（サイドブランチ）の両方にそれぞれバルーンカテーテルを配置し、同時にふくらませます。\n・　プラークシフトの防止・修正：片方の血管を治療する際にもう片方へプラーク（動脈硬化巣）が押し出されて狭くなる現象（プラークシフト）を防いだり、変形した分岐部の形状を整えたりします。\n・　血流の確保：ステント留置後などに、両方の血管の血流を最適化し、血管の閉塞や狭小化を防ぐために行われます（ファイナルキッシングインフレーション：FKI など）。"
   }
+  {
+    "id": "c-o",
+    "term": "c/o",
+    "reading": "シーオー / complaint of",
+    "fullName": "complains of",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "患者が特定の症状や不調を訴えていることを示す表現です。<br>例：c/o abdominal pain（腹痛を訴える）。"
+  },
+  {
+    "id": "h-o",
+    "term": "H/O",
+    "reading": "エイチオー",
+    "fullName": "History of",
+    "category": "CHART",
+    "initial": "H",
+    "meaning": "～の既往があることを示す表現です。<br>例：H/O gastric cancer（胃癌の既往）。"
+  },
+  {
+    "id": "s-p",
+    "term": "s/p",
+    "reading": "エスピー",
+    "fullName": "status post",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "手術や治療などを受けた後の状態を示す表現です。<br>例：s/p gastrectomy（胃切除術後）。"
+  },
+  {
+    "id": "r-o",
+    "term": "r/o",
+    "reading": "アールオー",
+    "fullName": "rule out",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "特定の疾患を除外するために検査や診察を行うことを示します。疑いがある疾患を確定・否定する過程で使用されます。<br>例：r/o malignancy（悪性腫瘍の除外）。"
+  },
+  {
+    "id": "s-o",
+    "term": "s/o",
+    "reading": "エスオー",
+    "fullName": "suspected of",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "特定の疾患や病態が疑われることを示す表現です。<br>例：s/o gastric cancer（胃癌疑い）。"
+  },
+  {
+    "id": "c-w",
+    "term": "c/w",
+    "reading": "シーダブリュー",
+    "fullName": "consistent with",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "検査所見などが特定の疾患や病態と一致する、または矛盾しないことを示します。<br>例：CT findings c/w liver metastasis（肝転移に一致するCT所見）。"
+  },
+  {
+    "id": "f-u",
+    "term": "F/U",
+    "reading": "エフユー",
+    "fullName": "Follow-up",
+    "category": "CHART",
+    "initial": "F",
+    "meaning": "経過観察や定期的な診察を意味します。治療後の再発確認や症状の変化を確認する場合などに使用されます。<br>例：F/U CT（経過観察目的のCT検査）。"
+  },
+  {
+    "id": "p-o",
+    "term": "P/O",
+    "reading": "ピーオー",
+    "fullName": "Postoperative",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "術後を意味する表現です。<br>例：P/O day 1（術後1日目）。"
+  },
+  {
+    "id": "p-o-d",
+    "term": "POD",
+    "reading": "ピーオーディー",
+    "fullName": "Postoperative Day",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "手術後の日数を示す略語です。<br>例：POD#3（術後3日目）。"
+  },
+  {
+    "id": "p-t",
+    "term": "Pt",
+    "reading": "ピーティー",
+    "fullName": "Patient",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "患者を意味する略語です。カルテ内で患者について記載する際に使用されます。"
+  },
+  {
+    "id": "d-x",
+    "term": "Dx",
+    "reading": "ディーエックス",
+    "fullName": "Diagnosis",
+    "category": "CHART",
+    "initial": "D",
+    "meaning": "診断・診断名を意味します。<br>例：Pre-op Dx（術前診断）、Post-op Dx（術後診断）。"
+  },
+  {
+    "id": "c-x",
+    "term": "Cx",
+    "reading": "シーエックス",
+    "fullName": "Complication",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "合併症を意味する略語として使用されることがあります。ただし、文脈によっては別の意味になるため注意が必要です。"
+  },
+  {
+    "id": "t-x",
+    "term": "Tx",
+    "reading": "ティーエックス",
+    "fullName": "Treatment",
+    "category": "CHART",
+    "initial": "T",
+    "meaning": "治療を意味します。<br>例：Conservative Tx（保存的治療）、Surgical Tx（外科的治療）。"
+  },
+  {
+    "id": "o-p",
+    "term": "Ope",
+    "reading": "オペ",
+    "fullName": "Operation",
+    "category": "CHART",
+    "initial": "O",
+    "meaning": "手術を意味します。<br>例：Ope目的に入院（手術を目的として入院）。"
+  },
+  {
+    "id": "c-t",
+    "term": "CT",
+    "reading": "シーティー",
+    "fullName": "Computed Tomography",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "コンピュータ断層撮影検査です。X線を用いて身体の断面画像を撮影し、腫瘍の有無や大きさ、転移、臓器の状態などを調べます。"
+  },
+  {
+    "id": "m-r-i",
+    "term": "MRI",
+    "reading": "エムアールアイ",
+    "fullName": "Magnetic Resonance Imaging",
+    "category": "CHART",
+    "initial": "M",
+    "meaning": "磁気共鳴画像検査です。磁場と電波を利用して身体内部の画像を撮影します。軟部組織や神経、前立腺などの評価に使用されます。"
+  },
+  {
+    "id": "e-g-d",
+    "term": "EGD",
+    "reading": "イージーディー",
+    "fullName": "Esophagogastroduodenoscopy",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "上部消化管内視鏡検査です。食道・胃・十二指腸を内視鏡で観察します。胃カメラとも呼ばれます。"
+  },
+  {
+    "id": "c-s",
+    "term": "CS",
+    "reading": "シーエス",
+    "fullName": "Colonoscopy",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "大腸内視鏡検査を意味する略語として使用されます。大腸の病変やポリープ、腫瘍などを観察します。"
+  },
+  {
+    "id": "b-x",
+    "term": "Bx",
+    "reading": "バイオプシー",
+    "fullName": "Biopsy",
+    "category": "CHART",
+    "initial": "B",
+    "meaning": "生検を意味します。組織の一部を採取し、病理検査によって良性・悪性などを調べます。<br>例：Bx：adenocarcinoma（生検結果：腺癌）。"
+  },
+  {
+    "id": "p-a-t-h",
+    "term": "Path",
+    "reading": "パス / パソロジー",
+    "fullName": "Pathology",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "病理検査・病理診断を意味します。採取した組織や細胞を顕微鏡などで調べ、疾患の種類や悪性度などを判定します。"
+  },
+  {
+    "id": "g-c",
+    "term": "GC",
+    "reading": "ジーシー",
+    "fullName": "Gastric Cancer",
+    "category": "CHART",
+    "initial": "G",
+    "meaning": "胃癌を意味する略語です。<br>例：Advanced GC（進行胃癌）、Early GC（早期胃癌）。"
+  },
+  {
+    "id": "c-r-c",
+    "term": "CRC",
+    "reading": "シーアールシー",
+    "fullName": "Colorectal Cancer",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "大腸癌を意味する略語です。結腸癌と直腸癌を含む総称として使用されます。"
+  },
+  {
+    "id": "p-c",
+    "term": "PC",
+    "reading": "ピーシー",
+    "fullName": "Prostate Cancer",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "前立腺癌を意味する略語として使用されることがあります。<br>例：PCに対してRARP施行（前立腺癌に対してロボット支援前立腺全摘術を施行）。"
+  },
+  {
+    "id": "h-c-c",
+    "term": "HCC",
+    "reading": "エイチシーシー",
+    "fullName": "Hepatocellular Carcinoma",
+    "category": "CHART",
+    "initial": "H",
+    "meaning": "肝細胞癌を意味します。肝臓に発生する悪性腫瘍の一種です。"
+  },
+  {
+    "id": "r-c-c",
+    "term": "RCC",
+    "reading": "アールシーシー",
+    "fullName": "Renal Cell Carcinoma",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "腎細胞癌を意味します。腎臓の尿細管上皮由来の悪性腫瘍です。"
+  },
+  {
+    "id": "l-n",
+    "term": "LN",
+    "reading": "エルエヌ",
+    "fullName": "Lymph Node",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "リンパ節を意味します。<br>例：LN swelling（リンパ節腫大）、LN metastasis（リンパ節転移）。"
+  },
+  {
+    "id": "m-e-t-s",
+    "term": "mets",
+    "reading": "メッツ",
+    "fullName": "Metastasis",
+    "category": "CHART",
+    "initial": "M",
+    "meaning": "転移を意味する略語です。癌細胞が原発部位から他の臓器や組織に広がることを指します。<br>例：Liver mets（肝転移）、Lung mets（肺転移）。"
+  },
+  {
+    "id": "n-e-d",
+    "term": "NED",
+    "reading": "エヌイーディー",
+    "fullName": "No Evidence of Disease",
+    "category": "CHART",
+    "initial": "N",
+    "meaning": "病気を示す明らかな所見が認められない状態を意味します。癌の治療後などに、画像検査や診察で明らかな再発・残存病変が認められない場合に使用されます。"
+  },
+  {
+    "id": "a-d-l",
+    "term": "ADL",
+    "reading": "エーディーエル",
+    "fullName": "Activities of Daily Living",
+    "category": "CHART",
+    "initial": "A",
+    "meaning": "日常生活動作を意味します。食事・更衣・入浴・排泄・移動など、日常生活を送るために必要な基本的動作のことです。<br>例：ADL自立（身の回りの動作を自分で行える状態）。"
+  },
+  {
+    "id": "p-s",
+    "term": "PS",
+    "reading": "ピーエス",
+    "fullName": "Performance Status",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "全身状態や日常生活の活動性を評価する指標です。癌診療ではECOGのPSスケールがよく使用され、治療方針や抗癌剤治療の適応判断などに用いられます。"
+  },
+  {
+    "id": "v-s",
+    "term": "V/S",
+    "reading": "ブイエス",
+    "fullName": "Vital Signs",
+    "category": "CHART",
+    "initial": "V",
+    "meaning": "バイタルサイン、生命徴候を意味します。血圧・脈拍・体温・呼吸数・酸素飽和度など、患者の全身状態を把握するための基本的な指標です。"
+  },
+  {
+    "id": "n-p-o",
+    "term": "NPO",
+    "reading": "エヌピーオー",
+    "fullName": "Nil Per Os",
+    "category": "CHART",
+    "initial": "N",
+    "meaning": "絶飲食を意味します。手術前や検査前、消化管の安静が必要な場合などに指示されます。"
+  },
+  {
+    "id": "w-n-l",
+    "term": "WNL",
+    "reading": "ダブリューエヌエル",
+    "fullName": "Within Normal Limits",
+    "category": "CHART",
+    "initial": "W",
+    "meaning": "正常範囲内であることを意味します。検査値や身体所見などが基準範囲内である場合に使用されます。"
+  },
+  {
+    "id": "n-a-d",
+    "term": "NAD",
+    "reading": "エヌエーディー",
+    "fullName": "No Abnormality Detected",
+    "category": "CHART",
+    "initial": "N",
+    "meaning": "明らかな異常が認められないことを意味します。検査や診察の結果に異常所見が見つからなかった場合に使用されます。"
+  },
+  {
+    "id": "p-r-n",
+    "term": "PRN",
+    "reading": "ピーアールエヌ",
+    "fullName": "Pro Re Nata",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "必要時を意味するラテン語由来の略語です。定時投与ではなく、症状などに応じて必要な場合に薬剤を使用する指示です。<br>例：Pain時PRN（疼痛時、必要に応じて使用）。"
+  },
+  {
+    "id": "e-t-c",
+    "term": "etc.",
+    "reading": "エトセトラ",
+    "fullName": "Et cetera",
+    "category": "CHART",
+    "initial": "E",
+    "meaning": "その他、などを意味します。複数の疾患・症状・検査項目などを列挙した後に使用されます。"
+  },
+  {
+    "id": "l-t",
+    "term": "Lt",
+    "reading": "レフト",
+    "fullName": "Left",
+    "category": "CHART",
+    "initial": "L",
+    "meaning": "左側を意味します。<br>例：Lt kidney（左腎臓）、Lt inguinal hernia（左鼠径ヘルニア）。"
+  },
+  {
+    "id": "r-t",
+    "term": "Rt",
+    "reading": "ライト",
+    "fullName": "Right",
+    "category": "CHART",
+    "initial": "R",
+    "meaning": "右側を意味します。<br>例：Rt kidney（右腎臓）、Rt inguinal hernia（右鼠径ヘルニア）。"
+  },
+  {
+    "id": "b-i-l",
+    "term": "B/I",
+    "reading": "ビーアイ",
+    "fullName": "Bilateral",
+    "category": "CHART",
+    "initial": "B",
+    "meaning": "両側を意味します。左右両方の臓器や部位に病変がある場合などに使用されます。<br>例：Bilateral inguinal hernia（両側鼠径ヘルニア）。"
+  },
+  {
+    "id": "c-r",
+    "term": "CR",
+    "reading": "シーアール",
+    "fullName": "Complete Response",
+    "category": "CHART",
+    "initial": "C",
+    "meaning": "完全奏効を意味します。癌治療などにおいて、評価対象となる病変が消失した状態を示す治療効果判定の用語です。"
+  },
+  {
+    "id": "p-r",
+    "term": "PR",
+    "reading": "ピーアール",
+    "fullName": "Partial Response",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "部分奏効を意味します。癌治療などにおいて、病変が一定の基準以上に縮小した状態を示す治療効果判定の用語です。"
+  },
+  {
+    "id": "p-d",
+    "term": "PD",
+    "reading": "ピーディー",
+    "fullName": "Progressive Disease",
+    "category": "CHART",
+    "initial": "P",
+    "meaning": "病勢進行を意味します。癌などの疾患において、病変の増大や新たな病変の出現などが認められた状態です。"
+  },
+  {
+    "id": "s-d",
+    "term": "SD",
+    "reading": "エスディー",
+    "fullName": "Stable Disease",
+    "category": "CHART",
+    "initial": "S",
+    "meaning": "安定を意味します。癌治療などにおいて、病変が一定以上縮小も増大もしていない状態を示す治療効果判定の用語です。"
+  }
 ]
