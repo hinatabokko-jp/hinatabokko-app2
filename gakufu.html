@@ -937,7 +937,22 @@
             </div>
         </div>
     </section>
-
+<!-- MEMO.html 共通 config.js との互換用ダミー要素 -->
+    <div id="compat-dummies" class="hidden" aria-hidden="true">
+        <button id="hamburger-btn"></button>
+        <div id="overlay"></div>
+        <aside id="sidebar"></aside>
+        <input id="message-input" />
+        <button id="send-btn"></button>
+        <input id="file-input" />
+        <div id="chat-box"></div>
+        <button id="changeUserBtn"></button>
+        <button id="modal-open-btn"></button>
+        <button id="footer-stamp-open-btn"></button>
+        <button id="footer-stamp-history-btn"></button>
+        <button id="calendar-modal-open-btn"></button>
+        <button id="monthly-checklist-modal-open-btn"></button>
+    </div>
     <script type="module">
         import { db, auth } from "./js/config.js";
         import { ref, onValue, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
