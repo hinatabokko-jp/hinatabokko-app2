@@ -49,6 +49,6 @@ export function showModal(title, msg) {
   document.getElementById('alert-modal').classList.add('active');
 }
 
-document.getElementById('alert-modal-ok').addEventListener('click', () => {
+document.getElementById('alert-modal-ok')?.addEventListener('click', () => {
   document.getElementById('alert-modal').classList.remove('active');
 });
