@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ScoreStage - iPad楽譜ビューワー</title>
+    <title>楽譜ビューワー</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -14,12 +14,20 @@
             --bg-card: rgba(28, 28, 34, 0.78);
             --border-glass: rgba(255, 255, 255, 0.1);
             --accent: #3B82F6;
+            --primary-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
+            --danger-color: #f43f5e;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-sm: 8px;
+            --radius-lg: 20px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
             -webkit-tap-highlight-color: transparent;
             user-select: none;
             -webkit-user-select: none;
+            box-sizing: border-box;
         }
 
         input, textarea {
@@ -51,12 +59,6 @@
             border-bottom: 1px solid var(--border-glass);
         }
 
-        /* テンキーのフィードバック */
-        .keypad-btn:active {
-            transform: scale(0.92);
-            background-color: rgba(255, 255, 255, 0.22);
-        }
-
         /* スクロールバー非表示（スッキリしたiPad表示） */
         ::-webkit-scrollbar {
             width: 6px;
@@ -83,23 +85,390 @@
             padding-bottom: max(1rem, env(safe-area-inset-bottom));
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
+        /* =========================================================
+           MEMO.html 共通あいことばロック画面・管理モーダルスタイル
+           ========================================================= */
+        #lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0D0D0F;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 24px;
+            overflow-y: auto;
         }
-        .animate-shake {
-            animation: shake 0.35s ease-in-out;
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background-color: #1C1C20;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .login-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: var(--primary-gradient);
+            padding: 2px;
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+        .login-icon-wrapper:hover {
+            transform: scale(1.05);
+        }
+        .login-icon-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #1C1C20;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.025em;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 0.95rem;
+            color: #A1A1AA;
+            text-align: center;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .login-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #A1A1AA;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding-left: 4px;
+        }
+
+        #pass-input {
+            width: 100%;
+            padding: 16px 20px;
+            background-color: #292930;
+            color: #ffffff;
+            border: 1px solid transparent;
+            border-radius: 16px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.25s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #pass-input::placeholder {
+            color: rgba(161, 161, 170, 0.5);
+        }
+
+        #pass-input:focus {
+            border-color: #ec4899;
+            box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2), inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .remember-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #A1A1AA;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+            padding-left: 4px;
+        }
+        .remember-container:hover {
+            color: #ffffff;
+        }
+        .remember-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #ec4899;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        #pass-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 16px 24px;
+            border-radius: 16px;
+            background: var(--primary-gradient);
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+            letter-spacing: 0.03em;
+        }
+        #pass-btn:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+        }
+        #pass-btn:active {
+            transform: translateY(0);
+        }
+
+        #pass-error {
+            color: var(--danger-color);
+            font-size: 0.85rem;
+            display: none;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .login-footer {
+            width: 100%;
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: rgba(161, 161, 170, 0.6);
+        }
+
+        .admin-link {
+            background: none;
+            border: none;
+            color: #A1A1AA;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: var(--transition);
+        }
+        .admin-link:hover {
+            color: #ffffff;
+        }
+
+        /* 管理画面モーダル共通スタイル */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-container {
+            background-color: #131b2e;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.1);
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            background-color: #1a233a;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.03em;
+        }
+        .modal-close-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .modal-close-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-color);
+            background-color: #131b2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .send-btn-style {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 0 20px;
+            height: 42px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .secondary-btn {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 9px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .admin-user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+        .admin-setting-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .toggle-switch-label {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .toggle-switch-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            cursor: pointer;
+        }
+        .toggle-switch-slider {
+            width: 40px;
+            height: 22px;
+            background: #292930;
+            border-radius: 999px;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+        .toggle-switch-slider::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            height: 18px;
+            width: 18px;
+            transition: transform 0.2s;
+        }
+        .toggle-switch-input:checked + .toggle-switch-slider {
+            background: #9333ea;
+        }
+        .toggle-switch-input:checked + .toggle-switch-slider::after {
+            transform: translateX(18px);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
     <!-- トースト通知（alert()の代替） -->
-    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none flex flex-col gap-2 w-11/12 max-w-md"></div>
+    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[11000] pointer-events-none flex flex-col gap-2 w-11/12 max-w-md"></div>
 
     <!-- カスタム確認モーダル（confirm()の代替） -->
-    <div id="confirm-modal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div id="confirm-modal" class="fixed inset-0 z-[10500] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/15">
             <h3 id="confirm-title" class="text-xl font-bold text-white mb-2">確認</h3>
             <p id="confirm-message" class="text-zinc-300 text-sm leading-relaxed mb-6">この操作を実行しますか？</p>
@@ -111,53 +480,118 @@
     </div>
 
     <!-- ==========================================
-         1. ログイン / パスコード画面
+         1. ログイン画面（MEMO.htmlと同じあいことば認証）
          ========================================== -->
-    <section id="login-screen" class="fixed inset-0 z-50 bg-[#0D0D0F] flex flex-col items-center justify-center p-6">
-        <div class="w-full max-w-sm flex flex-col items-center">
-            <!-- アプリアイコン -->
-            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 mb-5">
-                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-                </svg>
-            </div>
-
-            <h1 class="text-2xl font-bold tracking-tight text-white mb-1">ScoreStage</h1>
-            <p id="login-subtitle" class="text-zinc-400 text-sm mb-8 text-center">4桁のパスコードを入力してください</p>
-
-            <!-- パスコードインジケーター（4つのドット） -->
-            <div id="pin-dots" class="flex gap-5 mb-9">
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-zinc-500 transition-all duration-150"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-zinc-500 transition-all duration-150"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-zinc-500 transition-all duration-150"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-zinc-500 transition-all duration-150"></div>
-            </div>
-
-            <!-- iPad用大型テンキー -->
-            <div class="grid grid-cols-3 gap-4 w-full max-w-[290px]">
-                <button onclick="handlePinDigit('1')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">1</button>
-                <button onclick="handlePinDigit('2')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">2</button>
-                <button onclick="handlePinDigit('3')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">3</button>
-                <button onclick="handlePinDigit('4')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">4</button>
-                <button onclick="handlePinDigit('5')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">5</button>
-                <button onclick="handlePinDigit('6')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">6</button>
-                <button onclick="handlePinDigit('7')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">7</button>
-                <button onclick="handlePinDigit('8')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">8</button>
-                <button onclick="handlePinDigit('9')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">9</button>
-                <button onclick="clearPin()" class="keypad-btn h-20 rounded-full text-sm font-medium text-zinc-400 hover:text-white flex items-center justify-center transition">クリア</button>
-                <button onclick="handlePinDigit('0')" class="keypad-btn h-20 rounded-full glass text-2xl font-semibold text-white flex items-center justify-center transition">0</button>
-                <button onclick="backspacePin()" class="keypad-btn h-20 rounded-full text-zinc-300 hover:text-white flex items-center justify-center transition" aria-label="1文字削除">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"/>
+    <div id="lock-screen">
+        <div class="login-card">
+            <div class="login-icon-wrapper">
+                <div class="login-icon-inner">
+                    <svg style="width: 36px; height: 36px;" fill="none" stroke="url(#icon-gradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#a855f7" />
+                                <stop offset="50%" stop-color="#ec4899" />
+                                <stop offset="100%" stop-color="#3b82f6" />
+                            </linearGradient>
+                        </defs>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                     </svg>
-                </button>
+                </div>
             </div>
 
-            <button id="reset-pin-hint" onclick="promptResetPasscode()" class="mt-8 text-xs text-zinc-500 hover:text-zinc-300 underline transition hidden">
-                パスコードを忘れた場合（初期化）
-            </button>
+            <h1 class="login-title">ScoreStage</h1>
+            <p class="login-subtitle">自分の楽譜の記録保管用</p>
+
+            <div class="login-form">
+                <div class="input-group">
+                    <label for="pass-input" class="input-label">あいことば</label>
+                    <input 
+                        type="password" 
+                        id="pass-input" 
+                        placeholder="あいことばを入力" 
+                        autocomplete="off"
+                    />
+                </div>
+
+                <label class="remember-container">
+                    <input type="checkbox" id="remember-me-checkbox">
+                    次回から自動でログインする
+                </label>
+
+                <button id="pass-btn">入室する</button>
+                <div id="pass-error">あいことばが違います</div>
+            </div>
+
+            <div class="login-footer">
+                <span>Secure Storage</span>
+                <button id="open-admin-login-modal" class="admin-link">管理画面へ</button>
+            </div>
         </div>
-    </section>
+    </div>
+
+    <!-- 管理ID確認用モーダル（MEMO.html共通） -->
+    <div id="admin-login-modal" class="modal-overlay">
+        <div class="modal-container" style="max-width: 380px;">
+            <div class="modal-header">
+                <div class="modal-title">管理画面入室確認</div>
+                <button id="admin-login-close-x" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body" style="gap: 14px;">
+                <div class="input-group">
+                    <label class="input-label">管理ID</label>
+                    <input type="text" id="admin-id-input" placeholder="管理IDを入力" style="width: 100%; padding: 12px; background: #292930; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; outline: none;" />
+                </div>
+                <div class="input-group">
+                    <label class="input-label">パスワード</label>
+                    <input type="password" id="admin-pass-input" placeholder="パスワードを入力" style="width: 100%; padding: 12px; background: #292930; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; outline: none;" />
+                </div>
+                <div id="admin-login-error" style="color: var(--danger-color); font-size: 0.85rem; display: none; text-align: center;">IDまたはパスワードが違います</div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <button id="admin-login-submit" class="send-btn-style">入室する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理画面モーダル（MEMO.html共通） -->
+    <div id="admin-panel-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">管理画面</div>
+                <button id="admin-panel-close-x" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body" style="gap: 16px;">
+                <div class="admin-setting-card" style="margin-bottom: 0;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">あいことばの変更</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">入室用のあいことばを新しく設定します</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="new-passcode-input" placeholder="新しいあいことば" style="padding: 8px 12px; background: #292930; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; outline: none; font-size: 0.9rem; width: 140px;" />
+                        <button id="update-passcode-btn" class="send-btn-style" style="height: 38px; padding: 0 14px; font-size: 0.85rem;">変更</button>
+                    </div>
+                </div>
+
+                <div class="admin-setting-card">
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">新規ロック（ルームロック）</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">未登録ユーザーの新規入室を拒否します</div>
+                    </div>
+                    <label class="toggle-switch-label">
+                        <input type="checkbox" id="room-lock-toggle" class="toggle-switch-input">
+                        <div class="toggle-switch-slider"></div>
+                    </label>
+                </div>
+                <div class="section-title">ユーザー一覧・アクセス管理</div>
+                <div id="admin-users-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            <div class="modal-footer">
+                <div></div>
+                <button id="admin-panel-close-btn" class="secondary-btn">閉じる</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ==========================================
          2. 楽曲フォルダー一覧画面（ライブラリ）
@@ -179,12 +613,9 @@
                         </div>
                     </div>
 
-                    <!-- モバイル/iPad縦用 ロック＆パスコード変更ボタン -->
+                    <!-- モバイル/iPad縦用 ロックボタン -->
                     <div class="flex items-center gap-2 sm:hidden">
-                        <button onclick="openChangePasscode()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white" title="パスコード変更">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                        </button>
-                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white" title="ロック">
+                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white" title="ログアウト・ロック">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </button>
                     </div>
@@ -206,12 +637,9 @@
                         <span>新規フォルダー</span>
                     </button>
 
-                    <!-- タブレット横向き用 ロック＆設定 -->
+                    <!-- タブレット横向き用 ロック -->
                     <div class="hidden sm:flex items-center gap-2">
-                        <button onclick="openChangePasscode()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white transition" title="パスコード変更">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                        </button>
-                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white transition" title="アプリをロック">
+                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white transition" title="アプリをロック（ログアウト）">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </button>
                     </div>
@@ -233,7 +661,7 @@
                     </svg>
                 </div>
                 <h2 class="text-lg font-bold text-white mb-2">楽曲フォルダーがありません</h2>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、JPG形式の楽譜を追加してください。</p>
+                <p class="text-sm text-zinc-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、JPG形式の楽譜やカメラ撮影した楽譜を追加してください。</p>
                 <button onclick="openFolderModal()" class="py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition">
                     最初の楽曲フォルダーを作成
                 </button>
@@ -289,7 +717,7 @@
                     </div>
                 </div>
 
-                <!-- JPG追加 ＆ 演奏モード開始ボタン -->
+                <!-- 楽譜撮影・JPG追加 ＆ 演奏モード開始ボタン -->
                 <div class="flex flex-wrap items-center gap-2.5">
                     <!-- 画質・サイズプリセット選択 -->
                     <div class="flex items-center gap-1.5 glass px-3 py-2 rounded-2xl">
@@ -301,12 +729,23 @@
                         </select>
                     </div>
 
+                    <!-- カメラ撮影してコントラスト自動補正・縮小保存するボタン -->
+                    <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl glass hover:bg-white/10 active:scale-95 text-white font-medium text-sm flex items-center justify-center gap-2 transition border border-purple-500/30">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>楽譜を撮影</span>
+                        <input id="camera-capture-input" type="file" accept="image/*" capture="environment" onchange="handleCameraCapture(event)" class="hidden">
+                    </label>
+
+                    <!-- JPG楽譜追加ボタン -->
                     <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl glass hover:bg-white/10 active:scale-95 text-white font-medium text-sm flex items-center justify-center gap-2 transition">
                         <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                         <span>JPG楽譜を追加</span>
-                        <input id="jpg-upload-input" type="file" accept="image/jpeg,image/jpg" multiple onchange="handleJpgUpload(event)" class="hidden">
+                        <input id="jpg-upload-input" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onchange="handleJpgUpload(event)" class="hidden">
                     </label>
 
                     <button id="start-viewer-btn" onclick="openViewer(0)" class="flex-1 md:flex-initial py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition">
@@ -319,7 +758,7 @@
             </div>
         </header>
 
-        <!-- 最適化処理中プログレスオーバーレイ -->
+        <!-- 最適化・Firebase保存中プログレスオーバーレイ -->
         <div id="upload-progress-overlay" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
             <div class="glass rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-white/15">
                 <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -327,7 +766,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                 </div>
-                <h3 class="text-base font-bold text-white mb-1">楽譜をiPad向けに最適化中...</h3>
+                <h3 id="upload-progress-title" class="text-base font-bold text-white mb-1">楽譜を最適化して保存中...</h3>
                 <p id="upload-progress-text" class="text-xs text-zinc-400 mb-4">0 / 0 ページ処理中</p>
                 <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
                     <div id="upload-progress-bar" class="h-full bg-blue-500 transition-all duration-150" style="width: 0%"></div>
@@ -361,11 +800,21 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-bold text-white mb-1">まだ楽譜画像がありません</h3>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">iPadの写真ライブラリや「ファイル」アプリから、JPG形式の楽譜画像を複数まとめて選択して登録できます。</p>
-                <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition">
-                    <span>JPG画像を選択して追加</span>
-                    <input type="file" accept="image/jpeg,image/jpg" multiple onchange="handleJpgUpload(event)" class="hidden">
-                </label>
+                <p class="text-sm text-zinc-400 max-w-md mb-6">カメラで楽譜を直接撮影（自動でコントラスト・白地補正して見やすく最適化）するか、JPG画像を選択して登録できます。</p>
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>カメラで楽譜を撮影</span>
+                        <input type="file" accept="image/*" capture="environment" onchange="handleCameraCapture(event)" class="hidden">
+                    </label>
+                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition">
+                        <span>JPG画像を選択して追加</span>
+                        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onchange="handleJpgUpload(event)" class="hidden">
+                    </label>
+                </div>
             </div>
         </main>
     </section>
@@ -374,7 +823,7 @@
          4. iPadフルスクリーン楽譜ビューワー（演奏モード）
          ========================================== -->
     <section id="viewer-overlay" class="fixed inset-0 z-50 bg-[#08080A] hidden flex-col">
-        <!-- 上部ツールバー（タップで自動表示/非表示） -->
+        <!-- 上部ツールバー -->
         <div id="viewer-top-bar" class="glass-header absolute top-0 inset-x-0 z-30 pt-safe pb-3 px-4 sm:px-6 transition-all duration-300">
             <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
                 <button onclick="closeViewer()" class="py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm flex items-center gap-1.5 transition">
@@ -390,6 +839,13 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <!-- ツールバー表示切替ボタン -->
+                    <button onclick="toggleViewerChrome()" class="py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-zinc-200 text-xs sm:text-sm font-medium flex items-center gap-1 transition" title="バーを隠す">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                        </svg>
+                    </button>
+
                     <!-- メトロノーム開閉ボタン -->
                     <button id="metronome-toggle-btn" onclick="toggleMetronomePanel()" class="py-2.5 px-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-zinc-200 text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
                         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -437,23 +893,30 @@
                 </div>
             </div>
 
-            <!-- タッチ操作ゾーン（左28%：前へ / 中央44%：UI表示切替 / 右28%：次へ） -->
+            <!-- タッチ操作ゾーン（左半分50%：前のページ / 右半分50%：次のページ） -->
             <div class="absolute inset-0 z-20 flex">
-                <div onclick="prevPage()" class="w-[28%] h-full cursor-pointer group flex items-center justify-start pl-3" title="前のページ">
-                    <div class="w-11 h-16 rounded-2xl bg-white/5 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
+                <div onclick="prevPage()" class="w-1/2 h-full cursor-pointer group flex items-center justify-start pl-3" title="前のページ（画面左半分タップ）">
+                    <div class="w-11 h-16 rounded-2xl bg-white/10 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                     </div>
                 </div>
-                <div onclick="toggleViewerChrome()" class="w-[44%] h-full cursor-pointer" title="ツールバー表示/非表示"></div>
-                <div onclick="nextPage()" class="w-[28%] h-full cursor-pointer group flex items-center justify-end pr-3" title="次のページ">
-                    <div class="w-11 h-16 rounded-2xl bg-white/5 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
+                <div onclick="nextPage()" class="w-1/2 h-full cursor-pointer group flex items-center justify-end pr-3" title="次のページ（画面右半分タップ）">
+                    <div class="w-11 h-16 rounded-2xl bg-white/10 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 下部ページシークバー（タップで自動表示/非表示） -->
+        <!-- ツールバー非表示時に再表示するための控えめなフローティングボタン -->
+        <button id="restore-chrome-btn" onclick="toggleViewerChrome()" class="hidden fixed top-4 right-4 z-30 p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 border border-white/15 text-zinc-300 backdrop-blur-md transition" title="メニューバーを表示">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+        </button>
+
+        <!-- 下部ページシークバー -->
         <div id="viewer-bottom-bar" class="glass-header border-t border-white/10 absolute bottom-0 inset-x-0 z-30 pt-3 pb-safe px-4 sm:px-8 transition-all duration-300">
             <div class="max-w-4xl mx-auto flex items-center gap-4">
                 <button onclick="prevPage()" class="p-3 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 text-white transition shrink-0" aria-label="前のページ">
@@ -463,7 +926,7 @@
                 <div class="flex-1 flex flex-col gap-1">
                     <input id="viewer-scrubber" type="range" min="0" max="0" value="0" oninput="jumpToPage(parseInt(this.value))" class="w-full accent-blue-500 h-2 bg-zinc-700 rounded-lg cursor-pointer">
                     <div class="flex justify-between text-[11px] text-zinc-400 px-0.5">
-                        <span>画面の左右タップ・スワイプでめくり</span>
+                        <span>右半分タップで次へ ・ 左半分タップで前へ</span>
                         <span id="viewer-scrubber-text">1 / 1 ページ</span>
                     </div>
                 </div>
@@ -475,29 +938,47 @@
         </div>
     </section>
 
-    <script>
-        /* ==========================================================================
-           1. 状態管理 & IndexedDB（大容量JPG楽譜永続化）
-           ========================================================================== */
-        const DB_NAME = 'ScoreStageDB';
-        const DB_VERSION = 1;
-        let db = null;
+    <script type="module">
+        import { db, auth } from "./js/config.js";
+        import { ref, onValue, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-        let folders = [];           // { id, name, note, pageOrder: [pageId1, pageId2...], updatedAt }
+        /* ==========================================================================
+           1. MEMO.html 共通あいことば認証 ＆ Firebase Realtime Database 接続
+           ========================================================================== */
+        const gakufuFoldersRef = ref(db, "gakufu_folders");
+        const gakufuPagesRef = ref(db, "gakufu_pages");
+        const settingsPassRef = ref(db, "settings/passcode");
+        const roomLockRef = ref(db, "app_settings/room_lock");
+        const usersRef = ref(db, "users");
+
+        const DEVICE_ID_KEY = "memo_app_device_id";
+        const AUTO_LOGIN_KEY = "memo_app_auto_login";
+        const ADMIN_ID = "admin";
+        const ADMIN_PASS = "admin1234";
+
+        function getDeviceId() {
+            let id = localStorage.getItem(DEVICE_ID_KEY);
+            if (!id) {
+                id = "dev_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+                localStorage.setItem(DEVICE_ID_KEY, id);
+            }
+            return id;
+        }
+
+        let currentPasscode = "1234";
+        let isRoomLocked = false;
+        let isAuthenticated = false;
+        let foldersListenerAttached = false;
+
+        let folders = [];           // [{ id, name, note, pageOrder: [pageId1...], updatedAt }]
         let currentFolderId = null;
-        let currentPages = [];      // 現在開いているフォルダー内のページ配列 [{ id, folderId, name, blob, url }]
-        let activeObjectUrls = [];  // メモリリーク防止用URLリスト
+        let currentPages = [];      // [{ id, folderId, name, dataUrl, width, height, sizeBytes }]
 
         // ビューワー状態
         let currentPageIndex = 0;
-        let isSpreadMode = false;   // false: 1ページ表示, true: 見開き2ページ表示
+        let isSpreadMode = false;
         let isChromeVisible = true;
-
-        // パスコード状態
-        const PASSCODE_KEY = 'scorestage_passcode_v1';
-        let pinInput = '';
-        let pinMode = 'login';      // 'login' | 'setup_first' | 'setup_confirm' | 'change_first' | 'change_confirm'
-        let tempNewPin = '';
 
         // メトロノーム状態
         let audioCtx = null;
@@ -505,226 +986,272 @@
         let isMetronomePlaying = false;
         let metroBpm = 100;
 
-        // 初期化処理
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initDB();
-            await loadFoldersFromDB();
-            initPasscodeScreen();
+        // 初期化
+        window.addEventListener("DOMContentLoaded", () => {
+            initFirebaseAuthAndListeners();
+            setupLoginEvents();
             setupViewerGestures();
         });
 
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onupgradeneeded = (e) => {
-                    const database = e.target.result;
-                    if (!database.objectStoreNames.contains('folders')) {
-                        database.createObjectStore('folders', { keyPath: 'id' });
-                    }
-                    if (!database.objectStoreNames.contains('pages')) {
-                        const pageStore = database.createObjectStore('pages', { keyPath: 'id' });
-                        pageStore.createIndex('folderId', 'folderId', { unique: false });
-                    }
-                };
-                request.onsuccess = (e) => {
-                    db = e.target.result;
-                    resolve();
-                };
-                request.onerror = (e) => {
-                    showToast('データベースの初期化に失敗しました', 'error');
-                    reject(e);
-                };
+        function initFirebaseAuthAndListeners() {
+            signInAnonymously(auth).catch((err) => {
+                console.error("Anonymous auth error:", err);
+                showToast("Firebase認証エラー: " + err.message, "error");
             });
-        }
 
-        function dbTransaction(storeName, mode = 'readonly') {
-            return db.transaction(storeName, mode).objectStore(storeName);
-        }
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) return;
 
-        /* ==========================================================================
-           2. パスコード認証ロジック
-           ========================================================================== */
-        function initPasscodeScreen() {
-            const savedPin = localStorage.getItem(PASSCODE_KEY);
-            pinInput = '';
-            updatePinDots();
+                // あいことば監視
+                onValue(settingsPassRef, (snap) => {
+                    if (snap.exists() && snap.val()) {
+                        currentPasscode = String(snap.val());
+                    }
+                });
 
-            if (!savedPin) {
-                pinMode = 'setup_first';
-                document.getElementById('login-subtitle').textContent = '初回設定：新しい4桁のパスコードを決めてください';
-                document.getElementById('reset-pin-hint').classList.add('hidden');
-            } else {
-                pinMode = 'login';
-                document.getElementById('login-subtitle').textContent = '4桁のパスコードを入力してロック解除';
-                document.getElementById('reset-pin-hint').classList.remove('hidden');
-            }
-        }
+                // ルームロック状態監視
+                onValue(roomLockRef, (snap) => {
+                    isRoomLocked = snap.exists() ? Boolean(snap.val()) : false;
+                    const toggle = document.getElementById("room-lock-toggle");
+                    if (toggle) toggle.checked = isRoomLocked;
+                });
 
-        function handlePinDigit(digit) {
-            if (pinInput.length >= 4) return;
-            pinInput += digit;
-            updatePinDots();
-
-            if (pinInput.length === 4) {
-                setTimeout(processCompletePin, 120);
-            }
-        }
-
-        function backspacePin() {
-            pinInput = pinInput.slice(0, -1);
-            updatePinDots();
-        }
-
-        function clearPin() {
-            pinInput = '';
-            updatePinDots();
-        }
-
-        function updatePinDots() {
-            const dots = document.querySelectorAll('.pin-dot');
-            dots.forEach((dot, idx) => {
-                if (idx < pinInput.length) {
-                    dot.classList.add('bg-blue-500', 'border-blue-500', 'scale-110');
-                    dot.classList.remove('border-zinc-500');
-                } else {
-                    dot.classList.remove('bg-blue-500', 'border-blue-500', 'scale-110');
-                    dot.classList.add('border-zinc-500');
+                // 自動ログイン判定
+                if (localStorage.getItem(AUTO_LOGIN_KEY) === "true" && !isAuthenticated) {
+                    const allowed = await registerOrCheckDeviceAccess();
+                    if (allowed) {
+                        enterApp();
+                    }
                 }
             });
         }
 
-        function shakePinDots() {
-            const container = document.getElementById('pin-dots');
-            container.classList.add('animate-shake');
-            setTimeout(() => container.classList.remove('animate-shake'), 400);
-        }
-
-        function processCompletePin() {
-            const savedPin = localStorage.getItem(PASSCODE_KEY);
-
-            if (pinMode === 'login') {
-                if (pinInput === savedPin) {
-                    unlockApp();
+        async function registerOrCheckDeviceAccess() {
+            const devId = getDeviceId();
+            const userRef = ref(db, `users/${devId}`);
+            try {
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    const userData = snap.val();
+                    if (userData.blocked) {
+                        showToast("この端末はアクセスが制限されています", "error");
+                        return false;
+                    }
+                    await update(userRef, { lastAccess: Date.now() });
+                    return true;
                 } else {
-                    shakePinDots();
-                    showToast('パスコードが違います', 'error');
-                    pinInput = '';
-                    updatePinDots();
+                    if (isRoomLocked) {
+                        showToast("現在、新規端末の入室はロックされています", "error");
+                        return false;
+                    }
+                    await set(userRef, {
+                        id: devId,
+                        name: navigator.userAgent.includes("iPad") ? "iPad" : "端末 (" + devId.slice(-4) + ")",
+                        blocked: false,
+                        createdAt: Date.now(),
+                        lastAccess: Date.now()
+                    });
+                    return true;
                 }
-            } else if (pinMode === 'setup_first' || pinMode === 'change_first') {
-                tempNewPin = pinInput;
-                pinInput = '';
-                updatePinDots();
-                pinMode = (pinMode === 'setup_first') ? 'setup_confirm' : 'change_confirm';
-                document.getElementById('login-subtitle').textContent = '確認のため、もう一度同じ4桁を入力してください';
-            } else if (pinMode === 'setup_confirm' || pinMode === 'change_confirm') {
-                if (pinInput === tempNewPin) {
-                    localStorage.setItem(PASSCODE_KEY, pinInput);
-                    showToast('パスコードを設定しました', 'success');
-                    unlockApp();
-                } else {
-                    shakePinDots();
-                    showToast('パスコードが一致しません。最初からやり直してください', 'error');
-                    pinInput = '';
-                    tempNewPin = '';
-                    updatePinDots();
-                    pinMode = (pinMode === 'setup_confirm') ? 'setup_first' : 'change_first';
-                    document.getElementById('login-subtitle').textContent = '新しい4桁のパスコードを入力してください';
-                }
+            } catch (e) {
+                console.error(e);
+                return true;
             }
         }
 
-        function unlockApp() {
-            pinInput = '';
-            updatePinDots();
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('library-view').classList.remove('hidden');
-            document.getElementById('library-view').classList.add('flex');
-            renderFolders();
+        function setupLoginEvents() {
+            const passInput = document.getElementById("pass-input");
+            const passBtn = document.getElementById("pass-btn");
+            const passError = document.getElementById("pass-error");
+            const rememberCheck = document.getElementById("remember-me-checkbox");
+
+            if (localStorage.getItem(AUTO_LOGIN_KEY) === "true") {
+                rememberCheck.checked = true;
+            }
+
+            const attemptLogin = async () => {
+                const entered = passInput.value.trim();
+                passError.style.display = "none";
+
+                // 最新のあいことばを確認
+                try {
+                    const snap = await get(settingsPassRef);
+                    if (snap.exists() && snap.val()) {
+                        currentPasscode = String(snap.val());
+                    }
+                } catch (_) {}
+
+                if (entered === currentPasscode) {
+                    const allowed = await registerOrCheckDeviceAccess();
+                    if (!allowed) return;
+
+                    if (rememberCheck.checked) {
+                        localStorage.setItem(AUTO_LOGIN_KEY, "true");
+                    } else {
+                        localStorage.removeItem(AUTO_LOGIN_KEY);
+                    }
+                    passInput.value = "";
+                    enterApp();
+                } else {
+                    passError.style.display = "block";
+                }
+            };
+
+            passBtn.addEventListener("click", attemptLogin);
+            passInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") attemptLogin();
+            });
+
+            // 管理画面ログインモーダル
+            const openAdminBtn = document.getElementById("open-admin-login-modal");
+            const adminLoginModal = document.getElementById("admin-login-modal");
+            const adminLoginCloseX = document.getElementById("admin-login-close-x");
+            const adminLoginSubmit = document.getElementById("admin-login-submit");
+            const adminPanelModal = document.getElementById("admin-panel-modal");
+
+            openAdminBtn.addEventListener("click", () => {
+                document.getElementById("admin-login-error").style.display = "none";
+                adminLoginModal.classList.add("active");
+            });
+            adminLoginCloseX.addEventListener("click", () => adminLoginModal.classList.remove("active"));
+
+            adminLoginSubmit.addEventListener("click", () => {
+                const idVal = document.getElementById("admin-id-input").value.trim();
+                const pwVal = document.getElementById("admin-pass-input").value.trim();
+                if (idVal === ADMIN_ID && pwVal === ADMIN_PASS) {
+                    adminLoginModal.classList.remove("active");
+                    document.getElementById("admin-id-input").value = "";
+                    document.getElementById("admin-pass-input").value = "";
+                    openAdminPanel();
+                } else {
+                    document.getElementById("admin-login-error").style.display = "block";
+                }
+            });
+
+            document.getElementById("admin-panel-close-x").addEventListener("click", () => adminPanelModal.classList.remove("active"));
+            document.getElementById("admin-panel-close-btn").addEventListener("click", () => adminPanelModal.classList.remove("active"));
+
+            // あいことば変更
+            document.getElementById("update-passcode-btn").addEventListener("click", async () => {
+                const newCode = document.getElementById("new-passcode-input").value.trim();
+                if (!newCode) return;
+                await set(settingsPassRef, newCode);
+                document.getElementById("new-passcode-input").value = "";
+                showToast("あいことばを変更しました", "success");
+            });
+
+            // ルームロック切替
+            document.getElementById("room-lock-toggle").addEventListener("change", async (e) => {
+                await set(roomLockRef, e.target.checked);
+                showToast(e.target.checked ? "新規ロックを有効にしました" : "新規ロックを解除しました", "info");
+            });
         }
 
-        function lockApp() {
+        function openAdminPanel() {
+            const adminPanelModal = document.getElementById("admin-panel-modal");
+            adminPanelModal.classList.add("active");
+
+            onValue(usersRef, (snap) => {
+                const listEl = document.getElementById("admin-users-list");
+                listEl.innerHTML = "";
+                if (!snap.exists()) {
+                    listEl.innerHTML = '<div class="text-xs text-zinc-400">登録済み端末はありません</div>';
+                    return;
+                }
+                const usersObj = snap.val();
+                Object.values(usersObj).forEach((u) => {
+                    const row = document.createElement("div");
+                    row.className = "admin-user-row";
+                    row.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(u.name || u.id)}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">${u.id}</div>
+                        </div>
+                        <button class="secondary-btn" style="font-size: 0.75rem; ${u.blocked ? 'color: #34d399;' : 'color: #fb7185;'}">
+                            ${u.blocked ? "ブロック解除" : "ブロック"}
+                        </button>
+                    `;
+                    row.querySelector("button").onclick = async () => {
+                        await update(ref(db, `users/${u.id}`), { blocked: !u.blocked });
+                    };
+                    listEl.appendChild(row);
+                });
+            });
+        }
+
+        function enterApp() {
+            isAuthenticated = true;
+            document.getElementById("lock-screen").style.display = "none";
+            document.getElementById("library-view").classList.remove("hidden");
+            document.getElementById("library-view").classList.add("flex");
+            attachFoldersListener();
+        }
+
+        window.lockApp = function () {
             closeViewer();
-            document.getElementById('library-view').classList.add('hidden');
-            document.getElementById('folder-detail-view').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            initPasscodeScreen();
-        }
-
-        function openChangePasscode() {
-            document.getElementById('library-view').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            pinInput = '';
-            tempNewPin = '';
-            updatePinDots();
-            pinMode = 'change_first';
-            document.getElementById('login-subtitle').textContent = '変更後：新しい4桁のパスコードを入力してください';
-            document.getElementById('reset-pin-hint').classList.add('hidden');
-        }
-
-        function promptResetPasscode() {
-            showConfirm(
-                'パスコードのリセット',
-                'パスコードをリセットして再設定しますか？（保存済みの楽曲フォルダーや楽譜データは消えません）',
-                () => {
-                    localStorage.removeItem(PASSCODE_KEY);
-                    initPasscodeScreen();
-                    showToast('新しいパスコードを設定してください', 'info');
-                }
-            );
-        }
+            isAuthenticated = false;
+            localStorage.removeItem(AUTO_LOGIN_KEY);
+            document.getElementById("remember-me-checkbox").checked = false;
+            document.getElementById("library-view").classList.add("hidden");
+            document.getElementById("folder-detail-view").classList.add("hidden");
+            document.getElementById("lock-screen").style.display = "flex";
+        };
 
         /* ==========================================================================
-           3. 楽曲フォルダー管理（CRUD）
+           2. 楽曲フォルダー管理（Firebase Realtime Database 同期）
            ========================================================================== */
-        function loadFoldersFromDB() {
-            return new Promise((resolve) => {
-                const store = dbTransaction('folders', 'readonly');
-                const req = store.getAll();
-                req.onsuccess = () => {
-                    folders = (req.result || []).sort((a, b) => b.updatedAt - a.updatedAt);
-                    resolve();
-                };
+        function attachFoldersListener() {
+            if (foldersListenerAttached) return;
+            foldersListenerAttached = true;
+
+            onValue(gakufuFoldersRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    folders = [];
+                } else {
+                    folders = Object.values(data).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                }
+                renderFolders();
+
+                // フォルダー詳細画面を開いている場合もリアルタイム更新
+                if (currentFolderId) {
+                    const current = folders.find(f => f.id === currentFolderId);
+                    if (current) {
+                        document.getElementById("detail-folder-title").textContent = current.name;
+                    }
+                }
             });
         }
 
-        function saveFolderToDB(folder) {
-            return new Promise((resolve) => {
-                const store = dbTransaction('folders', 'readwrite');
-                const req = store.put(folder);
-                req.onsuccess = () => resolve();
-            });
-        }
+        window.renderFolders = function () {
+            const grid = document.getElementById("folders-grid");
+            const emptyState = document.getElementById("empty-folders-state");
+            const query = document.getElementById("search-input").value.trim().toLowerCase();
 
-        function renderFolders() {
-            const grid = document.getElementById('folders-grid');
-            const emptyState = document.getElementById('empty-folders-state');
-            const query = document.getElementById('search-input').value.trim().toLowerCase();
-
-            document.getElementById('folder-count-label').textContent = `${folders.length}曲の楽譜を管理中`;
+            document.getElementById("folder-count-label").textContent = `${folders.length}曲の楽譜を管理中`;
 
             const filtered = folders.filter(f =>
-                f.name.toLowerCase().includes(query) ||
+                (f.name && f.name.toLowerCase().includes(query)) ||
                 (f.note && f.note.toLowerCase().includes(query))
             );
 
-            grid.innerHTML = '';
+            grid.innerHTML = "";
 
             if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-                emptyState.classList.add('flex');
+                emptyState.classList.remove("hidden");
+                emptyState.classList.add("flex");
                 return;
             }
 
-            emptyState.classList.add('hidden');
-            emptyState.classList.remove('flex');
+            emptyState.classList.add("hidden");
+            emptyState.classList.remove("flex");
 
             filtered.forEach(folder => {
                 const pageCount = folder.pageOrder ? folder.pageOrder.length : 0;
-                const card = document.createElement('div');
-                card.className = 'glass rounded-3xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition group cursor-pointer active:scale-[0.99]';
+                const card = document.createElement("div");
+                card.className = "glass rounded-3xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition group cursor-pointer active:scale-[0.99]";
                 card.onclick = (e) => {
-                    if (e.target.closest('button')) return;
+                    if (e.target.closest("button")) return;
                     openFolderDetail(folder.id);
                 };
 
@@ -761,193 +1288,181 @@
                 `;
                 grid.appendChild(card);
             });
-        }
+        };
 
-        function openFolderModal(folderId = null) {
-            const modal = document.getElementById('folder-modal');
-            const titleEl = document.getElementById('folder-modal-title');
-            const idInput = document.getElementById('edit-folder-id');
-            const nameInput = document.getElementById('folder-name-input');
-            const noteInput = document.getElementById('folder-note-input');
+        window.openFolderModal = function (folderId = null) {
+            const modal = document.getElementById("folder-modal");
+            const titleEl = document.getElementById("folder-modal-title");
+            const idInput = document.getElementById("edit-folder-id");
+            const nameInput = document.getElementById("folder-name-input");
+            const noteInput = document.getElementById("folder-note-input");
 
             if (folderId) {
                 const folder = folders.find(f => f.id === folderId);
                 if (!folder) return;
-                titleEl.textContent = 'フォルダー情報の編集';
+                titleEl.textContent = "フォルダー情報の編集";
                 idInput.value = folder.id;
                 nameInput.value = folder.name;
-                noteInput.value = folder.note || '';
+                noteInput.value = folder.note || "";
             } else {
-                titleEl.textContent = '新規楽曲フォルダー';
-                idInput.value = '';
-                nameInput.value = '';
-                noteInput.value = '';
+                titleEl.textContent = "新規楽曲フォルダー";
+                idInput.value = "";
+                nameInput.value = "";
+                noteInput.value = "";
             }
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
             setTimeout(() => nameInput.focus(), 100);
-        }
+        };
 
-        function closeFolderModal() {
-            const modal = document.getElementById('folder-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
+        window.closeFolderModal = function () {
+            const modal = document.getElementById("folder-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        };
 
-        async function saveFolderForm(e) {
+        window.saveFolderForm = async function (e) {
             e.preventDefault();
-            const id = document.getElementById('edit-folder-id').value;
-            const name = document.getElementById('folder-name-input').value.trim();
-            const note = document.getElementById('folder-note-input').value.trim();
+            const id = document.getElementById("edit-folder-id").value;
+            const name = document.getElementById("folder-name-input").value.trim();
+            const note = document.getElementById("folder-note-input").value.trim();
             if (!name) return;
 
-            if (id) {
-                const folder = folders.find(f => f.id === id);
-                if (folder) {
-                    folder.name = name;
-                    folder.note = note;
-                    folder.updatedAt = Date.now();
-                    await saveFolderToDB(folder);
-                    if (currentFolderId === id) {
-                        document.getElementById('detail-folder-title').textContent = folder.name;
+            try {
+                if (id) {
+                    const folder = folders.find(f => f.id === id);
+                    if (folder) {
+                        await update(ref(db, `gakufu_folders/${id}`), {
+                            name,
+                            note,
+                            updatedAt: Date.now()
+                        });
+                        if (currentFolderId === id) {
+                            document.getElementById("detail-folder-title").textContent = name;
+                        }
+                        showToast("フォルダーを更新しました", "success");
                     }
-                    showToast('フォルダーを更新しました', 'success');
+                } else {
+                    const newId = "fld_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+                    const newFolder = {
+                        id: newId,
+                        name,
+                        note,
+                        pageOrder: [],
+                        updatedAt: Date.now()
+                    };
+                    await set(ref(db, `gakufu_folders/${newId}`), newFolder);
+                    showToast(`「${name}」を作成しました`, "success");
                 }
-            } else {
-                const newFolder = {
-                    id: 'fld_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-                    name,
-                    note,
-                    pageOrder: [],
-                    updatedAt: Date.now()
-                };
-                await saveFolderToDB(newFolder);
-                showToast(`「${name}」を作成しました`, 'success');
+                closeFolderModal();
+            } catch (err) {
+                console.error(err);
+                showToast("保存に失敗しました: " + err.message, "error");
             }
+        };
 
-            await loadFoldersFromDB();
-            renderFolders();
-            closeFolderModal();
-        }
-
-        function deleteFolder(folderId) {
+        window.deleteFolder = function (folderId) {
             const folder = folders.find(f => f.id === folderId);
             if (!folder) return;
 
             showConfirm(
-                'フォルダーの削除',
+                "フォルダーの削除",
                 `「${folder.name}」と中の楽譜ページをすべて削除しますか？この操作は取り消せません。`,
                 async () => {
-                    // 関連ページを削除
-                    const tx = db.transaction(['folders', 'pages'], 'readwrite');
-                    tx.objectStore('folders').delete(folderId);
-                    const pageStore = tx.objectStore('pages');
-                    const index = pageStore.index('folderId');
-                    const req = index.getAllKeys(folderId);
-                    req.onsuccess = () => {
-                        (req.result || []).forEach(key => pageStore.delete(key));
-                    };
-
-                    tx.oncomplete = async () => {
-                        await loadFoldersFromDB();
-                        renderFolders();
-                        showToast('フォルダーを削除しました', 'info');
-                    };
+                    try {
+                        await remove(ref(db, `gakufu_folders/${folderId}`));
+                        await remove(ref(db, `gakufu_pages/${folderId}`));
+                        showToast("フォルダーを削除しました", "info");
+                    } catch (err) {
+                        showToast("削除に失敗しました: " + err.message, "error");
+                    }
                 }
             );
-        }
+        };
 
         /* ==========================================================================
-           4. フォルダー内 JPGアップロード＆ページ番号管理
+           3. フォルダー詳細・カメラ撮影補正 ＆ JPGアップロード（Firebase保存）
            ========================================================================== */
-        function revokeActiveUrls() {
-            activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
-            activeObjectUrls = [];
-        }
-
-        async function openFolderDetail(folderId) {
+        window.openFolderDetail = async function (folderId) {
             currentFolderId = folderId;
             const folder = folders.find(f => f.id === folderId);
             if (!folder) return;
 
-            document.getElementById('library-view').classList.add('hidden');
-            document.getElementById('folder-detail-view').classList.remove('hidden');
-            document.getElementById('folder-detail-view').classList.add('flex');
+            document.getElementById("library-view").classList.add("hidden");
+            document.getElementById("folder-detail-view").classList.remove("hidden");
+            document.getElementById("folder-detail-view").classList.add("flex");
 
-            document.getElementById('detail-folder-title').textContent = folder.name;
+            document.getElementById("detail-folder-title").textContent = folder.name;
             await loadPagesForCurrentFolder();
-        }
+        };
 
-        function backToLibrary() {
-            revokeActiveUrls();
+        window.backToLibrary = function () {
             currentFolderId = null;
             currentPages = [];
-            document.getElementById('folder-detail-view').classList.add('hidden');
-            document.getElementById('library-view').classList.remove('hidden');
+            document.getElementById("folder-detail-view").classList.add("hidden");
+            document.getElementById("library-view").classList.remove("hidden");
             renderFolders();
-        }
+        };
 
-        function editCurrentFolder() {
+        window.editCurrentFolder = function () {
             if (currentFolderId) openFolderModal(currentFolderId);
-        }
+        };
 
-        function loadPagesForCurrentFolder() {
-            return new Promise((resolve) => {
-                revokeActiveUrls();
-                const folder = folders.find(f => f.id === currentFolderId);
-                const store = dbTransaction('pages', 'readonly');
-                const index = store.index('folderId');
-                const req = index.getAll(currentFolderId);
+        async function loadPagesForCurrentFolder() {
+            if (!currentFolderId) return;
+            const folder = folders.find(f => f.id === currentFolderId);
+            if (!folder) return;
 
-                req.onsuccess = async () => {
-                    const rawPages = req.result || [];
-                    const pageMap = new Map(rawPages.map(p => [p.id, p]));
+            try {
+                const snap = await get(ref(db, `gakufu_pages/${currentFolderId}`));
+                const pagesObj = snap.exists() ? snap.val() : {};
+                const pageMap = new Map(Object.entries(pagesObj));
 
-                    // folder.pageOrder の順番通りに並べる
-                    const ordered = [];
-                    const validOrderIds = [];
+                const ordered = [];
+                const validOrderIds = [];
 
-                    (folder.pageOrder || []).forEach(pid => {
-                        if (pageMap.has(pid)) {
-                            const p = pageMap.get(pid);
-                            p.url = p.blob ? URL.createObjectURL(p.blob) : p.dataUrl;
-                            if (p.blob) activeObjectUrls.push(p.url);
-                            ordered.push(p);
-                            validOrderIds.push(pid);
-                            pageMap.delete(pid);
-                        }
-                    });
-
-                    // 万が一 order に未登録のページがあれば末尾に追加
-                    pageMap.forEach((p, pid) => {
-                        p.url = p.blob ? URL.createObjectURL(p.blob) : p.dataUrl;
-                        if (p.blob) activeObjectUrls.push(p.url);
+                (folder.pageOrder || []).forEach(pid => {
+                    if (pageMap.has(pid)) {
+                        const p = pageMap.get(pid);
+                        p.url = p.dataUrl;
                         ordered.push(p);
                         validOrderIds.push(pid);
-                    });
-
-                    if (validOrderIds.length !== (folder.pageOrder || []).length) {
-                        folder.pageOrder = validOrderIds;
-                        await saveFolderToDB(folder);
+                        pageMap.delete(pid);
                     }
+                });
 
-                    currentPages = ordered;
-                    renderPagesGrid();
-                    resolve();
-                };
-            });
+                // order配列に未登録のページがあれば末尾に追加
+                pageMap.forEach((p, pid) => {
+                    p.url = p.dataUrl;
+                    ordered.push(p);
+                    validOrderIds.push(pid);
+                });
+
+                if (validOrderIds.length !== (folder.pageOrder || []).length) {
+                    folder.pageOrder = validOrderIds;
+                    await update(ref(db, `gakufu_folders/${currentFolderId}`), {
+                        pageOrder: validOrderIds
+                    });
+                }
+
+                currentPages = ordered;
+                renderPagesGrid();
+            } catch (err) {
+                console.error(err);
+                showToast("楽譜データの読み込みに失敗しました", "error");
+            }
         }
 
         // 画質プリセット定義（長辺の最大ピクセル数・JPEG品質）
         const UPLOAD_PRESETS = {
-            standard: { maxSide: 1800, quality: 0.82, label: '標準・高精細' },
-            high:     { maxSide: 2200, quality: 0.86, label: '超高精細' },
-            light:    { maxSide: 1400, quality: 0.78, label: '軽量' }
+            standard: { maxSide: 1800, quality: 0.82, label: "標準・高精細" },
+            high:     { maxSide: 2200, quality: 0.86, label: "超高精細" },
+            light:    { maxSide: 1400, quality: 0.78, label: "軽量" }
         };
 
-        // 画像をHTML5 Canvasでリサイズ・圧縮する関数（拡大はしない）
-        function compressJpgImage(file, maxSide, quality) {
+        // 画像リサイズ・圧縮関数（enhanceScore = true の場合は撮影楽譜向けにコントラスト・白地補正）
+        function processScoreImage(file, maxSide, quality, enhanceScore = false) {
             return new Promise((resolve, reject) => {
                 const sourceUrl = URL.createObjectURL(file);
                 const img = new Image();
@@ -958,39 +1473,39 @@
                     let targetH = img.naturalHeight;
                     const longest = Math.max(targetW, targetH);
 
-                    // 長辺が maxSide を超える場合のみアスペクト比を維持して縮小
                     if (longest > maxSide) {
                         const scale = maxSide / longest;
                         targetW = Math.round(targetW * scale);
                         targetH = Math.round(targetH * scale);
                     }
 
-                    const canvas = document.createElement('canvas');
+                    const canvas = document.createElement("canvas");
                     canvas.width = targetW;
                     canvas.height = targetH;
 
-                    const ctx = canvas.getContext('2d');
-                    // 白背景を敷いてから描画（透明部分がある場合でも黒くならないよう保護）
-                    ctx.fillStyle = '#FFFFFF';
+                    const ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#FFFFFF";
                     ctx.fillRect(0, 0, targetW, targetH);
                     ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
+                    ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(img, 0, 0, targetW, targetH);
 
-                    const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    canvas.toBlob((blob) => {
-                        if (!blob) {
-                            reject(new Error('JPGの変換に失敗しました'));
-                            return;
-                        }
-                        resolve({
-                            blob,
-                            dataUrl,
-                            width: targetW,
-                            height: targetH,
-                            sizeBytes: blob.size
-                        });
-                    }, 'image/jpeg', quality);
+                    // カメラ撮影時は五線譜と音符をくっきりさせ、紙の影や黄ばみを白く飛ばす補正を実行
+                    if (enhanceScore) {
+                        applyScoreReadabilityFilter(ctx, targetW, targetH);
+                    }
+
+                    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+                    // Base64データURLから概算バイト数を算出
+                    const base64Body = dataUrl.split(",")[1] || "";
+                    const sizeBytes = Math.round((base64Body.length * 3) / 4);
+
+                    resolve({
+                        dataUrl,
+                        width: targetW,
+                        height: targetH,
+                        sizeBytes
+                    });
                 };
 
                 img.onerror = () => {
@@ -1002,146 +1517,230 @@
             });
         }
 
+        // 楽譜写真の見やすさ向上フィルター（背景の白飛び補正＋コントラスト強調＋軽くグレースケール寄り補正）
+        function applyScoreReadabilityFilter(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            // 1. 輝度ヒストグラムから白地レベル（上位85%点）と黒インクレベル（下位5%点）を推定
+            const hist = new Uint32Array(256);
+            const step = 4 * 4; // 高速化のためサンプリング
+            let sampleCount = 0;
+            for (let i = 0; i < data.length; i += step) {
+                const lum = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
+                hist[lum]++;
+                sampleCount++;
+            }
+
+            let acc = 0;
+            let blackPoint = 35;
+            let whitePoint = 215;
+            for (let v = 0; v < 256; v++) {
+                acc += hist[v];
+                if (acc <= sampleCount * 0.03) blackPoint = v;
+                if (acc <= sampleCount * 0.78) whitePoint = v;
+            }
+            if (whitePoint - blackPoint < 60) {
+                blackPoint = 40;
+                whitePoint = 210;
+            }
+
+            const range = whitePoint - blackPoint;
+
+            // 2. レベル補正＋コントラストカーブで紙面を白く、音符・五線を濃く補正
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // 輝度算出
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                // レベル正規化（0.0〜1.0）
+                let norm = (lum - blackPoint) / range;
+                if (norm < 0) norm = 0;
+                if (norm > 1) norm = 1;
+
+                // 紙の薄グレーを白へ押し上げ、音符の黒を引き締めるシグモイド風カーブ
+                if (norm > 0.72) {
+                    norm = 0.72 + ((norm - 0.72) / 0.28) * 0.28;
+                    norm = Math.pow(norm, 0.55); // 白地をクリーンに
+                } else if (norm < 0.45) {
+                    norm = Math.pow(norm / 0.45, 1.35) * 0.45; // 音符・線をくっきり濃く
+                }
+
+                const targetLum = norm * 255;
+                // 書き込みの赤ペン・青ペンなどの色味は少し残しつつコントラストを反映
+                const ratio = lum > 1 ? targetLum / lum : 0;
+                const satBlend = 0.35; // 0:完全白黒, 1:元色維持（赤ペン書き込み等を視認可能に保持）
+
+                const nr = (r * satBlend + lum * (1 - satBlend)) * ratio;
+                const ng = (g * satBlend + lum * (1 - satBlend)) * ratio;
+                const nb = (b * satBlend + lum * (1 - satBlend)) * ratio;
+
+                data[i]     = nr > 255 ? 255 : (nr < 0 ? 0 : nr);
+                data[i + 1] = ng > 255 ? 255 : (ng < 0 ? 0 : ng);
+                data[i + 2] = nb > 255 ? 255 : (nb < 0 ? 0 : nb);
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+        }
+
         function formatFileSize(bytes) {
-            if (!bytes || bytes <= 0) return '';
+            if (!bytes || bytes <= 0) return "";
             if (bytes < 1024 * 1024) {
                 return `${Math.round(bytes / 1024)}KB`;
             }
             return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
         }
 
-        async function handleJpgUpload(event) {
+        // カメラ撮影後の自動補正・縮小・Firebase保存処理
+        window.handleCameraCapture = async function (event) {
             const files = Array.from(event.target.files || []);
-            event.target.value = ''; // 連続選択を可能にする
+            event.target.value = "";
             if (!files.length || !currentFolderId) return;
 
-            // JPGファイルのみフィルタリング
-            const jpgFiles = files.filter(f =>
-                f.type === 'image/jpeg' ||
-                f.type === 'image/jpg' ||
-                /\.(jpe?g)$/i.test(f.name)
+            await importAndSaveScoreFiles(files, true);
+        };
+
+        // 通常JPGファイル追加処理
+        window.handleJpgUpload = async function (event) {
+            const files = Array.from(event.target.files || []);
+            event.target.value = "";
+            if (!files.length || !currentFolderId) return;
+
+            const imageFiles = files.filter(f =>
+                f.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(f.name)
             );
 
-            if (jpgFiles.length === 0) {
-                showToast('JPG形式（.jpg / .jpeg）の画像を選択してください', 'error');
+            if (imageFiles.length === 0) {
+                showToast("画像ファイル（JPG / PNG / WebP）を選択してください", "error");
                 return;
             }
 
-            // ファイル名順（自然順ソート：1.jpg, 2.jpg, 10.jpg対応）で追加
-            jpgFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+            imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+            await importAndSaveScoreFiles(imageFiles, false);
+        };
 
-            const presetKey = document.getElementById('upload-preset-select')?.value || 'standard';
+        async function importAndSaveScoreFiles(files, isCameraEnhance) {
+            const presetKey = document.getElementById("upload-preset-select")?.value || "standard";
             const preset = UPLOAD_PRESETS[presetKey] || UPLOAD_PRESETS.standard;
 
-            const progressOverlay = document.getElementById('upload-progress-overlay');
-            const progressText = document.getElementById('upload-progress-text');
-            const progressBar = document.getElementById('upload-progress-bar');
+            const progressOverlay = document.getElementById("upload-progress-overlay");
+            const progressTitle = document.getElementById("upload-progress-title");
+            const progressText = document.getElementById("upload-progress-text");
+            const progressBar = document.getElementById("upload-progress-bar");
 
-            progressOverlay.classList.remove('hidden');
-            progressOverlay.classList.add('flex');
+            progressTitle.textContent = isCameraEnhance
+                ? "撮影楽譜を見やすくコントラスト補正中..."
+                : "楽譜を最適化してクラウド保存中...";
+            progressOverlay.classList.remove("hidden");
+            progressOverlay.classList.add("flex");
 
-            const processedItems = [];
             let totalOriginalBytes = 0;
             let totalCompressedBytes = 0;
 
             try {
-                for (let i = 0; i < jpgFiles.length; i++) {
-                    const file = jpgFiles[i];
-                    totalOriginalBytes += file.size;
-
-                    progressText.textContent = `${i + 1} / ${jpgFiles.length} ページ最適化中... (${file.name})`;
-                    progressBar.style.width = `${Math.round(((i + 0.5) / jpgFiles.length) * 100)}%`;
-
-                    const compressed = await compressJpgImage(file, preset.maxSide, preset.quality);
-                    totalCompressedBytes += compressed.sizeBytes;
-                    processedItems.push({ file, compressed });
-
-                    progressBar.style.width = `${Math.round(((i + 1) / jpgFiles.length) * 100)}%`;
-                }
-
                 const folder = folders.find(f => f.id === currentFolderId);
+                if (!folder) throw new Error("フォルダーが見つかりません");
                 if (!folder.pageOrder) folder.pageOrder = [];
 
-                const tx = db.transaction(['pages', 'folders'], 'readwrite');
-                const pageStore = tx.objectStore('pages');
+                const updates = {};
 
-                processedItems.forEach(({ file, compressed }, idx) => {
-                    const pageId = 'pg_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).slice(2, 6);
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    totalOriginalBytes += file.size;
+
+                    const displayName = isCameraEnhance
+                        ? `撮影楽譜_${new Date().toLocaleTimeString("ja-JP", { hour12: false }).replace(/:/g, "")}_${i + 1}.jpg`
+                        : file.name;
+
+                    progressText.textContent = `${i + 1} / ${files.length} ページ処理・保存中... (${displayName})`;
+                    progressBar.style.width = `${Math.round(((i + 0.5) / files.length) * 100)}%`;
+
+                    const processed = await processScoreImage(file, preset.maxSide, preset.quality, isCameraEnhance);
+                    totalCompressedBytes += processed.sizeBytes;
+
+                    const pageId = "pg_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6);
                     const pageObj = {
                         id: pageId,
                         folderId: currentFolderId,
-                        name: file.name,
-                        blob: compressed.blob,
-                        dataUrl: compressed.dataUrl,
-                        width: compressed.width,
-                        height: compressed.height,
-                        sizeBytes: compressed.sizeBytes
+                        name: displayName,
+                        dataUrl: processed.dataUrl,
+                        width: processed.width,
+                        height: processed.height,
+                        sizeBytes: processed.sizeBytes,
+                        createdAt: Date.now()
                     };
-                    pageStore.put(pageObj);
+
+                    updates[`gakufu_pages/${currentFolderId}/${pageId}`] = pageObj;
                     folder.pageOrder.push(pageId);
-                });
+
+                    progressBar.style.width = `${Math.round(((i + 1) / files.length) * 100)}%`;
+                }
 
                 folder.updatedAt = Date.now();
-                tx.objectStore('folders').put(folder);
+                updates[`gakufu_folders/${currentFolderId}/pageOrder`] = folder.pageOrder;
+                updates[`gakufu_folders/${currentFolderId}/updatedAt`] = folder.updatedAt;
 
-                tx.oncomplete = async () => {
-                    progressOverlay.classList.add('hidden');
-                    progressOverlay.classList.remove('flex');
-                    await loadPagesForCurrentFolder();
+                await update(ref(db), updates);
 
-                    const savedSummary = totalOriginalBytes > totalCompressedBytes
-                        ? `（${formatFileSize(totalOriginalBytes)} → ${formatFileSize(totalCompressedBytes)} に最適化）`
-                        : `（合計 ${formatFileSize(totalCompressedBytes)}）`;
-                    showToast(`${processedItems.length}ページ追加しました${savedSummary}`, 'success');
-                };
+                progressOverlay.classList.add("hidden");
+                progressOverlay.classList.remove("flex");
+
+                await loadPagesForCurrentFolder();
+
+                const savedSummary = totalOriginalBytes > totalCompressedBytes
+                    ? `（${formatFileSize(totalOriginalBytes)} → ${formatFileSize(totalCompressedBytes)} に最適化）`
+                    : `（${formatFileSize(totalCompressedBytes)}）`;
+                const prefixMsg = isCameraEnhance ? "コントラスト補正して" : "";
+                showToast(`${files.length}ページを${prefixMsg}保存しました${savedSummary}`, "success");
             } catch (err) {
-                progressOverlay.classList.add('hidden');
-                progressOverlay.classList.remove('flex');
-                showToast(err.message || '画像の最適化中にエラーが発生しました', 'error');
+                console.error(err);
+                progressOverlay.classList.add("hidden");
+                progressOverlay.classList.remove("flex");
+                showToast(err.message || "画像の保存中にエラーが発生しました", "error");
             }
         }
 
         function renderPagesGrid() {
-            const grid = document.getElementById('pages-grid');
-            const emptyState = document.getElementById('empty-pages-state');
-            const hintBar = document.getElementById('page-sort-hint');
-            const startBtn = document.getElementById('start-viewer-btn');
+            const grid = document.getElementById("pages-grid");
+            const emptyState = document.getElementById("empty-pages-state");
+            const hintBar = document.getElementById("page-sort-hint");
+            const startBtn = document.getElementById("start-viewer-btn");
             const folder = folders.find(f => f.id === currentFolderId);
 
             const total = currentPages.length;
-            const totalSizeBytes = currentPages.reduce((sum, p) => sum + (p.sizeBytes || (p.blob ? p.blob.size : 0)), 0);
-            const sizeInfoText = totalSizeBytes > 0 ? ` ・ 合計 ${formatFileSize(totalSizeBytes)}` : '';
-            const noteText = folder && folder.note ? ` ・ ${folder.note}` : '';
-            document.getElementById('detail-folder-subtitle').textContent = `全 ${total} ページ${sizeInfoText}${noteText}`;
+            const totalSizeBytes = currentPages.reduce((sum, p) => sum + (p.sizeBytes || 0), 0);
+            const sizeInfoText = totalSizeBytes > 0 ? ` ・ 合計 ${formatFileSize(totalSizeBytes)}` : "";
+            const noteText = folder && folder.note ? ` ・ ${folder.note}` : "";
+            document.getElementById("detail-folder-subtitle").textContent = `全 ${total} ページ${sizeInfoText}${noteText}`;
 
             startBtn.disabled = total === 0;
-            grid.innerHTML = '';
+            grid.innerHTML = "";
 
             if (total === 0) {
-                emptyState.classList.remove('hidden');
-                emptyState.classList.add('flex');
-                hintBar.classList.add('hidden');
+                emptyState.classList.remove("hidden");
+                emptyState.classList.add("flex");
+                hintBar.classList.add("hidden");
                 return;
             }
 
-            emptyState.classList.add('hidden');
-            emptyState.classList.remove('flex');
-            hintBar.classList.remove('hidden');
+            emptyState.classList.add("hidden");
+            emptyState.classList.remove("flex");
+            hintBar.classList.remove("hidden");
 
-            // ページ番号ドロップダウンの選択肢生成
             const pageOptionsHtml = currentPages.map((_, i) =>
                 `<option value="${i}">P.${i + 1}</option>`
-            ).join('');
+            ).join("");
 
             currentPages.forEach((page, index) => {
                 const pageNum = index + 1;
-                const card = document.createElement('div');
-                card.className = 'glass rounded-3xl overflow-hidden flex flex-col border border-white/10 hover:border-blue-500/40 transition group';
+                const card = document.createElement("div");
+                card.className = "glass rounded-3xl overflow-hidden flex flex-col border border-white/10 hover:border-blue-500/40 transition group";
 
-                const dimsText = (page.width && page.height) ? `${page.width}×${page.height}` : '';
-                const bytes = page.sizeBytes || (page.blob ? page.blob.size : 0);
-                const sizeText = bytes ? formatFileSize(bytes) : '';
-                const metaBadge = [dimsText, sizeText].filter(Boolean).join(' • ');
+                const dimsText = (page.width && page.height) ? `${page.width}×${page.height}` : "";
+                const sizeText = page.sizeBytes ? formatFileSize(page.sizeBytes) : "";
+                const metaBadge = [dimsText, sizeText].filter(Boolean).join(" • ");
 
                 card.innerHTML = `
                     <!-- 楽譜サムネイル領域（タップでそのページから演奏開始） -->
@@ -1159,7 +1758,7 @@
                         </button>
                     </div>
 
-                    <!-- ページ番号並べ替えコントロール（iPadタッチ向け大型ボタン） -->
+                    <!-- ページ番号並べ替えコントロール -->
                     <div class="p-3 bg-zinc-900/80 flex flex-col gap-2">
                         <div class="px-1">
                             <p class="text-[11px] text-zinc-300 truncate" title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</p>
@@ -1167,17 +1766,14 @@
                         </div>
                         
                         <div class="flex items-center justify-between gap-1.5">
-                            <!-- 1つ前へ移動 -->
                             <button onclick="movePage(${index}, ${index - 1})" ${index === 0 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="前のページへ">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                             </button>
 
-                            <!-- 直接ページ番号を指定して移動 -->
                             <select onchange="movePage(${index}, parseInt(this.value))" aria-label="ページ番号を変更" class="py-2 px-2.5 rounded-xl bg-zinc-800 border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-blue-500">
                                 ${pageOptionsHtml.replace(`value="${index}"`, `value="${index}" selected`)}
                             </select>
 
-                            <!-- 1つ後ろへ移動 -->
                             <button onclick="movePage(${index}, ${index + 1})" ${index === total - 1 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="次のページへ">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                             </button>
@@ -1188,7 +1784,7 @@
             });
         }
 
-        async function movePage(fromIndex, toIndex) {
+        window.movePage = async function (fromIndex, toIndex) {
             if (fromIndex === toIndex || toIndex < 0 || toIndex >= currentPages.length) return;
 
             const folder = folders.find(f => f.id === currentFolderId);
@@ -1197,146 +1793,152 @@
 
             folder.pageOrder = currentPages.map(p => p.id);
             folder.updatedAt = Date.now();
-            await saveFolderToDB(folder);
+
+            await update(ref(db, `gakufu_folders/${currentFolderId}`), {
+                pageOrder: folder.pageOrder,
+                updatedAt: folder.updatedAt
+            });
 
             renderPagesGrid();
-            showToast(`P.${toIndex + 1} に移動しました`, 'info');
-        }
+            showToast(`P.${toIndex + 1} に移動しました`, "info");
+        };
 
-        async function sortPagesByFilename() {
+        window.sortPagesByFilename = async function () {
             const folder = folders.find(f => f.id === currentFolderId);
-            currentPages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+            currentPages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
             folder.pageOrder = currentPages.map(p => p.id);
             folder.updatedAt = Date.now();
-            await saveFolderToDB(folder);
-            renderPagesGrid();
-            showToast('ファイル名順にページ番号を振り直しました', 'success');
-        }
 
-        function deletePage(pageId) {
+            await update(ref(db, `gakufu_folders/${currentFolderId}`), {
+                pageOrder: folder.pageOrder,
+                updatedAt: folder.updatedAt
+            });
+
+            renderPagesGrid();
+            showToast("ファイル名順にページ番号を振り直しました", "success");
+        };
+
+        window.deletePage = function (pageId) {
             showConfirm(
-                'ページの削除',
-                'この楽譜ページを削除しますか？（残りのページ番号は自動的に詰められます）',
+                "ページの削除",
+                "この楽譜ページを削除しますか？（残りのページ番号は自動的に詰められます）",
                 async () => {
                     const folder = folders.find(f => f.id === currentFolderId);
-                    folder.pageOrder = folder.pageOrder.filter(id => id !== pageId);
+                    folder.pageOrder = (folder.pageOrder || []).filter(id => id !== pageId);
                     folder.updatedAt = Date.now();
 
-                    const tx = db.transaction(['pages', 'folders'], 'readwrite');
-                    tx.objectStore('pages').delete(pageId);
-                    tx.objectStore('folders').put(folder);
+                    const updates = {};
+                    updates[`gakufu_pages/${currentFolderId}/${pageId}`] = null;
+                    updates[`gakufu_folders/${currentFolderId}/pageOrder`] = folder.pageOrder;
+                    updates[`gakufu_folders/${currentFolderId}/updatedAt`] = folder.updatedAt;
 
-                    tx.oncomplete = async () => {
-                        await loadPagesForCurrentFolder();
-                        showToast('ページを削除しました', 'info');
-                    };
+                    await update(ref(db), updates);
+                    await loadPagesForCurrentFolder();
+                    showToast("ページを削除しました", "info");
                 }
             );
-        }
+        };
 
         /* ==========================================================================
-           5. iPad楽譜ビューワー（演奏モード・見開き・スワイプ・メトロノーム）
+           4. iPad楽譜ビューワー（演奏モード・左右半分タップ・見開き・スワイプ・メトロノーム）
            ========================================================================== */
-        function openViewer(startIndex = 0) {
+        window.openViewer = function (startIndex = 0) {
             if (currentPages.length === 0) return;
 
             const folder = folders.find(f => f.id === currentFolderId);
-            document.getElementById('viewer-song-title').textContent = folder ? folder.name : '';
+            document.getElementById("viewer-song-title").textContent = folder ? folder.name : "";
 
-            // iPad横向きなら初期状態を見開き2ページにすると便利（画面幅1024px以上）
             isSpreadMode = window.innerWidth >= 1024 && currentPages.length > 1;
             updateSpreadButtonUI();
 
             currentPageIndex = Math.max(0, Math.min(startIndex, currentPages.length - 1));
             if (isSpreadMode && currentPageIndex % 2 === 1) {
-                currentPageIndex -= 1; // 見開き時は奇数ページ（index偶数）を左側に揃える
+                currentPageIndex -= 1;
             }
 
             isChromeVisible = true;
             updateChromeVisibility();
 
-            const overlay = document.getElementById('viewer-overlay');
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+            const overlay = document.getElementById("viewer-overlay");
+            overlay.classList.remove("hidden");
+            overlay.classList.add("flex");
 
             renderViewerPage();
-        }
+        };
 
-        function closeViewer() {
+        window.closeViewer = function () {
             stopMetronome();
-            document.getElementById('metronome-panel').classList.add('hidden');
-            const overlay = document.getElementById('viewer-overlay');
-            overlay.classList.add('hidden');
-            overlay.classList.remove('flex');
-        }
+            document.getElementById("metronome-panel").classList.add("hidden");
+            const overlay = document.getElementById("viewer-overlay");
+            overlay.classList.add("hidden");
+            overlay.classList.remove("flex");
+        };
 
-        function toggleSpreadMode() {
+        window.toggleSpreadMode = function () {
             isSpreadMode = !isSpreadMode;
             if (isSpreadMode && currentPageIndex % 2 === 1) {
                 currentPageIndex = Math.max(0, currentPageIndex - 1);
             }
             updateSpreadButtonUI();
             renderViewerPage();
-        }
+        };
 
         function updateSpreadButtonUI() {
-            const label = document.getElementById('spread-mode-label');
-            label.textContent = isSpreadMode ? '見開き2ページ' : '1ページ表示';
+            const label = document.getElementById("spread-mode-label");
+            label.textContent = isSpreadMode ? "見開き2ページ" : "1ページ表示";
         }
 
         function renderViewerPage() {
             const total = currentPages.length;
             if (total === 0) return;
 
-            const slot1 = document.getElementById('page-slot-1');
-            const slot2 = document.getElementById('page-slot-2');
-            const img1 = document.getElementById('sheet-img-1');
-            const img2 = document.getElementById('sheet-img-2');
-            const badge1 = document.getElementById('viewer-badge-1');
-            const badge2 = document.getElementById('viewer-badge-2');
+            const slot1 = document.getElementById("page-slot-1");
+            const slot2 = document.getElementById("page-slot-2");
+            const img1 = document.getElementById("sheet-img-1");
+            const img2 = document.getElementById("sheet-img-2");
+            const badge1 = document.getElementById("viewer-badge-1");
+            const badge2 = document.getElementById("viewer-badge-2");
 
             const page1 = currentPages[currentPageIndex];
             img1.src = page1.url;
             badge1.textContent = `P.${currentPageIndex + 1}`;
 
             if (isSpreadMode) {
-                slot1.classList.remove('w-full');
-                slot1.classList.add('w-1/2');
-                slot2.classList.remove('hidden');
-                slot2.classList.add('flex', 'w-1/2');
+                slot1.classList.remove("w-full");
+                slot1.classList.add("w-1/2");
+                slot2.classList.remove("hidden");
+                slot2.classList.add("flex", "w-1/2");
 
                 if (currentPageIndex + 1 < total) {
                     const page2 = currentPages[currentPageIndex + 1];
                     img2.src = page2.url;
-                    img2.classList.remove('hidden');
+                    img2.classList.remove("hidden");
                     badge2.textContent = `P.${currentPageIndex + 2}`;
-                    badge2.classList.remove('hidden');
-                    document.getElementById('viewer-page-indicator').textContent =
+                    badge2.classList.remove("hidden");
+                    document.getElementById("viewer-page-indicator").textContent =
                         `P.${currentPageIndex + 1} - P.${currentPageIndex + 2} / 全${total}ページ`;
                 } else {
-                    // 最終ページが片側のみの場合
-                    img2.classList.add('hidden');
-                    badge2.classList.add('hidden');
-                    document.getElementById('viewer-page-indicator').textContent =
+                    img2.classList.add("hidden");
+                    badge2.classList.add("hidden");
+                    document.getElementById("viewer-page-indicator").textContent =
                         `P.${currentPageIndex + 1} / 全${total}ページ`;
                 }
             } else {
-                slot1.classList.remove('w-1/2');
-                slot1.classList.add('w-full');
-                slot2.classList.add('hidden');
-                slot2.classList.remove('flex', 'w-1/2');
-                document.getElementById('viewer-page-indicator').textContent =
+                slot1.classList.remove("w-1/2");
+                slot1.classList.add("w-full");
+                slot2.classList.add("hidden");
+                slot2.classList.remove("flex", "w-1/2");
+                document.getElementById("viewer-page-indicator").textContent =
                     `P.${currentPageIndex + 1} / 全${total}ページ`;
             }
 
-            // シークバー更新
-            const scrubber = document.getElementById('viewer-scrubber');
+            const scrubber = document.getElementById("viewer-scrubber");
             scrubber.max = Math.max(0, total - 1);
             scrubber.value = currentPageIndex;
-            document.getElementById('viewer-scrubber-text').textContent = `${currentPageIndex + 1} / ${total} ページ`;
+            document.getElementById("viewer-scrubber-text").textContent = `${currentPageIndex + 1} / ${total} ページ`;
         }
 
-        function nextPage() {
+        window.nextPage = function () {
             const step = isSpreadMode ? 2 : 1;
             if (currentPageIndex + step < currentPages.length) {
                 currentPageIndex += step;
@@ -1345,11 +1947,11 @@
                 currentPageIndex = currentPages.length - 1;
                 renderViewerPage();
             } else {
-                showToast('最後のページです', 'info');
+                showToast("最後のページです", "info");
             }
-        }
+        };
 
-        function prevPage() {
+        window.prevPage = function () {
             const step = isSpreadMode ? 2 : 1;
             if (currentPageIndex - step >= 0) {
                 currentPageIndex -= step;
@@ -1358,49 +1960,51 @@
                 currentPageIndex = 0;
                 renderViewerPage();
             } else {
-                showToast('最初のページです', 'info');
+                showToast("最初のページです", "info");
             }
-        }
+        };
 
-        function jumpToPage(index) {
+        window.jumpToPage = function (index) {
             currentPageIndex = index;
             if (isSpreadMode && currentPageIndex % 2 === 1) {
                 currentPageIndex = Math.max(0, currentPageIndex - 1);
             }
             renderViewerPage();
-        }
+        };
 
-        function toggleViewerChrome() {
+        window.toggleViewerChrome = function () {
             isChromeVisible = !isChromeVisible;
             updateChromeVisibility();
-        }
+        };
 
         function updateChromeVisibility() {
-            const topBar = document.getElementById('viewer-top-bar');
-            const bottomBar = document.getElementById('viewer-bottom-bar');
+            const topBar = document.getElementById("viewer-top-bar");
+            const bottomBar = document.getElementById("viewer-bottom-bar");
+            const restoreBtn = document.getElementById("restore-chrome-btn");
             if (isChromeVisible) {
-                topBar.classList.remove('-translate-y-full', 'opacity-0', 'pointer-events-none');
-                bottomBar.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+                topBar.classList.remove("-translate-y-full", "opacity-0", "pointer-events-none");
+                bottomBar.classList.remove("translate-y-full", "opacity-0", "pointer-events-none");
+                restoreBtn.classList.add("hidden");
             } else {
-                topBar.classList.add('-translate-y-full', 'opacity-0', 'pointer-events-none');
-                bottomBar.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
+                topBar.classList.add("-translate-y-full", "opacity-0", "pointer-events-none");
+                bottomBar.classList.add("translate-y-full", "opacity-0", "pointer-events-none");
+                restoreBtn.classList.remove("hidden");
             }
         }
 
-        // スワイプ＆キーボード矢印操作のセットアップ
         function setupViewerGestures() {
-            const stage = document.getElementById('viewer-stage');
+            const stage = document.getElementById("viewer-stage");
             let touchStartX = 0;
             let touchStartY = 0;
 
-            stage.addEventListener('touchstart', (e) => {
+            stage.addEventListener("touchstart", (e) => {
                 if (e.touches.length === 1) {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                 }
             }, { passive: true });
 
-            stage.addEventListener('touchend', (e) => {
+            stage.addEventListener("touchend", (e) => {
                 if (e.changedTouches.length === 1) {
                     const dx = e.changedTouches[0].clientX - touchStartX;
                     const dy = e.changedTouches[0].clientY - touchStartY;
@@ -1411,65 +2015,64 @@
                 }
             }, { passive: true });
 
-            // 外付けBluetoothフットペダルやキーボード対応（PageUp/Down, 左右矢印, Space）
-            window.addEventListener('keydown', (e) => {
-                const viewerOpen = !document.getElementById('viewer-overlay').classList.contains('hidden');
+            window.addEventListener("keydown", (e) => {
+                const viewerOpen = !document.getElementById("viewer-overlay").classList.contains("hidden");
                 if (!viewerOpen) return;
 
-                if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+                if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
                     e.preventDefault();
                     nextPage();
-                } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
                     e.preventDefault();
                     prevPage();
-                } else if (e.key === 'Escape') {
+                } else if (e.key === "Escape") {
                     closeViewer();
                 }
             });
         }
 
         /* ==========================================================================
-           6. 練習用メトロノーム（Web Audio API）
+           5. 練習用メトロノーム（Web Audio API）
            ========================================================================== */
-        function toggleMetronomePanel() {
-            const panel = document.getElementById('metronome-panel');
-            panel.classList.toggle('hidden');
-        }
+        window.toggleMetronomePanel = function () {
+            const panel = document.getElementById("metronome-panel");
+            panel.classList.toggle("hidden");
+        };
 
-        function updateBpm(val) {
+        window.updateBpm = function (val) {
             metroBpm = parseInt(val, 10);
-            document.getElementById('metro-bpm-val').textContent = metroBpm;
+            document.getElementById("metro-bpm-val").textContent = metroBpm;
             if (isMetronomePlaying) {
                 stopMetronome();
                 startMetronome();
             }
-        }
+        };
 
-        function toggleMetronomePlay() {
+        window.toggleMetronomePlay = function () {
             if (isMetronomePlaying) {
                 stopMetronome();
             } else {
                 startMetronome();
             }
-        }
+        };
 
         function startMetronome() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            if (audioCtx.state === 'suspended') {
+            if (audioCtx.state === "suspended") {
                 audioCtx.resume();
             }
 
             isMetronomePlaying = true;
-            document.getElementById('metro-play-label').textContent = '■ 停止';
-            document.getElementById('metro-play-btn').classList.replace('bg-amber-500', 'bg-red-500');
-            document.getElementById('metro-play-btn').classList.replace('text-zinc-950', 'text-white');
+            document.getElementById("metro-play-label").textContent = "■ 停止";
+            document.getElementById("metro-play-btn").classList.replace("bg-amber-500", "bg-red-500");
+            document.getElementById("metro-play-btn").classList.replace("text-zinc-950", "text-white");
 
             const playClick = () => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'triangle';
+                osc.type = "triangle";
                 osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
@@ -1479,9 +2082,9 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.06);
 
-                const dot = document.getElementById('metro-beat-dot');
-                dot.classList.add('bg-amber-400', 'scale-125');
-                setTimeout(() => dot.classList.remove('bg-amber-400', 'scale-125'), 90);
+                const dot = document.getElementById("metro-beat-dot");
+                dot.classList.add("bg-amber-400", "scale-125");
+                setTimeout(() => dot.classList.remove("bg-amber-400", "scale-125"), 90);
             };
 
             playClick();
@@ -1495,46 +2098,46 @@
                 clearInterval(metronomeTimer);
                 metronomeTimer = null;
             }
-            const btn = document.getElementById('metro-play-btn');
+            const btn = document.getElementById("metro-play-btn");
             if (btn) {
-                document.getElementById('metro-play-label').textContent = '▶ 開始';
-                btn.classList.replace('bg-red-500', 'bg-amber-500');
-                btn.classList.replace('text-white', 'text-zinc-950');
+                document.getElementById("metro-play-label").textContent = "▶ 開始";
+                btn.classList.replace("bg-red-500", "bg-amber-500");
+                btn.classList.replace("text-white", "text-zinc-950");
             }
         }
 
         /* ==========================================================================
-           7. ユーティリティ（トースト通知・確認モーダル・HTMLエスケープ）
+           6. ユーティリティ（トースト通知・確認モーダル・HTMLエスケープ）
            ========================================================================== */
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toast-container");
+            const toast = document.createElement("div");
             const colors = {
-                success: 'bg-emerald-600/95 border-emerald-400/30 text-white',
-                error: 'bg-red-600/95 border-red-400/30 text-white',
-                info: 'bg-zinc-800/95 border-white/15 text-zinc-100'
+                success: "bg-emerald-600/95 border-emerald-400/30 text-white",
+                error: "bg-red-600/95 border-red-400/30 text-white",
+                info: "bg-zinc-800/95 border-white/15 text-zinc-100"
             };
             toast.className = `px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md text-sm font-medium text-center transition-all duration-300 transform translate-y-0 opacity-100 ${colors[type] || colors.info}`;
             toast.textContent = message;
             container.appendChild(toast);
 
             setTimeout(() => {
-                toast.classList.add('opacity-0', '-translate-y-2');
+                toast.classList.add("opacity-0", "-translate-y-2");
                 setTimeout(() => toast.remove(), 300);
             }, 2400);
         }
 
         function showConfirm(title, message, onConfirm) {
-            const modal = document.getElementById('confirm-modal');
-            document.getElementById('confirm-title').textContent = title;
-            document.getElementById('confirm-message').textContent = message;
+            const modal = document.getElementById("confirm-modal");
+            document.getElementById("confirm-title").textContent = title;
+            document.getElementById("confirm-message").textContent = message;
 
-            const cancelBtn = document.getElementById('confirm-cancel');
-            const okBtn = document.getElementById('confirm-ok');
+            const cancelBtn = document.getElementById("confirm-cancel");
+            const okBtn = document.getElementById("confirm-ok");
 
             const cleanup = () => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
             };
 
             cancelBtn.onclick = cleanup;
@@ -1543,17 +2146,17 @@
                 onConfirm();
             };
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
         }
 
         function escapeHtml(str) {
             return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
     </script>
 </body>
