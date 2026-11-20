@@ -7,18 +7,25 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>楽譜ビューワー</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #0D0D0F;
-            --bg-card: rgba(28, 28, 34, 0.78);
-            --border-glass: rgba(255, 255, 255, 0.1);
-            --accent: #3B82F6;
+            --bg-main: #0b0f19;
+            --bg-card: rgba(19, 27, 46, 0.78);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --accent: #a855f7;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-blue: #3b82f6;
             --primary-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%);
+            --primary-hover-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 50%, #2563eb 100%);
             --danger-color: #f43f5e;
             --text-muted: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(168, 85, 247, 0.3);
             --radius-sm: 8px;
+            --radius-md: 14px;
             --radius-lg: 20px;
             --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -36,9 +43,10 @@
         }
 
         body {
-            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-main);
-            color: #F4F4F6;
+            background-image: radial-gradient(circle at top right, rgba(168, 85, 247, 0.08), transparent 45%), radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.07), transparent 45%);
+            color: #f1f5f9;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -47,16 +55,56 @@
 
         .glass {
             background: var(--bg-card);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-glass);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 18px rgba(168, 85, 247, 0.08);
         }
 
         .glass-header {
-            background: rgba(13, 13, 15, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-glass);
+            background: rgba(19, 27, 46, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-btn {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+            transition: var(--transition);
+        }
+
+        .gradient-btn:hover:not(:disabled) {
+            background: var(--primary-hover-gradient);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 22px rgba(236, 72, 153, 0.38);
+        }
+
+        .gradient-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .stylish-icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #d8b4fe;
+            transition: var(--transition);
+        }
+
+        .stylish-icon-btn:hover:not(:disabled) {
+            background: rgba(168, 85, 247, 0.16);
+            border-color: var(--border-glow);
+            color: #f3e8ff;
+            transform: translateY(-1px);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
         }
 
         /* スクロールバー非表示（スッキリしたiPad表示） */
@@ -68,7 +116,7 @@
             background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(168, 85, 247, 0.25);
             border-radius: 9999px;
         }
 
@@ -485,11 +533,11 @@
     </div>
     <div id="confirm-modal" class="fixed inset-0 z-[10500] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="glass rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white/15">
-            <h3 id="confirm-title" class="text-xl font-bold text-white mb-2">確認</h3>
+            <h3 id="confirm-title" class="text-xl font-bold gradient-text mb-2">確認</h3>
             <p id="confirm-message" class="text-zinc-300 text-sm leading-relaxed mb-6">この操作を実行しますか？</p>
             <div class="flex gap-3">
-                <button id="confirm-cancel" class="flex-1 py-3.5 px-4 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium transition">キャンセル</button>
-                <button id="confirm-ok" class="flex-1 py-3.5 px-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-semibold transition">実行する</button>
+                <button id="confirm-cancel" class="flex-1 py-3.5 px-4 rounded-2xl stylish-icon-btn text-zinc-200 font-medium transition">キャンセル</button>
+                <button id="confirm-ok" class="flex-1 py-3.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition shadow-lg shadow-rose-600/25">実行する</button>
             </div>
         </div>
     </div>
@@ -501,16 +549,7 @@
         <div class="login-card">
             <div class="login-icon-wrapper">
                 <div class="login-icon-inner">
-                    <svg style="width: 36px; height: 36px;" fill="none" stroke="url(#icon-gradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#a855f7" />
-                                <stop offset="50%" stop-color="#ec4899" />
-                                <stop offset="100%" stop-color="#3b82f6" />
-                            </linearGradient>
-                        </defs>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
+                    <i class="fa-solid fa-music text-3xl gradient-text"></i>
                 </div>
             </div>
 
@@ -616,22 +655,22 @@
         <header class="glass-header sticky top-0 z-30 pt-safe pb-4 px-4 sm:px-8">
             <div class="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                            </svg>
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl p-[2px]" style="background: var(--primary-gradient); box-shadow: 0 6px 18px rgba(168, 85, 247, 0.25);">
+                            <div class="w-full h-full rounded-[14px] bg-[#131b2e] flex items-center justify-center text-purple-300">
+                                <i class="fa-solid fa-folder-music text-lg"></i>
+                            </div>
                         </div>
                         <div>
-                            <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">楽曲フォルダー</h1>
-                            <p id="folder-count-label" class="text-xs text-zinc-400">0曲の楽譜を管理中</p>
+                            <h1 class="text-xl sm:text-2xl font-extrabold gradient-text tracking-tight">楽曲フォルダー</h1>
+                            <p id="folder-count-label" class="text-xs text-slate-400">0曲の楽譜を管理中</p>
                         </div>
                     </div>
 
                     <!-- モバイル/iPad縦用 ロックボタン -->
                     <div class="flex items-center gap-2 sm:hidden">
-                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white" title="ログアウト・ロック">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <button onclick="lockApp()" class="w-11 h-11 rounded-2xl stylish-icon-btn flex items-center justify-center" title="ログアウト・ロック">
+                            <i class="fa-solid fa-lock text-sm"></i>
                         </button>
                     </div>
                 </div>
@@ -639,23 +678,19 @@
                 <!-- 検索バー＆アクションボタン -->
                 <div class="flex items-center gap-3">
                     <div class="relative flex-1 sm:w-64">
-                        <svg class="w-5 h-5 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                        <input id="search-input" type="text" oninput="renderFolders()" placeholder="曲名・作曲家で検索..." class="w-full pl-11 pr-4 py-3 rounded-2xl bg-zinc-900/90 border border-white/10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition">
+                        <i class="fa-solid fa-magnifying-glass text-purple-300/70 text-sm absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <input id="search-input" type="text" oninput="renderFolders()" placeholder="曲名・作曲家で検索..." class="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#131b2e]/90 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition">
                     </div>
 
-                    <button onclick="openFolderModal()" class="py-3 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-blue-600/25 transition shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                        </svg>
+                    <button onclick="openFolderModal()" class="py-3 px-5 rounded-2xl gradient-btn font-bold text-sm flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-folder-plus text-sm"></i>
                         <span>新規フォルダー</span>
                     </button>
 
                     <!-- タブレット横向き用 ロック -->
                     <div class="hidden sm:flex items-center gap-2">
-                        <button onclick="lockApp()" class="p-3 rounded-2xl glass text-zinc-300 hover:text-white transition" title="アプリをロック（ログアウト）">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <button onclick="lockApp()" class="w-11 h-11 rounded-2xl stylish-icon-btn flex items-center justify-center" title="アプリをロック（ログアウト）">
+                            <i class="fa-solid fa-lock text-sm"></i>
                         </button>
                     </div>
                 </div>
@@ -670,14 +705,12 @@
 
             <!-- 空状態メッセージ -->
             <div id="empty-folders-state" class="hidden flex-col items-center justify-center text-center py-20 px-4">
-                <div class="w-20 h-20 rounded-3xl glass flex items-center justify-center text-zinc-500 mb-5">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                    </svg>
+                <div class="w-20 h-20 rounded-3xl glass flex items-center justify-center text-purple-300 mb-5">
+                    <i class="fa-solid fa-compact-disc text-3xl"></i>
                 </div>
                 <h2 class="text-lg font-bold text-white mb-2">楽曲フォルダーがありません</h2>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、JPG形式の楽譜やカメラ撮影した楽譜を追加してください。</p>
-                <button onclick="openFolderModal()" class="py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition">
+                <p class="text-sm text-slate-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、JPG形式の楽譜やカメラ撮影した楽譜を追加してください。</p>
+                <button onclick="openFolderModal()" class="py-3.5 px-6 rounded-2xl gradient-btn font-bold text-sm transition">
                     最初の楽曲フォルダーを作成
                 </button>
             </div>
@@ -687,20 +720,20 @@
     <!-- フォルダー作成・編集モーダル -->
     <div id="folder-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="glass rounded-3xl p-6 max-w-md w-full shadow-2xl border border-white/15">
-            <h2 id="folder-modal-title" class="text-xl font-bold text-white mb-5">新規楽曲フォルダー</h2>
+            <h2 id="folder-modal-title" class="text-xl font-bold gradient-text mb-5">新規楽曲フォルダー</h2>
             <form onsubmit="saveFolderForm(event)" class="space-y-4">
                 <input type="hidden" id="edit-folder-id">
                 <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1.5">楽曲名 <span class="text-blue-400">*</span></label>
-                    <input id="folder-name-input" type="text" required placeholder="例：ノクターン 第2番 Op.9-2" class="w-full px-4 py-3.5 rounded-2xl bg-zinc-900/90 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 text-base">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">楽曲名 <span class="text-pink-400">*</span></label>
+                    <input id="folder-name-input" type="text" required placeholder="例：ノクターン 第2番 Op.9-2" class="w-full px-4 py-3.5 rounded-2xl bg-[#0b0f19]/90 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 text-base">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-zinc-400 mb-1.5">作曲家・メモ（任意）</label>
-                    <input id="folder-note-input" type="text" placeholder="例：ショパン / 発表会用" class="w-full px-4 py-3.5 rounded-2xl bg-zinc-900/90 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 text-base">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">作曲家・メモ（任意）</label>
+                    <input id="folder-note-input" type="text" placeholder="例：ショパン / 発表会用" class="w-full px-4 py-3.5 rounded-2xl bg-[#0b0f19]/90 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 text-base">
                 </div>
                 <div class="flex gap-3 pt-3">
-                    <button type="button" onclick="closeFolderModal()" class="flex-1 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium transition">キャンセル</button>
-                    <button type="submit" class="flex-1 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition">保存する</button>
+                    <button type="button" onclick="closeFolderModal()" class="flex-1 py-3.5 rounded-2xl stylish-icon-btn text-slate-200 font-medium transition">キャンセル</button>
+                    <button type="submit" class="flex-1 py-3.5 rounded-2xl gradient-btn font-bold transition">保存する</button>
                 </div>
             </form>
         </div>
@@ -713,60 +746,50 @@
         <header class="glass-header sticky top-0 z-30 pt-safe pb-4 px-4 sm:px-8">
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-3 min-w-0">
-                    <button onclick="backToLibrary()" class="p-3 rounded-2xl glass hover:bg-white/10 text-zinc-200 transition shrink-0 flex items-center gap-1.5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                        <span class="text-sm font-medium pr-1">一覧へ</span>
+                    <button onclick="backToLibrary()" class="py-2.5 px-4 rounded-2xl stylish-icon-btn text-slate-200 transition shrink-0 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                        <span class="text-sm font-semibold pr-0.5">一覧へ</span>
                     </button>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
-                            <h1 id="detail-folder-title" class="text-lg sm:text-2xl font-bold text-white truncate">楽曲名</h1>
-                            <button onclick="editCurrentFolder()" class="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition shrink-0" title="フォルダー名を編集">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                </svg>
+                            <h1 id="detail-folder-title" class="text-lg sm:text-2xl font-extrabold text-white truncate">楽曲名</h1>
+                            <button onclick="editCurrentFolder()" class="w-8 h-8 rounded-xl stylish-icon-btn flex items-center justify-center shrink-0" title="フォルダー名を編集">
+                                <i class="fa-solid fa-pen text-xs"></i>
                             </button>
                         </div>
-                        <p id="detail-folder-subtitle" class="text-xs text-zinc-400 truncate">全 0 ページ</p>
+                        <p id="detail-folder-subtitle" class="text-xs text-slate-400 truncate">全 0 ページ</p>
                     </div>
                 </div>
 
                 <!-- 楽譜撮影・JPG追加 ＆ 演奏モード開始ボタン -->
                 <div class="flex flex-wrap items-center gap-2.5">
                     <!-- 画質・サイズプリセット選択 -->
-                    <div class="flex items-center gap-1.5 glass px-3 py-2 rounded-2xl">
-                        <span class="text-[11px] text-zinc-400 shrink-0">取り込み画質:</span>
-                        <select id="upload-preset-select" aria-label="取り込み画質プリセット" class="bg-transparent text-xs font-semibold text-blue-300 focus:outline-none cursor-pointer">
-                            <option value="standard" class="bg-zinc-900 text-white" selected>標準・高精細 (1800px / 推奨)</option>
-                            <option value="high" class="bg-zinc-900 text-white">超高精細 (2200px / 細かい譜面)</option>
-                            <option value="light" class="bg-zinc-900 text-white">軽量 (1400px / 容量節約)</option>
+                    <div class="flex items-center gap-1.5 glass px-3 py-2.5 rounded-2xl">
+                        <i class="fa-solid fa-sliders text-xs text-purple-300"></i>
+                        <span class="text-[11px] text-slate-400 shrink-0">取り込み画質:</span>
+                        <select id="upload-preset-select" aria-label="取り込み画質プリセット" class="bg-transparent text-xs font-semibold text-pink-300 focus:outline-none cursor-pointer">
+                            <option value="standard" class="bg-[#131b2e] text-white" selected>標準・高精細 (1800px / 推奨)</option>
+                            <option value="high" class="bg-[#131b2e] text-white">超高精細 (2200px / 細かい譜面)</option>
+                            <option value="light" class="bg-[#131b2e] text-white">軽量 (1400px / 容量節約)</option>
                         </select>
                     </div>
 
                     <!-- カメラ撮影してコントラスト自動補正・縮小保存するボタン -->
-                    <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl glass hover:bg-white/10 active:scale-95 text-white font-medium text-sm flex items-center justify-center gap-2 transition border border-purple-500/30">
-                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
+                    <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl stylish-icon-btn active:scale-95 text-white font-semibold text-sm flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-camera text-pink-400"></i>
                         <span>楽譜を撮影</span>
                         <input id="camera-capture-input" type="file" accept="image/*" capture="environment" onchange="handleCameraCapture(event)" class="hidden">
                     </label>
 
                     <!-- JPG楽譜追加ボタン -->
-                    <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl glass hover:bg-white/10 active:scale-95 text-white font-medium text-sm flex items-center justify-center gap-2 transition">
-                        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
+                    <label class="flex-1 md:flex-initial cursor-pointer py-3 px-4 rounded-2xl stylish-icon-btn active:scale-95 text-white font-semibold text-sm flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-file-image text-purple-300"></i>
                         <span>JPG楽譜を追加</span>
                         <input id="jpg-upload-input" type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onchange="handleJpgUpload(event)" class="hidden">
                     </label>
 
-                    <button id="start-viewer-btn" onclick="openViewer(0)" class="flex-1 md:flex-initial py-3 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
+                    <button id="start-viewer-btn" onclick="openViewer(0)" class="flex-1 md:flex-initial py-3 px-6 rounded-2xl gradient-btn disabled:opacity-40 disabled:pointer-events-none active:scale-95 text-white font-bold text-sm flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-book-open"></i>
                         <span>演奏モード</span>
                     </button>
                 </div>
@@ -776,15 +799,13 @@
         <!-- 最適化・Firebase保存中プログレスオーバーレイ -->
         <div id="upload-progress-overlay" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
             <div class="glass rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-white/15">
-                <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+                <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
                 </div>
                 <h3 id="upload-progress-title" class="text-base font-bold text-white mb-1">楽譜を最適化して保存中...</h3>
-                <p id="upload-progress-text" class="text-xs text-zinc-400 mb-4">0 / 0 ページ処理中</p>
-                <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <div id="upload-progress-bar" class="h-full bg-blue-500 transition-all duration-150" style="width: 0%"></div>
+                <p id="upload-progress-text" class="text-xs text-slate-400 mb-4">0 / 0 ページ処理中</p>
+                <div class="w-full h-2.5 bg-[#0b0f19] rounded-full overflow-hidden border border-white/5">
+                    <div id="upload-progress-bar" class="h-full transition-all duration-150" style="width: 0%; background: var(--primary-gradient);"></div>
                 </div>
             </div>
         </div>
@@ -792,12 +813,12 @@
         <!-- ページ管理エリア -->
         <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-8 pb-safe">
             <!-- 操作ヒントバー -->
-            <div id="page-sort-hint" class="hidden glass rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-300">
+            <div id="page-sort-hint" class="hidden glass rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-semibold">ページ順管理</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/30 text-purple-200 font-bold">ページ順管理</span>
                     <span>「← / →」ボタンまたは「ページ番号選択」で演奏順を自由に入れ替えられます。楽譜をタップするとそのページから開きます。</span>
                 </div>
-                <button onclick="sortPagesByFilename()" class="text-blue-400 hover:text-blue-300 font-medium underline shrink-0">
+                <button onclick="sortPagesByFilename()" class="text-pink-300 hover:text-pink-200 font-semibold underline shrink-0">
                     ファイル名順に整列
                 </button>
             </div>
@@ -808,24 +829,20 @@
             </div>
 
             <!-- 楽譜未登録時のドロップ/選択エリア -->
-            <div id="empty-pages-state" class="hidden flex-col items-center justify-center text-center py-16 px-4 glass rounded-3xl border-dashed border-2 border-white/15">
-                <div class="w-16 h-16 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
+            <div id="empty-pages-state" class="hidden flex-col items-center justify-center text-center py-16 px-4 glass rounded-3xl border-dashed border-2 border-purple-400/25">
+                <div class="w-16 h-16 rounded-2xl bg-purple-500/15 border border-purple-400/25 text-purple-300 flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                 </div>
                 <h3 class="text-lg font-bold text-white mb-1">まだ楽譜画像がありません</h3>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">カメラで楽譜を直接撮影（自動でコントラスト・白地補正して見やすく最適化）するか、JPG画像を選択して登録できます。</p>
+                <p class="text-sm text-slate-400 max-w-md mb-6">カメラで楽譜を直接撮影するか、JPG画像を選択して登録すると、どちらも見やすいコントラストに自動補正・サイズ最適化されます。</p>
                 <div class="flex flex-wrap items-center justify-center gap-3">
-                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 transition flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
+                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl stylish-icon-btn text-white font-semibold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-camera text-pink-400"></i>
                         <span>カメラで楽譜を撮影</span>
                         <input type="file" accept="image/*" capture="environment" onchange="handleCameraCapture(event)" class="hidden">
                     </label>
-                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition">
+                    <label class="cursor-pointer py-3.5 px-6 rounded-2xl gradient-btn text-white font-bold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-images"></i>
                         <span>JPG画像を選択して追加</span>
                         <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onchange="handleJpgUpload(event)" class="hidden">
                     </label>
@@ -841,54 +858,46 @@
         <!-- 上部ツールバー -->
         <div id="viewer-top-bar" class="glass-header absolute top-0 inset-x-0 z-30 pt-safe pb-3 px-4 sm:px-6 transition-all duration-300">
             <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-                <button onclick="closeViewer()" class="py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm flex items-center gap-1.5 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                <button onclick="closeViewer()" class="py-2.5 px-4 rounded-2xl stylish-icon-btn text-white font-semibold text-sm flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-xmark"></i>
                     <span>終了</span>
                 </button>
 
                 <div class="text-center min-w-0 px-2">
                     <h2 id="viewer-song-title" class="text-sm sm:text-base font-bold text-white truncate">楽曲タイトル</h2>
-                    <p id="viewer-page-indicator" class="text-xs text-blue-400 font-semibold">P.1 / 4</p>
+                    <p id="viewer-page-indicator" class="text-xs text-purple-300 font-semibold">P.1 / 4</p>
                 </div>
 
                 <div class="flex items-center gap-2">
                     <!-- ツールバー表示切替ボタン -->
-                    <button onclick="toggleViewerChrome()" class="py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-zinc-200 text-xs sm:text-sm font-medium flex items-center gap-1 transition" title="バーを隠す">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-                        </svg>
+                    <button onclick="toggleViewerChrome()" class="w-10 h-10 rounded-2xl stylish-icon-btn text-xs sm:text-sm font-medium flex items-center justify-center transition" title="バーを隠す">
+                        <i class="fa-solid fa-eye-slash"></i>
                     </button>
 
                     <!-- メトロノーム開閉ボタン -->
-                    <button id="metronome-toggle-btn" onclick="toggleMetronomePanel()" class="py-2.5 px-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-zinc-200 text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                    <button id="metronome-toggle-btn" onclick="toggleMetronomePanel()" class="py-2.5 px-3.5 rounded-2xl stylish-icon-btn text-xs sm:text-sm font-medium flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-metronome text-amber-400"></i>
                         <span class="hidden sm:inline">メトロノーム</span>
                     </button>
 
                     <!-- 単ページ / 見開き2ページ切替 -->
-                    <button id="spread-mode-btn" onclick="toggleSpreadMode()" class="py-2.5 px-3.5 rounded-2xl bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
+                    <button id="spread-mode-btn" onclick="toggleSpreadMode()" class="py-2.5 px-3.5 rounded-2xl gradient-btn text-xs sm:text-sm font-bold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-book-open-reader"></i>
                         <span id="spread-mode-label">1ページ表示</span>
                     </button>
                 </div>
             </div>
 
             <!-- コンパクト・メトロノームパネル -->
-            <div id="metronome-panel" class="hidden max-w-md mx-auto mt-3 p-3 rounded-2xl bg-zinc-900/95 border border-white/15 flex items-center justify-between gap-3">
-                <button id="metro-play-btn" onclick="toggleMetronomePlay()" class="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shrink-0 transition">
+            <div id="metronome-panel" class="hidden max-w-md mx-auto mt-3 p-3 rounded-2xl bg-[#131b2e]/95 border border-white/15 flex items-center justify-between gap-3">
+                <button id="metro-play-btn" onclick="toggleMetronomePlay()" class="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shrink-0 transition">
                     <span id="metro-play-label">▶ 開始</span>
                 </button>
                 <div class="flex-1 flex items-center gap-2">
-                    <span class="text-xs text-zinc-400 font-mono w-16">BPM <strong id="metro-bpm-val" class="text-white">100</strong></span>
-                    <input id="metro-bpm-slider" type="range" min="40" max="220" value="100" oninput="updateBpm(this.value)" class="flex-1 accent-amber-400">
+                    <span class="text-xs text-slate-400 font-mono w-16">BPM <strong id="metro-bpm-val" class="text-white">100</strong></span>
+                    <input id="metro-bpm-slider" type="range" min="40" max="220" value="100" oninput="updateBpm(this.value)" class="flex-1 accent-purple-400">
                 </div>
-                <div id="metro-beat-dot" class="w-3.5 h-3.5 rounded-full bg-zinc-700 transition-transform duration-75"></div>
+                <div id="metro-beat-dot" class="w-3.5 h-3.5 rounded-full bg-slate-700 transition-transform duration-75"></div>
             </div>
         </div>
 
@@ -912,42 +921,39 @@
             <div class="absolute inset-0 z-20 flex">
                 <div onclick="prevPage()" class="w-1/2 h-full cursor-pointer group flex items-center justify-start pl-3" title="前のページ（画面左半分タップ）">
                     <div class="w-11 h-16 rounded-2xl bg-white/10 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <i class="fa-solid fa-chevron-left text-xl"></i>
                     </div>
                 </div>
                 <div onclick="nextPage()" class="w-1/2 h-full cursor-pointer group flex items-center justify-end pr-3" title="次のページ（画面右半分タップ）">
                     <div class="w-11 h-16 rounded-2xl bg-white/10 opacity-0 group-active:opacity-100 flex items-center justify-center text-white transition">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        <i class="fa-solid fa-chevron-right text-xl"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- ツールバー非表示時に再表示するための控えめなフローティングボタン -->
-        <button id="restore-chrome-btn" onclick="toggleViewerChrome()" class="hidden fixed top-4 right-4 z-30 p-2.5 rounded-2xl bg-black/60 hover:bg-black/80 border border-white/15 text-zinc-300 backdrop-blur-md transition" title="メニューバーを表示">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
+        <button id="restore-chrome-btn" onclick="toggleViewerChrome()" class="hidden fixed top-4 right-4 z-30 w-11 h-11 rounded-2xl stylish-icon-btn backdrop-blur-md flex items-center justify-center transition" title="メニューバーを表示">
+            <i class="fa-solid fa-eye"></i>
         </button>
 
         <!-- 下部ページシークバー -->
         <div id="viewer-bottom-bar" class="glass-header border-t border-white/10 absolute bottom-0 inset-x-0 z-30 pt-3 pb-safe px-4 sm:px-8 transition-all duration-300">
             <div class="max-w-4xl mx-auto flex items-center gap-4">
-                <button onclick="prevPage()" class="p-3 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 text-white transition shrink-0" aria-label="前のページ">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                <button onclick="prevPage()" class="w-11 h-11 rounded-2xl stylish-icon-btn active:scale-95 text-white flex items-center justify-center transition shrink-0" aria-label="前のページ">
+                    <i class="fa-solid fa-chevron-left"></i>
                 </button>
 
                 <div class="flex-1 flex flex-col gap-1">
-                    <input id="viewer-scrubber" type="range" min="0" max="0" value="0" oninput="jumpToPage(parseInt(this.value))" class="w-full accent-blue-500 h-2 bg-zinc-700 rounded-lg cursor-pointer">
-                    <div class="flex justify-between text-[11px] text-zinc-400 px-0.5">
+                    <input id="viewer-scrubber" type="range" min="0" max="0" value="0" oninput="jumpToPage(parseInt(this.value))" class="w-full accent-purple-400 h-2 bg-slate-800 rounded-lg cursor-pointer">
+                    <div class="flex justify-between text-[11px] text-slate-400 px-0.5">
                         <span>右半分タップで次へ ・ 左半分タップで前へ</span>
                         <span id="viewer-scrubber-text">1 / 1 ページ</span>
                     </div>
                 </div>
 
-                <button onclick="nextPage()" class="p-3 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 text-white transition shrink-0" aria-label="次のページ">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                <button onclick="nextPage()" class="w-11 h-11 rounded-2xl stylish-icon-btn active:scale-95 text-white flex items-center justify-center transition shrink-0" aria-label="次のページ">
+                    <i class="fa-solid fa-chevron-right"></i>
                 </button>
             </div>
         </div>
@@ -1185,7 +1191,7 @@
                 const listEl = document.getElementById("admin-users-list");
                 listEl.innerHTML = "";
                 if (!snap.exists()) {
-                    listEl.innerHTML = '<div class="text-xs text-zinc-400">登録済み端末はありません</div>';
+                    listEl.innerHTML = '<div class="text-xs text-slate-400">登録済み端末はありません</div>';
                     return;
                 }
                 const usersObj = snap.val();
@@ -1279,7 +1285,7 @@
             filtered.forEach(folder => {
                 const pageCount = folder.pageOrder ? folder.pageOrder.length : 0;
                 const card = document.createElement("div");
-                card.className = "glass rounded-3xl p-5 flex flex-col justify-between hover:border-blue-500/40 transition group cursor-pointer active:scale-[0.99]";
+                card.className = "glass rounded-3xl p-5 flex flex-col justify-between hover:border-purple-400/40 transition group cursor-pointer active:scale-[0.99]";
                 card.onclick = (e) => {
                     if (e.target.closest("button")) return;
                     openFolderDetail(folder.id);
@@ -1288,30 +1294,28 @@
                 card.innerHTML = `
                     <div>
                         <div class="flex items-start justify-between gap-3 mb-3">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-400/20 flex items-center justify-center text-blue-400 shrink-0">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
-                                </svg>
+                            <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-400/25 flex items-center justify-center text-purple-300 shrink-0">
+                                <i class="fa-solid fa-music text-lg"></i>
                             </div>
-                            <span class="px-3 py-1 rounded-full text-xs font-bold ${pageCount > 0 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-zinc-800 text-zinc-400'}">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${pageCount > 0 ? 'bg-pink-500/15 text-pink-200 border border-pink-400/30' : 'bg-slate-800/80 text-slate-400'}">
                                 ${pageCount} ページ
                             </span>
                         </div>
-                        <h3 class="text-lg font-bold text-white line-clamp-2 mb-1 group-hover:text-blue-300 transition">${escapeHtml(folder.name)}</h3>
-                        <p class="text-xs text-zinc-400 line-clamp-1 min-h-[1.25rem]">${folder.note ? escapeHtml(folder.note) : 'メモなし'}</p>
+                        <h3 class="text-lg font-bold text-white line-clamp-2 mb-1 group-hover:text-purple-200 transition">${escapeHtml(folder.name)}</h3>
+                        <p class="text-xs text-slate-400 line-clamp-1 min-h-[1.25rem]">${folder.note ? escapeHtml(folder.note) : 'メモなし'}</p>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 mt-4 border-t border-white/10">
-                        <span class="text-xs font-semibold text-blue-400 flex items-center gap-1">
+                        <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
                             <span>フォルダーを開く</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            <i class="fa-solid fa-arrow-right text-[11px]"></i>
                         </span>
-                        <div class="flex items-center gap-1">
-                            <button onclick="openFolderModal('${folder.id}')" class="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition" title="名前変更">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openFolderModal('${folder.id}')" class="w-9 h-9 rounded-xl stylish-icon-btn flex items-center justify-center transition" title="名前変更">
+                                <i class="fa-solid fa-pen text-xs"></i>
                             </button>
-                            <button onclick="deleteFolder('${folder.id}')" class="p-2.5 rounded-xl text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition" title="フォルダー削除">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <button onclick="deleteFolder('${folder.id}')" class="w-9 h-9 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-300 flex items-center justify-center transition" title="フォルダー削除">
+                                <i class="fa-solid fa-trash text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -1486,13 +1490,13 @@
 
         // 画質プリセット定義（長辺の最大ピクセル数・JPEG品質）
         const UPLOAD_PRESETS = {
-            standard: { maxSide: 1800, quality: 0.82, label: "標準・高精細" },
-            high:     { maxSide: 2200, quality: 0.86, label: "超高精細" },
-            light:    { maxSide: 1400, quality: 0.78, label: "軽量" }
+            standard: { maxSide: 1800, quality: 0.80, label: "標準・高精細" },
+            high:     { maxSide: 2200, quality: 0.85, label: "超高精細" },
+            light:    { maxSide: 1400, quality: 0.76, label: "軽量" }
         };
 
-        // 画像リサイズ・圧縮関数（enhanceScore = true の場合は撮影楽譜向けにコントラスト・白地補正）
-        function processScoreImage(file, maxSide, quality, enhanceScore = false) {
+        // 画像リサイズ・圧縮・コントラスト補正関数（撮影・JPG取り込み共通で見やすい楽譜へ最適化）
+        function processScoreImage(file, maxSide, quality, enhanceScore = true) {
             return new Promise((resolve, reject) => {
                 const sourceUrl = URL.createObjectURL(file);
                 const img = new Image();
@@ -1520,7 +1524,7 @@
                     ctx.imageSmoothingQuality = "high";
                     ctx.drawImage(img, 0, 0, targetW, targetH);
 
-                    // カメラ撮影時は五線譜と音符をくっきりさせ、紙の影や黄ばみを白く飛ばす補正を実行
+                    // 楽譜の五線譜と音符をくっきりさせ、紙の影や黄ばみを白く飛ばす補正を実行
                     if (enhanceScore) {
                         applyScoreReadabilityFilter(ctx, targetW, targetH);
                     }
@@ -1547,12 +1551,12 @@
             });
         }
 
-        // 楽譜写真の見やすさ向上フィルター（背景の白飛び補正＋コントラスト強調＋軽くグレースケール寄り補正）
+        // 楽譜画像の見やすさ向上フィルター（背景の白飛び補正＋コントラスト強調＋色味保持）
         function applyScoreReadabilityFilter(ctx, width, height) {
             const imgData = ctx.getImageData(0, 0, width, height);
             const data = imgData.data;
 
-            // 1. 輝度ヒストグラムから白地レベル（上位85%点）と黒インクレベル（下位5%点）を推定
+            // 1. 輝度ヒストグラムから白地レベルと黒インクレベルを推定
             const hist = new Uint32Array(256);
             const step = 4 * 4; // 高速化のためサンプリング
             let sampleCount = 0;
@@ -1583,14 +1587,11 @@
                 const g = data[i + 1];
                 const b = data[i + 2];
 
-                // 輝度算出
                 const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-                // レベル正規化（0.0〜1.0）
                 let norm = (lum - blackPoint) / range;
                 if (norm < 0) norm = 0;
                 if (norm > 1) norm = 1;
 
-                // 紙の薄グレーを白へ押し上げ、音符の黒を引き締めるシグモイド風カーブ
                 if (norm > 0.72) {
                     norm = 0.72 + ((norm - 0.72) / 0.28) * 0.28;
                     norm = Math.pow(norm, 0.55); // 白地をクリーンに
@@ -1599,9 +1600,8 @@
                 }
 
                 const targetLum = norm * 255;
-                // 書き込みの赤ペン・青ペンなどの色味は少し残しつつコントラストを反映
                 const ratio = lum > 1 ? targetLum / lum : 0;
-                const satBlend = 0.35; // 0:完全白黒, 1:元色維持（赤ペン書き込み等を視認可能に保持）
+                const satBlend = 0.35; // 赤ペン・青ペンなどの書き込み色味も視認可能に保持
 
                 const nr = (r * satBlend + lum * (1 - satBlend)) * ratio;
                 const ng = (g * satBlend + lum * (1 - satBlend)) * ratio;
@@ -1632,7 +1632,7 @@
             await importAndSaveScoreFiles(files, true);
         };
 
-        // 通常JPGファイル追加処理
+        // 通常JPG画像追加処理（JPG取り込み時もサイズ縮小＋コントラスト補正を適用）
         window.handleJpgUpload = async function (event) {
             const files = Array.from(event.target.files || []);
             event.target.value = "";
@@ -1651,7 +1651,7 @@
             await importAndSaveScoreFiles(imageFiles, false);
         };
 
-        async function importAndSaveScoreFiles(files, isCameraEnhance) {
+        async function importAndSaveScoreFiles(files, isCameraCapture) {
             const presetKey = document.getElementById("upload-preset-select")?.value || "standard";
             const preset = UPLOAD_PRESETS[presetKey] || UPLOAD_PRESETS.standard;
 
@@ -1660,9 +1660,9 @@
             const progressText = document.getElementById("upload-progress-text");
             const progressBar = document.getElementById("upload-progress-bar");
 
-            progressTitle.textContent = isCameraEnhance
+            progressTitle.textContent = isCameraCapture
                 ? "撮影楽譜を見やすくコントラスト補正中..."
-                : "楽譜を最適化してクラウド保存中...";
+                : "楽譜を縮小・コントラスト補正して保存中...";
             progressOverlay.classList.remove("hidden");
             progressOverlay.classList.add("flex");
 
@@ -1680,14 +1680,15 @@
                     const file = files[i];
                     totalOriginalBytes += file.size;
 
-                    const displayName = isCameraEnhance
+                    const displayName = isCameraCapture
                         ? `撮影楽譜_${new Date().toLocaleTimeString("ja-JP", { hour12: false }).replace(/:/g, "")}_${i + 1}.jpg`
                         : file.name;
 
                     progressText.textContent = `${i + 1} / ${files.length} ページ処理・保存中... (${displayName})`;
                     progressBar.style.width = `${Math.round(((i + 0.5) / files.length) * 100)}%`;
 
-                    const processed = await processScoreImage(file, preset.maxSide, preset.quality, isCameraEnhance);
+                    // カメラ撮影・JPG取り込みともにサイズ縮小＋コントラスト補正を適用
+                    const processed = await processScoreImage(file, preset.maxSide, preset.quality, true);
                     totalCompressedBytes += processed.sizeBytes;
 
                     const pageId = "pg_" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6);
@@ -1722,8 +1723,7 @@
                 const savedSummary = totalOriginalBytes > totalCompressedBytes
                     ? `（${formatFileSize(totalOriginalBytes)} → ${formatFileSize(totalCompressedBytes)} に最適化）`
                     : `（${formatFileSize(totalCompressedBytes)}）`;
-                const prefixMsg = isCameraEnhance ? "コントラスト補正して" : "";
-                showToast(`${files.length}ページを${prefixMsg}保存しました${savedSummary}`, "success");
+                showToast(`${files.length}ページをコントラスト補正して保存しました${savedSummary}`, "success");
             } catch (err) {
                 console.error(err);
                 progressOverlay.classList.add("hidden");
@@ -1766,7 +1766,7 @@
             currentPages.forEach((page, index) => {
                 const pageNum = index + 1;
                 const card = document.createElement("div");
-                card.className = "glass rounded-3xl overflow-hidden flex flex-col border border-white/10 hover:border-blue-500/40 transition group";
+                card.className = "glass rounded-3xl overflow-hidden flex flex-col border border-white/10 hover:border-purple-400/40 transition group";
 
                 const dimsText = (page.width && page.height) ? `${page.width}×${page.height}` : "";
                 const sizeText = page.sizeBytes ? formatFileSize(page.sizeBytes) : "";
@@ -1774,38 +1774,38 @@
 
                 card.innerHTML = `
                     <!-- 楽譜サムネイル領域（タップでそのページから演奏開始） -->
-                    <div onclick="openViewer(${index})" class="relative aspect-[3/4] bg-zinc-900 overflow-hidden cursor-pointer">
+                    <div onclick="openViewer(${index})" class="relative aspect-[3/4] bg-[#0b0f19] overflow-hidden cursor-pointer">
                         <img src="${page.url}" alt="P.${pageNum}" loading="lazy" class="w-full h-full object-contain bg-white group-hover:scale-[1.02] transition duration-200">
                         
                         <!-- 大きなページ番号バッジ -->
-                        <div class="absolute top-3 left-3 px-3 py-1.5 rounded-xl bg-blue-600 text-white font-extrabold text-sm shadow-lg">
+                        <div class="absolute top-3 left-3 px-3 py-1.5 rounded-xl gradient-btn text-white font-extrabold text-sm shadow-lg">
                             P.${pageNum}
                         </div>
 
                         <!-- 削除ボタン -->
-                        <button onclick="event.stopPropagation(); deletePage('${page.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-black/70 hover:bg-red-600 text-white flex items-center justify-center backdrop-blur-md transition" title="このページを削除">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <button onclick="event.stopPropagation(); deletePage('${page.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-black/70 hover:bg-rose-600 text-white flex items-center justify-center backdrop-blur-md transition" title="このページを削除">
+                            <i class="fa-solid fa-xmark text-sm"></i>
                         </button>
                     </div>
 
                     <!-- ページ番号並べ替えコントロール -->
-                    <div class="p-3 bg-zinc-900/80 flex flex-col gap-2">
+                    <div class="p-3 bg-[#131b2e]/90 flex flex-col gap-2">
                         <div class="px-1">
-                            <p class="text-[11px] text-zinc-300 truncate" title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</p>
-                            ${metaBadge ? `<p class="text-[10px] text-zinc-500 font-mono mt-0.5">${metaBadge}</p>` : ''}
+                            <p class="text-[11px] text-slate-300 truncate" title="${escapeHtml(page.name)}">${escapeHtml(page.name)}</p>
+                            ${metaBadge ? `<p class="text-[10px] text-slate-500 font-mono mt-0.5">${metaBadge}</p>` : ''}
                         </div>
                         
                         <div class="flex items-center justify-between gap-1.5">
-                            <button onclick="movePage(${index}, ${index - 1})" ${index === 0 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="前のページへ">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                            <button onclick="movePage(${index}, ${index - 1})" ${index === 0 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl stylish-icon-btn disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="前のページへ">
+                                <i class="fa-solid fa-chevron-left text-xs"></i>
                             </button>
 
-                            <select onchange="movePage(${index}, parseInt(this.value))" aria-label="ページ番号を変更" class="py-2 px-2.5 rounded-xl bg-zinc-800 border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-blue-500">
+                            <select onchange="movePage(${index}, parseInt(this.value))" aria-label="ページ番号を変更" class="py-2 px-2.5 rounded-xl bg-[#0b0f19] border border-white/10 text-white text-xs font-bold text-center focus:outline-none focus:border-purple-400">
                                 ${pageOptionsHtml.replace(`value="${index}"`, `value="${index}" selected`)}
                             </select>
 
-                            <button onclick="movePage(${index}, ${index + 1})" ${index === total - 1 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="次のページへ">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            <button onclick="movePage(${index}, ${index + 1})" ${index === total - 1 ? 'disabled' : ''} class="flex-1 py-2.5 rounded-xl stylish-icon-btn disabled:opacity-25 disabled:pointer-events-none text-white flex items-center justify-center transition" title="次のページへ">
+                                <i class="fa-solid fa-chevron-right text-xs"></i>
                             </button>
                         </div>
                     </div>
@@ -2097,7 +2097,7 @@
             isMetronomePlaying = true;
             document.getElementById("metro-play-label").textContent = "■ 停止";
             document.getElementById("metro-play-btn").classList.replace("bg-amber-500", "bg-red-500");
-            document.getElementById("metro-play-btn").classList.replace("text-zinc-950", "text-white");
+            document.getElementById("metro-play-btn").classList.replace("text-slate-950", "text-white");
 
             const playClick = () => {
                 const osc = audioCtx.createOscillator();
@@ -2132,7 +2132,7 @@
             if (btn) {
                 document.getElementById("metro-play-label").textContent = "▶ 開始";
                 btn.classList.replace("bg-red-500", "bg-amber-500");
-                btn.classList.replace("text-white", "text-zinc-950");
+                btn.classList.replace("text-white", "text-slate-950");
             }
         }
 
@@ -2144,8 +2144,8 @@
             const toast = document.createElement("div");
             const colors = {
                 success: "bg-emerald-600/95 border-emerald-400/30 text-white",
-                error: "bg-red-600/95 border-red-400/30 text-white",
-                info: "bg-zinc-800/95 border-white/15 text-zinc-100"
+                error: "bg-rose-600/95 border-rose-400/30 text-white",
+                info: "bg-[#131b2e]/95 border-purple-400/30 text-slate-100"
             };
             toast.className = `px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-md text-sm font-medium text-center transition-all duration-300 transform translate-y-0 opacity-100 ${colors[type] || colors.info}`;
             toast.textContent = message;
