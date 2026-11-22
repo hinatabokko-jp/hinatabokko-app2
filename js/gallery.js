@@ -1,9 +1,14 @@
 import { db } from "./config.js";
-import { ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { ref, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const imagesRef = ref(db, 'gallery_images');
 let itemToDeleteId = null;
 let cachedImages = [];
+
+// 並び替えモーダル用状態管理
+let reorderPostId = null;
+let reorderSlides = [];
+let draggedReorderIndex = null;
 
 // 拡大モーダル内の複数画像状態管理
 let modalSlides = [];
@@ -118,16 +123,20 @@ function createCardElement(item) {
 
     card.innerHTML = `
         <div class="px-3.5 py-3 flex items-center justify-between border-b border-gray-800/50 bg-cardBg">
-            <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
                     <i class="fa-solid fa-user"></i>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <p class="text-xs font-semibold text-gray-200 line-clamp-1">${escapeHtml(titleText)}</p>
                     <p class="text-[10px] text-gray-400">${formattedDate}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-1 shrink-0">
+                ${isMulti && !isAudio ? `
+                <button class="reorder-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-400 hover:bg-gray-800 transition" title="画像の並び替え">
+                    <i class="fa-solid fa-arrow-up-down text-xs"></i>
+                </button>` : ''}
                 ${!isAudio ? `
                 <button class="download-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 transition" title="表示中の画像をダウンロード">
                     <i class="fa-solid fa-download text-xs"></i>
@@ -255,6 +264,14 @@ function createCardElement(item) {
         openFullModal(slides, activeIndex);
     });
 
+    const reorderBtn = card.querySelector('.reorder-btn');
+    if (reorderBtn) {
+        reorderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openReorderModal(item, slides);
+        });
+    }
+
     const dlBtn = card.querySelector('.download-btn');
     if (dlBtn) {
         dlBtn.addEventListener('click', (e) => {
@@ -272,6 +289,144 @@ function createCardElement(item) {
     return card;
 }
 
+/* 並び替えモーダル制御 */
+function openReorderModal(item, slides) {
+    const modal = document.getElementById('reorder-modal');
+    const titleEl = document.getElementById('reorder-post-title');
+    if (!modal) return;
+
+    reorderPostId = item.id;
+    reorderSlides = slides.map(s => ({ src: s.src, name: s.name }));
+    draggedReorderIndex = null;
+
+    if (titleEl) {
+        titleEl.textContent = item.name || '無題の投稿';
+    }
+
+    renderReorderList();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeReorderModal() {
+    const modal = document.getElementById('reorder-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    reorderPostId = null;
+    reorderSlides = [];
+    draggedReorderIndex = null;
+}
+
+function moveReorderSlide(fromIdx, toIdx) {
+    if (fromIdx === toIdx) return;
+    if (fromIdx < 0 || fromIdx >= reorderSlides.length) return;
+    if (toIdx < 0 || toIdx >= reorderSlides.length) return;
+
+    const [moved] = reorderSlides.splice(fromIdx, 1);
+    reorderSlides.splice(toIdx, 0, moved);
+    renderReorderList();
+}
+
+function renderReorderList() {
+    const listEl = document.getElementById('reorder-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    reorderSlides.forEach((slide, idx) => {
+        const tile = document.createElement('div');
+        tile.className = 'bg-darkBg/90 border border-gray-800 rounded-xl overflow-hidden flex flex-col transition select-none';
+        tile.draggable = true;
+        tile.dataset.index = idx;
+
+        tile.innerHTML = `
+            <div class="relative aspect-[3/4] bg-black overflow-hidden">
+                <img src="${slide.src}" alt="${escapeHtml(slide.name)}" class="w-full h-full object-cover pointer-events-none" loading="lazy">
+                <span class="absolute top-2 left-2 bg-indigo-600/90 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow">
+                    ${idx + 1}枚目
+                </span>
+            </div>
+            <div class="p-2 flex items-center justify-between gap-1 bg-cardBg/80 border-t border-gray-800/70">
+                <button type="button" class="move-left-btn flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-gray-200 text-xs flex items-center justify-center transition" ${idx === 0 ? 'disabled' : ''} title="前へ移動">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button type="button" class="move-right-btn flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-gray-200 text-xs flex items-center justify-center transition" ${idx === reorderSlides.length - 1 ? 'disabled' : ''} title="次へ移動">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        `;
+
+        const leftBtn = tile.querySelector('.move-left-btn');
+        const rightBtn = tile.querySelector('.move-right-btn');
+        if (leftBtn) {
+            leftBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moveReorderSlide(idx, idx - 1);
+            });
+        }
+        if (rightBtn) {
+            rightBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moveReorderSlide(idx, idx + 1);
+            });
+        }
+
+        // PCドラッグ＆ドロップ並び替え
+        tile.addEventListener('dragstart', () => {
+            draggedReorderIndex = idx;
+            tile.classList.add('opacity-50', 'border-indigo-500');
+        });
+        tile.addEventListener('dragend', () => {
+            tile.classList.remove('opacity-50', 'border-indigo-500');
+            draggedReorderIndex = null;
+        });
+        tile.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            tile.classList.add('border-indigo-400');
+        });
+        tile.addEventListener('dragleave', () => {
+            tile.classList.remove('border-indigo-400');
+        });
+        tile.addEventListener('drop', (e) => {
+            e.preventDefault();
+            tile.classList.remove('border-indigo-400');
+            if (draggedReorderIndex !== null && draggedReorderIndex !== idx) {
+                moveReorderSlide(draggedReorderIndex, idx);
+                draggedReorderIndex = null;
+            }
+        });
+
+        listEl.appendChild(tile);
+    });
+}
+
+async function saveReorderedSlides() {
+    if (!reorderPostId || !reorderSlides.length) return;
+
+    const saveBtn = document.getElementById('save-reorder-btn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中...';
+    }
+
+    try {
+        await update(ref(db, 'gallery_images/' + reorderPostId), {
+            src: reorderSlides[0].src,
+            images: reorderSlides
+        });
+        closeReorderModal();
+        showToast('画像の並び順を保存しました');
+    } catch (err) {
+        console.error('並び順保存エラー:', err);
+        showToast('並び順の保存に失敗しました', 'delete');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> 順番を保存';
+        }
+    }
+}
+
 function initGalleryEvents() {
     if (window._galleryEventsBound) return;
     window._galleryEventsBound = true;
@@ -283,6 +438,30 @@ function initGalleryEvents() {
             el.addEventListener('change', handleFileSelect);
         }
     });
+
+    const closeReorderBtn = document.getElementById('close-reorder-modal');
+    if (closeReorderBtn) {
+        closeReorderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeReorderModal();
+        });
+    }
+
+    const cancelReorderBtn = document.getElementById('cancel-reorder-btn');
+    if (cancelReorderBtn) {
+        cancelReorderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeReorderModal();
+        });
+    }
+
+    const saveReorderBtn = document.getElementById('save-reorder-btn');
+    if (saveReorderBtn) {
+        saveReorderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            saveReorderedSlides();
+        });
+    }
 
     const scrollTopBtn = document.getElementById('btn-scroll-top');
     if (scrollTopBtn) {
