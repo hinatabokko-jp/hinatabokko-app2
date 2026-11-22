@@ -313,7 +313,7 @@
     <footer class="bg-[#11100E] text-sumiLight text-xs py-4 border-t border-sumi/15 mt-8">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p class="font-mincho">手書き漢和辞典 ― マウスや指で枠内に漢字を書いて検索できます。</p>
-            <p class="text-[11px] text-sumiLight/60">※オンライン手書き認識エンジンおよび内蔵漢字データベースを使用しています</p>
+            <p class="text-[11px] text-sumiLight/60">※オンライン手書き認識エンジンおよび複数JSON分割辞書データベースを使用しています</p>
         </div>
     </footer>
 
@@ -353,10 +353,17 @@
     <script>
         /**
          * ============================================================================
-         * 1. 内蔵 漢和辞典データベース & オフライン特徴量データ
+         * 1. 複数JSONファイル参照型 漢和辞典データベース（安定化・フォールバック対応）
          * ============================================================================
          */
-        const KANJI_DICTIONARY = {
+        const DICTIONARY_JSON_FILES = [
+            './data/kanji_grade1_6.json',
+            './data/kanji_junior_high.json',
+            './data/kanji_high_kanken2.json'
+        ];
+
+        // JSON読み込み失敗時や初期表示時にも必ず機能する最小内蔵ベースデータ
+        const FALLBACK_KANJI_DICTIONARY = {
             "漢": {
                 onyomi: "カン",
                 kunyomi: "おとこ",
@@ -389,9 +396,9 @@
                 ],
                 compounds: [
                     { word: "永遠", reading: "えいえん", desc: "いつまでも果てしなく続くこと" },
-                    { word: "永久", reading: "えいきゅう", desc: "とこしえに変わらないこと" },
-                    { word: "永字八法", reading: "えいじはっぽう", desc: "「永」の字に含まれる8種の基本筆法" },
-                    { word: "永眠", reading: "えいみん", desc: "永久の眠りにつくこと。死去" }
+                    { word: "永久", "reading": "えいきゅう", "desc": "とこしえに変わらないこと" },
+                    { word: "永字八法", reading: "えいじはっぽう", "desc": "「永」の字に含まれる8種の基本筆法" },
+                    { word: "永眠", reading: "えいみん", "desc": "永久の眠りにつくこと。死去" }
                 ]
             },
             "龍": {
@@ -399,32 +406,17 @@
                 kunyomi: "たつ",
                 radical: "龍（りゅう）",
                 strokes: 16,
-                grade: "人名用漢字（旧字体）",
+                grade: "人名用漢字・漢検2級相当",
                 meanings: [
                     "① たつ。想像上の霊獣。雲を呼び雨を降らせ、天に昇るとされる。",
                     "② 天子・皇帝のたとえ。（例：龍顔、龍体）",
                     "③ 並外れてすぐれた人物のたとえ。（例：臥龍）"
                 ],
                 compounds: [
-                    { word: "龍虎", reading: "りゅうこ", desc: "力量の伯仲した二人の英雄のたとえ" },
-                    { word: "登龍門", reading: "とうりゅうもん", desc: "立身出世のための難関" },
-                    { word: "画龍点睛", reading: "がりょうてんせい", desc: "物事を完成させるための最後の大切な仕上げ" },
-                    { word: "臥龍", reading: "がりょう", desc: "世に隠れて機会を待つ大人物" }
-                ]
-            },
-            "竜": {
-                onyomi: "リュウ・リョウ",
-                kunyomi: "たつ",
-                radical: "立（たつ）",
-                strokes: 10,
-                grade: "常用漢字",
-                meanings: [
-                    "① たつ。「龍」の新字体。想像上の霊獣。",
-                    "② 天子のたとえ。"
-                ],
-                compounds: [
-                    { word: "恐竜", reading: "きょうりゅう", desc: "中生代に栄えた巨大な爬虫類" },
-                    { word: "竜巻", reading: "たつまき", desc: "激しい渦巻きを伴う上昇気流" }
+                    { word: "龍虎", reading: "りゅうこ", "desc": "力量の伯仲した二人の英雄のたとえ" },
+                    { word: "登龍門", reading: "とうりゅうもん", "desc": "立身出世のための難関" },
+                    { word: "画龍点睛", reading: "がりょうてんせい", "desc": "物事を完成させるための最後の大切な仕上げ" },
+                    { word: "臥龍", reading: "がりょう", "desc": "世に隠れて機会を待つ大人物" }
                 ]
             },
             "鬱": {
@@ -432,136 +424,59 @@
                 kunyomi: "うっ-する・ふさ-ぐ・しげ-る",
                 radical: "鬯（ちょう・においざけ）",
                 strokes: 29,
-                grade: "常用漢字",
+                grade: "常用漢字・漢検2級",
                 meanings: [
                     "① 草木がこんもりと茂るさま。（例：鬱蒼）",
                     "② 気や血が滞ってふさがる。気分が晴れず落ち込む。（例：憂鬱）",
                     "③ 盛んにわき起こるさま。（例：鬱勃）"
                 ],
                 compounds: [
-                    { word: "憂鬱", reading: "ゆううつ", desc: "心が晴れず気が滅入ること" },
-                    { word: "鬱蒼", reading: "うっそう", desc: "木々が暗くなるほど茂り合うさま" },
-                    { word: "鬱憤", reading: "うっぷん", desc: "心の中にたまった怒りや不満" },
-                    { word: "鬱積", reading: "うっせき", desc: "感情や不満が心の中に積み重なること" }
-                ]
-            },
-            "薔": {
-                onyomi: "ショウ・ソウ",
-                kunyomi: "ばら・みずたで",
-                radical: "艹（くさかんむり）",
-                strokes: 16,
-                grade: "表外漢字",
-                meanings: [
-                    "① 植物の名。「薔薇（ばら）」の「薔」。",
-                    "② みずたで。タデ科の一年草。"
-                ],
-                compounds: [
-                    { word: "薔薇", reading: "ばら・そうび", desc: "バラ科の低木。美しい花を咲かせる" },
-                    { word: "薔薇色", reading: "ばらいろ", desc: "明るいピンク色。希望に満ちたさま" }
-                ]
-            },
-            "薇": {
-                onyomi: "ビ",
-                kunyomi: "ぜんまい",
-                radical: "艹（くさかんむり）",
-                strokes: 16,
-                grade: "表外漢字",
-                meanings: [
-                    "① ぜんまい。シダ植物の一種。春の山菜。",
-                    "② 「薔薇（ばら）」の「薇」。"
-                ],
-                compounds: [
-                    { word: "薔薇", reading: "ばら", desc: "トゲのある美しい花を咲かせる植物" },
-                    { word: "紫薇", reading: "しび", desc: "サルスベリ（百日紅）の別名" }
-                ]
-            },
-            "愛": {
-                onyomi: "アイ",
-                kunyomi: "いと-しい・め-でる・まな",
-                radical: "心（こころ）",
-                strokes: 13,
-                grade: "常用漢字（小4）",
-                meanings: [
-                    "① いつくしむ。相手を大切に思い、慈しむ気持ち。",
-                    "② めでる。好み楽しむ。（例：愛読書、愛好）",
-                    "③ 惜しむ。大切にする。（例：愛惜）"
-                ],
-                compounds: [
-                    { word: "愛情", reading: "あいじょう", desc: "深く愛し慈しむ心" },
-                    { word: "敬愛", reading: "けいあい", desc: "尊敬し親しみ愛すること" },
-                    { word: "愛惜", reading: "あいせき", desc: "別れや失うことを惜しむこと" },
-                    { word: "博愛", reading: "はくあい", desc: "すべての人を平等に愛すること" }
-                ]
-            },
-            "夢": {
-                onyomi: "ム・ボウ",
-                kunyomi: "ゆめ・ゆめ-みる・くら-い",
-                radical: "夕（ゆうべ）",
-                strokes: 13,
-                grade: "常用漢字（小5）",
-                meanings: [
-                    "① ゆめ。睡眠中に見る幻覚や体験。",
-                    "② はかないこと、現実離れしたことのたとえ。（例：夢幻）",
-                    "③ 将来実現させたい願いや理想。"
-                ],
-                compounds: [
-                    { word: "夢幻", reading: "むげん", desc: "夢と幻。はかないことのたとえ" },
-                    { word: "夢想", reading: "むそう", desc: "夢の中で思うこと。空想すること" },
-                    { word: "悪夢", reading: "あくむ", desc: "恐ろしい夢。忌まわしい出来事" },
-                    { word: "夢中", reading: "むちゅう", desc: "我を忘れるほど熱中すること" }
-                ]
-            },
-            "風": {
-                onyomi: "フウ・フ",
-                kunyomi: "かぜ・かざ",
-                radical: "風（かぜ）",
-                strokes: 9,
-                grade: "常用漢字（小2）",
-                meanings: [
-                    "① かぜ。空気の流れ。",
-                    "② ようす。おもむき。姿かたち。（例：風景、風情）",
-                    "③ ならわし。世間のしきたり。（例：風習、風紀）"
-                ],
-                compounds: [
-                    { word: "風情", reading: "ふぜい", desc: "しみじみとした趣や味わい" },
-                    { word: "風景", reading: "ふうけい", desc: "目の前に広がる自然や街の眺め" },
-                    { word: "風流", reading: "ふうりゅう", desc: "俗っぽさを離れ趣があること" },
-                    { word: "薫風", reading: "くんぷう", desc: "初夏の若葉の香りを含んだ穏やかな風" }
-                ]
-            },
-            "誠": {
-                onyomi: "セイ",
-                kunyomi: "まこと",
-                radical: "言（ごんべん）",
-                strokes: 13,
-                grade: "常用漢字（小6）",
-                meanings: [
-                    "① まこと。嘘や偽りのない真実の心。",
-                    "② 誠実である。真心をもって接すること。"
-                ],
-                compounds: [
-                    { word: "誠実", reading: "せいじつ", desc: "私利私欲を交えず真心をもって対するさま" },
-                    { word: "誠意", reading: "せいい", desc: "偽りのない真心" },
-                    { word: "忠誠", reading: "ちゅうせい", desc: "主君や国に対して真心をもって尽くすこと" }
-                ]
-            },
-            "桜": {
-                onyomi: "オウ・ヨウ",
-                kunyomi: "さくら",
-                radical: "木（きへん）",
-                strokes: 10,
-                grade: "常用漢字（小5）",
-                meanings: [
-                    "① さくら。バラ科の落葉高木。春に淡紅色や白色の美しい花を咲かせる。",
-                    "② 日本を代表する花として古来より愛でられる。"
-                ],
-                compounds: [
-                    { word: "桜花", reading: "おうか", desc: "さくらの花" },
-                    { word: "観桜", reading: "かんおう", desc: "桜の花を見て楽しむこと。花見" },
-                    { word: "桜吹雪", reading: "さくらふぶき", desc: "桜の花びらが吹雪のように舞い散るさま" }
+                    { word: "憂鬱", reading: "ゆううつ", "desc": "心が晴れず気が滅入ること" },
+                    { word: "鬱蒼", reading: "うっそう", "desc": "木々が暗くなるほど茂り合うさま" },
+                    { word: "鬱憤", reading: "うっぷん", "desc": "心の中にたまった怒りや不満" },
+                    { word: "鬱積", reading: "うっせき", "desc": "感情や不満が心の中に積み重なること" }
                 ]
             }
         };
+
+        let KANJI_DICTIONARY = { ...FALLBACK_KANJI_DICTIONARY };
+        let dictionaryReadyPromise = null;
+
+        async function loadDictionaryFromJsonFiles() {
+            const merged = { ...FALLBACK_KANJI_DICTIONARY };
+            const results = await Promise.allSettled(
+                DICTIONARY_JSON_FILES.map(async (url) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 4000);
+                    try {
+                        const res = await fetch(`${url}?v=${Date.now()}`, {
+                            cache: 'no-store',
+                            signal: controller.signal
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return await res.json();
+                    } finally {
+                        clearTimeout(timer);
+                    }
+                })
+            );
+
+            results.forEach((result) => {
+                if (result.status === 'fulfilled' && result.value && typeof result.value === 'object') {
+                    Object.assign(merged, result.value);
+                }
+            });
+
+            KANJI_DICTIONARY = merged;
+            return KANJI_DICTIONARY;
+        }
+
+        function ensureDictionaryLoaded() {
+            if (!dictionaryReadyPromise) {
+                dictionaryReadyPromise = loadDictionaryFromJsonFiles().catch(() => KANJI_DICTIONARY);
+            }
+            return dictionaryReadyPromise;
+        }
 
         /**
          * ============================================================================
@@ -591,6 +506,7 @@
             const dpr = window.devicePixelRatio || 1;
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
             redrawStrokes();
         }
@@ -782,7 +698,6 @@
             };
 
             try {
-                // タイムアウト制御用（モバイル回線での無限待ちを防ぐため3秒でタイムアウト）
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 3000);
 
@@ -810,7 +725,7 @@
                     throw new Error('Recognition failed');
                 }
             } catch (error) {
-                // ネットワークエラー・タイムアウト時は自動的にローカルフォールバックに切り替え
+                await ensureDictionaryLoaded();
                 const fallbackCandidates = getLocalFallbackCandidates(strokes.length);
                 renderCandidates(fallbackCandidates);
                 engineStatus.textContent = `オフライン/回線照合 (${strokes.length}画付近)`;
@@ -822,8 +737,8 @@
         function getLocalFallbackCandidates(strokeCount) {
             const allKanji = Object.keys(KANJI_DICTIONARY);
             const sorted = allKanji.sort((a, b) => {
-                const diffA = Math.abs(KANJI_DICTIONARY[a].strokes - strokeCount);
-                const diffB = Math.abs(KANJI_DICTIONARY[b].strokes - strokeCount);
+                const diffA = Math.abs((KANJI_DICTIONARY[a].strokes || 0) - strokeCount);
+                const diffB = Math.abs((KANJI_DICTIONARY[b].strokes || 0) - strokeCount);
                 return diffA - diffB;
             });
             return sorted.slice(0, 10);
@@ -861,7 +776,7 @@
 
         /**
          * ============================================================================
-         * 4. 漢和辞典 検索＆表示ロジック（安定化版）
+         * 4. 漢和辞典 検索＆表示ロジック（複数JSON統合・安定化版）
          * ============================================================================
          */
         let searchHistory = ['漢', '永', '龍', '鬱'];
@@ -878,34 +793,40 @@
             document.getElementById('dictUnicode').textContent = `Unicode: U+${codePoint}`;
             document.getElementById('externalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(targetChar + ' 漢字 意味 読み方')}`;
 
-            // 1. 内蔵データベースに存在する場合は即座に表示（外出先でも確実）
-            if (KANJI_DICTIONARY[targetChar]) {
-                const entry = KANJI_DICTIONARY[targetChar];
+            await ensureDictionaryLoaded();
+
+            const entry = KANJI_DICTIONARY[targetChar];
+            if (entry && typeof entry === 'object') {
+                const strokesText = typeof entry.strokes === 'number'
+                    ? `${entry.strokes}画`
+                    : (entry.strokes || '―');
+
                 displayDictionaryEntry({
                     char: targetChar,
-                    onyomi: entry.onyomi,
-                    kunyomi: entry.kunyomi,
-                    radical: entry.radical,
-                    strokes: `${entry.strokes}画`,
-                    grade: entry.grade,
-                    meanings: entry.meanings,
-                    compounds: entry.compounds
+                    onyomi: entry.onyomi || '―',
+                    kunyomi: entry.kunyomi || '―',
+                    radical: entry.radical || '部首検索参照',
+                    strokes: strokesText,
+                    grade: entry.grade || '辞書収録漢字',
+                    meanings: Array.isArray(entry.meanings) && entry.meanings.length > 0
+                        ? entry.meanings
+                        : [`① 「${targetChar}」（U+${codePoint}）の項目です。`],
+                    compounds: Array.isArray(entry.compounds) ? entry.compounds : []
                 });
                 return;
             }
 
-            // 2. 内蔵にない漢字で、モバイル回線等でAPIが使えない/失敗する場合の堅牢なフォールバック表示
-            // （「読み込みました」等で止まらず、必ず意味や案内が表示されるように即時フォールバックします）
+            // 辞書JSON未収録文字でも必ず読みやすく表示するフォールバック
             displayDictionaryEntry({
                 char: targetChar,
                 onyomi: '―',
                 kunyomi: '―',
                 radical: '部首検索参照',
                 strokes: `${strokes.length || '―'}画（参考）`,
-                grade: '一般漢字・文字',
+                grade: '未収録（JSON追加対象）',
                 meanings: [
-                    `① 「${targetChar}」（U+${codePoint}）の項目です。`,
-                    `② 外出先やモバイル通信環境のため自動解説の生成をスキップしました。詳しい意味は下の「詳細検索」からワンタップで確認できます。`
+                    `① 「${targetChar}」（U+${codePoint}）は現在の辞書JSONに未収録の文字です。`,
+                    `② 「詳細検索」から外部検索で読みや意味を確認するか、./data/ 以下のJSONファイルに項目を追加すると次回から表示されます。`
                 ],
                 compounds: [
                     { word: targetChar + "の検索", reading: "かんたん検索", desc: "Google検索で詳しい意味や熟語を調べる" }
@@ -969,7 +890,7 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>"']/g, m => ({
+            return String(str).replace(/[&<>"']/g, m => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
         }
@@ -1037,8 +958,9 @@
         });
 
         window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             resizeCanvas();
+            await ensureDictionaryLoaded();
             lookupKanji('漢');
         });
     </script>
