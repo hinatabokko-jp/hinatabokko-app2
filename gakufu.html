@@ -676,7 +676,7 @@
                     </svg>
                 </div>
                 <h2 class="text-lg font-bold text-white mb-2">楽曲フォルダーがありません</h2>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、JPG形式の楽譜を追加してください。</p>
+                <p class="text-sm text-zinc-400 max-w-md mb-6">「新規フォルダー」ボタンから曲ごとのフォルダーを作成し、端末に保存したJPG形式の楽譜を追加してください。</p>
                 <button onclick="openFolderModal()" class="py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition">
                     最初の楽曲フォルダーを作成
                 </button>
@@ -753,7 +753,7 @@
             </div>
         </header>
 
-        <!-- 最適化・Firebase保存中プログレスオーバーレイ -->
+        <!-- 最適化・保存中プログレスオーバーレイ -->
         <div id="upload-progress-overlay" class="fixed inset-0 z-[80] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
             <div class="glass rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border border-white/15">
                 <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -775,7 +775,7 @@
             <div id="page-sort-hint" class="hidden glass rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-300">
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-semibold">ページ順管理</span>
-                    <span>「← / →」ボタンまたは「ページ番号選択」で演奏順を自由に入れ替えられます。楽譜をタップするとそのページから開きます。</span>
+                    <span>「← / →」ボタンまたは「ページ番号選択」で演奏順を自由に入れ替えられます（曲順はクラウド同期）。楽譜をタップするとそのページから開きます。</span>
                 </div>
                 <button onclick="sortPagesByFilename()" class="text-blue-400 hover:text-blue-300 font-medium underline shrink-0">
                     ファイル名順に整列
@@ -795,7 +795,7 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-bold text-white mb-1">まだ楽譜画像がありません</h3>
-                <p class="text-sm text-zinc-400 max-w-md mb-6">JPG形式の楽譜画像を選択して追加してください。タブレットで見やすいサイズに自動調整して保存します。</p>
+                <p class="text-sm text-zinc-400 max-w-md mb-6">端末内の「gakufu」フォルダーなどに保存したJPG楽譜を選択してください。タブレット画面で見やすく軽量なサイズへ自動調整して端末内に保存します。</p>
                 <div class="flex flex-wrap items-center justify-center gap-3">
                     <label class="cursor-pointer py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition">
                         <span>JPG画像を選択して追加</span>
@@ -871,11 +871,19 @@
                 <!-- 左（または単ページ） -->
                 <div id="page-slot-1" class="relative h-full flex items-center justify-center">
                     <img id="sheet-img-1" src="" alt="楽譜ページ" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-white">
+                    <div id="sheet-missing-1" class="hidden w-full max-w-md aspect-[3/4] rounded-2xl glass border border-white/15 flex-col items-center justify-center text-center p-6">
+                        <p class="text-sm font-bold text-white mb-1">この端末に画像が未保存です</p>
+                        <p id="sheet-missing-name-1" class="text-xs text-zinc-400"></p>
+                    </div>
                     <span id="viewer-badge-1" class="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 text-white text-xs font-bold backdrop-blur-md">P.1</span>
                 </div>
                 <!-- 右（見開きモード時のみ表示） -->
                 <div id="page-slot-2" class="relative h-full hidden items-center justify-center">
                     <img id="sheet-img-2" src="" alt="楽譜ページ（右）" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl bg-white">
+                    <div id="sheet-missing-2" class="hidden w-full max-w-md aspect-[3/4] rounded-2xl glass border border-white/15 flex-col items-center justify-center text-center p-6">
+                        <p class="text-sm font-bold text-white mb-1">この端末に画像が未保存です</p>
+                        <p id="sheet-missing-name-2" class="text-xs text-zinc-400"></p>
+                    </div>
                     <span id="viewer-badge-2" class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 text-white text-xs font-bold backdrop-blur-md">P.2</span>
                 </div>
             </div>
