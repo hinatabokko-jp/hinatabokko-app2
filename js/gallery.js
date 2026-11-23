@@ -29,14 +29,20 @@ let lastTapTime = 0;
 
 // 認証解除（アンロック）後にGalleryのデータを読み込み開始
 window.initGalleryApp = function() {
+    if (window._galleryDbUnsubscribed) return;
+    window._galleryDbUnsubscribed = true;
+
     onValue(imagesRef, async (snapshot) => {
         const data = snapshot.val();
         let items = [];
-        if (data) {
-            items = Object.values(data);
+        if (data && typeof data === 'object') {
+            items = Object.entries(data).map(([firebaseKey, val]) => ({
+                ...val,
+                id: val && val.id ? val.id : firebaseKey
+            }));
         }
 
-        items.sort((a, b) => b.timestamp - a.timestamp);
+        items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         cachedImages = items;
         renderFeed(cachedImages);
     });
@@ -62,18 +68,24 @@ if (appContentEl) {
 
 // 投稿アイテムから表示用スライド配列を正規化（複数画像・単一画像・音声対応）
 function normalizeSlides(item) {
+    if (!item) return [];
     if (Array.isArray(item.images) && item.images.length > 0) {
-        return item.images.map((img, idx) => {
-            if (typeof img === 'string') {
-                return { src: img, name: `${item.name || 'image'} (${idx + 1})` };
-            }
-            return {
-                src: img.src,
-                name: img.name || item.name || `image_${idx + 1}.jpg`
-            };
-        });
+        return item.images
+            .filter(img => img && (typeof img === 'string' || img.src))
+            .map((img, idx) => {
+                if (typeof img === 'string') {
+                    return { src: img, name: `${item.name || 'image'} (${idx + 1})` };
+                }
+                return {
+                    src: img.src,
+                    name: img.name || item.name || `image_${idx + 1}.jpg`
+                };
+            });
     }
-    return [{ src: item.src, name: item.name || '無題の画像' }];
+    if (item.src) {
+        return [{ src: item.src, name: item.name || '無題の画像' }];
+    }
+    return [];
 }
 
 function renderFeed(items) {
@@ -96,17 +108,21 @@ function renderFeed(items) {
 
     items.forEach(item => {
         const card = createCardElement(item);
-        container.appendChild(card);
+        if (card) {
+            container.appendChild(card);
+        }
     });
 }
 
 function createCardElement(item) {
     const slides = normalizeSlides(item);
+    if (!slides.length) return null;
+
     const isMulti = slides.length > 1;
     const isAudio = item.type === 'audio' || (slides[0] && typeof slides[0].src === 'string' && slides[0].src.startsWith('data:audio/'));
     let activeIndex = 0;
 
-    const formattedDate = new Date(item.timestamp).toLocaleString('ja-JP', {
+    const formattedDate = new Date(item.timestamp || Date.now()).toLocaleString('ja-JP', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -134,14 +150,15 @@ function createCardElement(item) {
             </div>
             <div class="flex items-center gap-1 shrink-0">
                 ${isMulti && !isAudio ? `
-                <button class="reorder-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-indigo-400 hover:bg-gray-800 transition" title="画像の並び替え">
-                    <i class="fa-solid fa-arrow-up-down text-xs"></i>
+                <button type="button" class="reorder-btn h-8 px-2.5 rounded-full flex items-center justify-center gap-1 text-indigo-300 hover:text-white bg-indigo-500/15 hover:bg-indigo-600/40 border border-indigo-500/30 transition text-[11px] font-semibold" title="画像の並び替え">
+                    <i class="fa-solid fa-arrow-up-down text-[10px]"></i>
+                    <span>並び替え</span>
                 </button>` : ''}
                 ${!isAudio ? `
-                <button class="download-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 transition" title="表示中の画像をダウンロード">
+                <button type="button" class="download-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 transition" title="表示中の画像をダウンロード">
                     <i class="fa-solid fa-download text-xs"></i>
                 </button>` : ''}
-                <button class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-gray-800 transition" title="削除">
+                <button type="button" class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-gray-800 transition" title="削除">
                     <i class="fa-regular fa-trash-can text-xs"></i>
                 </button>
             </div>
@@ -293,7 +310,7 @@ function createCardElement(item) {
 function openReorderModal(item, slides) {
     const modal = document.getElementById('reorder-modal');
     const titleEl = document.getElementById('reorder-post-title');
-    if (!modal) return;
+    if (!modal || !item || !item.id) return;
 
     reorderPostId = item.id;
     reorderSlides = slides.map(s => ({ src: s.src, name: s.name }));
@@ -393,6 +410,59 @@ function renderReorderList() {
             if (draggedReorderIndex !== null && draggedReorderIndex !== idx) {
                 moveReorderSlide(draggedReorderIndex, idx);
                 draggedReorderIndex = null;
+            }
+        });
+
+        // スマホ・タブレット向けタッチドラッグ並び替え
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouchDragging = false;
+
+        tile.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button')) return;
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isTouchDragging = true;
+                tile.classList.add('border-indigo-500', 'scale-[0.98]');
+            }
+        }, { passive: true });
+
+        tile.addEventListener('touchmove', (e) => {
+            if (!isTouchDragging || e.touches.length !== 1) return;
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            if (Math.abs(dx) > 12 || Math.abs(dy) > 12) {
+                e.preventDefault();
+            }
+            const targetEl = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+            const targetTile = targetEl ? targetEl.closest('#reorder-list > div[data-index]') : null;
+            listEl.querySelectorAll(':scope > div[data-index]').forEach(el => {
+                el.classList.remove('ring-2', 'ring-indigo-400');
+            });
+            if (targetTile && targetTile !== tile) {
+                targetTile.classList.add('ring-2', 'ring-indigo-400');
+            }
+        }, { passive: false });
+
+        tile.addEventListener('touchend', (e) => {
+            if (!isTouchDragging) return;
+            isTouchDragging = false;
+            tile.classList.remove('border-indigo-500', 'scale-[0.98]');
+            listEl.querySelectorAll(':scope > div[data-index]').forEach(el => {
+                el.classList.remove('ring-2', 'ring-indigo-400');
+            });
+
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                const targetTile = targetEl ? targetEl.closest('#reorder-list > div[data-index]') : null;
+                if (targetTile) {
+                    const dropIdx = Number(targetTile.dataset.index);
+                    if (!Number.isNaN(dropIdx) && dropIdx !== idx) {
+                        moveReorderSlide(idx, dropIdx);
+                    }
+                }
             }
         });
 
