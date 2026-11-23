@@ -27,6 +27,10 @@ let initialPinchDistance = 0;
 let initialScale = 1;
 let lastTapTime = 0;
 
+function isWideLandscapeView() {
+    return window.innerWidth >= 768 || (window.innerWidth > window.innerHeight && window.innerWidth >= 640);
+}
+
 // 認証解除（アンロック）後にGalleryのデータを読み込み開始
 window.initGalleryApp = function() {
     if (window._galleryDbUnsubscribed) return;
@@ -563,8 +567,9 @@ function initGalleryEvents() {
     if (modalPrevBtn) {
         modalPrevBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            const step = isWideLandscapeView() && modalSlides.length > 1 ? 2 : 1;
             if (modalCurrentIndex > 0) {
-                setModalSlide(modalCurrentIndex - 1);
+                setModalSlide(Math.max(0, modalCurrentIndex - step));
             }
         });
     }
@@ -573,11 +578,19 @@ function initGalleryEvents() {
     if (modalNextBtn) {
         modalNextBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (modalCurrentIndex < modalSlides.length - 1) {
-                setModalSlide(modalCurrentIndex + 1);
+            const step = isWideLandscapeView() && modalSlides.length > 1 ? 2 : 1;
+            if (modalCurrentIndex + step < modalSlides.length) {
+                setModalSlide(modalCurrentIndex + step);
             }
         });
     }
+
+    window.addEventListener('resize', () => {
+        const modal = document.getElementById('fullmodal');
+        if (modal && !modal.classList.contains('hidden') && modalSlides.length > 0) {
+            setModalSlide(modalCurrentIndex);
+        }
+    });
 
     const fullModal = document.getElementById('fullmodal');
     if (fullModal) {
@@ -781,7 +794,7 @@ function closeDeleteModal() {
     modal.classList.remove('flex');
 }
 
-function updateModalNavigationUI() {
+function updateModalNavigationUI(isPairActive = false) {
     const counterEl = document.getElementById('modal-counter');
     const prevBtn = document.getElementById('modal-prev-btn');
     const nextBtn = document.getElementById('modal-next-btn');
@@ -790,36 +803,73 @@ function updateModalNavigationUI() {
 
     if (counterEl) {
         counterEl.classList.toggle('hidden', !isMulti);
-        counterEl.textContent = `${modalCurrentIndex + 1} / ${modalSlides.length}`;
+        if (isPairActive && modalCurrentIndex + 1 < modalSlides.length) {
+            counterEl.textContent = `${modalCurrentIndex + 1}-${modalCurrentIndex + 2} / ${modalSlides.length}`;
+        } else {
+            counterEl.textContent = `${modalCurrentIndex + 1} / ${modalSlides.length}`;
+        }
     }
     if (prevBtn) {
         prevBtn.classList.toggle('hidden', !isMulti || modalCurrentIndex === 0);
         prevBtn.classList.toggle('flex', isMulti && modalCurrentIndex > 0);
     }
     if (nextBtn) {
-        nextBtn.classList.toggle('hidden', !isMulti || modalCurrentIndex === modalSlides.length - 1);
-        nextBtn.classList.toggle('flex', isMulti && modalCurrentIndex < modalSlides.length - 1);
+        const hasNext = isPairActive
+            ? modalCurrentIndex + 2 < modalSlides.length
+            : modalCurrentIndex < modalSlides.length - 1;
+        nextBtn.classList.toggle('hidden', !isMulti || !hasNext);
+        nextBtn.classList.toggle('flex', isMulti && hasNext);
     }
     if (dotsEl) {
         dotsEl.classList.toggle('hidden', !isMulti);
         dotsEl.classList.toggle('flex', isMulti);
-        dotsEl.innerHTML = isMulti ? modalSlides.map((_, idx) => `
-            <span class="h-1.5 rounded-full transition-all ${idx === modalCurrentIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/40'}"></span>
-        `).join('') : '';
+        dotsEl.innerHTML = isMulti ? modalSlides.map((_, idx) => {
+            const isActiveDot = isPairActive
+                ? (idx === modalCurrentIndex || idx === modalCurrentIndex + 1)
+                : (idx === modalCurrentIndex);
+            return `<span class="h-1.5 rounded-full transition-all ${isActiveDot ? 'w-4 bg-white' : 'w-1.5 bg-white/40'}"></span>`;
+        }).join('') : '';
     }
 }
 
 function setModalSlide(index) {
     if (index < 0 || index >= modalSlides.length) return;
+    const modal = document.getElementById('fullmodal');
+    const isMulti = modalSlides.length > 1;
+    const isPairActive = Boolean(modal && isMulti && isWideLandscapeView());
+
+    if (isPairActive && index > 0 && index === modalSlides.length - 1) {
+        index = Math.max(0, modalSlides.length - 2);
+    }
+
     modalCurrentIndex = index;
     const slide = modalSlides[modalCurrentIndex];
+    const nextSlide = isPairActive ? modalSlides[modalCurrentIndex + 1] : null;
     const img = document.getElementById('modal-img');
+    const secondImg = document.getElementById('modal-img-second');
     const dlBtn = document.getElementById('modal-download-btn');
+
+    if (modal) {
+        modal.classList.toggle('is-multi-pair', isPairActive);
+    }
 
     if (img) {
         img.src = slide.src;
         img.alt = slide.name || 'Full view';
     }
+
+    if (secondImg) {
+        if (nextSlide) {
+            secondImg.src = nextSlide.src;
+            secondImg.alt = nextSlide.name || 'Full view second';
+            secondImg.classList.remove('hidden');
+        } else {
+            secondImg.src = '';
+            secondImg.alt = '';
+            secondImg.classList.add('hidden');
+        }
+    }
+
     if (dlBtn) {
         dlBtn.onclick = (e) => {
             e.stopPropagation();
@@ -830,7 +880,7 @@ function setModalSlide(index) {
     if (typeof window.resetZoom === 'function') {
         window.resetZoom();
     }
-    updateModalNavigationUI();
+    updateModalNavigationUI(isPairActive);
 }
 
 function openFullModal(slidesOrSrc, startIndexOrFilename = 0) {
@@ -859,14 +909,19 @@ function openFullModal(slidesOrSrc, startIndexOrFilename = 0) {
 function closeModal() {
     const modal = document.getElementById('fullmodal');
     const img = document.getElementById('modal-img');
+    const secondImg = document.getElementById('modal-img-second');
     if (!modal) return;
 
     modal.classList.remove('opacity-100');
     modal.classList.add('opacity-0');
     setTimeout(() => {
         modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        modal.classList.remove('flex', 'is-multi-pair');
         if (img) img.src = '';
+        if (secondImg) {
+            secondImg.src = '';
+            secondImg.classList.add('hidden');
+        }
         modalSlides = [];
         modalCurrentIndex = 0;
         if (typeof window.resetZoom === 'function') {
@@ -878,20 +933,35 @@ function closeModal() {
 /* ピンチイン・ピンチアウト & ダブルタップ & ホイール拡大/ドラッグ移動 & 複数画像左右スワイプ制御 */
 function setupImageZoomAndPan() {
     const modalImg = document.getElementById('modal-img');
+    const modalImgSecond = document.getElementById('modal-img-second');
     const viewport = document.getElementById('modal-viewport');
     if (!modalImg || !viewport) return;
 
+    let activeZoomTarget = modalImg;
     let swipeStartX = 0;
     let swipeStartY = 0;
     let isSwipeTracking = false;
+
+    function getTargetTransformStyle(target) {
+        if (target === activeZoomTarget) {
+            return `translate3d(${translateX}px, ${translateY}px, 0) scale(${currentScale})`;
+        }
+        return 'translate3d(0, 0, 0) scale(1)';
+    }
 
     function updateTransform(withTransition = false) {
         if (currentScale <= 1) {
             translateX = 0;
             translateY = 0;
         }
-        modalImg.style.transition = withTransition ? 'transform 0.2s ease-out' : 'transform 0.04s linear';
-        modalImg.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${currentScale})`;
+        const transitionValue = withTransition ? 'transform 0.2s ease-out' : 'transform 0.04s linear';
+        modalImg.style.transition = transitionValue;
+        modalImg.style.transform = getTargetTransformStyle(modalImg);
+
+        if (modalImgSecond && !modalImgSecond.classList.contains('hidden')) {
+            modalImgSecond.style.transition = transitionValue;
+            modalImgSecond.style.transform = getTargetTransformStyle(modalImgSecond);
+        }
     }
 
     function resetZoom() {
@@ -900,10 +970,18 @@ function setupImageZoomAndPan() {
         translateY = 0;
         isDragging = false;
         isSwipeTracking = false;
+        activeZoomTarget = modalImg;
         updateTransform(false);
     }
 
     window.resetZoom = resetZoom;
+
+    function resolveZoomTarget(targetEl) {
+        if (modalImgSecond && !modalImgSecond.classList.contains('hidden') && targetEl === modalImgSecond) {
+            return modalImgSecond;
+        }
+        return modalImg;
+    }
 
     function getTouchDistance(touches) {
         const dx = touches[0].clientX - touches[1].clientX;
@@ -914,6 +992,7 @@ function setupImageZoomAndPan() {
     // PCマウスホイールでのズーム操作
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
+        activeZoomTarget = resolveZoomTarget(e.target);
         const delta = e.deltaY < 0 ? 0.25 : -0.25;
         currentScale = Math.min(Math.max(currentScale + delta, minScale), maxScale);
         if (currentScale === 1) {
@@ -925,6 +1004,7 @@ function setupImageZoomAndPan() {
 
     // タッチ開始（ピンチ開始・ドラッグ開始・左右スワイプ開始・ダブルタップ判定）
     viewport.addEventListener('touchstart', (e) => {
+        activeZoomTarget = resolveZoomTarget(e.target);
         if (e.touches.length === 2) {
             e.preventDefault();
             isDragging = false;
@@ -990,6 +1070,10 @@ function setupImageZoomAndPan() {
                 const clampedDx = Math.max(-120, Math.min(120, dx * 0.45));
                 modalImg.style.transition = 'none';
                 modalImg.style.transform = `translate3d(${clampedDx}px, 0, 0) scale(1)`;
+                if (modalImgSecond && !modalImgSecond.classList.contains('hidden')) {
+                    modalImgSecond.style.transition = 'none';
+                    modalImgSecond.style.transform = `translate3d(${clampedDx}px, 0, 0) scale(1)`;
+                }
             }
         }
     }, { passive: false });
@@ -1000,25 +1084,25 @@ function setupImageZoomAndPan() {
             initialPinchDistance = 0;
         }
         if (e.touches.length === 0) {
+            const step = isWideLandscapeView() && modalSlides.length > 1 ? 2 : 1;
             if (isSwipeTracking && currentScale === 1 && e.changedTouches.length > 0 && modalSlides.length > 1) {
                 const dx = e.changedTouches[0].clientX - swipeStartX;
                 const dy = e.changedTouches[0].clientY - swipeStartY;
                 if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-                    if (dx < 0 && modalCurrentIndex < modalSlides.length - 1) {
-                        setModalSlide(modalCurrentIndex + 1);
+                    if (dx < 0 && modalCurrentIndex + step < modalSlides.length) {
+                        setModalSlide(modalCurrentIndex + step);
                         isDragging = false;
                         isSwipeTracking = false;
                         return;
                     } else if (dx > 0 && modalCurrentIndex > 0) {
-                        setModalSlide(modalCurrentIndex - 1);
+                        setModalSlide(Math.max(0, modalCurrentIndex - step));
                         isDragging = false;
                         isSwipeTracking = false;
                         return;
                     }
                 }
                 // 切り替わらなかった場合は元の位置に戻す
-                modalImg.style.transition = 'transform 0.2s ease-out';
-                modalImg.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                updateTransform(true);
             }
 
             isDragging = false;
@@ -1039,6 +1123,7 @@ function setupImageZoomAndPan() {
 
     viewport.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
+        activeZoomTarget = resolveZoomTarget(e.target);
         if (currentScale > 1) {
             e.preventDefault();
             isDragging = true;
@@ -1061,14 +1146,15 @@ function setupImageZoomAndPan() {
     });
 
     window.addEventListener('mouseup', (e) => {
+        const step = isWideLandscapeView() && modalSlides.length > 1 ? 2 : 1;
         if (isMouseSwiping && currentScale === 1 && modalSlides.length > 1) {
             const dx = e.clientX - mouseDownX;
             const dy = e.clientY - mouseDownY;
             if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-                if (dx < 0 && modalCurrentIndex < modalSlides.length - 1) {
-                    setModalSlide(modalCurrentIndex + 1);
+                if (dx < 0 && modalCurrentIndex + step < modalSlides.length) {
+                    setModalSlide(modalCurrentIndex + step);
                 } else if (dx > 0 && modalCurrentIndex > 0) {
-                    setModalSlide(modalCurrentIndex - 1);
+                    setModalSlide(Math.max(0, modalCurrentIndex - step));
                 }
             }
         }
