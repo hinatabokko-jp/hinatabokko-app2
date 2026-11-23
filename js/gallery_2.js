@@ -31,6 +31,51 @@ function isWideLandscapeView() {
     return window.innerWidth >= 768 || (window.innerWidth > window.innerHeight && window.innerWidth >= 640);
 }
 
+function fitModalImagesToViewport() {
+    const viewport = document.getElementById('modal-viewport');
+    const modal = document.getElementById('fullmodal');
+    const img = document.getElementById('modal-img');
+    const secondImg = document.getElementById('modal-img-second');
+    if (!viewport || !img) return;
+
+    const isPairActive = Boolean(modal && modal.classList.contains('is-multi-pair') && secondImg && !secondImg.classList.contains('hidden'));
+
+    const applyFitToElement = (el, slotEl) => {
+        if (!el || el.classList.contains('hidden') || !el.src) return;
+        const container = slotEl || viewport;
+        const availW = container.clientWidth;
+        const availH = container.clientHeight;
+        if (!availW || !availH) return;
+
+        const natW = el.naturalWidth;
+        const natH = el.naturalHeight;
+        if (!natW || !natH) {
+            el.style.maxWidth = `${availW}px`;
+            el.style.maxHeight = `${availH}px`;
+            el.style.width = 'auto';
+            el.style.height = 'auto';
+            return;
+        }
+
+        const scale = Math.min(availW / natW, availH / natH);
+        const fittedW = Math.max(1, Math.floor(natW * scale));
+        const fittedH = Math.max(1, Math.floor(natH * scale));
+
+        el.style.width = `${fittedW}px`;
+        el.style.height = `${fittedH}px`;
+        el.style.maxWidth = `${availW}px`;
+        el.style.maxHeight = `${availH}px`;
+    };
+
+    const firstSlot = document.getElementById('modal-slot-first');
+    const secondSlot = document.getElementById('modal-slot-second');
+
+    applyFitToElement(img, isPairActive ? firstSlot : viewport);
+    if (isPairActive && secondImg) {
+        applyFitToElement(secondImg, secondSlot);
+    }
+}
+
 // 認証解除（アンロック）後にGalleryのデータを読み込み開始
 window.initGalleryApp = function() {
     if (window._galleryDbUnsubscribed) return;
@@ -592,10 +637,31 @@ function initGalleryEvents() {
         }
     });
 
+    const modalImgEl = document.getElementById('modal-img');
+    const modalImgSecondEl = document.getElementById('modal-img-second');
+    if (modalImgEl) {
+        modalImgEl.addEventListener('load', () => {
+            if (currentScale === 1) fitModalImagesToViewport();
+        });
+    }
+    if (modalImgSecondEl) {
+        modalImgSecondEl.addEventListener('load', () => {
+            if (currentScale === 1) fitModalImagesToViewport();
+        });
+    }
+
     const fullModal = document.getElementById('fullmodal');
     if (fullModal) {
         fullModal.addEventListener('click', (e) => {
-            if (currentScale === 1 && (e.target.id === 'fullmodal' || e.target.id === 'modal-viewport')) {
+            if (
+                currentScale === 1 &&
+                (
+                    e.target.id === 'fullmodal' ||
+                    e.target.id === 'modal-viewport' ||
+                    e.target.id === 'modal-slot-first' ||
+                    e.target.id === 'modal-slot-second'
+                )
+            ) {
                 closeModal();
             }
         });
@@ -847,6 +913,7 @@ function setModalSlide(index) {
     const nextSlide = isPairActive ? modalSlides[modalCurrentIndex + 1] : null;
     const img = document.getElementById('modal-img');
     const secondImg = document.getElementById('modal-img-second');
+    const secondSlot = document.getElementById('modal-slot-second');
     const dlBtn = document.getElementById('modal-download-btn');
 
     if (modal) {
@@ -858,15 +925,17 @@ function setModalSlide(index) {
         img.alt = slide.name || 'Full view';
     }
 
-    if (secondImg) {
+    if (secondImg && secondSlot) {
         if (nextSlide) {
             secondImg.src = nextSlide.src;
             secondImg.alt = nextSlide.name || 'Full view second';
             secondImg.classList.remove('hidden');
+            secondSlot.classList.remove('hidden', 'is-hidden-slot');
         } else {
             secondImg.src = '';
             secondImg.alt = '';
             secondImg.classList.add('hidden');
+            secondSlot.classList.add('hidden', 'is-hidden-slot');
         }
     }
 
@@ -880,6 +949,7 @@ function setModalSlide(index) {
     if (typeof window.resetZoom === 'function') {
         window.resetZoom();
     }
+    fitModalImagesToViewport();
     updateModalNavigationUI(isPairActive);
 }
 
@@ -896,13 +966,15 @@ function openFullModal(slidesOrSrc, startIndexOrFilename = 0) {
     }
 
     if (!modalSlides.length || !modalSlides[0].src) return;
-    setModalSlide(modalCurrentIndex);
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    setModalSlide(modalCurrentIndex);
+
     requestAnimationFrame(() => {
         modal.classList.remove('opacity-0');
         modal.classList.add('opacity-100');
+        fitModalImagesToViewport();
     });
 }
 
@@ -910,6 +982,7 @@ function closeModal() {
     const modal = document.getElementById('fullmodal');
     const img = document.getElementById('modal-img');
     const secondImg = document.getElementById('modal-img-second');
+    const secondSlot = document.getElementById('modal-slot-second');
     if (!modal) return;
 
     modal.classList.remove('opacity-100');
@@ -917,10 +990,23 @@ function closeModal() {
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex', 'is-multi-pair');
-        if (img) img.src = '';
+        if (img) {
+            img.src = '';
+            img.style.width = '';
+            img.style.height = '';
+            img.style.maxWidth = '';
+            img.style.maxHeight = '';
+        }
         if (secondImg) {
             secondImg.src = '';
+            secondImg.style.width = '';
+            secondImg.style.height = '';
+            secondImg.style.maxWidth = '';
+            secondImg.style.maxHeight = '';
             secondImg.classList.add('hidden');
+        }
+        if (secondSlot) {
+            secondSlot.classList.add('hidden', 'is-hidden-slot');
         }
         modalSlides = [];
         modalCurrentIndex = 0;
