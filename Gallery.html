@@ -363,16 +363,31 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
-        /* モーダル画像変形用のスタイル（縦幅基準で全体表示） */
+        /* モーダル画像変形用のスタイル（有効表示エリア内で縦横比を維持して全体表示） */
         #modal-viewport {
-            padding: 56px 12px 76px;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            padding: 58px 48px 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-pair-slot {
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #modal-img,
         .modal-dual-img {
-            height: 100%;
-            width: auto;
             max-width: 100%;
             max-height: 100%;
+            width: auto;
+            height: auto;
             object-fit: contain;
             transform-origin: center center;
             transition: transform 0.05s linear;
@@ -385,26 +400,29 @@
                 max-width: 100% !important;
             }
             #fullmodal.is-multi-pair #modal-viewport {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
-                padding: 56px 16px 76px;
+                display: flex;
+                flex-direction: row;
+                gap: 16px;
+                padding: 58px 56px 80px;
                 align-items: center;
-                justify-items: center;
+                justify-content: center;
             }
-            #fullmodal.is-multi-pair #modal-img {
-                width: auto;
+            #fullmodal.is-multi-pair .modal-pair-slot {
+                flex: 1 1 0%;
+                width: 50%;
                 height: 100%;
-                max-width: 100% !important;
-                max-height: 100% !important;
-                object-fit: contain;
+                min-width: 0;
+                min-height: 0;
             }
+            #fullmodal.is-multi-pair .modal-pair-slot.is-hidden-slot {
+                display: none;
+            }
+            #fullmodal.is-multi-pair #modal-img,
             #fullmodal.is-multi-pair .modal-pair-second {
-                display: block !important;
-                width: auto;
-                height: 100%;
                 max-width: 100%;
                 max-height: 100%;
+                width: auto;
+                height: auto;
                 object-fit: contain;
             }
         }
@@ -657,8 +675,12 @@
         </button>
 
         <div id="modal-viewport" class="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
-            <img id="modal-img" src="" alt="Full view" class="modal-dual-img h-full w-auto max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none">
-            <img id="modal-img-second" src="" alt="Full view second" class="modal-dual-img modal-pair-second hidden h-full w-auto max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none">
+            <div id="modal-slot-first" class="modal-pair-slot">
+                <img id="modal-img" src="" alt="Full view" class="modal-dual-img rounded-lg shadow-2xl select-none">
+            </div>
+            <div id="modal-slot-second" class="modal-pair-slot is-hidden-slot hidden">
+                <img id="modal-img-second" src="" alt="Full view second" class="modal-dual-img modal-pair-second rounded-lg shadow-2xl select-none">
+            </div>
         </div>
 
         <!-- モーダル内 ドットインジケーター（複数枚時） -->
