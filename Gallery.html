@@ -364,11 +364,41 @@
             text-transform: uppercase;
         }
         /* モーダル画像変形用のスタイル */
-        #modal-img {
+        #modal-img,
+        .modal-dual-img {
             transform-origin: center center;
             transition: transform 0.05s linear;
             will-change: transform;
             touch-action: none;
+        }
+        /* 横長画面（PC・横向きタブレット等）での全幅拡張＆2枚横並び拡大表示 */
+        @media (min-width: 768px), (orientation: landscape) and (min-width: 640px) {
+            .gallery-shell {
+                max-width: 100% !important;
+            }
+            #fullmodal.is-multi-pair #modal-viewport {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                padding: 56px 16px 76px;
+                align-items: center;
+                justify-items: center;
+            }
+            #fullmodal.is-multi-pair #modal-img {
+                width: 100%;
+                height: 100%;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                object-fit: contain;
+            }
+            #fullmodal.is-multi-pair .modal-pair-second {
+                display: block !important;
+                width: 100%;
+                height: 100%;
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
         }
     </style>
 </head>
@@ -425,7 +455,7 @@
     <!-- アプリ本体（認証後に表示） -->
     <div id="app-content" class="h-full flex flex-col justify-between" style="display: none;">
         <!-- ヘッダー -->
-        <header class="sticky top-0 z-30 bg-darkBg/80 backdrop-blur-md border-b border-gray-800/80 px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full">
+        <header class="gallery-shell sticky top-0 z-30 bg-darkBg/80 backdrop-blur-md border-b border-gray-800/80 px-4 py-3 flex justify-between items-center max-w-md mx-auto w-full">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/30">
                     <i class="fa-solid font-bold fa-camera"></i>
@@ -448,12 +478,12 @@
         </header>
 
         <!-- メインフィードエリア -->
-        <main id="feed-container" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth w-full max-w-md mx-auto py-4 px-2 sm:px-0 space-y-6">
+        <main id="feed-container" class="gallery-shell flex-1 overflow-y-auto no-scrollbar scroll-smooth w-full max-w-md mx-auto py-4 px-2 sm:px-4 space-y-6">
             <!-- JSで動的にフィードカードが生成されます -->
         </main>
 
         <!-- 空状態（画像がない場合） -->
-        <div id="empty-state" class="hidden flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-md mx-auto">
+        <div id="empty-state" class="gallery-shell hidden flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-md mx-auto">
             <div class="w-20 h-20 bg-gray-800/60 rounded-full flex items-center justify-center mb-4 border border-gray-700/50">
                 <i class="fa-regular fa-images text-3xl text-gray-500"></i>
             </div>
@@ -467,7 +497,7 @@
         </div>
 
         <!-- フッター/ナビゲーション -->
-        <footer class="sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
+        <footer class="gallery-shell sticky bottom-0 z-30 bg-darkBg/90 backdrop-blur-md border-t border-gray-800/80 max-w-md mx-auto w-full px-6 py-2.5 flex justify-around items-center text-gray-400">
             <!-- 左下：カメラのアイコンを用いたスタイリッシュな無音撮影ボタン -->
             <button id="btn-open-camera-modal" class="p-2 text-indigo-400 hover:text-white transition flex flex-col items-center gap-0.5 active:scale-95" title="アプリ内カメラで撮影">
                 <i class="fa-solid fa-camera-retro text-lg"></i>
@@ -599,7 +629,7 @@
         </div>
     </div>
 
-    <!-- フルスクリーンスライド/モーダル（ピンチ＆ホイール＆複数画像左右スワイプ対応エリア） -->
+    <!-- フルスクリーンスライド/モーダル（ピンチ＆ホイール＆複数画像左右スワイプ＆横長2枚横並び対応エリア） -->
     <div id="fullmodal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col items-center justify-center p-2 backdrop-blur-sm opacity-0 transition-opacity duration-300">
         <button id="close-modal-btn" class="absolute top-4 right-4 text-white/70 hover:text-white bg-gray-800/60 p-2.5 rounded-full w-10 h-10 flex items-center justify-center z-20 transition">
             <i class="fa-solid fa-xmark text-xl"></i>
@@ -619,7 +649,8 @@
         </button>
 
         <div id="modal-viewport" class="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
-            <img id="modal-img" src="" alt="Full view" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none">
+            <img id="modal-img" src="" alt="Full view" class="modal-dual-img max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none">
+            <img id="modal-img-second" src="" alt="Full view second" class="modal-dual-img modal-pair-second hidden max-h-full max-w-full object-contain rounded-lg shadow-2xl select-none">
         </div>
 
         <!-- モーダル内 ドットインジケーター（複数枚時） -->
@@ -739,7 +770,7 @@
     <!-- モジュールJavaScriptファイルの読み込み -->
     <script type="module" src="js/config.js"></script>
     <script type="module" src="js/auth_2.js"></script>
-    <script type="module" src="js/gallery.js"></script>
+    <script type="module" src="js/gallery_2.js"></script>
     <script type="module" src="js/record.js"></script>
 
     <!-- アプリ内無音カメラ & 自動投稿スクリプト -->
