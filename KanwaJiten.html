@@ -396,9 +396,9 @@
                 ],
                 compounds: [
                     { word: "永遠", reading: "えいえん", desc: "いつまでも果てしなく続くこと" },
-                    { word: "永久", "reading": "えいきゅう", "desc": "とこしえに変わらないこと" },
-                    { word: "永字八法", reading: "えいじはっぽう", "desc": "「永」の字に含まれる8種の基本筆法" },
-                    { word: "永眠", reading: "えいみん", "desc": "永久の眠りにつくこと。死去" }
+                    { word: "永久", reading: "えいきゅう", desc: "とこしえに変わらないこと" },
+                    { word: "永字八法", reading: "えいじはっぽう", desc: "「永」の字に含まれる8種の基本筆法" },
+                    { word: "永眠", reading: "えいみん", desc: "永久の眠りにつくこと。死去" }
                 ]
             },
             "龍": {
@@ -413,10 +413,10 @@
                     "③ 並外れてすぐれた人物のたとえ。（例：臥龍）"
                 ],
                 compounds: [
-                    { word: "龍虎", reading: "りゅうこ", "desc": "力量の伯仲した二人の英雄のたとえ" },
-                    { word: "登龍門", reading: "とうりゅうもん", "desc": "立身出世のための難関" },
-                    { word: "画龍点睛", reading: "がりょうてんせい", "desc": "物事を完成させるための最後の大切な仕上げ" },
-                    { word: "臥龍", reading: "がりょう", "desc": "世に隠れて機会を待つ大人物" }
+                    { word: "龍虎", reading: "りゅうこ", desc: "力量の伯仲した二人の英雄のたとえ" },
+                    { word: "登龍門", reading: "とうりゅうもん", desc: "立身出世のための難関" },
+                    { word: "画龍点睛", reading: "がりょうてんせい", desc: "物事を完成させるための最後の大切な仕上げ" },
+                    { word: "臥龍", reading: "がりょう", desc: "世に隠れて機会を待つ大人物" }
                 ]
             },
             "鬱": {
@@ -431,10 +431,10 @@
                     "③ 盛んにわき起こるさま。（例：鬱勃）"
                 ],
                 compounds: [
-                    { word: "憂鬱", reading: "ゆううつ", "desc": "心が晴れず気が滅入ること" },
-                    { word: "鬱蒼", reading: "うっそう", "desc": "木々が暗くなるほど茂り合うさま" },
-                    { word: "鬱憤", reading: "うっぷん", "desc": "心の中にたまった怒りや不満" },
-                    { word: "鬱積", reading: "うっせき", "desc": "感情や不満が心の中に積み重なること" }
+                    { word: "憂鬱", reading: "ゆううつ", desc: "心が晴れず気が滅入ること" },
+                    { word: "鬱蒼", reading: "うっそう", desc: "木々が暗くなるほど茂り合うさま" },
+                    { word: "鬱憤", reading: "うっぷん", desc: "心の中にたまった怒りや不満" },
+                    { word: "鬱積", reading: "うっせき", desc: "感情や不満が心の中に積み重なること" }
                 ]
             }
         };
@@ -780,10 +780,18 @@
          * ============================================================================
          */
         let searchHistory = ['漢', '永', '龍', '鬱'];
+        let currentSelectedChar = '漢';
+
+        function openGoogleSearchForKanji(char) {
+            const target = Array.from(char || currentSelectedChar || '漢')[0];
+            const url = `https://www.google.com/search?q=${encodeURIComponent(`${target} 漢字 意味 読み方`)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
 
         async function lookupKanji(char) {
             if (!char) return;
             const targetChar = Array.from(char)[0];
+            currentSelectedChar = targetChar;
 
             searchHistory = [targetChar, ...searchHistory.filter(c => c !== targetChar)].slice(0, 8);
             renderHistory();
@@ -829,7 +837,7 @@
                     `② 「詳細検索」から外部検索で読みや意味を確認するか、./data/ 以下のJSONファイルに項目を追加すると次回から表示されます。`
                 ],
                 compounds: [
-                    { word: targetChar + "の検索", reading: "かんたん検索", desc: "Google検索で詳しい意味や熟語を調べる" }
+                    { word: targetChar + "の検索", reading: "かんたん検索", desc: "Google検索で詳しい意味や熟語を調べる", isQuickGoogle: true, targetChar: targetChar }
                 ]
             });
         }
@@ -862,8 +870,18 @@
             }
 
             compounds.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'p-2.5 bg-washiDark rounded border border-sumi/15 flex flex-col justify-between';
+                const isQuickSearch = Boolean(item.isQuickGoogle || item.reading === 'かんたん検索');
+                const card = document.createElement(isQuickSearch ? 'button' : 'div');
+                if (isQuickSearch) {
+                    card.type = 'button';
+                    card.className = 'p-2.5 bg-washiDark hover:bg-sumi/10 rounded border border-shu/40 flex flex-col justify-between text-left transition cursor-pointer';
+                    card.title = `「${item.targetChar || currentSelectedChar}」をGoogle検索する`;
+                    card.addEventListener('click', () => {
+                        openGoogleSearchForKanji(item.targetChar || currentSelectedChar);
+                    });
+                } else {
+                    card.className = 'p-2.5 bg-washiDark rounded border border-sumi/15 flex flex-col justify-between';
+                }
                 card.innerHTML = `
                     <div class="flex items-baseline gap-2 mb-1">
                         <span class="font-mincho font-bold text-base text-sumi">${escapeHtml(item.word)}</span>
@@ -933,7 +951,8 @@
             e.preventDefault();
             const val = document.getElementById('directInput').value.trim();
             if (val) {
-                lookupKanji(val);
+                const targetChar = Array.from(val)[0];
+                openGoogleSearchForKanji(targetChar);
                 document.getElementById('directInput').value = '';
             }
         });
