@@ -761,7 +761,7 @@
         return;
       }
 
-      grid.innerHTML = filtered.map(item => {
+      const renderCard = (item) => {
         const inCartQty = cart
           .filter(c => c.itemId === item.id)
           .reduce((sum, c) => sum + c.qty, 0);
@@ -794,7 +794,36 @@
             </div>
           </div>
         `;
-      }).join('');
+      };
+
+      // 「すべて」選択時はカテゴリーごとにグループ化し、間に区切りの横線を入れる
+      if (currentCategory === 'all') {
+        const displayCategories = CATEGORIES.filter(c => c.id !== 'all');
+        let sectionIndex = 0;
+
+        grid.innerHTML = displayCategories.map(cat => {
+          const catItems = filtered.filter(item => item.category === cat.id);
+          if (catItems.length === 0) return '';
+
+          const dividerHtml = sectionIndex > 0
+            ? `<div class="col-span-full border-t border-kura-border/80 my-2"></div>`
+            : '';
+
+          const headerHtml = `
+            <div class="col-span-full flex items-center gap-2 pt-1">
+              <span class="text-base">${cat.icon}</span>
+              <span class="font-serif font-bold text-sm md:text-base text-[#b3ffeb]">${cat.name}</span>
+              <span class="text-xs text-kura-muted">(${catItems.length}品)</span>
+            </div>
+          `;
+
+          sectionIndex++;
+          return dividerHtml + headerHtml + catItems.map(renderCard).join('');
+        }).join('');
+        return;
+      }
+
+      grid.innerHTML = filtered.map(renderCard).join('');
     }
 
     // -------------------------------------------------------------------------
