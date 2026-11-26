@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>朝ごはん</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: 明るくさわやかな雰囲気の丸ゴシック＆ゴシック -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Firebase Compat SDK (Realtime Database) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kura: {
+              bg: '#161311',
+              surface: '#221D1A',
+              card: '#2B2521',
+              cardHover: '#362E29',
+              gold: '#D4AF37',
+              goldLight: '#F3E5AB',
+              vermilion: '#C83C2B',
+              vermilionHover: '#DF4836',
+              cream: '#F5F0E6',
+              muted: '#A89F91',
+              border: '#423831',
+            }
+          },
+          fontFamily: {
+            serif: ['"Zen Maru Gothic"', '"Noto Sans JP"', 'sans-serif'],
+            sans: ['"Noto Sans JP"', '"Zen Maru Gothic"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #161311;
+      color: #F5F0E6;
+      font-family: 'Noto Sans JP', 'Zen Maru Gothic', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .bg-washi-dark {
+      background-color: #161311;
+      background-image:
+        radial-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 0),
+        radial-gradient(rgba(245, 240, 230, 0.03) 1px, transparent 0);
+      background-size: 24px 24px;
+      background-position: 0 0, 12px 12px;
+    }
+
+    .kura-card {
+      background: linear-gradient(145deg, #2C2622 0%, #201B18 100%);
+      border: 1px solid #423831;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s, box-shadow 0.2s;
+    }
+    .kura-card:active:not(.sold-out) {
+      transform: scale(0.97);
+    }
+    .kura-card:hover:not(.sold-out) {
+      border-color: rgba(212, 175, 55, 0.6);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6), 0 0 12px rgba(212, 175, 55, 0.15);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-pop-in {
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes bellSwing {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(15deg); }
+      40% { transform: rotate(-12deg); }
+      60% { transform: rotate(8deg); }
+      80% { transform: rotate(-5deg); }
+    }
+    .animate-bell {
+      animation: bellSwing 0.8s ease-in-out;
+    }
+
+    .noren-border {
+      border-bottom: 2px solid #D4AF37;
+      position: relative;
+    }
+    .noren-border::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background-color: rgba(212, 175, 55, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-washi-dark min-h-screen flex flex-col overflow-x-hidden">
+
+  <!-- ==================== ヘッダー ==================== -->
+  <header class="bg-[#1A1614]/95 backdrop-blur-md border-b border-kura-border sticky top-0 z-30 px-4 py-3 md:px-6 flex items-center justify-between shadow-lg">
+    <div class="flex items-center gap-3 md:gap-4">
+      <div class="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-kura-vermilion to-[#8F2418] border border-kura-gold/60 flex items-center justify-center shadow-md shrink-0">
+        <span class="font-serif font-black text-kura-cream text-xl md:text-2xl tracking-tight">朝</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-serif font-bold text-xl md:text-2xl text-kura-cream tracking-wide">朝ごはん</h1>
+          <span class="hidden sm:inline-block text-[11px] font-serif px-2.5 py-0.5 rounded-full border border-kura-gold/50 text-kura-gold bg-kura-gold/10">おうち注文システム</span>
+        </div>
+        <p id="greetingText" class="text-xs md:text-sm text-kura-muted mt-0.5">おはようございます！きょうの朝ごはんをお選びください</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 md:gap-3">
+      <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 md:px-3.5 md:py-2 rounded-xl bg-kura-surface border border-kura-border hover:border-kura-gold/50 text-kura-cream flex items-center gap-1.5 transition active:scale-95" title="呼び出しベル音のオン/オフ">
+        <span id="soundIcon" class="text-lg">🔔</span>
+        <span id="soundLabel" class="hidden md:inline text-xs text-kura-muted">ベルON</span>
+      </button>
+
+      <button onclick="openKitchenModal('orders')" class="relative p-2.5 md:px-4 md:py-2 rounded-xl bg-kura-surface border border-kura-gold/40 hover:border-kura-gold text-kura-goldLight flex items-center gap-2 transition active:scale-95 shadow">
+        <span class="text-lg">👩‍🍳</span>
+        <span class="text-xs md:text-sm font-bold">厨房・設定</span>
+        <span id="activeOrderBadge" class="hidden absolute -top-2 -right-2 bg-kura-vermilion text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#1A1614] shadow">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== メインコンテンツ ==================== -->
+  <div class="flex-1 flex flex-col lg:flex-row max-w-[1600px] w-full mx-auto overflow-hidden">
+
+    <!-- 左エリア：カテゴリタブ ＋ メニュー一覧 -->
+    <main class="flex-1 flex flex-col min-w-0 p-3 md:p-5 lg:pr-3">
+
+      <nav aria-label="メニューカテゴリ" class="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-3 noren-border">
+        <div id="categoryTabs" class="flex gap-2 md:gap-3 w-full"></div>
+      </nav>
+
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-5 bg-kura-gold rounded-full inline-block"></span>
+          <h2 id="currentCategoryTitle" class="font-serif font-bold text-lg md:text-xl text-kura-cream tracking-wide">すべて</h2>
+        </div>
+        <span id="menuCountLabel" class="text-xs text-kura-muted bg-kura-surface px-2.5 py-1 rounded-full border border-kura-border">0品</span>
+      </div>
+
+      <div id="menuGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 overflow-y-auto pb-28 lg:pb-6 pr-0.5">
+      </div>
+    </main>
+
+    <!-- 右エリア：ご注文トレイ -->
+    <aside class="lg:w-[370px] xl:w-[410px] bg-[#1D1815] border-t lg:border-t-0 lg:border-l border-kura-border flex flex-col shrink-0 z-20 shadow-2xl">
+
+      <div class="px-4 py-3 md:py-4 bg-gradient-to-r from-[#28211D] to-[#1E1916] border-b border-kura-border flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🍱</span>
+          <div>
+            <h2 class="font-serif font-bold text-base md:text-lg text-kura-goldLight tracking-wide">ご注文のお盆（トレイ）</h2>
+            <p class="text-[11px] text-kura-muted">食べたいものをタッチしてね</p>
+          </div>
+        </div>
+        <button id="clearCartBtn" onclick="clearCart()" class="hidden text-xs text-kura-muted hover:text-kura-vermilion underline px-2 py-1 rounded transition">
+          全部消す
+        </button>
+      </div>
+
+      <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-2.5 max-h-[220px] lg:max-h-none">
+        <div id="emptyCartMessage" class="h-full min-h-[120px] lg:min-h-[260px] flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-kura-border/70 rounded-2xl bg-kura-surface/30">
+          <span class="text-4xl mb-2 opacity-60">🥢</span>
+          <p class="font-serif text-sm md:text-base text-kura-muted">まだお盆に何も乗っていません</p>
+          <p class="text-xs text-kura-muted/70 mt-1">左のメニューから好きなものを<br>タッチして選んでね！</p>
+        </div>
+      </div>
+
+      <div class="p-3 md:p-4 bg-[#171311] border-t border-kura-border space-y-3">
+        <div class="flex items-center justify-between text-sm px-1">
+          <span class="text-kura-muted">えらんだ数：<strong id="totalCountDisplay" class="text-kura-cream text-lg font-serif mx-1">0</strong>品</span>
+          <span class="text-kura-muted">目安時間：<strong id="totalTimeDisplay" class="text-kura-gold font-medium">0分</strong></span>
+        </div>
+
+        <button id="submitOrderBtn" onclick="submitOrder()" disabled class="w-full py-3.5 md:py-4 px-6 rounded-2xl font-serif font-bold text-base md:text-lg tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-kura-vermilion to-[#A82C1D] hover:from-kura-vermilionHover hover:to-kura-vermilion text-white border border-kura-gold/50 active:scale-[0.98]">
+          <span>🛎️</span>
+          <span>注文を確定する（厨房へ送信！）</span>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== モーダル1：メニュー詳細＆カスタマイズ追加 ==================== -->
+  <div id="itemDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="kura-card w-full max-w-lg rounded-3xl overflow-hidden animate-pop-in border-2 border-kura-gold/40">
+      <div class="p-5 md:p-6 bg-gradient-to-b from-[#332B26] to-[#241F1C] border-b border-kura-border flex items-start justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div id="modalItemVisual" class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-[#1A1614] border border-kura-gold/30 flex items-center justify-center overflow-hidden shadow-inner shrink-0">
+            <span class="text-5xl">🍽️</span>
+          </div>
+          <div>
+            <span id="modalItemCategory" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-kura-gold/15 text-kura-gold border border-kura-gold/30">主菜</span>
+            <h3 id="modalItemName" class="font-serif font-bold text-xl md:text-2xl text-kura-cream mt-1.5">メニュー名</h3>
+            <div class="flex items-center gap-2 mt-2 text-xs text-kura-goldLight">
+              <span>⏱️ 準備目安: <strong id="modalItemTime">約3分</strong></span>
+            </div>
+          </div>
+        </div>
+        <button onclick="closeItemModal()" class="w-10 h-10 rounded-full bg-kura-surface border border-kura-border text-kura-muted hover:text-white flex items-center justify-center text-xl transition">✕</button>
+      </div>
+
+      <div class="p-5 md:p-6 space-y-4">
+        <div>
+          <label class="block font-serif text-sm text-kura-goldLight mb-2">✨ おこのみリクエスト（タップで選択）</label>
+          <div id="quickTagsContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div>
+          <label for="customNoteInput" class="block text-xs text-kura-muted mb-1">そのほかのメモ（任意）</label>
+          <input type="text" id="customNoteInput" placeholder="例：みみカット、氷なし、よく焼き など" class="w-full px-3.5 py-2.5 rounded-xl bg-[#161311] border border-kura-border text-kura-cream placeholder-kura-muted/50 focus:outline-none focus:border-kura-gold text-sm">
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-kura-border/60">
+          <span class="font-serif text-base text-kura-cream">数量</span>
+          <div class="flex items-center gap-4 bg-[#161311] px-3 py-1.5 rounded-2xl border border-kura-border">
+            <button onclick="changeModalQty(-1)" class="w-10 h-10 rounded-xl bg-kura-surface hover:bg-kura-cardHover text-kura-cream font-bold text-xl flex items-center justify-center active:scale-90 transition">−</button>
+            <span id="modalQtyValue" class="font-serif font-bold text-2xl text-kura-gold w-8 text-center">1</span>
+            <button onclick="changeModalQty(1)" class="w-10 h-10 rounded-xl bg-kura-surface hover:bg-kura-cardHover text-kura-cream font-bold text-xl flex items-center justify-center active:scale-90 transition">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 md:p-5 bg-[#191513] border-t border-kura-border flex gap-3">
+        <button onclick="closeItemModal()" class="flex-1 py-3.5 rounded-xl bg-kura-surface border border-kura-border text-kura-muted font-bold text-sm hover:text-kura-cream transition">
+          もどる
+        </button>
+        <button onclick="confirmAddToCart()" class="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-kura-gold to-[#B59124] text-[#161311] font-serif font-black text-base md:text-lg shadow-lg hover:brightness-110 active:scale-98 transition">
+          お盆にのせる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル2：注文確定アニメーション＆確認画面 ==================== -->
+  <div id="orderSuccessModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-md p-4">
+    <div class="kura-card w-full max-w-lg rounded-3xl p-6 md:p-8 text-center border-2 border-kura-gold animate-pop-in relative overflow-hidden">
+      <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-kura-vermilion to-[#8F2418] border-2 border-kura-gold flex items-center justify-center shadow-xl animate-bell">
+        <span class="text-4xl">🛎️</span>
+      </div>
+
+      <p class="font-serif text-kura-gold text-sm tracking-widest mb-1">まいどありがとうございます</p>
+      <h2 class="font-serif font-black text-2xl md:text-3xl text-kura-cream mb-3">ご注文を承りました！</h2>
+      <p class="text-sm md:text-base text-kura-muted leading-relaxed mb-5">
+        厨房へ注文を送信しました。<br>
+        できあがりまで、席でお待ちくださいね！
+      </p>
+
+      <div class="bg-[#161311] border border-kura-border rounded-2xl p-4 mb-6 text-left max-h-56 overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-kura-border pb-2 mb-2.5">
+          <span class="font-serif text-xs text-kura-gold">📋 ご注文控え</span>
+          <span id="receiptTime" class="text-xs text-kura-muted">07:30 受付</span>
+        </div>
+        <ul id="receiptList" class="space-y-2 text-sm"></ul>
+      </div>
+
+      <button onclick="closeSuccessModal()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-kura-gold to-[#B59124] text-[#161311] font-serif font-bold text-lg shadow-lg hover:brightness-110 active:scale-98 transition">
+        メニュー画面にもどる
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル3：厨房確認＆メニュー編集モード ==================== -->
+  <div id="kitchenModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4">
+    <div class="bg-[#1E1916] border border-kura-gold/50 w-full max-w-4xl h-[92vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-pop-in">
+
+      <div class="px-5 py-4 bg-[#151210] border-b border-kura-border flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">👩‍🍳</span>
+          <div>
+            <h2 class="font-serif font-bold text-lg md:text-xl text-kura-goldLight">厨房・お品書き管理</h2>
+            <p class="text-xs text-kura-muted">本日の注文確認と、写真＋名前のメニュー登録・編集</p>
+          </div>
+        </div>
+        <button onclick="closeKitchenModal()" class="px-4 py-2 rounded-xl bg-kura-surface border border-kura-border text-kura-cream hover:border-kura-gold text-sm font-bold transition">
+          ✕ 閉じる
+        </button>
+      </div>
+
+      <div class="flex border-b border-kura-border bg-[#191513] px-4 pt-2 gap-2">
+        <button id="tabBtnOrders" onclick="switchKitchenTab('orders')" class="px-4 py-2.5 rounded-t-xl font-serif font-bold text-sm border-t border-x border-kura-gold/50 bg-[#1E1916] text-kura-gold transition">
+          📋 本日の注文確認
+        </button>
+        <button id="tabBtnMenu" onclick="switchKitchenTab('menu')" class="px-4 py-2.5 rounded-t-xl font-serif font-bold text-sm border-t border-x border-transparent text-kura-muted hover:text-kura-cream transition">
+          ✏️ メニュー登録・品切れ設定
+        </button>
+        <button id="tabBtnData" onclick="switchKitchenTab('data')" class="px-4 py-2.5 rounded-t-xl font-serif font-bold text-sm border-t border-x border-transparent text-kura-muted hover:text-kura-cream transition">
+          💾 保存・バックアップ
+        </button>
+      </div>
+
+      <!-- タブ1：本日の注文確認 -->
+      <div id="kitchenTabOrders" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-kura-border/60">
+          <h3 class="font-serif font-bold text-base md:text-lg text-kura-cream">入った注文一覧</h3>
+          <button onclick="clearAllOrders()" class="text-xs px-3 py-1.5 rounded-lg bg-kura-surface border border-kura-border text-kura-muted hover:text-kura-vermilion transition">
+            すべての履歴をクリア
+          </button>
+        </div>
+
+        <div id="kitchenOrdersList" class="space-y-4"></div>
+      </div>
+
+      <!-- タブ2：メニュー登録（写真＋名前）・品切れ管理 -->
+      <div id="kitchenTabMenu" class="hidden flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
+        <div class="bg-[#151210] border border-kura-border rounded-2xl p-4">
+          <h3 id="menuFormTitle" class="font-serif font-bold text-base text-kura-gold mb-3">＋ メニューを登録する（写真＋名前）</h3>
+          <form id="menuItemForm" onsubmit="saveMenuItem(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
+            <input type="hidden" id="editItemId">
+            <input type="hidden" id="formPhotoData">
+
+            <div class="md:col-span-3">
+              <label class="block text-[11px] text-kura-muted mb-1">メニュー写真</label>
+              <div class="flex items-center gap-2">
+                <div id="formPhotoPreview" class="w-14 h-14 rounded-xl bg-kura-surface border border-kura-border flex items-center justify-center overflow-hidden shrink-0 text-2xl">
+                  📷
+                </div>
+                <label class="flex-1 py-2 px-2.5 rounded-xl bg-kura-surface border border-kura-gold/40 hover:border-kura-gold text-xs text-kura-goldLight text-center cursor-pointer transition">
+                  写真を選ぶ
+                  <input type="file" id="formPhotoInput" accept="image/*" onchange="handlePhotoFileChange(event)" class="hidden">
+                </label>
+              </div>
+            </div>
+
+            <div class="md:col-span-4">
+              <label class="block text-[11px] text-kura-muted mb-1">メニュー名</label>
+              <input type="text" id="formName" placeholder="例：バタートースト" required class="w-full px-3 py-2.5 rounded-xl bg-kura-surface border border-kura-border text-sm text-kura-cream focus:border-kura-gold focus:outline-none">
+            </div>
+
+            <div class="md:col-span-3">
+              <label class="block text-[11px] text-kura-muted mb-1">カテゴリー</label>
+              <select id="formCategory" class="w-full px-3 py-2.5 rounded-xl bg-kura-surface border border-kura-border text-sm text-kura-cream focus:border-kura-gold focus:outline-none">
+                <option value="main">主菜</option>
+                <option value="side">副菜</option>
+                <option value="soup">スープ</option>
+                <option value="drink">飲みもの</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2 flex flex-col gap-1.5">
+              <button type="submit" id="formSubmitBtn" class="w-full py-2.5 px-3 rounded-xl bg-kura-gold text-[#161311] font-bold text-sm hover:brightness-110 transition">
+                登録する
+              </button>
+              <button type="button" id="formCancelEditBtn" onclick="resetMenuForm()" class="hidden w-full py-1.5 px-2 rounded-xl bg-kura-surface border border-kura-border text-xs text-kura-muted hover:text-white">
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-serif font-bold text-base text-kura-cream">登録済みメニュー一覧</h3>
+            <button onclick="resetToDefaultMenu()" class="text-xs text-kura-muted hover:text-kura-gold underline">
+              初期メニューに戻す
+            </button>
+          </div>
+          <div id="adminMenuList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+        </div>
+      </div>
+
+      <!-- タブ3：JSONエクスポート / インポート -->
+      <div id="kitchenTabData" class="hidden flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
+        <div class="bg-[#151210] border border-kura-border rounded-2xl p-5 space-y-4">
+          <h3 class="font-serif font-bold text-base text-kura-gold">設定データの書き出し・読み込み（JSON）</h3>
+          <p class="text-xs md:text-sm text-kura-muted leading-relaxed">
+            Firebase Realtime Database に自動保存されますが、バックアップや一括編集用に JSON をコピー・読み込みできます。
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="exportDataJson()" class="px-4 py-2.5 rounded-xl bg-kura-gold text-[#161311] font-bold text-sm hover:brightness-110 transition">
+              📤 現在のメニューをJSONでコピー
+            </button>
+            <button onclick="importDataJson()" class="px-4 py-2.5 rounded-xl bg-kura-surface border border-kura-gold/50 text-kura-goldLight font-bold text-sm hover:bg-kura-cardHover transition">
+              📥 JSONテキストから読み込む
+            </button>
+          </div>
+          <textarea id="jsonDataBox" rows="8" placeholder="ここにエクスポートされたJSONが表示されます。読み込む場合はここに貼り付けて「JSONテキストから読み込む」を押してください。" class="w-full p-3 rounded-xl bg-[#0F0D0B] border border-kura-border text-xs font-mono text-kura-cream focus:border-kura-gold focus:outline-none"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- トースト通知用コンテナ -->
+  <div id="toastContainer" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <!-- ==================== JavaScript ロジック ==================== -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. Firebase 難読化設定＆初期化（FamilyChat2.html と同一DB）
+    // -------------------------------------------------------------------------
+    const _fbEncoded = {
+      a: "QUl6YVN5Q2ZIRTRneThFRkUzVHhIUWt3NGp0aXVNRDlEM0JyWDZN",
+      b: "ZmFtaWx5LWNoYXQtMi1iY2E2ZS5maXJlYmFzZWFwcC5jb20=",
+      c: "aHR0cHM6Ly9mYW1pbHktY2hhdC0yLWJjYTZlLWRlZmF1bHQtcnRkYi5maXJlYmFzZWlvLmNvbQ==",
+      d: "ZmFtaWx5LWNoYXQtMi1iY2E2ZQ==",
+      e: "ZmFtaWx5LWNoYXQtMi1iY2E2ZS5maXJlYmFzZXN0b3JhZ2UuYXBw",
+      f: "NTQyOTM1ODQwMjY0",
+      g: "MTk1NDI5MzU4NDAyNjQ6d2ViOjA1NWQ2NGZiZjMxMGI1MzdmNDAzYmQ=".replace("19", "1:"),
+      h: "Ry1GR1ZRMzc4NEVO"
+    };
+
+    function _dec(str) {
+      return atob(str);
+    }
+
+    const firebaseConfig = {
+      apiKey: _dec(_fbEncoded.a),
+      authDomain: _dec(_fbEncoded.b),
+      databaseURL: _dec(_fbEncoded.c),
+      projectId: _dec(_fbEncoded.d),
+      storageBucket: _dec(_fbEncoded.e),
+      messagingSenderId: _dec(_fbEncoded.f),
+      appId: "1:542935840264:web:055d64fbf310b537f403bd",
+      measurementId: _dec(_fbEncoded.h)
+    };
+
+    let dbRefMenu = null;
+    let dbRefOrders = null;
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      const rtdb = firebase.database();
+      dbRefMenu = rtdb.ref('asagohan/menu');
+      dbRefOrders = rtdb.ref('asagohan/orders');
+    } catch (err) {
+      console.warn('Firebase init fallback to local:', err);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. データ定義・初期メニュー
+    // -------------------------------------------------------------------------
+    const STORAGE_KEYS = {
+      MENU: 'asagohan_menu_v1',
+      ORDERS: 'asagohan_orders_v1',
+      SOUND: 'asagohan_sound_v1'
+    };
+
+    const CATEGORIES = [
+      { id: 'all', name: 'すべて', icon: '🍽️' },
+      { id: 'main', name: '主菜', icon: '🍳' },
+      { id: 'side', name: '副菜', icon: '🥗' },
+      { id: 'soup', name: 'スープ', icon: '🥣' },
+      { id: 'drink', name: '飲みもの', icon: '🥛' }
+    ];
+
+    const QUICK_TAGS = [
+      'ケチャップ多め',
+      '半分こ',
+      'よく焼き',
+      'あったかいので',
+      'つめたいので',
+      'おしょうゆ少し',
+      'あとから出す'
+    ];
+
+    function makeSvgPhoto(bgHex, accentHex, label) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
+        <rect width="320" height="240" rx="20" fill="${bgHex}"/>
+        <circle cx="160" cy="112" r="58" fill="${accentHex}" fill-opacity="0.22"/>
+        <text x="160" y="132" text-anchor="middle" font-size="56">${label}</text>
+      </svg>`;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    const DEFAULT_MENU_ITEMS = [
+      { id: 'main-1', category: 'main', name: 'バタートースト', photo: makeSvgPhoto('#241E1A', '#D4AF37', '🍞'), prepTime: 3, soldOut: false },
+      { id: 'main-2', category: 'main', name: 'ピザトースト', photo: makeSvgPhoto('#241E1A', '#C83C2B', '🍕'), prepTime: 5, soldOut: false },
+      { id: 'main-3', category: 'main', name: 'おにぎり', photo: makeSvgPhoto('#241E1A', '#F3E5AB', '🍙'), prepTime: 3, soldOut: false },
+      { id: 'main-4', category: 'main', name: '目玉焼き', photo: makeSvgPhoto('#241E1A', '#D4AF37', '🍳'), prepTime: 4, soldOut: false },
+      { id: 'side-1', category: 'side', name: 'ミニサラダ', photo: makeSvgPhoto('#1E241C', '#4ADE80', '🥗'), prepTime: 2, soldOut: false },
+      { id: 'side-2', category: 'side', name: 'ウインナー', photo: makeSvgPhoto('#241E1A', '#C83C2B', '🌭'), prepTime: 4, soldOut: false },
+      { id: 'side-3', category: 'side', name: 'ヨーグルト', photo: makeSvgPhoto('#1F2226', '#E2E8F0', '🍨'), prepTime: 1, soldOut: false },
+      { id: 'soup-1', category: 'soup', name: 'おみそ汁', photo: makeSvgPhoto('#241E1A', '#D4AF37', '🍲'), prepTime: 4, soldOut: false },
+      { id: 'soup-2', category: 'soup', name: 'コーンスープ', photo: makeSvgPhoto('#242117', '#FACC15', '🥣'), prepTime: 3, soldOut: false },
+      { id: 'drink-1', category: 'drink', name: '牛乳', photo: makeSvgPhoto('#1D2228', '#F8FAFC', '🥛'), prepTime: 1, soldOut: false },
+      { id: 'drink-2', category: 'drink', name: 'オレンジジュース', photo: makeSvgPhoto('#261E17', '#FB923C', '🍊'), prepTime: 1, soldOut: false },
+      { id: 'drink-3', category: 'drink', name: 'ミルクココア', photo: makeSvgPhoto('#231C18', '#A16207', '☕'), prepTime: 2, soldOut: false }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 3. アプリケーション状態管理
+    // -------------------------------------------------------------------------
+    let menuItems = [];
+    let cart = [];
+    let orders = [];
+    let currentCategory = 'all';
+    let selectedModalItem = null;
+    let modalQty = 1;
+    let selectedTags = new Set();
+    let soundEnabled = true;
+
+    // -------------------------------------------------------------------------
+    // 4. 初期化・Firebase 同期・ストレージ処理
+    // -------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalCache();
+      updateGreeting();
+      renderCategories();
+      renderMenuGrid();
+      renderCart();
+      updateOrderBadge();
+      updateSoundUI();
+      initFirebaseListeners();
+    });
+
+    function loadLocalCache() {
+      try {
+        const savedMenu = localStorage.getItem(STORAGE_KEYS.MENU);
+        menuItems = savedMenu ? JSON.parse(savedMenu) : structuredClone(DEFAULT_MENU_ITEMS);
+        if (!savedMenu) localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(menuItems));
+
+        const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
+        orders = savedOrders ? JSON.parse(savedOrders) : [];
+
+        const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND);
+        soundEnabled = savedSound !== null ? JSON.parse(savedSound) : true;
+      } catch (e) {
+        console.error('Cache load error:', e);
+        menuItems = structuredClone(DEFAULT_MENU_ITEMS);
+        orders = [];
+      }
+    }
+
+    function initFirebaseListeners() {
+      if (!dbRefMenu || !dbRefOrders) return;
+
+      dbRefMenu.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          const list = Array.isArray(val) ? val.filter(Boolean) : Object.values(val);
+          if (list.length > 0) {
+            menuItems = list;
+            localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(menuItems));
+            renderMenuGrid();
+            renderAdminMenuList();
+          }
+        } else {
+          dbRefMenu.set(menuItems);
+        }
+      });
+
+      dbRefOrders.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          const list = Array.isArray(val) ? val.filter(Boolean) : Object.values(val);
+          orders = list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        } else {
+          orders = [];
+        }
+        localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+        updateOrderBadge();
+        renderKitchenOrders();
+      });
+    }
+
+    function persistMenu() {
+      localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(menuItems));
+      if (dbRefMenu) {
+        dbRefMenu.set(menuItems).catch((e) => console.warn('Firebase menu save error:', e));
+      }
+    }
+
+    function persistOrders() {
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
+      updateOrderBadge();
+      if (dbRefOrders) {
+        dbRefOrders.set(orders).catch((e) => console.warn('Firebase orders save error:', e));
+      }
+    }
+
+    function updateGreeting() {
+      const hour = new Date().getHours();
+      const el = document.getElementById('greetingText');
+      if (hour < 11) {
+        el.textContent = 'おはようございます！きょうの朝ごはんをお選びください';
+      } else if (hour < 15) {
+        el.textContent = 'こんにちは！ブランチ・おひるごはんのご注文もどうぞ';
+      } else {
+        el.textContent = 'きょうもおつかれさまです！ごはんをお選びください';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. Web Audio API 呼び出しベル音
+    // -------------------------------------------------------------------------
+    function playChimeSound() {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+        const frequencies = [1046.5, 2093.0, 3135.96];
+        const gains = [0.35, 0.15, 0.08];
+
+        frequencies.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          gainNode.gain.setValueAtTime(0.001, now);
+          gainNode.gain.exponentialRampToValueAtTime(gains[idx], now + 0.015);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 1.65);
+        });
+      } catch (e) {
+        console.warn('Web Audio API playback failed:', e);
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem(STORAGE_KEYS.SOUND, JSON.stringify(soundEnabled));
+      updateSoundUI();
+      if (soundEnabled) {
+        playChimeSound();
+        showToast('🔔 呼び出しベルをONにしました');
+      } else {
+        showToast('🔕 呼び出しベルをOFFにしました');
+      }
+    }
+
+    function updateSoundUI() {
+      document.getElementById('soundIcon').textContent = soundEnabled ? '🔔' : '🔕';
+      document.getElementById('soundLabel').textContent = soundEnabled ? 'ベルON' : 'ベルOFF';
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. メニュー画面レンダリング（写真＋名前のみ）
+    // -------------------------------------------------------------------------
+    function renderCategories() {
+      const container = document.getElementById('categoryTabs');
+      container.innerHTML = CATEGORIES.map(cat => {
+        const isActive = cat.id === currentCategory;
+        return `
+          <button onclick="selectCategory('${cat.id}')"
+            class="px-4 py-2.5 md:px-5 md:py-3 rounded-2xl font-serif font-bold text-sm md:text-base whitespace-nowrap flex items-center gap-2 transition-all active:scale-95 shrink-0
+            ${isActive
+              ? 'bg-gradient-to-r from-kura-gold to-[#B89225] text-[#161311] shadow-md border border-kura-goldLight'
+              : 'bg-kura-surface text-kura-cream/80 border border-kura-border hover:border-kura-gold/50 hover:text-kura-cream'}">
+            <span class="text-lg">${cat.icon}</span>
+            <span>${cat.name}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategory(catId) {
+      currentCategory = catId;
+      const catObj = CATEGORIES.find(c => c.id === catId);
+      document.getElementById('currentCategoryTitle').textContent = catObj ? catObj.name : 'すべて';
+      renderCategories();
+      renderMenuGrid();
+    }
+
+    function renderMenuGrid() {
+      const grid = document.getElementById('menuGrid');
+      const filtered = currentCategory === 'all'
+        ? menuItems
+        : menuItems.filter(item => item.category === currentCategory);
+
+      document.getElementById('menuCountLabel').textContent = `${filtered.length}品`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-kura-muted bg-kura-surface/40 rounded-2xl border border-kura-border">
+            <p class="font-serif text-base">このカテゴリーにはまだメニューがありません</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(item => {
+        const inCartQty = cart
+          .filter(c => c.itemId === item.id)
+          .reduce((sum, c) => sum + c.qty, 0);
+        const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+
+        return `
+          <div onclick="${item.soldOut ? '' : `openItemModal('${item.id}')`}"
+            class="kura-card rounded-2xl p-3.5 md:p-4 flex flex-col justify-between relative overflow-hidden cursor-pointer ${item.soldOut ? 'sold-out opacity-55 cursor-not-allowed' : ''}">
+
+            ${inCartQty > 0 ? `
+              <div class="absolute top-2.5 right-2.5 bg-kura-vermilion text-white text-xs font-bold px-2.5 py-1 rounded-full border border-kura-gold/60 shadow-md z-10">
+                お盆に ${inCartQty}個
+              </div>
+            ` : ''}
+
+            ${item.soldOut ? `
+              <div class="absolute inset-0 bg-black/60 z-10 flex items-center justify-center">
+                <span class="font-serif font-bold text-sm md:text-base px-4 py-1.5 rounded-lg border-2 border-kura-vermilion text-kura-vermilion bg-[#161311]/90 tracking-widest -rotate-6">
+                  本日品切れ
+                </span>
+              </div>
+            ` : ''}
+
+            <div>
+              <div class="w-full h-28 md:h-32 rounded-xl bg-gradient-to-b from-[#1D1815] to-[#14110F] border border-kura-border/80 flex items-center justify-center mb-3 overflow-hidden relative group">
+                <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105">
+              </div>
+
+              <h3 class="font-serif font-bold text-base md:text-lg text-kura-cream leading-snug text-center">${escapeHtml(item.name)}</h3>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. メニュー詳細モーダル＆お盆操作
+    // -------------------------------------------------------------------------
+    function openItemModal(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (!item || item.soldOut) return;
+
+      selectedModalItem = item;
+      modalQty = 1;
+      selectedTags.clear();
+
+      const catObj = CATEGORIES.find(c => c.id === item.category);
+      const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+
+      document.getElementById('modalItemVisual').innerHTML = `<img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover">`;
+      document.getElementById('modalItemCategory').textContent = catObj ? catObj.name : 'メニュー';
+      document.getElementById('modalItemName').textContent = item.name;
+      document.getElementById('modalItemTime').textContent = `約${item.prepTime || 3}分`;
+      document.getElementById('modalQtyValue').textContent = modalQty;
+      document.getElementById('customNoteInput').value = '';
+
+      renderQuickTags();
+
+      const modal = document.getElementById('itemDetailModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeItemModal() {
+      const modal = document.getElementById('itemDetailModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      selectedModalItem = null;
+    }
+
+    function renderQuickTags() {
+      const container = document.getElementById('quickTagsContainer');
+      container.innerHTML = QUICK_TAGS.map(tag => {
+        const active = selectedTags.has(tag);
+        return `
+          <button type="button" onclick="toggleQuickTag('${tag}')"
+            class="px-3 py-1.5 rounded-xl text-xs font-medium border transition active:scale-95
+            ${active
+              ? 'bg-kura-gold text-[#161311] border-kura-gold font-bold'
+              : 'bg-kura-surface text-kura-cream border-kura-border hover:border-kura-gold/50'}">
+            ${active ? '✓ ' : '+ '}${tag}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleQuickTag(tag) {
+      if (selectedTags.has(tag)) {
+        selectedTags.delete(tag);
+      } else {
+        selectedTags.add(tag);
+      }
+      renderQuickTags();
+    }
+
+    function changeModalQty(delta) {
+      modalQty = Math.max(1, Math.min(10, modalQty + delta));
+      document.getElementById('modalQtyValue').textContent = modalQty;
+    }
+
+    function confirmAddToCart() {
+      if (!selectedModalItem) return;
+
+      const textNote = document.getElementById('customNoteInput').value.trim();
+      const allNotes = [...selectedTags];
+      if (textNote) allNotes.push(textNote);
+      const combinedNote = allNotes.join(' / ');
+
+      const existing = cart.find(c => c.itemId === selectedModalItem.id && c.note === combinedNote);
+      if (existing) {
+        existing.qty += modalQty;
+      } else {
+        cart.push({
+          cartId: 'cart-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          itemId: selectedModalItem.id,
+          name: selectedModalItem.name,
+          photo: selectedModalItem.photo || '',
+          prepTime: selectedModalItem.prepTime || 3,
+          qty: modalQty,
+          note: combinedNote
+        });
+      }
+
+      showToast(`🍱 「${selectedModalItem.name}」をお盆にのせました`);
+      closeItemModal();
+      renderCart();
+      renderMenuGrid();
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cartItemsContainer');
+      const emptyMsg = document.getElementById('emptyCartMessage');
+      const clearBtn = document.getElementById('clearCartBtn');
+      const submitBtn = document.getElementById('submitOrderBtn');
+
+      if (cart.length === 0) {
+        emptyMsg.classList.remove('hidden');
+        clearBtn.classList.add('hidden');
+        submitBtn.disabled = true;
+        Array.from(container.children).forEach(child => {
+          if (child.id !== 'emptyCartMessage') child.remove();
+        });
+        document.getElementById('totalCountDisplay').textContent = '0';
+        document.getElementById('totalTimeDisplay').textContent = '0分';
+        return;
+      }
+
+      emptyMsg.classList.add('hidden');
+      clearBtn.classList.remove('hidden');
+      submitBtn.disabled = false;
+
+      const itemsHtml = cart.map(item => {
+        const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+        return `
+          <div class="bg-[#26201C] border border-kura-border rounded-2xl p-3 flex items-center justify-between gap-2.5 animate-pop-in">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-12 h-12 rounded-xl object-cover border border-kura-border shrink-0">
+              <div class="min-w-0">
+                <p class="font-serif font-bold text-sm text-kura-cream truncate">${escapeHtml(item.name)}</p>
+                ${item.note ? `<p class="text-[11px] text-kura-gold mt-0.5 truncate">📝 ${escapeHtml(item.note)}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="updateCartItemQty('${item.cartId}', -1)" class="w-8 h-8 rounded-lg bg-kura-surface border border-kura-border text-kura-cream font-bold hover:border-kura-gold active:scale-90 transition">−</button>
+              <span class="font-serif font-bold text-base text-kura-goldLight w-6 text-center">${item.qty}</span>
+              <button onclick="updateCartItemQty('${item.cartId}', 1)" class="w-8 h-8 rounded-lg bg-kura-surface border border-kura-border text-kura-cream font-bold hover:border-kura-gold active:scale-90 transition">＋</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = '';
+      container.appendChild(emptyMsg);
+      container.insertAdjacentHTML('beforeend', itemsHtml);
+
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      const maxPrepTime = Math.max(...cart.map(item => item.prepTime || 3));
+      const estimatedTime = maxPrepTime + Math.floor((totalQty - 1) * 1.5);
+
+      document.getElementById('totalCountDisplay').textContent = totalQty;
+      document.getElementById('totalTimeDisplay').textContent = `約${estimatedTime}分`;
+    }
+
+    function updateCartItemQty(cartId, delta) {
+      const idx = cart.findIndex(c => c.cartId === cartId);
+      if (idx === -1) return;
+
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) {
+        cart.splice(idx, 1);
+      }
+      renderCart();
+      renderMenuGrid();
+    }
+
+    function clearCart() {
+      cart = [];
+      renderCart();
+      renderMenuGrid();
+      showToast('お盆を空にしました');
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. 注文確定＆送信処理
+    // -------------------------------------------------------------------------
+    function submitOrder() {
+      if (cart.length === 0) return;
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = now.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+
+      const newOrder = {
+        orderId: 'ORD-' + Date.now(),
+        createdAt: now.getTime(),
+        timestamp: `${dateStr} ${timeStr}`,
+        items: structuredClone(cart),
+        status: 'pending'
+      };
+
+      orders.unshift(newOrder);
+      persistOrders();
+      playChimeSound();
+
+      document.getElementById('receiptTime').textContent = `${timeStr} 受付`;
+      document.getElementById('receiptList').innerHTML = newOrder.items.map(item => `
+        <li class="flex items-start justify-between border-b border-kura-border/40 pb-1.5 last:border-none">
+          <div>
+            <span class="font-bold text-kura-cream">${escapeHtml(item.name)}</span>
+            ${item.note ? `<span class="block text-xs text-kura-gold ml-2">└ ${escapeHtml(item.note)}</span>` : ''}
+          </div>
+          <span class="font-serif font-bold text-kura-goldLight shrink-0">× ${item.qty}</span>
+        </li>
+      `).join('');
+
+      const modal = document.getElementById('orderSuccessModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      cart = [];
+      renderCart();
+      renderMenuGrid();
+    }
+
+    function closeSuccessModal() {
+      const modal = document.getElementById('orderSuccessModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. 厨房・設定モード
+    // -------------------------------------------------------------------------
+    function updateOrderBadge() {
+      const pendingCount = orders.filter(o => o.status === 'pending').length;
+      const badge = document.getElementById('activeOrderBadge');
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function openKitchenModal(defaultTab = 'orders') {
+      const modal = document.getElementById('kitchenModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      switchKitchenTab(defaultTab);
+    }
+
+    function closeKitchenModal() {
+      const modal = document.getElementById('kitchenModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      resetMenuForm();
+    }
+
+    function switchKitchenTab(tabName) {
+      const tabs = ['orders', 'menu', 'data'];
+      tabs.forEach(t => {
+        const panel = document.getElementById(`kitchenTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (t === tabName) {
+          panel.classList.remove('hidden');
+          btn.classList.add('bg-[#1E1916]', 'text-kura-gold', 'border-kura-gold/50');
+          btn.classList.remove('text-kura-muted', 'border-transparent');
+        } else {
+          panel.classList.add('hidden');
+          btn.classList.remove('bg-[#1E1916]', 'text-kura-gold', 'border-kura-gold/50');
+          btn.classList.add('text-kura-muted', 'border-transparent');
+        }
+      });
+
+      if (tabName === 'orders') renderKitchenOrders();
+      if (tabName === 'menu') renderAdminMenuList();
+    }
+
+    function renderKitchenOrders() {
+      const container = document.getElementById('kitchenOrdersList');
+      if (!container) return;
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center bg-[#151210] rounded-2xl border border-kura-border">
+            <span class="text-4xl block mb-2">🍵</span>
+            <p class="font-serif text-base text-kura-muted">現在入っている注文はありません</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const isDone = order.status === 'completed';
+        return `
+          <div class="rounded-2xl p-4 md:p-5 border transition ${isDone ? 'bg-[#161311]/60 border-kura-border/50 opacity-65' : 'bg-[#26201C] border-kura-gold/60 shadow-lg'}">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-kura-border">
+              <div class="flex items-center gap-2.5">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isDone ? 'bg-kura-surface text-kura-muted' : 'bg-kura-vermilion text-white animate-pulse'}">
+                  ${isDone ? '✓ 提供済み' : '🔥 調理待ち'}
+                </span>
+                <span class="font-serif text-sm text-kura-goldLight">${order.timestamp} のご注文</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                ${!isDone ? `
+                  <button onclick="completeOrder('${order.orderId}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold text-xs md:text-sm shadow transition active:scale-95">
+                    ✓ 調理完了にする
+                  </button>
+                ` : ''}
+                <button onclick="deleteOrder('${order.orderId}')" class="px-2.5 py-2 rounded-xl bg-kura-surface border border-kura-border text-xs text-kura-muted hover:text-kura-vermilion transition">
+                  削除
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              ${order.items.map(item => {
+                const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+                return `
+                  <div class="bg-[#161311] border border-kura-border/80 rounded-xl p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-12 h-12 rounded-xl object-cover border border-kura-border">
+                      <div>
+                        <p class="font-serif font-bold text-base text-kura-cream">${escapeHtml(item.name)}</p>
+                        ${item.note ? `<p class="text-xs font-bold text-kura-gold mt-0.5">★ ${escapeHtml(item.note)}</p>` : ''}
+                      </div>
+                    </div>
+                    <span class="font-serif font-black text-xl text-kura-goldLight bg-kura-surface px-3 py-1 rounded-lg border border-kura-border">
+                      ×${item.qty}
+                    </span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function completeOrder(orderId) {
+      const order = orders.find(o => o.orderId === orderId);
+      if (order) {
+        order.status = 'completed';
+        persistOrders();
+        renderKitchenOrders();
+        showToast('✨ 調理完了にしました！');
+      }
+    }
+
+    function deleteOrder(orderId) {
+      orders = orders.filter(o => o.orderId !== orderId);
+      persistOrders();
+      renderKitchenOrders();
+    }
+
+    function clearAllOrders() {
+      orders = [];
+      persistOrders();
+      renderKitchenOrders();
+      showToast('注文履歴をすべてクリアしました');
+    }
+
+    // -------------------------------------------------------------------------
+    // 10. メニュー登録（写真＋名前）・編集・品切れ管理
+    // -------------------------------------------------------------------------
+    function handlePhotoFileChange(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxSize = 480;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height && width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          document.getElementById('formPhotoData').value = resizedDataUrl;
+          document.getElementById('formPhotoPreview').innerHTML = `<img src="${resizedDataUrl}" alt="プレビュー" class="w-full h-full object-cover">`;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderAdminMenuList() {
+      const container = document.getElementById('adminMenuList');
+      if (!container) return;
+
+      container.innerHTML = menuItems.map(item => {
+        const catObj = CATEGORIES.find(c => c.id === item.category);
+        const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+        return `
+          <div class="bg-[#151210] border border-kura-border rounded-xl p-3 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-12 h-12 rounded-xl object-cover border border-kura-border shrink-0">
+              <div class="min-w-0">
+                <p class="font-serif font-bold text-sm text-kura-cream truncate ${item.soldOut ? 'line-through text-kura-muted' : ''}">${escapeHtml(item.name)}</p>
+                <span class="text-[11px] text-kura-muted">${catObj ? catObj.name : ''}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="toggleSoldOut('${item.id}')"
+                class="px-2.5 py-1.5 rounded-lg text-xs font-bold border transition
+                ${item.soldOut
+                  ? 'bg-kura-vermilion/20 border-kura-vermilion text-kura-vermilion'
+                  : 'bg-emerald-950/60 border-emerald-600/50 text-emerald-400'}">
+                ${item.soldOut ? '品切れ中' : '販売中'}
+              </button>
+              <button onclick="startEditMenuItem('${item.id}')" class="p-1.5 rounded-lg bg-kura-surface border border-kura-border text-xs text-kura-goldLight hover:border-kura-gold" title="編集">
+                ✏️
+              </button>
+              <button onclick="deleteMenuItem('${item.id}')" class="p-1.5 rounded-lg bg-kura-surface border border-kura-border text-xs text-kura-muted hover:text-kura-vermilion" title="削除">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSoldOut(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (item) {
+        item.soldOut = !item.soldOut;
+        persistMenu();
+        renderAdminMenuList();
+        renderMenuGrid();
+        showToast(item.soldOut ? `「${item.name}」を品切れにしました` : `「${item.name}」を販売中に戻しました`);
+      }
+    }
+
+    function saveMenuItem(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editItemId').value;
+      const name = document.getElementById('formName').value.trim();
+      const category = document.getElementById('formCategory').value;
+      const photoInputVal = document.getElementById('formPhotoData').value;
+
+      if (!name) return;
+
+      if (editId) {
+        const idx = menuItems.findIndex(m => m.id === editId);
+        if (idx !== -1) {
+          const nextPhoto = photoInputVal || menuItems[idx].photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+          menuItems[idx] = { ...menuItems[idx], name, category, photo: nextPhoto };
+          showToast(`✏️ 「${name}」を更新しました`);
+        }
+      } else {
+        const nextPhoto = photoInputVal || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+        menuItems.unshift({
+          id: 'custom-' + Date.now(),
+          name,
+          category,
+          photo: nextPhoto,
+          prepTime: 3,
+          soldOut: false
+        });
+        showToast(`✨ 「${name}」を登録しました`);
+      }
+
+      persistMenu();
+      resetMenuForm();
+      renderAdminMenuList();
+      renderMenuGrid();
+    }
+
+    function startEditMenuItem(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (!item) return;
+
+      const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#D4AF37', '🍽️');
+      document.getElementById('editItemId').value = item.id;
+      document.getElementById('formName').value = item.name;
+      document.getElementById('formCategory').value = item.category;
+      document.getElementById('formPhotoData').value = item.photo || '';
+      document.getElementById('formPhotoPreview').innerHTML = `<img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover">`;
+
+      document.getElementById('menuFormTitle').textContent = `✏️ 「${item.name}」を編集中`;
+      document.getElementById('formSubmitBtn').textContent = '更新保存';
+      document.getElementById('formCancelEditBtn').classList.remove('hidden');
+
+      document.getElementById('kitchenTabMenu').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetMenuForm() {
+      document.getElementById('menuItemForm').reset();
+      document.getElementById('editItemId').value = '';
+      document.getElementById('formPhotoData').value = '';
+      document.getElementById('formPhotoInput').value = '';
+      document.getElementById('formPhotoPreview').innerHTML = '📷';
+      document.getElementById('menuFormTitle').textContent = '＋ メニューを登録する（写真＋名前）';
+      document.getElementById('formSubmitBtn').textContent = '登録する';
+      document.getElementById('formCancelEditBtn').classList.add('hidden');
+    }
+
+    function deleteMenuItem(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (!item) return;
+      menuItems = menuItems.filter(m => m.id !== itemId);
+      persistMenu();
+      renderAdminMenuList();
+      renderMenuGrid();
+      showToast(`🗑️ 「${item.name}」を削除しました`);
+    }
+
+    function resetToDefaultMenu() {
+      menuItems = structuredClone(DEFAULT_MENU_ITEMS);
+      persistMenu();
+      renderAdminMenuList();
+      renderMenuGrid();
+      showToast('初期メニューに戻しました');
+    }
+
+    // -------------------------------------------------------------------------
+    // 11. JSONエクスポート・インポート
+    // -------------------------------------------------------------------------
+    function exportDataJson() {
+      const box = document.getElementById('jsonDataBox');
+      box.value = JSON.stringify(menuItems, null, 2);
+      box.select();
+      try {
+        document.execCommand('copy');
+        showToast('📋 JSONデータをコピーしました');
+      } catch (e) {
+        showToast('JSONを表示しました');
+      }
+    }
+
+    function importDataJson() {
+      const box = document.getElementById('jsonDataBox');
+      try {
+        const parsed = JSON.parse(box.value);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('Invalid format');
+        }
+        menuItems = parsed;
+        persistMenu();
+        renderMenuGrid();
+        renderAdminMenuList();
+        showToast(`✅ ${parsed.length}品のメニューを読み込みました！`);
+      } catch (e) {
+        showToast('⚠️ JSONの形式が正しくありません');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 12. ユーティリティ
+    // -------------------------------------------------------------------------
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-[#2C2520] text-kura-cream border border-kura-gold/70 px-4 py-2.5 rounded-full shadow-2xl text-xs md:text-sm font-medium animate-pop-in whitespace-nowrap';
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
