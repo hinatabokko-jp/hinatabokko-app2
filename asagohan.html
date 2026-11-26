@@ -168,7 +168,7 @@
   <div class="flex-1 min-h-0 flex flex-row max-w-[1600px] w-full mx-auto overflow-hidden">
 
     <!-- 左エリア：カテゴリタブ ＋ メニュー一覧（縦スクロール） -->
-    <main class="flex-1 min-w-0 min-h-0 flex flex-col p-3 md:p-4 lg:p-5 pr-2 md:pr-3 overflow-hidden">
+    <main class="flex-1 min-w-0 min-h-0 flex flex-col p-3 md:p-5 lg:pr-3 overflow-hidden">
 
       <nav aria-label="メニューカテゴリ" class="flex gap-2 overflow-x-auto no-scrollbar pb-2.5 mb-2.5 noren-border shrink-0">
         <div id="categoryTabs" class="flex gap-2 md:gap-3 w-full"></div>
@@ -182,40 +182,40 @@
         <span id="menuCountLabel" class="text-xs text-kura-muted bg-kura-surface px-2.5 py-1 rounded-full border border-kura-border">0品</span>
       </div>
 
-      <div id="menuGrid" class="flex-1 min-h-0 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 overflow-y-auto pb-4 pr-1 content-start">
+      <div id="menuGrid" class="flex-1 min-h-0 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 overflow-y-auto pb-4 pr-0.5 content-start">
       </div>
     </main>
 
     <!-- 右エリア：ご注文トレー ＋ 注文確定ボタン -->
-    <aside class="w-[230px] sm:w-[290px] md:w-[340px] lg:w-[370px] xl:w-[410px] h-full min-h-0 bg-[#1D1815] border-l border-kura-border flex flex-col shrink-0 z-20 shadow-2xl overflow-hidden">
+    <aside class="w-[260px] sm:w-[310px] md:w-[340px] lg:w-[370px] xl:w-[410px] h-full min-h-0 bg-[#1D1815] border-l border-kura-border flex flex-col shrink-0 z-20 shadow-2xl overflow-hidden">
 
       <div class="px-3 md:px-4 py-3 bg-gradient-to-r from-[#28211D] to-[#1E1916] border-b border-kura-border flex items-center justify-between gap-2 shrink-0">
-        <div class="flex items-center gap-2 min-w-0">
+        <div class="flex items-center gap-2 md:gap-2.5 min-w-0">
           <span class="text-xl md:text-2xl shrink-0">🍱</span>
           <div class="min-w-0">
             <h2 class="font-serif font-bold text-sm md:text-lg text-kura-goldLight tracking-wide truncate">ご注文のトレー</h2>
-            <p class="text-[10px] md:text-[11px] text-kura-muted truncate">決まったら注文ボタンを押してね</p>
+            <p class="text-[11px] text-kura-muted truncate">決まったら注文ボタンを押してね</p>
           </div>
         </div>
-        <button id="clearCartBtn" onclick="clearCart()" class="hidden text-[11px] md:text-xs text-kura-muted hover:text-kura-vermilion underline px-1.5 py-1 rounded transition shrink-0">
+        <button id="clearCartBtn" onclick="clearCart()" class="hidden text-xs text-kura-muted hover:text-kura-vermilion underline px-2 py-1 rounded transition shrink-0">
           全部消す
         </button>
       </div>
 
-      <div id="cartItemsContainer" class="flex-1 min-h-0 overflow-y-auto p-2.5 md:p-4 space-y-2.5">
-        <div id="emptyCartMessage" class="h-full min-h-[120px] flex flex-col items-center justify-center text-center p-3 border-2 border-dashed border-kura-border/70 rounded-2xl bg-kura-surface/30">
+      <div id="cartItemsContainer" class="flex-1 min-h-0 overflow-y-auto p-3 md:p-4 space-y-2.5">
+        <div id="emptyCartMessage" class="h-full min-h-[120px] flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-kura-border/70 rounded-2xl bg-kura-surface/30">
           <span class="text-3xl md:text-4xl mb-2 opacity-60">🥢</span>
           <p class="font-serif text-xs md:text-base text-kura-muted">まだトレーに何も乗っていません</p>
           <p class="text-[11px] md:text-xs text-kura-muted/70 mt-1">左のメニューから好きなものを<br>タッチして選んでね！</p>
         </div>
       </div>
 
-      <div class="p-3 md:p-4 bg-[#171311] border-t border-kura-border space-y-2.5 md:space-y-3 shrink-0">
+      <div class="p-3 md:p-4 bg-[#171311] border-t border-kura-border space-y-3 shrink-0">
         <div class="flex items-center justify-between text-xs md:text-sm px-1">
           <span class="text-kura-muted">えらんだ数：<strong id="totalCountDisplay" class="text-kura-cream text-base md:text-lg font-serif mx-1">0</strong>品</span>
         </div>
 
-        <button id="submitOrderBtn" onclick="submitOrder()" disabled class="w-full py-3 md:py-4 px-4 md:px-6 rounded-2xl font-serif font-bold text-sm md:text-lg tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-kura-vermilion to-[#A82C1D] hover:from-kura-vermilionHover hover:to-kura-vermilion text-white border border-kura-gold/50 active:scale-[0.98]">
+        <button id="submitOrderBtn" onclick="submitOrder()" disabled class="w-full py-3 md:py-4 px-4 md:px-6 rounded-2xl font-serif font-bold text-sm md:text-lg tracking-wider flex items-center justify-center gap-2 md:gap-2.5 transition-all shadow-lg disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-kura-vermilion to-[#A82C1D] hover:from-kura-vermilionHover hover:to-kura-vermilion text-white border border-kura-gold/50 active:scale-[0.98]">
           <span>🛎️</span>
           <span>注文する</span>
         </button>
@@ -703,11 +703,11 @@
         const isActive = cat.id === currentCategory;
         return `
           <button onclick="selectCategory('${cat.id}')"
-            class="px-3.5 py-2 md:px-5 md:py-2.5 rounded-2xl font-serif font-bold text-xs md:text-base whitespace-nowrap flex items-center gap-1.5 md:gap-2 transition-all active:scale-95 shrink-0
+            class="px-4 py-2 md:px-5 md:py-2.5 rounded-2xl font-serif font-bold text-sm md:text-base whitespace-nowrap flex items-center gap-2 transition-all active:scale-95 shrink-0
             ${isActive
               ? 'category-tab-active'
               : 'bg-kura-surface text-kura-cream/80 border-2 border-kura-border hover:border-[#6be173]/50 hover:text-kura-cream'}">
-            <span class="text-base md:text-lg">${cat.icon}</span>
+            <span class="text-lg">${cat.icon}</span>
             <span>${cat.name}</span>
           </button>
         `;
@@ -747,10 +747,10 @@
 
         return `
           <div onclick="${item.soldOut ? '' : `openItemModal('${item.id}')`}"
-            class="kura-card rounded-2xl p-3 md:p-4 flex flex-col justify-between relative overflow-hidden cursor-pointer ${item.soldOut ? 'sold-out opacity-55 cursor-not-allowed' : ''}">
+            class="kura-card rounded-2xl p-3.5 md:p-4 flex flex-col justify-between relative overflow-hidden cursor-pointer ${item.soldOut ? 'sold-out opacity-55 cursor-not-allowed' : ''}">
 
             ${inCartQty > 0 ? `
-              <div class="absolute top-2 right-2 bg-kura-vermilion text-white text-[11px] md:text-xs font-bold px-2 py-0.5 md:px-2.5 md:py-1 rounded-full border border-[#6be173]/60 shadow-md z-10">
+              <div class="absolute top-2.5 right-2.5 bg-kura-vermilion text-white text-xs font-bold px-2.5 py-1 rounded-full border border-[#6be173]/60 shadow-md z-10">
                 トレーに ${inCartQty}個
               </div>
             ` : ''}
@@ -764,11 +764,11 @@
             ` : ''}
 
             <div>
-              <div class="w-full h-24 sm:h-28 md:h-32 rounded-xl bg-gradient-to-b from-[#1D1815] to-[#14110F] border border-kura-border/80 flex items-center justify-center mb-2.5 md:mb-3 overflow-hidden relative group">
+              <div class="w-full h-28 md:h-32 rounded-xl bg-gradient-to-b from-[#1D1815] to-[#14110F] border border-kura-border/80 flex items-center justify-center mb-3 overflow-hidden relative group">
                 <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105">
               </div>
 
-              <h3 class="font-serif font-bold text-sm sm:text-base md:text-lg text-kura-cream leading-snug text-center">${escapeHtml(item.name)}</h3>
+              <h3 class="font-serif font-bold text-base md:text-lg text-kura-cream leading-snug text-center">${escapeHtml(item.name)}</h3>
             </div>
           </div>
         `;
@@ -888,15 +888,15 @@
         const photoSrc = item.photo || makeSvgPhoto('#241E1A', '#6be173', '🍽️');
         return `
           <div class="bg-[#26201C] border border-kura-border rounded-2xl p-2.5 md:p-3 flex items-center justify-between gap-2 animate-pop-in">
-            <div class="flex items-center gap-2 min-w-0">
-              <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-10 h-10 md:w-12 md:h-12 rounded-xl object-cover border border-kura-border shrink-0">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img src="${photoSrc}" alt="${escapeHtml(item.name)}" class="w-11 h-11 md:w-12 md:h-12 rounded-xl object-cover border border-kura-border shrink-0">
               <div class="min-w-0">
                 <p class="font-serif font-bold text-xs md:text-sm text-kura-cream leading-tight line-clamp-2">${escapeHtml(item.name)}</p>
                 ${item.note ? `<p class="text-[11px] text-[#6be173] mt-0.5 truncate">📝 ${escapeHtml(item.note)}</p>` : ''}
               </div>
             </div>
 
-            <div class="flex items-center gap-1 md:gap-1.5 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
               <button onclick="updateCartItemQty('${item.cartId}', -1)" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-kura-surface border border-kura-border text-kura-cream font-bold text-sm hover:border-[#6be173] active:scale-90 transition">−</button>
               <span class="font-serif font-bold text-sm md:text-base text-kura-goldLight w-5 md:w-6 text-center">${item.qty}</span>
               <button onclick="updateCartItemQty('${item.cartId}', 1)" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-kura-surface border border-kura-border text-kura-cream font-bold text-sm hover:border-[#6be173] active:scale-90 transition">＋</button>
