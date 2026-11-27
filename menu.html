@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111214">
-<title>TODAY'S MENU | MY RECIPE BOOK</title>
+<title>MENU</title>
 <style>
 :root{
   --bg:#111214;--panel:#191a1e;--panel2:#202126;--line:#34353b;
@@ -295,12 +295,11 @@ select{color-scheme:dark}
 (() => {
 'use strict';
 
-// 元のデータベースと共通の設定
+// 元のデータベースと共通の設定（難読化済み）
 const FIREBASE_CONFIG_B64 = 'eyJhcGlLZXkiOiJBSXphU3lDUGtaeG5NaDc5RDFPeEl4WVpiQmJMTEJpMndseWFhOFkiLCJhdXRoRG9tYWluIjoibWVtby0zMjk3OS5maXJlYmFzZWFwcC5jb20iLCJkYXRhYmFzZVVSTCI6Imh0dHBzOi8vbWVtby0zMjk3OS1kZWZhdWx0LXJ0ZGIuZmlyZWJhc2Vpby5jb20iLCJwcm9qZWN0SWQiOiJtZW1vLTMyOTc5Iiwic3RvcmFnZUJ1Y2tldCI6Im1lbW8tMzI5NzkuZmlyZWJhc2VzdG9yYWdlLmFwcCIsIm1lc3NhZ2luZ1NlbmRlcklkIjoiNzk4NDU3OTAwODU3IiwiYXBwSWQiOiIxOjc5ODQ1NzkwMDg1Nzp3ZWI6OGI1YWMyODEyYWVlOGMzYzg0MDJlOCIsIm1lYXN1cmVtZW50SWQiOiJHLTdaRkpGVFRITlcifQ==';
 const firebaseConfig = JSON.parse(decodeURIComponent(escape(atob(FIREBASE_CONFIG_B64))));
 const CATEGORIES = ['肉料理','魚料理','野菜料理','副菜','汁物・スープ','ご飯・麺類','パン','お菓子・デザート','その他'];
 const STORAGE_KEYS = {
-  ORDERS: 'recipe_book_orders_v1',
   SOUND: 'recipe_book_sound_v1'
 };
 
@@ -314,6 +313,7 @@ let orders = [];
 let selectedRecipe = null;
 let modalQty = 1;
 let soundEnabled = true;
+let ordersRef = null;
 
 function toast(msg) {
   const t = $('toast');
@@ -324,22 +324,12 @@ function toast(msg) {
 
 function loadLocalState() {
   try {
-    const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
-    orders = savedOrders ? JSON.parse(savedOrders) : [];
     const savedSound = localStorage.getItem(STORAGE_KEYS.SOUND);
     soundEnabled = savedSound !== null ? JSON.parse(savedSound) : true;
   } catch (e) {
-    orders = [];
     soundEnabled = true;
   }
   updateSoundUI();
-  updateOrderBadge();
-}
-
-function saveOrders() {
-  try {
-    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orders));
-  } catch (e) {}
   updateOrderBadge();
 }
 
@@ -488,35 +478,41 @@ function renderTray() {
   container.insertAdjacentHTML('beforeend', html);
 }
 
-function submitOrder() {
-  if (tray.length === 0) return;
+async function submitOrder() {
+  if (tray.length === 0 || !ordersRef) return;
   const now = new Date();
   const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
   const stamp = `${now.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} ${timeStr}`;
+  const orderId = 'ORD-' + Date.now();
 
   const order = {
-    id: 'ORD-' + Date.now(),
+    id: orderId,
+    createdAt: now.getTime(),
     timestamp: stamp,
     status: 'pending',
     items: tray.map(t => ({ id: t.id, name: t.name, category: t.category, qty: t.qty }))
   };
 
-  orders.unshift(order);
-  saveOrders();
-  playChime();
+  try {
+    await ordersRef.child(orderId).set(order);
+    playChime();
 
-  $('receiptTime').textContent = `${timeStr} 受付`;
-  $('receiptRows').innerHTML = order.items.map(i => `
-    <div class="ticket-row">
-      <span>${esc(i.name)}</span>
-      <strong>× ${i.qty}</strong>
-    </div>
-  `).join('');
+    $('receiptTime').textContent = `${timeStr} 受付`;
+    $('receiptRows').innerHTML = order.items.map(i => `
+      <div class="ticket-row">
+        <span>${esc(i.name)}</span>
+        <strong>× ${i.qty}</strong>
+      </div>
+    `).join('');
 
-  tray = [];
-  renderTray();
-  renderList();
-  $('successModal').classList.add('open');
+    tray = [];
+    renderTray();
+    renderList();
+    $('successModal').classList.add('open');
+  } catch (e) {
+    console.error('Order submit error:', e);
+    toast('注文の送信に失敗しました');
+  }
 }
 
 function renderOrdersModal() {
@@ -539,7 +535,7 @@ function renderOrdersModal() {
             <button class="btn" type="button" data-action="delete" style="padding:6px 10px;font-size:11px;">削除</button>
           </div>
         </div>
-        ${o.items.map(i => `
+        ${(o.items || []).map(i => `
           <div class="ticket-row">
             <span>${esc(i.name)}</span>
             <strong>× ${i.qty}</strong>
@@ -547,6 +543,22 @@ function renderOrdersModal() {
         `).join('')}
       </div>`;
   }).join('');
+}
+
+function subscribeOrders() {
+  ordersRef = db.ref('orders');
+  ordersRef.on('value', snap => {
+    const data = snap.val() || {};
+    orders = Object.entries(data)
+      .map(([id, o]) => ({ ...o, id }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    updateOrderBadge();
+    if ($('ordersModal').classList.contains('open')) {
+      renderOrdersModal();
+    }
+  }, err => {
+    console.error('Orders sync error:', err);
+  });
 }
 
 async function refresh() {
@@ -626,26 +638,30 @@ $('kitchenBtn').onclick = () => {
   $('ordersModal').classList.add('open');
 };
 $('closeOrdersModal').onclick = () => $('ordersModal').classList.remove('open');
-$('clearOrdersBtn').onclick = () => {
-  orders = [];
-  saveOrders();
-  renderOrdersModal();
-  toast('注文履歴をクリアしました');
+$('clearOrdersBtn').onclick = async () => {
+  if (!ordersRef) return;
+  try {
+    await ordersRef.remove();
+    toast('注文履歴をクリアしました');
+  } catch (e) {
+    console.error('Clear orders error:', e);
+    toast('履歴のクリアに失敗しました');
+  }
 };
-$('ordersModalBody').onclick = e => {
+$('ordersModalBody').onclick = async e => {
   const btn = e.target.closest('[data-action]');
   const ticket = e.target.closest('[data-order-id]');
-  if (!btn || !ticket) return;
+  if (!btn || !ticket || !ordersRef) return;
   const id = ticket.dataset.orderId;
-  if (btn.dataset.action === 'done') {
-    const target = orders.find(o => o.id === id);
-    if (target) target.status = 'done';
-    saveOrders();
-    renderOrdersModal();
-  } else if (btn.dataset.action === 'delete') {
-    orders = orders.filter(o => o.id !== id);
-    saveOrders();
-    renderOrdersModal();
+  try {
+    if (btn.dataset.action === 'done') {
+      await ordersRef.child(id).update({ status: 'done' });
+    } else if (btn.dataset.action === 'delete') {
+      await ordersRef.child(id).remove();
+    }
+  } catch (err) {
+    console.error('Order update error:', err);
+    toast('更新に失敗しました');
   }
 };
 
@@ -658,6 +674,7 @@ $('ordersModalBody').onclick = e => {
     db = firebase.database();
     await auth.signInAnonymously();
     categoryOptions();
+    subscribeOrders();
     await refresh();
   } catch (e) {
     console.error('Firebase initialization error:', e);
